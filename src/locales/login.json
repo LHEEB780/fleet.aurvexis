@@ -1,0 +1,130 @@
+{
+  "ar": {
+    "backToPublic": "العودة للموقع العام",
+    "switchLanguage": "English",
+    "systemSuite": "مجمع نظام Axoventra",
+    "systemDesc": "بوابة سحابية لإدارة حركة الصيانات ومخازن الأساطيل",
+    "selectIdentity": "احجز هويتك المراد الدخول بها (SaaS Role):",
+    "roleAdmin": "مدير نظام",
+    "roleTechnician": "فني صيانة",
+    "roleViewer": "مراقب جودة",
+    "roleDriver": "سائق عجلات",
+    "online": "متصل الآن",
+    "cloudConnected": "الشبكة سحابية",
+    "latency": "زمن الاستجابة: 12ms",
+    "passcodeLabel": "رمز المرور للتأكيد (Passcode)",
+    "passcodePlaceholder": "اكتب رمز الدخول...",
+    "passcodeTip": "💡 رمز المرور الافتراضي المعزز للأمن هو 1234",
+    "rememberCheckbox": "تذكر هويتي وجلستي",
+    "rememberUser": "تذكرني",
+    "loadingText": "جاري التحقق والمزامنة...",
+    "submitButton": "تسجيل الدخول الآمن للـ SaaS",
+    "orBiometric": "أو الولوج الفوري الذكي",
+    "biometricScanning": "جاري فحص وتشفير أنماط البصمة...",
+    "biometricSuccess": "✓ تم التحقق بنجاح من الهوية!",
+    "biometricIdle": "الدخول السريع عبر البصمة الحيوية",
+    "biometricScanDetails": "تطابق معيار المعرف الفريد للموظف: 99.8%",
+    "biometricSuccessDetails": "رمز المعرف المؤسسي الآمن: #SEC-6590",
+    "biometricIdleDetails": "انقر على رمز البصمة للمطابقة السريعة برتبة الهوية المختارة",
+    "footerSecurity": "جميع حقوق الملكية وحماية البيانات معززة بقنوات تشفير SSL دائرية 🔒",
+    "passcodeError": "رمز المرور غير صحيح! (اتركه فارغاً أو اكتب 1234 للتجربة)",
+    "emailLabel": "البريد الإلكتروني للعمل",
+    "emailPlaceholder": "اكتب البريد الإلكتروني (مثال: master@axoventra.com)",
+    "forgotPassword": "هل نسيت كلمة المرور؟",
+    "recoverPassword": "بوابة استعادة كلمة المرور",
+    "backToLogin": "← العودة لصفحة تسجيل الدخول",
+    "sendResetLink": "إرسال رابط استعادة آمن",
+    "resetSuccess": "✓ تم إرسال رابط تأكيد الاستعادة بنجاح! المحاكاة نشطة عبر Firebase Auth: تفقّد صندوق الوارد لـ {email} 🔒",
+    "resetError": "يرجى كتابة عنوان بريد إلكتروني صحيح!",
+    "emailRequiredError": "يرجى إدخال البريد الإلكتروني للتأكيد!",
+    "greetings": {
+      "morning": "صباح الخير والبركة ☀️",
+      "afternoon": "طاب يومك السعيد 🌤️",
+      "evening": "مساء الخير والمسرات 🌅",
+      "night": "طاب مساؤك الهانئ 🌙",
+      "welcome": "مرحباً بك في"
+    },
+    "users": {
+      "admin": {
+        "name": "المهندس خالد",
+        "title": "مدير قسم الصيانة"
+      },
+      "technician": {
+        "name": "الفني أحمد",
+        "title": "فني ميكانيك أول"
+      },
+      "viewer": {
+        "name": "المراقب سالم",
+        "title": "مراقب جودة"
+      },
+      "driver": {
+        "name": "السائق خالد الكعبي",
+        "title": "سائق نقل ثقيل مرخص"
+      }
+    }
+  },
+  "en": {
+    "backToPublic": "Back to Public Site",
+    "switchLanguage": "المظهر العربي",
+    "systemSuite": "Axoventra SaaS Suite",
+    "systemDesc": "Cloud portal for logistics, workshops, and fleet maintenance",
+    "selectIdentity": "Select your professional identity:",
+    "roleAdmin": "Admin",
+    "roleTechnician": "Tech",
+    "roleViewer": "Auditor",
+    "roleDriver": "Driver",
+    "online": "Online",
+    "cloudConnected": "Cloud Connected",
+    "latency": "Latency: 12ms",
+    "passcodeLabel": "Demo Passcode",
+    "passcodePlaceholder": "Enter demo password...",
+    "passcodeTip": "💡 Use default walkthrough passcode: 1234",
+    "rememberCheckbox": "Remember my identity & session",
+    "rememberUser": "Remember Me",
+    "loadingText": "Checking Identity...",
+    "submitButton": "Secure Login to Enterprise",
+    "orBiometric": "Or AI Biometric Direct Access",
+    "biometricScanning": "Analyzing fingerprint encryptions...",
+    "biometricSuccess": "✓ Identity Verified Successfully!",
+    "biometricIdle": "Quick Biometric Sign-In",
+    "biometricScanDetails": "Matching signature with staff database: 99.8%",
+    "biometricSuccessDetails": "Secure Session Assigned: ID #SEC-6590",
+    "biometricIdleDetails": "Simulate secure biometric single sign-on with the chosen identity",
+    "footerSecurity": "All assets data are encrypted with bank-grade security protocols 🔒",
+    "passcodeError": "Password incorrect! (Leave blank or write 1234 to bypass)",
+    "emailLabel": "Work Email",
+    "emailPlaceholder": "Enter email (e.g. master@axoventra.com)",
+    "forgotPassword": "Forgot Password?",
+    "recoverPassword": "Password Recovery Gateway",
+    "backToLogin": "← Back to Sign In",
+    "sendResetLink": "Send Secure Reset Link",
+    "resetSuccess": "✓ Verification link successfully sent! Simulated via Firebase Auth: Check the inbox of {email} 🔒",
+    "resetError": "Please enter a valid email address!",
+    "emailRequiredError": "Please enter your email to proceed!",
+    "greetings": {
+      "morning": "Good morning ☀️",
+      "afternoon": "Good afternoon 🌤️",
+      "evening": "Good evening 🌅",
+      "night": "Good night 🌙",
+      "welcome": "welcome to"
+    },
+    "users": {
+      "admin": {
+        "name": "Eng Khaled",
+        "title": "Maintenance Department Director"
+      },
+      "technician": {
+        "name": "Tech Ahmed",
+        "title": "Lead Senior Mechanic"
+      },
+      "viewer": {
+        "name": "Quality Inspector Salem",
+        "title": "Quality Inspector"
+      },
+      "driver": {
+        "name": "Khaled Al-Kaabi",
+        "title": "Heavy Duty Hauler Driver"
+      }
+    }
+  }
+}

@@ -1,0 +1,279 @@
+{
+  "entities": {
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Represents a fleet vehicle under tracking and diagnostic observation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique vehicle ID" },
+        "name": { "type": "string", "description": "User visible vehicle title" },
+        "plate": { "type": "string", "description": "License plate identifier" },
+        "brand": { "type": "string", "description": "Vehicle brand or manufacturer" },
+        "model": { "type": "string", "description": "Model description" },
+        "year": { "type": "string", "description": "Manufacturing year" },
+        "type": { "type": "string", "description": "Class or category" },
+        "status": { "type": "string", "description": "Active status of vehicle" },
+        "currentDriver": { "type": "string", "description": "Assigned driver name" },
+        "oilLife": { "type": "number", "description": "Calculated motor oil life remaining percentage" },
+        "brakesWear": { "type": "number", "description": "Brakes wear calculation" },
+        "batteryLife": { "type": "number", "description": "Calculated battery voltage health percentage" }
+      },
+      "required": ["id", "plate", "name"]
+    },
+    "MaintenanceOrder": {
+      "title": "MaintenanceOrder",
+      "description": "Represents a specific mechanical repair, diagnostic check or service task.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Order unique identifier" },
+        "vehicleId": { "type": "string", "description": "Associated vehicle ID" },
+        "type": { "type": "string", "description": "Category of maintenance task" },
+        "desc": { "type": "string", "description": "Description of operations conducted" },
+        "tech": { "type": "string", "description": "Name or ID of assigned technician" },
+        "cost": { "type": "number", "description": "Calculated total financial cost in SAR" },
+        "status": { "type": "string", "description": "Repair sequence state" },
+        "date": { "type": "string", "description": "Action logged date string" },
+        "priority": { "type": "string", "description": "Urgency classification" }
+      },
+      "required": ["id", "vehicleId", "type", "status"]
+    },
+    "Technician": {
+      "title": "Technician",
+      "description": "A certified mechanic or technical contractor registered in the workshop.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique technician resource ID" },
+        "name": { "type": "string", "description": "Full name of staff member" },
+        "specialty": { "type": "string", "description": "Mechanical or electrical specialty classification" },
+        "phone": { "type": "string", "description": "Contact number" },
+        "ordersCount": { "type": "number", "description": "Number of assigned task orders" },
+        "status": { "type": "string", "description": "Work availability state" },
+        "score": { "type": "number", "description": "Customer feedback and execution rating score" }
+      },
+      "required": ["id", "name", "specialty"]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "A replacement spare part, fluid, filter or mechanical tool stored in stock.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Barcode or general SKU identifier" },
+        "name": { "type": "string", "description": "Part name" },
+        "qty": { "type": "number", "description": "Units current stock count" },
+        "minQty": { "type": "number", "description": "Minimum alert limit threshold" },
+        "price": { "type": "number", "description": "Cost per unit in SAR" },
+        "category": { "type": "string", "description": "Storage bin classification" },
+        "location": { "type": "string", "description": "Warehouse physical shelf layout" }
+      },
+      "required": ["id", "name", "qty", "price"]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "A customer-initiated technical, billing, hardware, or consultation issue ticket.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "category": { "type": "string", "enum": ["technical", "billing", "hardware", "consultation"] },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "emergency"] },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "in_progress", "resolved", "closed"] },
+        "createdAt": { "type": "string" },
+        "replies": { "type": "array" }
+      },
+      "required": ["id", "subject", "category", "priority", "description", "status"]
+    },
+    "CustomDevRequest": {
+      "title": "CustomDevRequest",
+      "description": "A project manager scoped task for specialized improvements and custom client developments.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "impact": { "type": "string", "enum": ["low", "medium", "high"] },
+        "timeframe": { "type": "string", "enum": ["1_week", "2_weeks", "1_month"] },
+        "status": { "type": "string", "enum": ["pending_review", "under_scoring", "approved", "declined"] },
+        "createdAt": { "type": "string" },
+        "estimatedHours": { "type": "number" },
+        "hourlyRate": { "type": "number" },
+        "pmRiskAssessment": { "type": "string" }
+      },
+      "required": ["id", "title", "description", "impact", "timeframe", "status"]
+    },
+    "TechnicalInspection": {
+      "title": "TechnicalInspection",
+      "description": "Represents a digital component technical audit for a vehicle mechanical repair order.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique audit inspection key" },
+        "orderId": { "type": "string", "description": "Associated maintenance order ID" },
+        "orderNumber": { "type": "string", "description": "User visible maintenance order number" },
+        "vehicleId": { "type": "string", "description": "Associated vehicle ID" },
+        "vehicleName": { "type": "string", "description": "Vehicle display name" },
+        "checkedBy": { "type": "string", "description": "Examiner team member name" },
+        "timestamp": { "type": "string", "description": "Audit certification date" },
+        "items": { "type": "array", "description": "List of inspected structural divisions & statuses" },
+        "overallNotes": { "type": "string", "description": "Overall technician recommendations" },
+        "signature": { "type": "string", "description": "Signature signature label" }
+      },
+      "required": ["id", "orderId", "vehicleId", "checkedBy", "timestamp", "items"]
+    },
+    "SafetyInspection": {
+      "title": "SafetyInspection",
+      "description": "Pre-departure checklist or driver safety inspection document.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "inspector": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "vehicleId"]
+    },
+    "SaaSLead": {
+      "title": "SaaSLead",
+      "description": "A prospect or lead registered through the landing page.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "company": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "fleetSize": { "type": "number" },
+        "status": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "BrandingSettings": {
+      "title": "BrandingSettings",
+      "description": "White-label customization settings of the SaaS platform.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "color": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "color"]
+    },
+    "SaaSFeature": {
+      "title": "SaaSFeature",
+      "description": "Features configured and visible on the pricing table.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "desc": { "type": "string" }
+      },
+      "required": ["id", "title"]
+    },
+    "SaaSClient": {
+      "title": "SaaSClient",
+      "description": "Commercial partners shown in the trust carousel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "logo": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "SaaSReview": {
+      "title": "SaaSReview",
+      "description": "SaaS customer reviews shown on the marketing page.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "author": { "type": "string" },
+        "text": { "type": "string" }
+      },
+      "required": ["id", "author", "text"]
+    },
+    "RegisteredCompany": {
+      "title": "RegisteredCompany",
+      "description": "A tenant company registered inside the SaaS space.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "CompanySubscription": {
+      "title": "CompanySubscription",
+      "description": "Active subscription plans mapping custom client accounts.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "planId": { "type": "string" }
+      },
+      "required": ["id", "companyId"]
+    }
+  },
+  "firestore": {
+    "vehicles": {
+      "schema": "Vehicle",
+      "description": "Collection storing white-label commercial fleet vehicles."
+    },
+    "maintenance_orders": {
+      "schema": "MaintenanceOrder",
+      "description": "Main task log details for repairs, checks and workflows."
+    },
+    "technicians": {
+      "schema": "Technician",
+      "description": "Technician active directory rosters."
+    },
+    "inventory": {
+      "schema": "InventoryItem",
+      "description": "Spare parts database for local workshop stock."
+    },
+    "support_tickets": {
+      "schema": "SupportTicket",
+      "description": "Collection tracking user-submitted customer support and self-healing tickets."
+    },
+    "custom_dev_requests": {
+      "schema": "CustomDevRequest",
+      "description": "Collection tracking custom development proposals, PM evaluations, and client request statuses."
+    },
+    "technical_inspections": {
+      "schema": "TechnicalInspection",
+      "description": "Inspections generated during digital technical component checks."
+    },
+    "safety_inspections": {
+      "schema": "SafetyInspection",
+      "description": "Inspections representing safety checkouts."
+    },
+    "saas_leads": {
+      "schema": "SaaSLead",
+      "description": "Prospect subscription contact cards for marketing followups."
+    },
+    "saas_settings": {
+      "schema": "BrandingSettings",
+      "description": "Branded name, description, colors, and global configurations."
+    },
+    "saas_features": {
+      "schema": "SaaSFeature",
+      "description": "Target features management."
+    },
+    "saas_clients": {
+      "schema": "SaaSClient",
+      "description": "Partners client lists."
+    },
+    "saas_reviews": {
+      "schema": "SaaSReview",
+      "description": "Customer testimonials management."
+    },
+    "registered_companies": {
+      "schema": "RegisteredCompany",
+      "description": "Organizations currently running instances inside the SaaS CRM."
+    },
+    "company_subscriptions": {
+      "schema": "CompanySubscription",
+      "description": "Custom subscriptions management."
+    }
+  }
+}

@@ -1,0 +1,4780 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Globe2, 
+  Settings, 
+  Users, 
+  Sparkles, 
+  Trash2, 
+  Plus, 
+  Edit3, 
+  Check, 
+  TrendingUp, 
+  Handshake, 
+  MessageSquare, 
+  Save, 
+  Info, 
+  Calendar, 
+  Truck, 
+  Phone, 
+  Mail, 
+  Building2, 
+  Briefcase, 
+  Award,
+  ChevronRight,
+  User,
+  Star,
+  Activity,
+  Droplets,
+  DollarSign,
+  Eye,
+  PenTool,
+  Cloud,
+  Database,
+  CheckSquare,
+  ArrowRightLeft,
+  BookOpen,
+  ShieldCheck,
+  Zap,
+  Lock,
+  Cpu,
+  ChevronDown,
+  Search,
+  FileText,
+  Download,
+  Clock,
+  SlidersHorizontal,
+  Filter,
+  UserCheck,
+  BarChart2,
+  RefreshCw,
+  Menu,
+  X
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '../services/LanguageContext';
+import ContextualHelp from './ContextualHelp';
+import { 
+  db, 
+  saveDocument, 
+  deleteDocument, 
+  testFirestoreConnection, 
+  pushLocalDataToCloud, 
+  pullCloudDataToLocal 
+} from '../services/firebase';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+
+interface MarketingAdminProps {
+  brandPrimaryColor: string;
+  setBrandPrimaryColor: (color: string) => void;
+  saasBrandName: string;
+  setSaasBrandName: (name: string) => void;
+  saasBrandDesc: string;
+  setSaasBrandDesc: (desc: string) => void;
+  onNavigateToTab?: (tab: string) => void;
+}
+
+// Default static fallbacks to initialize storage
+const DEFAULT_FEATURES = [
+  {
+    id: 'f-1',
+    iconName: 'Truck',
+    titleAr: 'إدارة أسطول النقل والسيارات',
+    titleEn: 'Fleet Ledger Integrity',
+    descAr: 'سجل متكامل لكل مركبة ومعدة، مع تحليلات الوقود وتواريخ الفحص الأسبوعي لمنع الأعطال المفاجئة.',
+    descEn: 'Log technical properties, active drivers, and safety validation statuses cleanly across any layout.',
+    badgeAr: 'أساسي',
+    badgeEn: 'Core'
+  },
+  {
+    id: 'f-2',
+    iconName: 'Smartphone',
+    titleAr: 'تلقي بلاغات السائقين والصوتيات',
+    titleEn: 'Driver Feedback Channels',
+    descAr: 'بوابة ويب متناسقة بالكامل للسائقين لإرسال بلاغات ميكانيكية فورية مع دعم رسائل الصوت والفحص بالباركود للسلامة.',
+    descEn: 'Instant reporting desk that allows drivers to submit issues, including fast voice note capture.',
+    badgeAr: 'تفاعلي',
+    badgeEn: 'Interactive'
+  },
+  {
+    id: 'f-3',
+    iconName: 'Cpu',
+    titleAr: 'الذكاء الاصطناعي لتشخيص الأعطال ذاتياً',
+    titleEn: 'Interactive AI Diagnostics',
+    descAr: 'محرك ميكانيكي ذكي يقوم بالتدقيق والفحص التلقائي لرموز الأخطاء ويقترح مسار الإصلاح المثالي والقطع اللازمة.',
+    descEn: 'Instantly query diagnostic codes and parse engine troubleshooting scripts natively using model integrations.',
+    badgeAr: 'حصري',
+    badgeEn: 'AI Powered'
+  },
+  {
+    id: 'f-4',
+    iconName: 'Wrench',
+    titleAr: 'إدارة الورش والمواعيد الدورية',
+    titleEn: 'Workshops & Preventative Triggers',
+    descAr: 'تنظيم مهام الفنيين وصيانة المعدات وفق جداول زمنية دقيقة لتقليل مدة تعطل الأسطول التشغيلية.',
+    descEn: 'Schedule service plans, dispatch workorders, and optimize technician workbench allocations dynamically.',
+    badgeAr: 'جديد',
+    badgeEn: 'New Update'
+  }
+];
+
+const DEFAULT_CLIENTS = [
+  { 
+    id: 'c-1', 
+    name: 'مؤسسة الغد للشحن الذكي', 
+    nameAr: 'مؤسسة الغد للشحن الذكي',
+    nameEn: 'Al-Ghad Smart Transport Corp.',
+    industryAr: 'سلاسل التوريد وشحن المستقبل', 
+    industryEn: 'Supply Chain & Future Cargo', 
+    rating: 5, 
+    yearJoint: '2024', 
+    activeVehicles: '1,200', 
+    logoSeed: 'LG',
+    bgLight: 'bg-sky-50/70 hover:bg-sky-50 hover:shadow-sky-50 border-sky-100 hover:border-sky-300 text-sky-900',
+    bgDark: 'dark:bg-sky-950/20 dark:border-sky-900/30 dark:hover:border-sky-800',
+    badgeBg: 'text-sky-700 bg-sky-100 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-900/30',
+    avatarBg: 'bg-sky-600 text-white shadow-sky-100'
+  },
+  { 
+    id: 'c-2', 
+    name: 'فيوتشر تراك للخدمات البيئية', 
+    nameAr: 'فيوتشر تراك للخدمات البيئية',
+    nameEn: 'FutureTrack Eco Services',
+    industryAr: 'خدمات النقل النظيف والهجين', 
+    industryEn: 'Clean & Hybrid Mobility Hubs', 
+    rating: 5, 
+    yearJoint: '2023', 
+    activeVehicles: '450', 
+    logoSeed: 'FT',
+    bgLight: 'bg-emerald-50/70 hover:bg-emerald-50 hover:shadow-emerald-50 border-emerald-100 hover:border-emerald-300 text-emerald-900',
+    bgDark: 'dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:hover:border-emerald-800',
+    badgeBg: 'text-emerald-700 bg-emerald-100 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-900/30',
+    avatarBg: 'bg-emerald-600 text-white shadow-emerald-100'
+  },
+  { 
+    id: 'c-3', 
+    name: 'المسار المستدام للنقل اللوجستي', 
+    nameAr: 'المسار المستدام للنقل اللوجستي',
+    nameEn: 'Sustainable National Cargo',
+    industryAr: 'شحن مستدام وموثق للصناعات', 
+    industryEn: 'Certified Sustainable Logistics', 
+    rating: 5, 
+    yearJoint: '2024', 
+    activeVehicles: '820', 
+    logoSeed: 'SC',
+    bgLight: 'bg-indigo-50/70 hover:bg-indigo-50 hover:shadow-indigo-50 border-indigo-100 hover:border-indigo-300 text-indigo-900',
+    bgDark: 'dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:hover:border-indigo-800',
+    badgeBg: 'text-indigo-700 bg-indigo-100 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-900/30',
+    avatarBg: 'bg-indigo-600 text-white shadow-indigo-100'
+  },
+  { 
+    id: 'c-4', 
+    name: 'أوربت ترانزيت للنقل الطاقي', 
+    nameAr: 'أوربت ترانزيت للنقل الطاقي',
+    nameEn: 'TransOrbit Hybrid Transit',
+    industryAr: 'شحن الطاقة المسال والوقائيات', 
+    industryEn: 'Energy Cargo & Odometer Sync', 
+    rating: 4.9, 
+    yearJoint: '2025', 
+    activeVehicles: '310', 
+    logoSeed: 'OT',
+    bgLight: 'bg-amber-50/70 hover:bg-amber-50 hover:shadow-amber-50 border-amber-100 hover:border-amber-300 text-amber-900',
+    bgDark: 'dark:bg-amber-950/20 dark:border-amber-900/30 dark:hover:border-amber-800',
+    badgeBg: 'text-amber-700 bg-amber-100 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900/30',
+    avatarBg: 'bg-amber-600 text-white shadow-amber-100'
+  },
+  { 
+    id: 'c-5', 
+    name: 'ريدان للتكامل اللوجستي', 
+    nameAr: 'ريدان للتكامل اللوجستي',
+    nameEn: 'Raydan Eco-Transit Systems',
+    industryAr: 'شبكات النقل الكهربائي الموثوق', 
+    industryEn: 'Battery-Powered Net-Zero Transit', 
+    rating: 5, 
+    yearJoint: '2025', 
+    activeVehicles: '150', 
+    logoSeed: 'RE',
+    bgLight: 'bg-purple-50/70 hover:bg-purple-50 hover:shadow-purple-50 border-purple-100 hover:border-purple-300 text-purple-900',
+    bgDark: 'dark:bg-purple-950/20 dark:border-purple-900/30 dark:hover:border-purple-800',
+    badgeBg: 'text-purple-700 bg-purple-100 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-900/30',
+    avatarBg: 'bg-purple-600 text-white shadow-purple-100'
+  }
+];
+
+const DEFAULT_REVIEWS = [
+  {
+    id: 'r-1',
+    authorName: 'المهندس عبدالرحمن العتيبي',
+    roleAr: 'مدير العمليات اللوجستية',
+    roleEn: 'VP of Fleet Logistics',
+    company: 'المسار المستدام للنقل اللوجستي',
+    contentAr: 'ساعدتنا بوابة صيانة المعدات في دمج الفنيين مع تقارير السائقين الصوتية بشكل فوري. مستوى التحكم في استهلاك قطع الغيار فاق توقعاتنا بكثير!',
+    contentEn: 'This platform transformed our maintenance response. Integrating driver voice reports directly with the mechanics desk has cut down repair cycle-times extensively.',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces'
+  },
+  {
+    id: 'r-2',
+    authorName: 'المهندس صالح الخالدي',
+    roleAr: 'رئيس وحدة صيانة المعدات الثقيلة',
+    roleEn: 'Head of Industrial Equipment Maintenance',
+    company: 'فيوتشر تراك للخدمات البيئية',
+    contentAr: 'الذكاء الاصطناعي لفحص كود الأعطال يثير الإعجاب. نوفر الآن آلاف الريالات يومياً عبر استباق الأعطال وتصليح الحشوات قبل تضرر رأس المحرك.',
+    contentEn: 'The AI diagnostics scanner is highly impressive. We prevent massive cylinder head damage by proactive component swaps triggered by sensor thresholds.',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces'
+  },
+  {
+    id: 'r-3',
+    authorName: 'د. فيصل السديري',
+    roleAr: 'مشرف الخدمات البلدية والمعدات',
+    roleEn: 'Municipal Services Supervisor',
+    company: 'أوربت ترانزيت للنقل الطاقي',
+    contentAr: 'نظام إدارة الإطارات ومراقبة مستويات الضغط يعطينا رؤية أمان حقيقية وموثوقة على شبكتنا الميدانية. نوصي به بشدة لأي قطاع بلدي أو نقلي.',
+    contentEn: 'The tire integrity desk and tire inventory audit tools give us reliable safety views on active vehicles. Highly recommended for municipal environments.',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=faces'
+  }
+];
+
+const DEFAULT_FOOTER_COLUMNS = [
+  {
+    id: "col-1",
+    titleAr: "الحلول",
+    titleEn: "Solutions",
+    items: [
+      { id: "item-1-1", labelAr: "الحل لمالكي الأساطيل", labelEn: "Fleet Owners" },
+      { id: "item-1-2", labelAr: "الحل للأساطيل الكبيرة", labelEn: "Enterprise Fleets" },
+      { id: "item-1-3", labelAr: "قطاع الإنشاءات والبناء", labelEn: "Construction Sector" },
+      { id: "item-1-4", labelAr: "مقدمو الخدمات التشغيلية", labelEn: "Service Providers" },
+      { id: "item-1-5", labelAr: "البلديات والجهات الحكومية", labelEn: "Municipalities & Government" },
+      { id: "item-1-6", labelAr: "النقل اللوجستي والشاحنات", labelEn: "Logistics & Trucking" },
+      { id: "item-1-7", labelAr: "قطاع المدارس والتعليم", labelEn: "Schools & Education" }
+    ]
+  },
+  {
+    id: "col-2",
+    titleAr: "المنتج والمميزات",
+    titleEn: "Product Features",
+    items: [
+      { id: "item-2-1", labelAr: "جدولة الصيانة الوقائية PM", labelEn: "Preventative Maintenance PM" },
+      { id: "item-2-2", labelAr: "الفحوصات الرقمية والباركود", labelEn: "Digital Inspection & Barcode" },
+      { id: "item-2-3", labelAr: "أوامر العمل وعقود الصيانة", labelEn: "Work Orders & Contracts" },
+      { id: "item-2-4", labelAr: "قائمة مستودع وجرد قطع الغيار", labelEn: "Spare Parts Ledger" },
+      { id: "item-2-5", labelAr: "إدارة أصول الأسطول الفني", labelEn: "Fleet Asset Management" },
+      { id: "item-2-6", labelAr: "أتمتة العمليات وحوكمة الامتثال", labelEn: "Ecosystem Compliance Audit" },
+      { id: "item-2-7", labelAr: "إدارة المعدات الثقيلة والخفيفة", labelEn: "Heavy & Light Equipment" },
+      { id: "item-2-8", labelAr: "أدوات الفحص والتحقق وطباعة QR", labelEn: "Daily Inspection & QR Label" }
+    ]
+  },
+  {
+    id: "col-3",
+    titleAr: "أهم المصادر والأقسام",
+    titleEn: "Key Resources",
+    items: [
+      { id: "item-3-1", labelAr: "قصص ودراسات نجاح العملاء", labelEn: "Validated Customer Case Stories" },
+      { id: "item-3-2", labelAr: "مدونة Axoventra للفنيين", labelEn: "Axoventra Engineering Blog" },
+      { id: "item-3-3", labelAr: "مكتبة الفيديوهات والشروحات", labelEn: "Platform Video Library" },
+      { id: "item-3-4", labelAr: "أدلة وركائز الاستخدام التشغيلي", labelEn: "Operations Guides" },
+      { id: "item-3-5", labelAr: "Axoventra مقابل فليتيو", labelEn: "Axoventra vs Fleetio Comparison" },
+      { id: "item-3-6", labelAr: "أداة حاسبة العائد الاستثماري ROI", labelEn: "Interactive Earnings ROI Tool" },
+      { id: "item-3-7", labelAr: "نماذج وقوالب سجلات الحركة", labelEn: "Worksheets & Daily Logs" }
+    ]
+  },
+  {
+    id: "col-4",
+    titleAr: "الشركة والدعم",
+    titleEn: "Company & Support",
+    items: [
+      { id: "item-4-1", labelAr: "نبذة عن شركة Axoventra", labelEn: "About Axoventra" },
+      { id: "item-4-2", labelAr: "غرفة المركز الإعلامي والأخبار", labelEn: "Corporate Press Room" },
+      { id: "item-4-3", labelAr: "الشراكات اللوجستية والتحالفات", labelEn: "Strategic Supply Partnerships" },
+      { id: "item-4-4", labelAr: "الاتصال المباشر بالدعم الفني", labelEn: "24/7 Engineers Helpdesk" },
+      { id: "item-4-5", labelAr: "بوابة فنيي الصيانة وشركاء الخدمة", labelEn: "Service Providers Portal" },
+      { id: "item-4-6", labelAr: "تنسيق وحجز عرض تقديمي ديمو للمنصة", labelEn: "Request a Dynamic Demo Run" }
+    ]
+  }
+];
+
+export function MarketingAdmin({
+  brandPrimaryColor,
+  setBrandPrimaryColor,
+  saasBrandName,
+  setSaasBrandName,
+  saasBrandDesc,
+  setSaasBrandDesc,
+  onNavigateToTab
+}: MarketingAdminProps) {
+  const { language, dir } = useLanguage();
+  const isRtl = dir === 'rtl';
+
+  // Sub-navigation tabs
+  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots'>('leads');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchMenuQuery, setSearchMenuQuery] = useState('');
+
+  const menuItems = [
+    { id: 'leads', label: 'المشتركون والطلبات المتلقاة', subLabel: 'متابعة الـ Leads وتحديث حالة الحسابات والمبيعات', icon: <Users size={15} /> },
+    { id: 'launch-planner', label: 'دليل وخطة إطلاق الساس متكامل', subLabel: 'الخطة والتحقق ودليل التشغيل بالتفصيل', icon: <CheckSquare size={15} className="text-amber-500" /> },
+    { id: 'robots', label: 'مكتبة الروبوتات والذكاء الاصطناعي', subLabel: 'أوتوماتونات ذكية ومعالجات خلفية لأتمتة النظام', icon: <Sparkles size={15} style={{ color: brandPrimaryColor }} className="animate-pulse" /> },
+    { id: 'identity', label: 'إعدادات الهوية والألوان', subLabel: 'تعديل شعار، ودرجات السحابة وسير اللوفر', icon: <Settings size={15} /> },
+    { id: 'features', label: 'إدارة مميزات النظام', subLabel: 'خصائص مقارنة المنصات الفنية وسعر الباقة', icon: <Sparkles size={15} /> },
+    { id: 'clients', label: 'قائمة العملاء والشركات', subLabel: 'تنسيق شعارات الشركاء والتطبيقات المتصلة', icon: <Handshake size={15} /> },
+    { id: 'testimonials', label: 'آراء بتقييمات المستخدمين', subLabel: 'مراجعات الورش وشهادات الموثوقية بالصفحة', icon: <MessageSquare size={15} /> },
+    { id: 'footer', label: 'روابط وتفاصيل أسفل تذييل الموقع', subLabel: 'قوائم الروابط السريعة وحسابات التواصل', icon: <Globe2 size={15} /> }
+  ];
+
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!searchMenuQuery) return true;
+    return item.label.toLowerCase().includes(searchMenuQuery.toLowerCase()) || 
+           item.subLabel.toLowerCase().includes(searchMenuQuery.toLowerCase());
+  });
+
+  // Firebase Firestore Integration states
+  const [useFirebase, setUseFirebase] = useState<boolean>(() => {
+    return localStorage.getItem('saas_admin_use_firebase') === 'true';
+  });
+  const [isFirestoreConnected, setIsFirestoreConnected] = useState<boolean>(false);
+  const [isSyncingWithCloud, setIsSyncingWithCloud] = useState<boolean>(false);
+  const [cloudFeedbackLog, setCloudFeedbackLog] = useState<string>('');
+
+  // PM Step-by-Step launch roadmap checklists state
+  const [launchSteps, setLaunchSteps] = useState<any[]>(() => {
+    const stored = localStorage.getItem('saas_launch_steps_v1');
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) {}
+    }
+    return [
+      {
+        id: "step-1",
+        phase: "infrastructure",
+        phaseAr: "أولاً: البنية التحتية والربط السحابي",
+        titleAr: "تهيئة قاعدة بيانات Firebase Firestore وتأمين قواعد الحماية السحابية",
+        titleEn: "Activate Firestore database & security rules",
+        status: "completed",
+        descAr: "إنشاء مستودعات آمنة ومشتركة لتسجيل المشتركين والمؤسسات تزامناً مع خادمنا السحابي.",
+        descEn: "Initialize persistent cloud collections for client records and interactive SaaS tools."
+      },
+      {
+        id: "step-2",
+        phase: "white-label",
+        phaseAr: "ثانياً: الهوية والـ White-Labeling",
+        titleAr: "تخصيص الهوية التجارية وتصميم العرض التسويقي للشركات والمشتركين",
+        titleEn: "Setup custom White-Label SaaS branding details",
+        status: "completed",
+        descAr: "ضبط اسم النظام، والشعار ونظام الألوان الموحد من لوحة الإدارة ليعكس هوية علامتك التجارية فوراً.",
+        descEn: "Update white label parameters directly inside branding panel to build visual safety authority."
+      },
+      {
+        id: "step-3",
+        phase: "billing",
+        phaseAr: "ثالثاً: بوابة الدفع والاشتراكات لمدراء الأساطيل",
+        titleAr: "ربط واختبار بوابة دفع Stripe وحساب الباقات وتفعيل الـ Webhooks",
+        titleEn: "Connect Stripe payment gateway & configure packages",
+        status: "pending",
+        descAr: "تكامل بوابات السداد وإعداد الفواتير وعضويات الباقات للسرعات والأساطيل بشكل مؤتمت بالكامل.",
+        descEn: "Link Stripe, configure webhook actions, and test standard monthly and yearly recurring tiers."
+      },
+      {
+        id: "step-4",
+        phase: "security",
+        phaseAr: "رابعاً: التحقق الأمني ونمذجة صلاحيات الأسطول",
+        titleAr: "تطبيق تدقيق الأمان Fleet Guard وصلاحيات مستويات الإذن",
+        titleEn: "Perform Fleet Guard security audits & role limits",
+        status: "pending",
+        descAr: "تحصين مستويات الصلاحيات للشركات الفرعية والسائقين ومدرائهم لضمان تشفير البيانات المشتركة ومنع التسريب وصناعة ثقة مطلقة.",
+        descEn: "Validate user scopes (technicians, fleet managers, and drivers) during system stress testing."
+      },
+      {
+        id: "step-5",
+        phase: "lead-capture",
+        phaseAr: "خامساً: تشغيل كشاف الريادة ومصائد العملاء",
+        titleAr: "تفعيل نماذج الاستقطاب وحجز الديمو وتنسيق قنوات المبيعات",
+        titleEn: "Activate public leads tracking & CRM pipelines",
+        status: "pending",
+        descAr: "توصيل النماذج العامة بصفحة الويب التسويقية (طلبات حجز العروض الحية، وبلاغات المبيعات) بقاعدة Firebase السحابية.",
+        descEn: "Test live user registrations and confirm data pipelines feed into the SaaS Admin CRM desk instantly."
+      },
+      {
+        id: "step-6",
+        phase: "production",
+        phaseAr: "سادساً: الإطلاق الفعلي على النطاق الخاص Custom Domain",
+        titleAr: "ربط النطاق المخصص saas-fleet-app.com وبدء استقبال الاشتراكات المدفوعة",
+        titleEn: "Go live with custom production domain & customer support desk",
+        status: "pending",
+        descAr: "ربط اسم الدومين المستقل، وإتاحة الدعم المباشر ومراقبة نشاط الشركات وعداد الإيرادات اليومية بثقة.",
+        descEn: "Configure domain DNS settings, launch live chat, and welcome your premium enterprise subscribers."
+      }
+    ];
+  });
+
+  const toggleLaunchStep = (stepId: string) => {
+    const updated = launchSteps.map(step => {
+      if (step.id === stepId) {
+        const nextStatus = step.status === 'completed' ? 'pending' : 'completed';
+        return { ...step, status: nextStatus };
+      }
+      return step;
+    });
+    setLaunchSteps(updated);
+    localStorage.setItem('saas_launch_steps_v1', JSON.stringify(updated));
+    triggerSaveNotification();
+  };
+
+  // Visual Saving Indicator state
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveTimerRef = useRef<any>(null);
+  const resetTimerRef = useRef<any>(null);
+
+  const triggerSaveNotification = () => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+
+    setSaveStatus('saving');
+    
+    saveTimerRef.current = setTimeout(() => {
+      setSaveStatus('saved');
+      resetTimerRef.current = setTimeout(() => {
+        setSaveStatus('idle');
+      }, 1600);
+    }, 600);
+  };
+
+  // Watch identity brand texts & colors to automatically trigger save indicator on text modifications
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      triggerSaveNotification();
+      if (useFirebase && isFirestoreConnected) {
+        saveBrandingToFirestore();
+      }
+    }
+  }, [brandPrimaryColor, saasBrandName, saasBrandDesc]);
+
+  // Sync branding specifically
+  const saveBrandingToFirestore = async () => {
+    try {
+      await saveDocument('saas_settings', 'branding', {
+        name: saasBrandName,
+        description: saasBrandDesc,
+        color: brandPrimaryColor,
+        updatedAt: new Date().toISOString()
+      });
+    } catch(e) {
+      console.error("Firestore sync error for brandsettings:", e);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    };
+  }, []);
+
+  // Core collections retrieved from stateful storage
+  const [features, setFeatures] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
+
+  // CRM Advanced Filters & Modals
+  const [leadSearchQuery, setLeadSearchQuery] = useState('');
+  const [leadStatusFilter, setLeadStatusFilter] = useState<'all' | 'new' | 'contacted' | 'won' | 'lost'>('all');
+  const [selectedLeadForDetail, setSelectedLeadForDetail] = useState<any | null>(null);
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [provisionSuccessInfo, setProvisionSuccessInfo] = useState<any | null>(null);
+  
+  // Manual Lead Form
+  const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [newLeadForm, setNewLeadForm] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+    fleetSize: 10,
+    province: 'المنطقة الشرقية',
+    country: 'المملكة العربية السعودية',
+    notes: '',
+    status: 'new' as 'new' | 'contacted' | 'won' | 'lost'
+  });
+  
+  // Custom Communication Log
+  const [newLogNote, setNewLogNote] = useState('');
+  const [newLogType, setNewLogType] = useState<'call' | 'email' | 'meeting' | 'offer'>('call');
+  const [footerColumns, setFooterColumns] = useState<any[]>([]);
+
+  // SaaS Dynamic Simulator & Revenue Predictor States
+  const [targetSubscribers, setTargetSubscribers] = useState<number>(12);
+  const [avgFleetUnits, setAvgFleetUnits] = useState<number>(55);
+  const [mrrPricePerTruck, setMrrPricePerTruck] = useState<number>(35);
+  const [footerMeta, setFooterMeta] = useState<any>({
+    copyrightAr: "",
+    copyrightEn: "",
+    playStoreUrl: "",
+    appStoreUrl: "",
+    privacyLabelAr: "",
+    privacyLabelEn: "",
+    termsLabelAr: "",
+    termsLabelEn: "",
+    socialX: "",
+    socialLinkedin: "",
+    socialInstagram: "",
+    socialFacebook: "",
+    socialYoutube: ""
+  });
+
+  const [selectedColId, setSelectedColId] = useState<string>("col-1");
+  const [newColItemAr, setNewColItemAr] = useState<string>("");
+  const [newColItemEn, setNewColItemEn] = useState<string>("");
+
+  // AI Agents & Robots state and handlers
+  interface AIRobot {
+    id: string;
+    name: string;
+    nameEn: string;
+    icon: string;
+    description: string;
+    descriptionEn: string;
+    isActive: boolean;
+    triggerEvent: string;
+    triggerEventAr: string;
+    prompt: string;
+    lastRun: string;
+    stats: {
+      scansCount: number;
+      actionsTaken: number;
+      efficiencyRating: string;
+    };
+    logs: string[];
+  }
+
+  const [aiRobots, setAiRobots] = useState<AIRobot[]>(() => {
+    const defaults: AIRobot[] = [
+      {
+        id: 'leads-auto',
+        name: 'أوتوماتون معالجة الاشتراكات وحجز الخدمات',
+        nameEn: 'Leads & Subscriptions Automaton',
+        icon: 'users',
+        description: 'يقوم بمراقبة طلبات الاشتراك الفورية، وتصنيف العملاء آلياً، وإرسال قوالب الترحيب وعروض الأسعار المناسبة، وتنبيه موظفي المبيعات للطلبات الساخنة.',
+        descriptionEn: 'Monitors incoming subscriptions, automatically categorizes clients, dispatches welcome messages, and triggers immediate alerts for priority leads.',
+        isActive: true,
+        triggerEvent: 'On New Lead Registration',
+        triggerEventAr: 'عند تسجيل مشترك أو طلب جديد',
+        prompt: 'أنت الوكيل الذكي لإدارة العملاء المحتملين في ميكانيك 360. قم بمراجعة بيانات العميل الجديد وفحص حجم ورشته، وإسناد العميل للمندوب الأنسب مع صياغة رسالة واتساب ترحيبية مخصصة للحل الذي تم اختياره.',
+        lastRun: 'منذ دقيقة واحدة',
+        stats: { scansCount: 142, actionsTaken: 118, efficiencyRating: '98.5%' },
+        logs: [
+          '[13:40:12] [نظام] بدء المعالج في خلفية السحابة بنجاح.',
+          '[13:42:01] [فحص] تم اكتشاف طلب جديد باسم "المركز الذهبي لصيانة السيارات".',
+          '[13:42:04] [أتمتة] تصنيف المشترك كـ "ورشة متوسطة" بناءً على البيانات المدخلة.',
+          '[13:42:05] [تواصل] توليد رسالة عرض سعر "باقة ميكانيك بلس" وحفظ مسودة الترحيب.',
+          '[13:42:06] [توجيه] إرسال تنبيه للمشرف أحمد لإجراء المكالمة التنسيقية الأولى.'
+        ]
+      },
+      {
+        id: 'sales-analyst',
+        name: 'بوت تحليل المبيعات والذاتية المالية للشركة',
+        nameEn: 'Autonomous Sales & Finance Analyst',
+        icon: 'dollar',
+        description: 'يحلل تدفقات المبيعات وسجل الباقات المفعلة، ويحسب معدل التحويل اللحظي وتوقعات الإيرادات المتكررة الفورية، ويقترح تعديلات الأسعار لزيادة الأرباح.',
+        descriptionEn: 'Analyzes active plans, calculates instant conversion rates and MRR, and recommends target upgrades and discount tiers dynamically.',
+        isActive: true,
+        triggerEvent: 'Hourly Recurring Scan',
+        triggerEventAr: 'كل ساعة بشكل دوري تلقائي',
+        prompt: 'أنت الخبير المالي ومحلل ساس ميكانيك 360. قم بتحليل باقات الاشتراك ومقارنتها بسلوك العملاء، وتحديد أكثر الباقات مبيعاً وتوليد تقرير شهري استشرافي للمبيعات.',
+        lastRun: 'منذ ٢٢ دقيقة',
+        stats: { scansCount: 89, actionsTaken: 12, efficiencyRating: '94.2%' },
+        logs: [
+          '[12:00:00] [محلل] سحب بيانات المدفوعات والاشتراكات لآخر 30 يوماً.',
+          '[12:00:03] [حساب] نسبة التحويل للباقة الذهبية بلغت 42%.',
+          '[12:00:05] [ذكاء] التوصية: تقديم حافز اشتراك سنوي لزيادة متوسط قيمة العميل (LTV).',
+          '[12:00:06] [أوتوماتون] توليد تقارير الأداء المالي اللحظي وإتاحتها لمديري النظام.'
+        ]
+      },
+      {
+        id: 'team-dispatcher',
+        name: 'روبوت إسناد المهام وتوجيه طاقم العمل والمبيعات',
+        nameEn: 'AI Task Dispatcher & Team Coach',
+        icon: 'briefcase',
+        description: 'يتتبع ضغط العمل لدى المهندسين وممثلي المبيعات، ويقوم بإسناد مهام التواصل والمتابعة تلقائياً لموازنة وتوزيع المهام بالتساوي ومنع التأخير.',
+        descriptionEn: 'Tracks team workload, automatically distributes tasks, and triggers personalized prompts for field technicians to balance schedules.',
+        isActive: false,
+        triggerEvent: 'On Lead Status Change / Task Added',
+        triggerEventAr: 'عند تغير حالة المشترك أو إضافة مهمة',
+        prompt: 'أنت مدير المشروع المساعد في منصة ميكانيك 360. تتبع المهام المفتوحة وقم بموازنة التوزيع على الزملاء بناءً على أعداد المهام النشطة لكل ممثل مبيعات.',
+        lastRun: 'منذ ٣ ساعات',
+        stats: { scansCount: 56, actionsTaken: 41, efficiencyRating: '91.0%' },
+        logs: [
+          '[10:15:30] [توجيه] فحص مصفوفة أداء الزملاء وحجم أعباء العمل.',
+          '[10:15:35] [تم] نقل مهمة متابعة العميل "أوتو سكان" إلى ممثل المبيعات شاكر لموازنة العبء.'
+        ]
+      },
+      {
+        id: 'support-responder',
+        name: 'معالج أتمتة الدعم الفني والرد التفاعلي للعملاء',
+        nameEn: 'Instant Support & Customer Engagement Bot',
+        icon: 'message',
+        description: 'يقرأ استفسارات ومشاكل المستخدمين المتلقاة على واجهة الساس، ويقوم بصياغة حلول فورية مقترحة بالاعتماد على قاعدة المعرفة والدليل الفني وتجهيزها للاستخدام.',
+        descriptionEn: 'Reads tickets and user inquiries, crafts smart initial diagnostic replies referencing the SaaS knowledge base, and prepares replies.',
+        isActive: true,
+        triggerEvent: 'On Support Ticket Open',
+        triggerEventAr: 'عند فتح تذكرة دعم أو تلقي استفسار',
+        prompt: 'أنت مهندس الدعم الفني للعملاء المشتركين في ميكانيك 360. تعامل مع التذكرة بترحيب لبق مع تقديم الدليل التدريجي لحل الخلل البرمجي أو التشغيلي للورشة.',
+        lastRun: 'منذ ١٠ دقائق',
+        stats: { scansCount: 204, actionsTaken: 195, efficiencyRating: '97.8%' },
+        logs: [
+          '[13:20:01] [استقبال] تذكرة جديدة برقم #4409: "مواجهة بطء في مزامنة الفواتير".',
+          '[13:20:04] [تحليل] فحص الـ Sw.js وإجراءات التحديث الحالية في المتصفح.',
+          '[13:20:06] [أوتوماتون] صياغة رد تفصيلي بخطوات تفريغ الكود المباشر وتحميل التحديث المحدث.'
+        ]
+      },
+      {
+        id: 'system-integrity',
+        name: 'فاحص ومحلل التماسك وصيانة منافذ النظام الذكي',
+        nameEn: 'AI System Integrity & Port Maintenance Agent',
+        icon: 'shield',
+        description: 'يقوم بإجراء مسح فوري وفحص حركي شامل للتخزين، والـ API الميداني، ومنافذ تذاكر الدعم والاتصال بالإضافة لتفويض عمليات الصيانة الذكية الذاتية وتطهير الكاشز.',
+        descriptionEn: 'Performs immediate health scans on cloud storage, field integration APIs, service queue ports, and dispatches automated self-healing integrity routines.',
+        isActive: true,
+        triggerEvent: 'On Maintenance Scan / Periodic Run',
+        triggerEventAr: 'عند طلب صيانة فورية أو لفة دورية مجدولة',
+        prompt: 'أنت مهندس الصيانة والمسؤول التقني الذكي لنظام ميكانيك 360. تعامل مع طلب الفحص والمسح بموثوقية فائقة؛ افحص اتصال وتماسك السحابة Firestore، والـ APIs الميدانية، ومنافذ البريد والاستقبال، وقم بإجراء تطهير ذكي فوري للملفات التالفة والذاكرة المؤقتة لضمان استجابة ١٠٠٪.',
+        lastRun: 'منذ ثوانٍ',
+        stats: { scansCount: 310, actionsTaken: 289, efficiencyRating: '99.9%' },
+        logs: [
+          `[${new Date().toLocaleTimeString()}] [صيانة] تم تشغيل الفحص والمسح الشامل لمنافذ الاتصال وحافظات الداتا بطلب الإداري.`,
+          `[${new Date().toLocaleTimeString()}] [أمن] تماسك التخزين السحابي Firebase Firestore سليم ومشفر بالكامل بنسبة ١٠٠٪.`,
+          `[${new Date().toLocaleTimeString()}] [أتمتة] صيانة وتطهير فوري لذاكرة التبادل المؤقتة ووحدات Sw.js.`,
+          `[${new Date().toLocaleTimeString()}] [اتصال] فحص الـ API الميداني للمحافظ والمعدات: نشط ومتصل بالقاعدة المركزية.`
+        ]
+      }
+    ];
+
+    const saved = localStorage.getItem('saas_ai_robots');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const missing = defaults.filter(def => !parsed.some((p: any) => p.id === def.id));
+          if (missing.length > 0) {
+            const merged = [...parsed, ...missing];
+            localStorage.setItem('saas_ai_robots', JSON.stringify(merged));
+            return merged;
+          }
+          return parsed;
+        }
+      } catch (e) { }
+    }
+    localStorage.setItem('saas_ai_robots', JSON.stringify(defaults));
+    return defaults;
+  });
+
+  const [selectedRobotId, setSelectedRobotId] = useState<string>('leads-auto');
+  const [robotSimStatus, setRobotSimStatus] = useState<{
+    status: 'idle' | 'scanning' | 'executing' | 'done';
+    progress: number;
+    message: string;
+    robotId: string | null;
+  }>({
+    status: 'idle',
+    progress: 0,
+    message: '',
+    robotId: null
+  });
+
+  const [isRemoteAuthAuthorized, setIsRemoteAuthAuthorized] = useState<boolean>(() => localStorage.getItem('remote_maintenance_auth') === 'true');
+
+  const handleToggleRemoteAuth = () => {
+    setIsRemoteAuthAuthorized(prev => {
+      const next = !prev;
+      localStorage.setItem('remote_maintenance_auth', String(next));
+      return next;
+    });
+  };
+
+  const [showAddRobotModal, setShowAddRobotModal] = useState<boolean>(false);
+  const [newRobotForm, setNewRobotForm] = useState({
+    name: '',
+    nameEn: '',
+    icon: 'users',
+    description: '',
+    descriptionEn: '',
+    triggerEventAr: 'عند تفاعل فوري بالنظام',
+    triggerEvent: 'On Demand Action Trigger',
+    prompt: '',
+    isActive: true
+  });
+
+  // Track state persistence
+  useEffect(() => {
+    localStorage.setItem('saas_ai_robots', JSON.stringify(aiRobots));
+  }, [aiRobots]);
+
+  const handleToggleRobotActive = (id: string) => {
+    setAiRobots(prev => prev.map(bot => {
+      if (bot.id === id) {
+        const nextActive = !bot.isActive;
+        return {
+          ...bot,
+          isActive: nextActive,
+          logs: [
+            `[${new Date().toLocaleTimeString()}] [تحديث] تم ${nextActive ? 'تفعيل' : 'إطفاء'} الروبوت تلقائياً ومزامنة المعالجات الخلفية.`,
+            ...bot.logs
+          ]
+        };
+      }
+      return bot;
+    }));
+  };
+
+  const handleUpdateRobotPrompt = (id: string, newPrompt: string) => {
+    setAiRobots(prev => prev.map(bot => {
+      if (bot.id === id) {
+        return {
+          ...bot,
+          prompt: newPrompt,
+          logs: [
+            `[${new Date().toLocaleTimeString()}] [إعدادات] تعديل الدليل التوجيهي للذكاء الاصطناعي (Prompt) وحفظ خطوط التعليمات الجديدة.`,
+            ...bot.logs
+          ]
+        };
+      }
+      return bot;
+    }));
+  };
+
+  const handleClearRobotLogs = (id: string) => {
+    setAiRobots(prev => prev.map(bot => {
+      if (bot.id === id) {
+        return {
+          ...bot,
+          logs: [`[${new Date().toLocaleTimeString()}] [تطهير] تم تفريغ سجل العمليات والتقارير بنجاح.`]
+        };
+      }
+      return bot;
+    }));
+  };
+
+  const handleSimulateRobotExecution = (id: string) => {
+    if (robotSimStatus.status !== 'idle') return;
+
+    const botObj = aiRobots.find(b => b.id === id);
+    if (!botObj) return;
+
+    // Save current active state before updating
+    const wasInactive = !botObj.isActive;
+
+    // 1. Immediately update local state to add starting logs and turn robot ACTIVE if it was inactive
+    setAiRobots(prev => prev.map(bot => {
+      if (bot.id === id) {
+        const timestamp = new Date().toLocaleTimeString();
+        const initialLogs = [
+          `[${timestamp}] [فحص] تم إطلاق حلقة فحص يدوي شاملة... الاتصال بمركز معالجة داتا الساس الموحدة.`,
+          ...bot.logs
+        ];
+        
+        if (wasInactive) {
+          initialLogs.unshift(`[${timestamp}] [تنشيط] تم تفعيل الروبوت وتشغيل خلاياه آلياً بطلب التشغيل الفيدرالي لإنهاء المهام.`);
+        }
+
+        return {
+          ...bot,
+          isActive: true,
+          logs: initialLogs
+        };
+      }
+      return bot;
+    }));
+
+    setRobotSimStatus({
+      status: 'scanning',
+      progress: 10,
+      message: language === 'ar' ? 'الاتصال بوكيل النمذجة والاستدعاء المباشر...' : 'Connecting to background agent...',
+      robotId: id
+    });
+
+    let currentProgress = 10;
+    const interval = setInterval(() => {
+      currentProgress += 15;
+      if (currentProgress < 100) {
+        let textAr = '';
+        if (currentProgress < 40) {
+          textAr = 'قراءة الإحصائيات وبنى جداول الداتا الحية...';
+        } else if (currentProgress < 75) {
+          textAr = 'مقارنة البيانات مع الفلترة وإطلاق الموجه...';
+        } else {
+          textAr = 'حفظ النتائج وصياغة الاستجابات والأتمتة النهائية...';
+        }
+        setRobotSimStatus({
+          status: 'executing',
+          progress: currentProgress,
+          message: language === 'ar' ? textAr : 'Executing rules...',
+          robotId: id
+        });
+      } else {
+        clearInterval(interval);
+        
+        // Build simulated logs referencing actual live list constraints
+        const latestLead = leads[0] || { name: 'المجمع السكني ورشة سريعة', company: 'ورشة الفحص الفني', province: 'الدمام', fleetSize: 12 };
+        let logsToAppend: string[] = [];
+
+        if (id === 'leads-auto') {
+          logsToAppend = [
+            `[${new Date().toLocaleTimeString()}] [فحص] قراءة سجل كشوف leads. تم مسح المشترك الحقيقي: "${latestLead.name || latestLead.company}" بمحافظة ${latestLead.province || 'الشرقية'}.`,
+            `[${new Date().toLocaleTimeString()}] [أتمتة] صياغة مسودة البريد والواتساب الترحيبي المناسب لحجم الأسطول (${latestLead.fleetSize || 10} مركبات).`,
+            `[${new Date().toLocaleTimeString()}] [تواصل] إشعار الوكيل والمندوب @أحمد بالاستهداف التلقائي الفوري لمتابعة التحويل بنجاح.`
+          ];
+        } else if (id === 'sales-analyst') {
+          logsToAppend = [
+            `[${new Date().toLocaleTimeString()}] [مالي] إجراء مسح دوري للتدفقات. إجمالي المشتركين النشطين بالكامل: ${leads.length} عميل برؤية ميكانيك 350.`,
+            `[${new Date().toLocaleTimeString()}] [توقع] معدل الكفاءة المالي المتوقع للربع الحالي يرتفع بمقدار +14.5% لتميز الباقات الدورية الحادثة.`,
+            `[${new Date().toLocaleTimeString()}] [ذكاء] التوصية: حافز تخفيض 8% لباقات السنوية لزيادة متوسط قيمة العميل ميكانيكياً.`
+          ];
+        } else if (id === 'team-dispatcher') {
+          logsToAppend = [
+            `[${new Date().toLocaleTimeString()}] [فحص] تحليل المهام وتراكم الأعباء على المهندسين والإداريين الفعالين في الإقليم الحالي.`,
+            `[${new Date().toLocaleTimeString()}] [أتمتة] جدولة وتعيين 3 اتصالات تذكيرية جديدة لممثلي المبيعات شاكر وفيصل بدقة بالغة.`,
+            `[${new Date().toLocaleTimeString()}] [استنتاج] توزيع الأعباء آلياً مما يوفر طاقة عمل بنسبة 28%.`
+          ];
+        } else if (id === 'support-responder') {
+          logsToAppend = [
+            `[${new Date().toLocaleTimeString()}] [استقبال] التقصي عن أي اضطرابات في خوادم الإرسال أو تحديث الـ Service Worker كاشز.`,
+            `[${new Date().toLocaleTimeString()}] [تحليل] فحص نسخة sw.js المسرعة وعملية التحديث (Force Live Update).`,
+            `[${new Date().toLocaleTimeString()}] [أتمتة] إنشاء مسودة رد تكت ذكي تقدم التوضيح التقني الكامل للاشتراكات بورشة الصيانة لحل المشاكل.`
+          ];
+        } else if (id === 'system-integrity') {
+          logsToAppend = [
+            `[${new Date().toLocaleTimeString()}] [تفتيش] بدء المسح الميداني الفوري لمنافذ الـ API والاتصال... متصل بنجاح 🟢`,
+            `[${new Date().toLocaleTimeString()}] [تخزين] تماسك قواعد البيانات والتخزين السحابي (Firestore DB) مستقر؛ لا يوجد اختناق في سجلات المزامنة.`,
+            `[${new Date().toLocaleTimeString()}] [صيانة] تفويض الصيانة الذكية الذاتية عن بعد: تم تطهير الكاشز والملفات المؤقتة وإعادة رصف نقاط استقبال تذاكر الخدمة.`,
+            `[${new Date().toLocaleTimeString()}] [تأكيد] صيانة منافذ الاتصال والمحركات مكتملة بنسبة ١٠٠٪ بنشاط دوري تفصيلي تام.`
+          ];
+        } else {
+          logsToAppend = [
+            `[${new Date().toLocaleTimeString()}] [طلب] تشغيل الوكيل المخصص: "${botObj.name}" بنجاح فوري.`,
+            `[${new Date().toLocaleTimeString()}] [تحليل] تطبيق موجهات الـ AI الخاصة بك: "${botObj.prompt.substring(0, 40)}...".`,
+            `[${new Date().toLocaleTimeString()}] [تنفيذ] إنهاء التوجيه الخلفي وتأكيد اكتمال كفة المهام التكرارية بنجاح.`
+          ];
+        }
+
+        // Apply state updates
+        setAiRobots(prev => prev.map(bot => {
+          if (bot.id === id) {
+            return {
+              ...bot,
+              lastRun: 'الآن',
+              stats: {
+                scansCount: bot.stats.scansCount + 1,
+                actionsTaken: bot.stats.actionsTaken + (Math.random() > 0.3 ? 1 : 2),
+                efficiencyRating: `${(parseFloat(bot.stats.efficiencyRating) + (Math.random() * 0.2)).toFixed(1)}%`
+              },
+              logs: [...logsToAppend, ...bot.logs]
+            };
+          }
+          return bot;
+        }));
+
+        setRobotSimStatus({
+          status: 'done',
+          progress: 100,
+          message: language === 'ar' ? '✓ تم تشغيل ومعالجة مهام الأوتوماتون بنجاح واكتملت الحلقة!' : '✓ Agent operation cycled and completed successfully!',
+          robotId: id
+        });
+
+        // Reset sim status back to idle after a pleasant duration
+        setTimeout(() => {
+          setRobotSimStatus({ status: 'idle', progress: 0, message: '', robotId: null });
+        }, 3500);
+      }
+    }, 450);
+  };
+
+  const handleCreateNewRobot = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRobotForm.name) return;
+
+    const newBot: AIRobot = {
+      id: `custom-bot-${Date.now()}`,
+      name: newRobotForm.name,
+      nameEn: newRobotForm.nameEn || newRobotForm.name,
+      icon: newRobotForm.icon,
+      description: newRobotForm.description || 'تم إنشاؤه وتخصيصه بالكامل بواسطة مدير النظام.',
+      descriptionEn: newRobotForm.descriptionEn || 'Custom created system bot agent.',
+      isActive: newRobotForm.isActive,
+      triggerEvent: newRobotForm.triggerEvent,
+      triggerEventAr: newRobotForm.triggerEventAr,
+      prompt: newRobotForm.prompt || 'أنت وكيل مساعد لأتمتة المهام بقاعدة ميكانيك 360.',
+      lastRun: 'لم يشتغل بعد',
+      stats: {
+        scansCount: 0,
+        actionsTaken: 0,
+        efficiencyRating: '100%'
+      },
+      logs: [`[${new Date().toLocaleTimeString()}] [تأسيس] تم تصميم وإدراج الوكيل الذكي الجديد في مستودع النظام بنجاح.`]
+    };
+
+    setAiRobots(prev => [newBot, ...prev]);
+    setSelectedRobotId(newBot.id);
+    setShowAddRobotModal(false);
+    // Reset form
+    setNewRobotForm({
+      name: '',
+      nameEn: '',
+      icon: 'users',
+      description: '',
+      descriptionEn: '',
+      triggerEventAr: 'عند تفاعل فوري بالنظام',
+      triggerEvent: 'On Demand Action Trigger',
+      prompt: '',
+      isActive: true
+    });
+  };
+
+  const handleDeleteRobot = (id: string) => {
+    if (['leads-auto', 'sales-analyst', 'team-dispatcher', 'support-responder', 'system-integrity'].includes(id)) {
+      alert(language === 'ar' ? 'عذراً، هذا الروبوت يعتبر معالجاً أساسياً في النظام ولا يمكن حذفه.' : 'Core system robots cannot be removed.');
+      return;
+    }
+    if (confirm(language === 'ar' ? 'هل أنت متأكد من رغبتك بحذف هذا الوكيل الذكي نهائياً من مستودع الروبوتات؟' : 'Are you sure you want to delete this AI Robot?')) {
+      const remaining = aiRobots.filter(b => b.id !== id);
+      setAiRobots(remaining);
+      if (selectedRobotId === id) {
+        setSelectedRobotId('leads-auto');
+      }
+    }
+  };
+
+  // Test and initialize Firestore connection on mount/toggle
+  useEffect(() => {
+    async function testConn() {
+      if (useFirebase) {
+        setCloudFeedbackLog(language === 'ar' ? 'جاري فحص الاتصال وقراءة الجداول السحابية لـ Firebase Firestore...' : 'Checking connection & collections on Firebase Firestore...');
+        const connected = await testFirestoreConnection();
+        setIsFirestoreConnected(connected);
+        if (connected) {
+          setCloudFeedbackLog(language === 'ar' ? '✓ متصل نشط بخام Firestore السحابي للمشروع' : '✓ Connected to Cloud Firestore successfully!');
+          await pullBrandedData();
+        } else {
+          setCloudFeedbackLog(language === 'ar' ? '⚠️ تعذر الاتصال بسحابة Firebase. يرجى تفعيل الخدمة أو التحقق من إعدادات الاتصال. تم استخدام الذاكرة المحلية كبديل.' : '⚠️ Cloud database connection failed. Falling back to local responsive storage.');
+        }
+      } else {
+        setCloudFeedbackLog(language === 'ar' ? 'نظام العرض يعمل بالذاكرة المحلية للمتصفح (Offline-Ready Mode).' : 'SaaS Admin is running in local responsive web storage mode.');
+      }
+    }
+    testConn();
+  }, [useFirebase]);
+
+  // Pull SaaS CRM Leads and Landing configurations from Firestore
+  const pullBrandedData = async () => {
+    if (!db) return;
+    setIsSyncingWithCloud(true);
+    setCloudFeedbackLog(language === 'ar' ? 'جاري سحب وتحديث سجلات المشتركين ومميزات الهوية التجارية من السيرفر السحابي...' : 'Pulling latest subscriber records and visual styles from SaaS Firestore...');
+    try {
+      // 1. Leads
+      const leadsSnap = await getDocs(collection(db, 'saas_leads'));
+      const listLeads: any[] = [];
+      leadsSnap.forEach(docSnap => {
+        listLeads.push(docSnap.data());
+      });
+      if (listLeads.length > 0) {
+        setLeads(listLeads);
+        localStorage.setItem('saas_crm_leads_v1', JSON.stringify(listLeads));
+      }
+
+      // 2. Settings (branding)
+      const brandDoc = await getDoc(doc(db, 'saas_settings', 'branding'));
+      if (brandDoc.exists()) {
+        const b = brandDoc.data();
+        if (b.name) {
+          setSaasBrandName(b.name);
+          localStorage.setItem('saas_brand_name', b.name);
+        }
+        if (b.description) {
+          setSaasBrandDesc(b.description);
+          localStorage.setItem('saas_brand_desc', b.description);
+        }
+        if (b.color) {
+          setBrandPrimaryColor(b.color);
+          localStorage.setItem('saas_brand_primary_color', b.color);
+        }
+      }
+      
+      // 3. Features
+      const featuresSnap = await getDocs(collection(db, 'saas_features'));
+      const listFeatures: any[] = [];
+      featuresSnap.forEach(d => { listFeatures.push(d.data()); });
+      if (listFeatures.length > 0) {
+        setFeatures(listFeatures);
+        localStorage.setItem('saas_marketing_features_v1', JSON.stringify(listFeatures));
+      }
+
+      // 4. Clients
+      const clientsSnap = await getDocs(collection(db, 'saas_clients'));
+      const listClients: any[] = [];
+      clientsSnap.forEach(d => { listClients.push(d.data()); });
+      if (listClients.length > 0) {
+        setClients(listClients);
+        localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(listClients));
+      }
+
+      // 5. Testimonials/Reviews
+      const reviewsSnap = await getDocs(collection(db, 'saas_reviews'));
+      const listReviews: any[] = [];
+      reviewsSnap.forEach(d => { listReviews.push(d.data()); });
+      if (listReviews.length > 0) {
+        setReviews(listReviews);
+        localStorage.setItem('saas_marketing_reviews_v1', JSON.stringify(listReviews));
+      }
+      
+      setCloudFeedbackLog(language === 'ar' ? '✓ تم تحديث وسحب كافة البيانات السحابية الحية بنجاح!' : '✓ All SaaS Cloud datasets successfully fetched and updated!');
+    } catch (e) {
+      console.warn("Error pulling Firestore collections, keeping local instead.", e);
+      setCloudFeedbackLog(language === 'ar' ? '⚠️ فشل سحب البيانات السحابية (يرجى مراجعة الصلاحيات الأمنية Security Rules). تم تشغيل البيانات الاحتياطية.' : '⚠️ Firestore load failed. Standard local cache persisted.');
+    } finally {
+      setIsSyncingWithCloud(false);
+    }
+  };
+
+  // Push local current states to Firestore collections
+  const pushBrandedDataToCloud = async () => {
+    if (!db) {
+      alert(language === 'ar' ? "قاعدة البيانات غير مهيأة" : "Firestore database is not initialized.");
+      return;
+    }
+    setIsSyncingWithCloud(true);
+    setCloudFeedbackLog(language === 'ar' ? 'جاري تصدير السجلات المحلية ومزامنة الهياكل بقواعد السحابة...' : 'Pushing local records and aligning remote schemas...');
+    try {
+      let count = 0;
+      // 1. Settings
+      await saveBrandingToFirestore();
+      count++;
+
+      // 2. Leads
+      for (const l of leads) {
+        await saveDocument('saas_leads', l.id, l);
+        count++;
+      }
+
+      // 3. Features
+      for (const f of features) {
+        await saveDocument('saas_features', f.id, f);
+        count++;
+      }
+
+      // 4. Clients
+      for (const c of clients) {
+        await saveDocument('saas_clients', c.id, c);
+        count++;
+      }
+
+      // 5. Reviews
+      for (const r of reviews) {
+        await saveDocument('saas_reviews', r.id, r);
+        count++;
+      }
+
+      setCloudFeedbackLog(language === 'ar' ? `✓ اكتمل تصدير البيانات! تم تأمين عدد ${count} سجل سحابي بـ Firebase Firestore.` : `✓ Sync finished! Secured ${count} records on Firebase Firestore.`);
+    } catch (e) {
+      console.error("Sync backup failure:", e);
+      setCloudFeedbackLog(language === 'ar' ? '✕ فشل سداد السجل السحابي. يرجى التحقق من أذونات قواعد الحماية Security Rules.' : '✕ Remote sync failed. Please review Firestore rules.');
+    } finally {
+      setIsSyncingWithCloud(false);
+    }
+  };
+
+  // Load state from local storage on render as first responsive mount
+  useEffect(() => {
+    // 1. Features
+    const storedFeatures = localStorage.getItem('saas_marketing_features_v1');
+    if (storedFeatures) {
+      try { setFeatures(JSON.parse(storedFeatures)); } catch(e) {}
+    } else {
+      setFeatures(DEFAULT_FEATURES);
+      localStorage.setItem('saas_marketing_features_v1', JSON.stringify(DEFAULT_FEATURES));
+    }
+
+    // 2. Clients
+    const storedClients = localStorage.getItem('saas_marketing_clients_v2');
+    if (storedClients) {
+      try { setClients(JSON.parse(storedClients)); } catch(e) {}
+    } else {
+      setClients(DEFAULT_CLIENTS);
+      localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(DEFAULT_CLIENTS));
+    }
+
+    // 3. Reviews
+    const storedReviews = localStorage.getItem('saas_marketing_reviews_v1');
+    if (storedReviews) {
+      try { setReviews(JSON.parse(storedReviews)); } catch(e) {}
+    } else {
+      setReviews(DEFAULT_REVIEWS);
+      localStorage.setItem('saas_marketing_reviews_v1', JSON.stringify(DEFAULT_REVIEWS));
+    }
+
+    // 4. Leads
+    const storedLeads = localStorage.getItem('saas_crm_leads_v1');
+    if (storedLeads) {
+      try { setLeads(JSON.parse(storedLeads)); } catch(e) {}
+    } else {
+      const initialLeads = [
+        {
+          id: 'lead-1',
+          name: 'م. تركي القحطاني',
+          company: 'شركة الناقل اللوجستية',
+          email: 't.qahtani@alnaqel.com.sa',
+          phone: '+966 50 123 4567',
+          fleetSize: 45,
+          country: 'المملكة العربية السعودية',
+          province: 'منطقة الرياض',
+          status: 'new',
+          date: '2026-06-05',
+          source: 'الموقع التسويقي',
+          notes: 'مهتم بباقة الـ Pro. يطلب مكالمة استشارية فنية حول الذكاء الاصطناعي.'
+        },
+        {
+          id: 'lead-2',
+          name: 'الأستاذ بندر الدوسري',
+          company: 'مجموعة نقليات الصحراء',
+          email: 'b.dosari@sahara-trans.com',
+          phone: '+966 54 987 6543',
+          fleetSize: 120,
+          country: 'المملكة العربية السعودية',
+          province: 'المنطقة الشرقية',
+          status: 'contacted',
+          date: '2026-06-03',
+          source: 'حاسبة العائد ROI',
+          notes: 'تم الاتصال المبدئي به. يمتلك أسطول شاحنات مرسيدس أكتروس، منبهر بحاسبة الأرباح.'
+        }
+      ];
+      setLeads(initialLeads);
+      localStorage.setItem('saas_crm_leads_v1', JSON.stringify(initialLeads));
+    }
+
+    // 5. Footer Columns
+    const storedFooterCols = localStorage.getItem('saas_marketing_footer_columns_v2');
+    if (storedFooterCols && storedFooterCols.includes("item-3-7")) {
+      try { setFooterColumns(JSON.parse(storedFooterCols)); } catch(e) {}
+    } else {
+      setFooterColumns(DEFAULT_FOOTER_COLUMNS);
+      localStorage.setItem('saas_marketing_footer_columns_v2', JSON.stringify(DEFAULT_FOOTER_COLUMNS));
+    }
+
+    // 6. Footer Meta
+    const storedFooterMeta = localStorage.getItem('saas_marketing_footer_meta_v1');
+    if (storedFooterMeta) {
+      try { setFooterMeta(JSON.parse(storedFooterMeta)); } catch(e) {}
+    } else {
+      const defaultMeta = {
+        copyrightAr: "حقوق النشر © ٢٠٢٦ Axoventra لإدارة أساطيل النقل والورش الذكية. جميع الحقوق محفوظة.",
+        copyrightEn: "Copyright © 2026 Axoventra Intelligent Fleet & Workshop Management. All Rights Reserved.",
+        playStoreUrl: "https://play.google.com/store",
+        appStoreUrl: "https://apps.apple.com",
+        privacyLabelAr: "سياسة الخصوصية والموثوقية وبنود الأمان",
+        privacyLabelEn: "Privacy & Safe Operation Guidelines",
+        termsLabelAr: "شروط الخدمة والاستخدام العادل للأسطول",
+        termsLabelEn: "Terms of Fair SaaS Usage & Service Agreements",
+        socialX: "https://x.com",
+        socialLinkedin: "https://linkedin.com",
+        socialInstagram: "https://instagram.com",
+        socialFacebook: "https://facebook.com",
+        socialYoutube: "https://youtube.com"
+      };
+      setFooterMeta(defaultMeta);
+      localStorage.setItem('saas_marketing_footer_meta_v1', JSON.stringify(defaultMeta));
+    }
+  }, []);
+
+  // Sync state functions
+  const saveFeatures = async (items: any[]) => {
+    setFeatures(items);
+    localStorage.setItem('saas_marketing_features_v1', JSON.stringify(items));
+    triggerSaveNotification();
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        for (const f of items) {
+          await saveDocument('saas_features', f.id, f);
+        }
+      } catch (e) {
+        console.error("Firestore features sync error:", e);
+      }
+    }
+  };
+
+  const saveClients = async (items: any[]) => {
+    setClients(items);
+    localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(items));
+    triggerSaveNotification();
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        for (const c of items) {
+          await saveDocument('saas_clients', c.id, c);
+        }
+      } catch (e) {
+        console.error("Firestore clients sync error:", e);
+      }
+    }
+  };
+
+  const saveReviews = async (items: any[]) => {
+    setReviews(items);
+    localStorage.setItem('saas_marketing_reviews_v1', JSON.stringify(items));
+    triggerSaveNotification();
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        for (const r of items) {
+          await saveDocument('saas_reviews', r.id, r);
+        }
+      } catch (e) {
+        console.error("Firestore reviews sync error:", e);
+      }
+    }
+  };
+
+  const saveLeads = async (items: any[], updatedLead?: any) => {
+    setLeads(items);
+    localStorage.setItem('saas_crm_leads_v1', JSON.stringify(items));
+    triggerSaveNotification();
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        if (updatedLead) {
+          await saveDocument('saas_leads', updatedLead.id, updatedLead);
+        } else {
+          for (const l of items) {
+            await saveDocument('saas_leads', l.id, l);
+          }
+        }
+      } catch (e) {
+        console.error("Firestore leads sync error:", e);
+      }
+    }
+  };
+
+  const handleToggleFirebaseMode = (enabled: boolean) => {
+    setUseFirebase(enabled);
+    localStorage.setItem('saas_admin_use_firebase', enabled ? 'true' : 'false');
+    triggerSaveNotification();
+  };
+
+  // UI Modal/Form States for Features CRUD
+  const [featureForm, setFeatureForm] = useState<{ id?: string, titleAr: string, titleEn: string, descAr: string, descEn: string, iconName: string, badgeAr: string, badgeEn: string } | null>(null);
+
+  // UI Modal/Form States for Clients CRUD
+  const [clientForm, setClientForm] = useState<{ id?: string, name: string, industryAr: string, industryEn: string, rating: number, yearJoint: string, activeVehicles: string, logoSeed: string } | null>(null);
+
+  // UI Modal/Form States for Testimonials CRUD
+  const [reviewForm, setReviewForm] = useState<{ id?: string, authorName: string, roleAr: string, roleEn: string, company: string, contentAr: string, contentEn: string, rating: number } | null>(null);
+
+  // Status Colors representation
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'new':
+        return <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-bold rounded-lg text-[10px] uppercase border border-indigo-100/40 flex items-center gap-1.5"><Sparkles size={11} /> جديدة</span>;
+      case 'contacted':
+        return <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-750 dark:text-amber-400 font-bold rounded-lg text-[10px] uppercase border border-amber-100/40 flex items-center gap-1.5"><Phone size={11} /> جاري التواصل</span>;
+      case 'won':
+        return <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold rounded-lg text-[10px] uppercase border border-emerald-100/40 flex items-center gap-1.5"><Check size={11} /> موافقة / مكتمل</span>;
+      case 'lost':
+        return <span className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 font-bold rounded-lg text-[10px] uppercase border border-rose-100/40 flex items-center gap-1.5">✕ مرفوض</span>;
+      default:
+        return <span className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg text-[10px]">{status}</span>;
+    }
+  };
+
+  // CRM Leads Management Handles
+  const changeLeadStatus = (leadId: string, newStatus: string) => {
+    const targetLead = leads.find(l => l.id === leadId);
+    if (!targetLead) return;
+    const updatedLead = { ...targetLead, status: newStatus };
+    const updatedList = leads.map(l => l.id === leadId ? updatedLead : l);
+    saveLeads(updatedList, updatedLead);
+  };
+
+  const updateLeadNotes = (leadId: string, notes: string) => {
+    const targetLead = leads.find(l => l.id === leadId);
+    if (!targetLead) return;
+    const updatedLead = { ...targetLead, notes };
+    const updatedList = leads.map(l => l.id === leadId ? updatedLead : l);
+    saveLeads(updatedList, updatedLead);
+  };
+
+  const deleteLead = async (leadId: string) => {
+    if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا العميل نهائياً من سجلاتك وقاعدة البيانات متكاملة؟' : 'Are you sure you want to delete this lead?')) return;
+    const updated = leads.filter(l => l.id !== leadId);
+    setLeads(updated);
+    localStorage.setItem('saas_crm_leads_v1', JSON.stringify(updated));
+    triggerSaveNotification();
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        await deleteDocument('saas_leads', leadId);
+      } catch (e) {
+        console.error("Firestore lead deletion error:", e);
+      }
+    }
+    if (selectedLeadForDetail?.id === leadId) {
+      setSelectedLeadForDetail(null);
+    }
+  };
+
+  // Export Leads dataset to CSV format for real Sales team workflows
+  const exportLeadsToCsv = () => {
+    let csvContent = "\uFEFF"; // Add UTF-8 BOM for Arabic characters compatibility in Excel
+    csvContent += "ID,الاسم,الشركة,البريد الإلكتروني,الهاتف,حجم الأسطول,المنطقة,الحالة,ملاحظات المتابعة,تاريخ التسجيل\n";
+    leads.forEach(l => {
+      const escapedNotes = (l.notes || '').replace(/"/g, '""');
+      const escapedName = (l.name || '').replace(/"/g, '""');
+      const escapedCompany = (l.company || '').replace(/"/g, '""');
+      csvContent += `"${l.id}","${escapedName}","${escapedCompany}","${l.email || ''}","${l.phone || ''}","${l.fleetSize || 0}","${l.province || l.country || ''}","${l.status}","${escapedNotes}","${l.date || ''}"\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `SaaS_CRM_Leads_Onboarding_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Add a communication log entry
+  const addCommunicationLog = (leadId: string) => {
+    if (!newLogNote.trim()) return;
+    const targetLead = leads.find(l => l.id === leadId);
+    if (!targetLead) return;
+    
+    const newLog = {
+      id: 'log-' + Date.now(),
+      date: new Date().toLocaleDateString('ar-SA') + ' ' + new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+      type: newLogType,
+      note: newLogNote,
+      agent: 'مدير الصيانة والمبيعات'
+    };
+    
+    const existingLogs = Array.isArray(targetLead.communicationLogs) ? targetLead.communicationLogs : [];
+    const updatedLead = {
+      ...targetLead,
+      communicationLogs: [newLog, ...existingLogs],
+      lastActivityDate: new Date().toISOString()
+    };
+    
+    const updatedList = leads.map(l => l.id === leadId ? updatedLead : l);
+    saveLeads(updatedList, updatedLead);
+    setSelectedLeadForDetail(updatedLead);
+    setNewLogNote('');
+  };
+
+  // Simulate converting a lead into a real tenant/active system subscription
+  const simulateOnboardingProspect = (lead: any, packageType: string, licenseMonths: number) => {
+    setIsProvisioning(true);
+    
+    setTimeout(() => {
+      const expirationDate = new Date();
+      expirationDate.setMonth(expirationDate.getMonth() + Number(licenseMonths));
+      
+      const provisionedInfo = {
+        tenantName: lead.company,
+        adminUser: lead.name,
+        adminEmail: lead.email,
+        packageSelected: packageType,
+        databaseSchema: `tenant_db_sch_${lead.id}`,
+        apiToken: `pk_live_saas_${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+        subscriptionExpires: expirationDate.toLocaleDateString('ar-SA'),
+        assignedSubdomain: `${lead.company.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]/g, '').slice(0, 12)}.fleetlock.com.sa`
+      };
+      
+      const currentLogs = Array.isArray(lead.communicationLogs) ? lead.communicationLogs : [];
+      const activationLog = {
+        id: 'log-' + Date.now(),
+        date: new Date().toLocaleDateString('ar-SA') + ' ' + new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+        type: 'offer',
+        note: `🎉 تم تعميد عقد الاشتراك وتأهيل الأسطول بنجاح! الباقة: (${packageType === 'pro' ? 'سلطة احترافية Pro' : packageType === 'enterprise' ? 'الشركات الضخمة Enterprise' : 'الأساسية Basic'}) لفترة ${licenseMonths} شهر.`,
+        agent: 'النظام الآلي'
+      };
+      
+      const updatedLead = {
+        ...lead,
+        status: 'won',
+        communicationLogs: [activationLog, ...currentLogs],
+        provisionedDetails: provisionedInfo,
+        lastActivityDate: new Date().toISOString()
+      };
+      
+      const updatedList = leads.map(l => l.id === lead.id ? updatedLead : l);
+      saveLeads(updatedList, updatedLead);
+      setSelectedLeadForDetail(updatedLead);
+      setProvisionSuccessInfo(provisionedInfo);
+      setIsProvisioning(false);
+    }, 1500);
+  };
+
+  // Manual Lead entry submission
+  const handleAddNewLead = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLeadForm.name || !newLeadForm.company) return;
+    
+    const newLeadObject = {
+      id: 'lead-' + Date.now(),
+      name: newLeadForm.name,
+      company: newLeadForm.company,
+      email: newLeadForm.email || `${newLeadForm.company.toLowerCase().replace(/\s+/g, '')}@saas-fleet.com`,
+      phone: newLeadForm.phone || 'غير مسجل',
+      fleetSize: Number(newLeadForm.fleetSize) || 12,
+      province: newLeadForm.province,
+      country: newLeadForm.country,
+      notes: newLeadForm.notes || 'لا يوجد ملاحظات أولية',
+      status: newLeadForm.status,
+      date: new Date().toISOString().split('T')[0],
+      communicationLogs: [
+        {
+          id: 'log-initial',
+          date: new Date().toLocaleDateString('ar-SA') + ' ' + new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+          type: 'meeting',
+          note: `تم فتح هذه الصفقة وتدوين البيانات يدوياً من لوحة القيادة. حجم الأسطول التقديري: ${newLeadForm.fleetSize} شاحنة ومعدة.`,
+          agent: 'مدير عمليات المبيعات'
+        }
+      ]
+    };
+    
+    const updatedList = [newLeadObject, ...leads];
+    saveLeads(updatedList, newLeadObject);
+    
+    setShowAddLeadModal(false);
+    // Reset form
+    setNewLeadForm({
+      name: '',
+      company: '',
+      email: '',
+      phone: '',
+      fleetSize: 10,
+      province: 'المنطقة الشرقية',
+      country: 'المملكة العربية السعودية',
+      notes: '',
+      status: 'new'
+    });
+  };
+
+  // Features Handles
+  const handleFeatureSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!featureForm) return;
+
+    if (featureForm.id) {
+      // Edit
+      const updated = features.map(f => f.id === featureForm.id ? { ...featureForm } : f);
+      saveFeatures(updated);
+    } else {
+      // Add
+      const newF = {
+        ...featureForm,
+        id: 'f-' + Date.now()
+      };
+      saveFeatures([...features, newF]);
+    }
+    setFeatureForm(null);
+  };
+
+  const startEditFeature = (f: any) => {
+    setFeatureForm({
+      id: f.id,
+      titleAr: f.titleAr || '',
+      titleEn: f.titleEn || '',
+      descAr: f.descAr || '',
+      descEn: f.descEn || '',
+      iconName: f.iconName || 'Wrench',
+      badgeAr: f.badgeAr || '',
+      badgeEn: f.badgeEn || ''
+    });
+  };
+
+  const handleDeleteFeature = (id: string) => {
+    if (!window.confirm(language === 'ar' ? 'هل تريد حذف هذه الميزة تشغيلياً؟' : 'Delete this feature?')) return;
+    const updated = features.filter(f => f.id !== id);
+    saveFeatures(updated);
+  };
+
+  // Partners handles
+  const handleClientSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientForm) return;
+
+    if (clientForm.id) {
+      const updated = clients.map(c => c.id === clientForm.id ? { ...clientForm } : c);
+      saveClients(updated);
+    } else {
+      const newC = {
+        ...clientForm,
+        id: 'c-' + Date.now()
+      };
+      saveClients([...clients, newC]);
+    }
+    setClientForm(null);
+  };
+
+  const startEditClient = (c: any) => {
+    setClientForm({
+      id: c.id,
+      name: c.name || '',
+      industryAr: c.industryAr || '',
+      industryEn: c.industryEn || '',
+      rating: c.rating || 5,
+      yearJoint: c.yearJoint || '2026',
+      activeVehicles: c.activeVehicles || '25',
+      logoSeed: c.logoSeed || 'CL'
+    });
+  };
+
+  const handleDeleteClient = (id: string) => {
+    if (!window.confirm(language === 'ar' ? 'هل تريد حذف العميل/الشركة من قائمة الموقع؟' : 'Remove company from site?')) return;
+    const updated = clients.filter(c => c.id !== id);
+    saveClients(updated);
+  };
+
+  // Reviews/Testimonials handlers
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewForm) return;
+
+    if (reviewForm.id) {
+      const updated = reviews.map(r => r.id === reviewForm.id ? { ...reviewForm } : r);
+      saveReviews(updated);
+    } else {
+      const newR = {
+        ...reviewForm,
+        id: 'r-' + Date.now(),
+        avatar: `https://images.unsplash.com/photo-${Math.floor(Math.random() * 50) + 1500000}?w=150&h=150&fit=crop&crop=faces`
+      };
+      saveReviews([...reviews, newR]);
+    }
+    setReviewForm(null);
+  };
+
+  const startEditReview = (r: any) => {
+    setReviewForm({
+      id: r.id,
+      authorName: r.authorName || '',
+      roleAr: r.roleAr || '',
+      roleEn: r.roleEn || '',
+      company: r.company || '',
+      contentAr: r.contentAr || '',
+      contentEn: r.contentEn || '',
+      rating: r.rating || 5
+    });
+  };
+
+  const handleDeleteReview = (id: string) => {
+    if (!window.confirm(language === 'ar' ? 'حذف تقييم العميل؟' : 'Delete review?')) return;
+    const updated = reviews.filter(r => r.id !== id);
+    saveReviews(updated);
+  };
+
+  const saveFooterColumns = (cols: any[]) => {
+    setFooterColumns(cols);
+    localStorage.setItem('saas_marketing_footer_columns_v2', JSON.stringify(cols));
+    triggerSaveNotification();
+  };
+
+  const saveFooterMeta = (meta: any) => {
+    setFooterMeta(meta);
+    localStorage.setItem('saas_marketing_footer_meta_v1', JSON.stringify(meta));
+    triggerSaveNotification();
+  };
+
+  const handleAddFooterItem = (colId: string) => {
+    if (!newColItemAr.trim() || !newColItemEn.trim()) return;
+    const updated = footerColumns.map(col => {
+      if (col.id === colId) {
+        return {
+          ...col,
+          items: [
+            ...col.items,
+            {
+              id: 'item-' + colId + '-' + Date.now(),
+              labelAr: newColItemAr.trim(),
+              labelEn: newColItemEn.trim()
+            }
+          ]
+        };
+      }
+      return col;
+    });
+    saveFooterColumns(updated);
+    setNewColItemAr("");
+    setNewColItemEn("");
+  };
+
+  const handleDeleteFooterItem = (colId: string, itemId: string) => {
+    const updated = footerColumns.map(col => {
+      if (col.id === colId) {
+        return {
+          ...col,
+          items: col.items.filter((item: any) => item.id !== itemId)
+        };
+      }
+      return col;
+    });
+    saveFooterColumns(updated);
+  };
+
+  const handleUpdateColumnTitle = (colId: string, titleAr: string, titleEn: string) => {
+    const updated = footerColumns.map(col => {
+      if (col.id === colId) {
+        return {
+          ...col,
+          titleAr,
+          titleEn
+        };
+      }
+      return col;
+    });
+    saveFooterColumns(updated);
+  };
+
+  const handleResetFooterDefault = () => {
+    if (window.confirm(language === 'ar' ? 'هل تريد استعادة قوائم التذييل والروابط الافتراضية؟ سيتم مسح التعديلات الحالية.' : 'Restore original footer link template? This overwrites current changes.')) {
+      saveFooterColumns(DEFAULT_FOOTER_COLUMNS);
+    }
+  };
+
+  // Dynamic calculation of stats inside the component render scope
+  const totalLeadsCount = leads.length;
+  const pendingLeadsCount = leads.filter(l => l.status === 'new').length;
+  const contactedLeadsCount = leads.filter(l => l.status === 'contacted').length;
+  const wonLeadsCount = leads.filter(l => l.status === 'won').length;
+  const lostLeadsCount = leads.filter(l => l.status === 'lost').length;
+  const conversionRatePercent = totalLeadsCount > 0 ? Math.round((wonLeadsCount / totalLeadsCount) * 100) : 0;
+  const totalFleetSize = leads.reduce((sum, l) => sum + (Number(l.fleetSize) || 0), 0);
+  const saasMmrValueSAR = leads.filter(l => l.status === 'won').reduce((sum, l) => sum + (Number(l.fleetSize) || 0) * 35, 0);
+  const potentialMmrValueSAR = leads.reduce((sum, l) => sum + (Number(l.fleetSize) || 0) * 35, 0);
+
+  const filteredLeads = leads.filter(l => {
+    const matchesSearch = 
+      (l.name || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
+      (l.company || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
+      (l.email || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
+      (l.phone || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
+      (l.province || '').toLowerCase().includes(leadSearchQuery.toLowerCase());
+    
+    const matchesStatus = leadStatusFilter === 'all' || l.status === leadStatusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleSimulateSaudiLeads = () => {
+    const mockSaudiLeads = [
+      {
+        id: 'sim-lead-1',
+        name: 'م. خالد الحربي',
+        company: 'الجزيرة للخدمات اللوجستية',
+        email: 'k.harbi@aljazira-logistics.com.sa',
+        phone: '+966 56 345 8761',
+        fleetSize: 180,
+        country: 'المملكة العربية السعودية',
+        province: 'منطقة الرياض',
+        status: 'won',
+        date: new Date().toISOString().split('T')[0],
+        source: 'محاكي المبيعات',
+        notes: 'عميل مميز فائز بالصفقة! تم تعميد وتفعيل ترخيص أسطول بـ 180 شاحنة نقل مبردة ومعدات.'
+      },
+      {
+        id: 'sim-lead-2',
+        name: 'أ. عبد الرحمن اليوسف',
+        company: 'شركة نقليات صدارة الشرق',
+        email: 'ar.yousef@sadarahtrans.com',
+        phone: '+966 50 432 1098',
+        fleetSize: 42,
+        country: 'المملكة العربية السعودية',
+        province: 'المنطقة الشرقية',
+        status: 'contacted',
+        date: new Date().toISOString().split('T')[0],
+        source: 'الموقع التسويقي',
+        notes: 'تم تقديم عرض أسعار مبدئي لباقة الـ Pro. يدرس الربط مع نظام المحاسبة ERP للورشة.'
+      },
+      {
+        id: 'sim-lead-3',
+        name: 'م. فهد السديري',
+        company: 'مجموعة المانع للمقاولات والمعدات',
+        email: 'f.sudairy@almanabe.com',
+        phone: '+966 55 998 8877',
+        fleetSize: 95,
+        country: 'المملكة العربية السعودية',
+        province: 'المنطقة الغربية',
+        status: 'new',
+        date: new Date().toISOString().split('T')[0],
+        source: 'حاسبة العائد',
+        notes: 'طلب جديد مسجل عبر حاسبة العوائد. يمتلك 95 بلدوز وحارثة ثقيلة تشغيلية في ينبع.'
+      },
+      {
+        id: 'sim-lead-4',
+        name: 'م. أحمد الشهري',
+        company: 'توصيل إكسبريس السريع',
+        email: 'a.shehri@tawseel-express.sa',
+        phone: '+966 54 123 7890',
+        fleetSize: 320,
+        country: 'المملكة العربية السعودية',
+        province: 'منطقة الرياض',
+        status: 'won',
+        date: new Date().toISOString().split('T')[0],
+        source: 'الموقع التسويقي',
+        notes: 'صفقة تعميد كبرى! تم الفوز بـ 320 سيارة توصيل مايل أخير لربط فنيي الصيانة الدورية.'
+      },
+      {
+        id: 'sim-lead-5',
+        name: 'أ. صالح باهدى',
+        company: 'مؤسسة باهدى لتوزيع الأغذية',
+        email: 's.bahaj@bahaja-food.com',
+        phone: '+966 59 776 5544',
+        fleetSize: 15,
+        country: 'المملكة العربية السعودية',
+        province: 'المنطقة الجنوبية',
+        status: 'lost',
+        date: new Date().toISOString().split('T')[0],
+        source: 'محاكي المبيعات',
+        notes: 'حالة غير مهتمة حالياً. لم يقرر التفعيل لامتلاك ورشته الخاصة براد صيانة متكامل يدوياً.'
+      }
+    ];
+    const organic = leads.filter(l => !l.id.startsWith('sim-'));
+    saveLeads([...mockSaudiLeads, ...organic]);
+  };
+
+  const handleSimulateMajorWonLead = () => {
+    const majorLead = {
+      id: `sim-won-giant-${Date.now()}`,
+      name: 'م. عبد العزيز الشمراني',
+      company: 'الوطنية للنقل واللوجستيات (مساهمة)',
+      email: 'a.shamrani@saudi-transport.com.sa',
+      phone: '+966 54 888 7777',
+      fleetSize: 750,
+      country: 'المملكة العربية السعودية',
+      province: 'منطقة الرياض',
+      status: 'won',
+      date: new Date().toISOString().split('T')[0],
+      source: 'صفقة استراتيجية كبرى',
+      notes: 'العميل الحكومي المميز للعام ٢٠٢٦! تعميد فوري بـ 750 شاحنة ومقطورة ثقيلة بمعدل اشتراك مخصص.'
+    };
+    saveLeads([majorLead, ...leads]);
+  };
+
+  const handleClearSimulatedLeads = () => {
+    const filtered = leads.filter(l => !l.id.startsWith('sim-'));
+    saveLeads(filtered);
+  };
+
+  const handleForceRefresh = () => {
+    // Unregister aggressive service workers
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const reg of registrations) {
+          reg.unregister();
+        }
+      }).catch(() => {});
+    }
+    // Delete stale caches under this domain
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        for (const key of keys) {
+          caches.delete(key);
+        }
+      }).catch(() => {});
+    }
+    
+    // Set a cache busted signature
+    localStorage.setItem("applet_project_signature", "m360_mechanic_v3_forced_" + Date.now());
+    
+    // Refresh page
+    window.location.reload();
+  };
+
+  return (
+    <div className="space-y-6 @container">
+      {/* HEADER BAR */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-soft">
+        <div className="flex items-center gap-3.5 text-right w-full md:w-auto">
+          <span className="p-3 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl border border-indigo-100/40 dark:border-slate-850">
+            <Globe2 size={24} className="animate-pulse" />
+          </span>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm font-black text-slate-800 dark:text-slate-100">
+                {language === 'ar' ? 'إدارة لوحة الهوية والموقع التسويقي (SaaS Controller)' : 'Marketing Site Control Panel'}
+              </h2>
+              <ContextualHelp 
+                id="marketing-admin"
+                titleAr="متحكم الهوية والموقع التسويقي"
+                titleEn="SaaS Brand & Landing Controller"
+                explanationAr="وحدة تحكم متكاملة خاصة بالمشرفين لتغيير ومطابقة ألوان التطبيق الإجمالية، وتخصيص عنوان ووصف العلامة التجارية، بالإضافة إلى تتبع طلبات تواصل العملاء الواردة من الصفحة التسويقية العامة."
+                explanationEn="An elite administrative module to configure custom SaaS brand colors, manage reviews listed on public pages, and review active client leads."
+                benefitsAr={[
+                  "تعديل فوري للون الرئيسي الخاص بتطبيقك وشعار Axoventra المخصص.",
+                  "عرض وتعديل الميزات وآراء ومراجعات ملاك الورش لتسريع المبيعات.",
+                  "سجل متكامل للـ Leads والعملاء مع ميزة تحديث ورصد حالتهم اللوجيستية."
+                ]}
+                benefitsEn={[
+                  "Dynamic theme adjustments updating primary style guides immediately across all tabs.",
+                  "Full content manager modifying features and company rating grids.",
+                  "Live lead response dashboard to fast-forward customer engagement."
+                ]}
+                tipsAr={[
+                  "يمكنك الضغط على زر العلامة التجارية المخصصة ومعاينتها لتفقد مدى ملائمة درجات الألوان المختارة قبل نشرها للعملاء."
+                ]}
+                tipsEn={[
+                  "Always verify the Brand Preview box to ensure colors comply with eye strain guidelines before publishing changes."
+                ]}
+                language={language}
+              />
+            </div>
+            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
+              {language === 'ar' 
+                ? 'تحكّم تام بكامل محتوى الصفحة الخارجية، الباقات، الميزات، وآراء العملاء مع معالجة طلبات الاشتراك الفورية.'
+                : 'Complete command over brand colors, landing segments, static reviews, partners, and incoming leads.'}
+            </p>
+          </div>
+        </div>
+
+        {/* TOP QUICK METRICS SUMMARY + QUICK SWITCHER & SAVING INDICATOR */}
+        <div className="flex flex-wrap md:flex-nowrap gap-3 items-center justify-start md:justify-end w-full md:w-auto select-none">
+          {/* VISUAL SAVE STATUS INDICATOR */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100/70 dark:border-slate-800/80 text-[10.5px] font-black h-10 select-none">
+            {saveStatus === 'saving' && (
+              <>
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                <span className="text-amber-600 dark:text-amber-400">
+                  {language === 'ar' ? 'جاري الحفظ تلقائياً...' : 'Saving...'}
+                </span>
+              </>
+            )}
+            {saveStatus === 'saved' && (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <Check size={11} strokeWidth={3} />
+                  {language === 'ar' ? 'تم حفظ التغييرات' : 'Changes saved'}
+                </span>
+              </>
+            )}
+            {saveStatus === 'idle' && (
+              <>
+                <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                <span className="text-slate-400 dark:text-slate-500">
+                  {language === 'ar' ? 'جميع التعديلات محفوظة' : 'All saved'}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* QUICK MODE SWITCHER */}
+          <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-150/40 dark:border-slate-800/60 font-sans select-none items-center shrink-0 h-10">
+            <button 
+              type="button" 
+              onClick={() => onNavigateToTab?.('marketing-portal')}
+              className="px-3.5 py-1.5 hover:bg-white dark:hover:bg-slate-900 text-slate-505 dark:text-slate-400 hover:text-indigo-650 dark:hover:text-indigo-400 text-[10px] font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-none hover:shadow-xs"
+              title={language === 'ar' ? 'معاينة العرض العام للموقع' : 'Preview public website view'}
+            >
+              <Eye size={12} className="text-slate-405 dark:text-slate-500" />
+              <span>{language === 'ar' ? 'العرض العام للموقع' : 'Public Site'}</span>
+            </button>
+            <div 
+              className="px-3.5 py-1.5 bg-indigo-650 dark:bg-indigo-700 text-white text-[10px] font-black rounded-xl flex items-center gap-1.5 shadow-soft border border-indigo-500/10"
+            >
+              <PenTool size={11} />
+              <span>{language === 'ar' ? 'وضع تحرير المحتوى' : 'Edit Mode'}</span>
+            </div>
+          </div>
+
+          {/* INSTANT CACHE FLUSHER & CODE BROADCAST BUTTON */}
+          <button
+            type="button"
+            onClick={handleForceRefresh}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border border-amber-200/50 dark:border-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-black h-10 cursor-pointer transition-all hover:scale-98"
+            title={language === 'ar' ? 'تحديث الكود الفوري وإفراغ الذاكرة المؤقتة للمتصفح للجوال والكمبيوتر' : 'Force clear cache and load latest code updates'}
+          >
+            <RefreshCw size={11.5} className="animate-spin text-amber-600 dark:text-amber-400 duration-3000" />
+            <span>{language === 'ar' ? 'تحديث الكود المباشر' : 'Force Update'}</span>
+          </button>
+
+          <div className="hidden lg:flex gap-1.5 items-center">
+            <div className="px-3 py-1.5 h-10 bg-indigo-50/50 dark:bg-indigo-950/15 border border-indigo-100/30 dark:border-indigo-900/10 rounded-xl text-center flex flex-col justify-center min-w-[100px]">
+              <span className="text-[8px] text-indigo-505 dark:text-indigo-400 block font-bold leading-none mb-0.5">إجمالي الطلبات</span>
+              <span className="text-xs font-black text-indigo-700 dark:text-indigo-300 font-mono leading-none">{leads.length}</span>
+            </div>
+            <div className="px-3 py-1.5 h-10 bg-emerald-50/50 dark:bg-emerald-950/15 border border-emerald-100/30 dark:border-emerald-950/10 rounded-xl text-center flex flex-col justify-center min-w-[100px]">
+              <span className="text-[8px] text-emerald-800 dark:text-emerald-400 block font-bold leading-none mb-0.5">الباقات المكتملة</span>
+              <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 font-mono leading-none">{leads.filter(l => l.status === 'won').length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CRM NAV LIST STRUCTURE */}
+            {/* MOBILE CRM TRIGGER BAR */}
+            <div className="block lg:hidden bg-[#0B132B] text-slate-100 p-4.5 rounded-3xl border border-slate-800 shadow-xl select-none mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => setIsMobileMenuOpen(true)}
+                    className="p-2 px-3 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+                    style={{ backgroundColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}20` }}
+                  >
+                    <Menu size={14} strokeWidth={2.5} />
+                    <span>{language === 'ar' ? 'أقسام اللوحة' : 'Menu'}</span>
+                  </button>
+                  <div className="text-right">
+                    <span className="text-[8.5px] block text-slate-400 font-extrabold tracking-wide uppercase leading-none">متحكم الساس | CRM PANEL</span>
+                    <h4 className="text-[11px] font-black text-slate-100 mt-1">
+                      {language === 'ar' ? 'تخصيص الموقع والهوية' : 'SaaS Customize Dashboard'}
+                    </h4>
+                  </div>
+                </div>
+                
+                <div className="text-left font-sans">
+                  <div className="bg-slate-950/60 border border-slate-800 px-3.5 py-1.5 rounded-2xl">
+                    <span className="text-[10px] font-black" style={{ color: brandPrimaryColor }}>
+                      {activeSubTab === 'leads' ? 'المشتركون' :
+                       activeSubTab === 'launch-planner' ? 'خطة الإطلاق' :
+                       activeSubTab === 'identity' ? 'الهوية والألوان' :
+                       activeSubTab === 'features' ? 'المميزات' :
+                       activeSubTab === 'clients' ? 'العملاء والشعارات' :
+                       activeSubTab === 'testimonials' ? 'المراجعات' : 
+                       activeSubTab === 'robots' ? 'مكتبة الروبوتات الذكية' : 'التذييل'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* MOBILE DRAWER SIDEBAR OVERLAY */}
+            <AnimatePresence>
+              {isMobileMenuOpen && (
+                <>
+                  {/* Backdrop overlay */}
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 lg:hidden"
+                  />
+                  {/* Sliding Drawer Container */}
+                  <motion.div 
+                    initial={{ x: isRtl ? '100%' : '-100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: isRtl ? '100%' : '-100%' }}
+                    transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+                    className={`fixed top-0 bottom-0 ${isRtl ? 'right-0' : 'left-0'} w-80 bg-[#0C1225] text-slate-100 border-l border-slate-800 p-5.5 shadow-2xl z-51 overflow-y-auto lg:hidden flex flex-col justify-between text-right`}
+                    dir={isRtl ? 'rtl' : 'ltr'}
+                  >
+                    <div className="space-y-5">
+                      {/* Drawer Brand Header */}
+                      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+                        <button 
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="p-1.5 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-slate-100 rounded-lg cursor-pointer transition-colors border border-slate-800"
+                        >
+                          <X size={15} />
+                        </button>
+                        <div className="text-right">
+                          <span className="text-[9px] font-black tracking-wider block leading-none" style={{ color: brandPrimaryColor }}>بوابة Axoventra</span>
+                          <h3 className="text-xs font-black text-slate-100 mt-1">SaaS CRM Controller</h3>
+                        </div>
+                      </div>
+
+                      {/* Interactive Search Box */}
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          placeholder="بحث سريع في اللوحة..." 
+                          value={searchMenuQuery}
+                          onChange={(e) => setSearchMenuQuery(e.target.value)}
+                          className="w-full bg-slate-950/70 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl py-2 px-3.5 pr-9 text-[11px] font-sans text-right focus:outline-none focus:border-brand-blue-500 transition-colors"
+                        />
+                        <Search size={12.5} className="absolute right-3.5 top-3 text-slate-500" />
+                      </div>
+
+                      {/* Filtered Tabs List */}
+                      <div className="space-y-1.5 select-none">
+                        {filteredMenuItems.length > 0 ? (
+                          filteredMenuItems.map(t => {
+                            const isActive = activeSubTab === t.id;
+                            return (
+                              <button
+                                key={t.id}
+                                onClick={() => {
+                                  setActiveSubTab(t.id as any);
+                                  setIsMobileMenuOpen(false);
+                                }}
+                                className={`w-full text-right p-3 rounded-2xl transition-all duration-200 flex items-start gap-3 cursor-pointer group border ${
+                                  isActive 
+                                    ? 'text-white font-extrabold' 
+                                    : 'bg-transparent border-transparent text-slate-300 hover:text-white hover:bg-slate-900/60'
+                                }`}
+                                style={isActive ? { backgroundColor: brandPrimaryColor, borderColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}20` } : {}}
+                              >
+                                <span className={`p-2 rounded-xl transition-all shrink-0 mt-0.5 ${
+                                  isActive 
+                                    ? 'bg-white/10 text-white' 
+                                    : 'bg-slate-900 text-slate-400 group-hover:text-slate-200 border border-slate-800'
+                                }`}>
+                                  {t.icon}
+                                </span>
+                                <div className="space-y-0.5 min-w-0 flex-1">
+                                  <strong className="text-[11px] block transition-colors leading-tight font-black">
+                                    {language === 'ar' ? t.label : t.id.toUpperCase()}
+                                  </strong>
+                                  <span className={`text-[9px] truncate block leading-none font-medium ${isActive ? 'text-white/80' : 'text-slate-550'}`}>
+                                    {language === 'ar' ? t.subLabel : 'SaaS setup modules'}
+                                  </span>
+                                </div>
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="text-center py-6 text-xs text-slate-500">
+                            لا توجد أقسام مطابقة للبحث
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dynamic Profile Card at Custom Sidebar bottom */}
+                    <div className="border-t border-slate-800 pt-4 mt-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-black shadow-md border border-orange-500/20">
+                            أ
+                          </div>
+                          <div className="text-right">
+                            <h4 className="text-[11px] font-black text-slate-200">أحمد المدير</h4>
+                            <span className="text-[8.5px] font-bold text-amber-500 block">مدير النظام الفائق</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[8px] font-bold text-slate-500">مكتمل</span>
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-emerald-400 animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+
+            {/* SIDE-BY-SIDE CRM LAYOUT */}
+            <div className="flex flex-col lg:flex-row gap-6 items-start font-sans">
+              
+              {/* DESKTOP STICKY VERTICAL SIDEBAR (DARK & PREMIUM LOOK DESIGN) */}
+              <div className="hidden lg:block w-[325px] shrink-0 space-y-4 lg:sticky lg:top-6">
+                <div className="bg-[#0B132B] dark:bg-slate-950 border border-slate-800/80 p-5 rounded-3xl shadow-2xl text-right">
+                  {/* Sidebar Header */}
+                  <div className="border-b border-slate-800/80 pb-3.5 mb-3.5 text-right flex items-center gap-2 justify-end">
+                    <div className="text-right flex-1 min-w-0">
+                      <span className="text-[9px] font-black tracking-wider block" style={{ color: brandPrimaryColor }}>
+                        {language === 'ar' ? 'بوابة لوحة تحكم الساس' : 'SaaS Portal Customizer'}
+                      </span>
+                      <h3 className="text-xs font-black text-slate-100 mt-1 truncate">
+                        {language === 'ar' ? 'الموقع والهوية والألوان' : 'SaaS Control Modules'}
+                      </h3>
+                    </div>
+                    <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 animate-pulse" style={{ backgroundColor: `${brandPrimaryColor}15`, borderColor: `${brandPrimaryColor}40`, color: brandPrimaryColor }}>
+                      <SlidersHorizontal size={14} />
+                    </span>
+                  </div>
+
+                  {/* Quick Search */}
+                  <div className="relative mb-3.5">
+                    <input 
+                      type="text" 
+                      placeholder={language === 'ar' ? 'بحث سريع بالاعدادات...' : 'Quick CRM search...'} 
+                      value={searchMenuQuery}
+                      onChange={(e) => setSearchMenuQuery(e.target.value)}
+                      className="w-full bg-slate-950/50 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl py-2 px-3.5 pr-9 text-[11px] font-sans text-right focus:outline-none focus:border-brand-blue-500 transition-colors"
+                    />
+                    <Search size={12.5} className="absolute right-3.5 top-3 text-slate-500" />
+                  </div>
+                  
+                  {/* Items List */}
+                  <div className="space-y-1.5 select-none">
+                    {filteredMenuItems.length > 0 ? (
+                      filteredMenuItems.map(t => {
+                        const isActive = activeSubTab === t.id;
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => setActiveSubTab(t.id as any)}
+                            className={`w-full text-right p-3 rounded-2xl transition-all duration-200 flex items-start gap-3 cursor-pointer group border ${
+                              isActive 
+                                ? 'text-white font-extrabold' 
+                                : 'bg-transparent border-transparent text-slate-350 hover:text-white hover:bg-slate-900/40'
+                            }`}
+                            style={isActive ? { backgroundColor: brandPrimaryColor, borderColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}20` } : {}}
+                          >
+                            <span className={`p-2 rounded-xl transition-all shrink-0 mt-0.5 ${
+                              isActive 
+                                ? 'bg-white/10 text-white' 
+                                : 'bg-slate-900 text-slate-400 group-hover:text-slate-200 border border-slate-800'
+                            }`}>
+                              {t.icon}
+                            </span>
+                            <div className="space-y-0.5 min-w-0 flex-1">
+                              <strong className={`text-[11px] block transition-colors leading-tight ${isActive ? 'font-black' : 'font-bold'}`}>
+                                {language === 'ar' ? t.label : t.id.toUpperCase()}
+                              </strong>
+                              <span className={`text-[9px] truncate block leading-none font-medium ${isActive ? 'text-white/80' : 'text-slate-500'}`}>
+                                {language === 'ar' ? t.subLabel : 'Configuration tab'}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-6 text-xs text-slate-500">
+                        لا توجد نتائج مطابقة
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Profile section at bottom */}
+                  <div className="border-t border-slate-800-80 pt-4 mt-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8.5 h-8.5 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-black shadow-md border border-orange-500/10">
+                          أ
+                        </div>
+                        <div className="text-right">
+                          <h4 className="text-[11px] font-black text-slate-200">أحمد المدير</h4>
+                          <span className="text-[8px] font-bold text-amber-500 block">مدير النظام الفائق</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[8px] font-black text-slate-500">نشط</span>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 border border-emerald-400 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* QUICK GENERAL METRICS */}
+                <div className="bg-slate-55/40 dark:bg-slate-950/10 border border-slate-150/60 dark:border-slate-800/40 rounded-3xl p-4 text-right space-y-3 select-none">
+                  <div className="flex items-center gap-1.5 justify-end">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[9px] font-black text-slate-500 dark:text-slate-400">{language === 'ar' ? 'إحصائيات فورية للموقع' : 'Active stats'}</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 font-mono">
+                    <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 p-2.5 rounded-2xl text-center">
+                      <span className="text-[7.5px] text-slate-400 font-extrabold block mb-1">{language === 'ar' ? 'طلبات الاشتراك' : 'Requests'}</span>
+                      <span className="text-[11px] font-black text-slate-700 dark:text-slate-350">{leads.length}</span>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 p-2.5 rounded-2xl text-center">
+                      <span className="text-[7.5px] text-slate-400 font-extrabold block mb-1">{language === 'ar' ? 'سعر المقارنة باقة' : 'Main limit'}</span>
+                      <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">{leads.filter(l => l.status === 'won').length}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* DESKTOP/MOBILE CENTRAL DETAILS CONTENT CONTAINER */}
+              <div className="flex-1 w-full min-w-0 space-y-6">
+
+        
+        {/* TAB 1: SAAS LEADS VIEW */}
+        {activeSubTab === 'leads' && (
+          <div className="space-y-6">
+              
+              {/* FIREBASE SENSITIVE INTEGRATION DESK */}
+              <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-5 shadow-xl font-sans text-right">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="space-y-1 text-right w-full md:w-auto">
+                    <div className="flex items-center gap-2 justify-end">
+                      <span className="p-1 px-2.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black rounded-lg border border-indigo-400/10 flex items-center gap-1.5 direction-ltr">
+                        <Cloud size={11} className="animate-pulse text-indigo-400" />
+                        {language === 'ar' ? 'البوابة السحابية نشطة' : 'Cloud Portal Active'}
+                      </span>
+                      <h3 className="text-xs font-black tracking-tight text-white">{language === 'ar' ? 'بوابة التحكم والربط السحابي بقاعدة Firebase' : 'SaaS Firebase Cloud Integration Core'}</h3>
+                    </div>
+                    <p className="text-[10.5px] text-slate-400 mt-1 max-w-xl">
+                      {language === 'ar' 
+                        ? 'يمكنك التبديل بين الذاكرة المحلية والاتصال السحابي بقاعدة Firestore الحية لحفظ وإثبات تسجيلات المشتركين ومزامنة هوية موقعك التسويقي.' 
+                        : 'Toggle between clean local storage fallback and direct live Google Firebase Firestore connection.'}
+                    </p>
+                  </div>
+
+                  {/* Switcher & Manual Sync button */}
+                  <div className="flex flex-wrap gap-2 items-center justify-end">
+                    {/* Toggle */}
+                    <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+                      <span className="text-[9.5px] font-bold text-slate-400">{language === 'ar' ? 'وضع السحابة نشط:' : 'Cloud Mode:'}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFirebaseMode(!useFirebase)}
+                        className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          useFirebase ? 'bg-indigo-650' : 'bg-slate-800'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                            useFirebase ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Manual Backup Sync */}
+                    <button
+                      type="button"
+                      disabled={isSyncingWithCloud}
+                      onClick={pushBrandedDataToCloud}
+                      className="p-2 px-3 bg-indigo-650 hover:bg-indigo-700 disabled:opacity-50 text-white text-[10px] font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-indigo-500/20"
+                    >
+                      <ArrowRightLeft size={12} className={isSyncingWithCloud ? 'animate-spin' : ''} />
+                      <span>{language === 'ar' ? 'مزامنة السحابة يدوياً' : 'Force Cloud Sync'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live Connection Diagnostics bar */}
+                <div className="mt-4 p-3 bg-slate-950/60 rounded-2xl border border-slate-850 flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex items-center gap-2 font-mono text-[9px] select-all">
+                    <span className={`w-2 h-2 rounded-full ${isFirestoreConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-400'}`} />
+                    <span className="text-slate-400">STATUS:</span>
+                    <span className={isFirestoreConnected ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                      {isFirestoreConnected ? 'LIVE_FIRESTORE_CONNECTED' : 'LOCAL_STORAGE_MODE'}
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5">
+                    <Database size={11} className="text-indigo-400" />
+                    <span>{cloudFeedbackLog}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* -------------------- SaaS CRM Pipeline Metrics Hub -------------------- */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-right">
+                
+                {/* Metric 1: Total Opportunities */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-4 rounded-2xl shadow-soft space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                      <Users size={16} />
+                    </span>
+                    <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'فرص المبيعات' : 'CRM Opportunities'}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xl font-black text-slate-850 dark:text-white font-mono">{totalLeadsCount}</div>
+                    <p className="text-[10px] text-slate-405 dark:text-slate-500">
+                      {language === 'ar' ? `حجم الأسطول الكلي المتراكم: ${totalFleetSize} شاحنة` : `Total target fleet units: ${totalFleetSize}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metric 2: Conversion Success Rate */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-4 rounded-2xl shadow-soft space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                      <BarChart2 size={16} />
+                    </span>
+                    <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'معدل نجاح الصفقات' : 'Conversion Success'}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{conversionRatePercent}%</div>
+                    <p className="text-[10px] text-slate-405 dark:text-slate-500">
+                      {language === 'ar' ? `مقبول ومفعل: ${wonLeadsCount} • قيد التواصل: ${contactedLeadsCount}` : `Onboarded: ${wonLeadsCount} • Working: ${contactedLeadsCount}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metric 3: Active Monthly SaaS Value (MRR) */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-4 rounded-2xl shadow-soft space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="p-2 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl">
+                      <DollarSign size={16} />
+                    </span>
+                    <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'الإيراد الشهري الفعلي' : 'Monthly SaaS MRR'}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xl font-black text-slate-850 dark:text-white font-mono">
+                      {saasMmrValueSAR.toLocaleString('ar-SA')} <span className="text-xs font-bold text-slate-400 font-sans">ر.س</span>
+                    </div>
+                    <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      {language === 'ar' ? '✓ اشتراكات مفعلة ومدفوعة تلقائياً' : '✓ Paid active licenses'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Metric 4: Potential Pipeline MMR */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-4 rounded-2xl shadow-soft space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="p-2 bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 rounded-xl">
+                      <TrendingUp size={16} />
+                    </span>
+                    <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'الإيراد الإجمالي المتوقع' : 'Potential Pipeline'}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xl font-black text-slate-850 dark:text-white font-mono">
+                      {potentialMmrValueSAR.toLocaleString('ar-SA')} <span className="text-xs font-bold text-slate-400 font-sans">ر.س</span>
+                    </div>
+                    <p className="text-[10px] text-slate-405 dark:text-slate-500">
+                      {language === 'ar' ? 'القيمة التقديرية لكافة طلبات صفحة الهبوط' : 'Estimated worth of all registered leads'}
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* -------------------- DYNAMIC SAAS CONTROLLER PLAYGROUND & REV CALCULATOR -------------------- */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right select-none">
+                
+                {/* Panel 1: MRR Projected Revenue Engine */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-5 rounded-3xl shadow-soft space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-850 pb-3">
+                    <span className="p-1 px-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg text-[9.5px] font-black tracking-wider uppercase">
+                      {language === 'ar' ? 'نموذج محاكاة التسعير' : 'MRR Forecaster'}
+                    </span>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5 justify-end">
+                      <span>{language === 'ar' ? 'حاسبة توقع الإيرادات والنمو التفاعلية' : 'Interactive MRR & Sales Forecaster'}</span>
+                      <TrendingUp size={14} className="text-indigo-650" />
+                    </h4>
+                  </div>
+                  
+                  <div className="space-y-3.5">
+                    {/* Slider 1: Target Subscribed Companies */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px] font-bold">
+                        <span className="font-mono text-indigo-650 dark:text-indigo-400">{targetSubscribers} {language === 'ar' ? 'ورشة/شركة' : 'clients'}</span>
+                        <span className="text-slate-600 dark:text-slate-350">{language === 'ar' ? 'عدد العملاء والشركات النشطة المستهدفة:' : 'Target Customers:'}</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="100" 
+                        value={targetSubscribers} 
+                        onChange={(e) => setTargetSubscribers(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      />
+                    </div>
+
+                    {/* Slider 2: Average Fleet size */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px] font-bold">
+                        <span className="font-mono text-indigo-650 dark:text-indigo-400">{avgFleetUnits} {language === 'ar' ? 'شاحنة/معدة' : 'vehicles'}</span>
+                        <span className="text-slate-600 dark:text-slate-350">{language === 'ar' ? 'متوسط حجم أسطول المشترك الواحد:' : 'Avg Fleet Units Per Client:'}</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="5" 
+                        max="350" 
+                        value={avgFleetUnits} 
+                        onChange={(e) => setAvgFleetUnits(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      />
+                    </div>
+
+                    {/* Slider 3: Price per dynamic license */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px] font-bold">
+                        <span className="font-mono text-indigo-650 dark:text-indigo-400">{mrrPricePerTruck} {language === 'ar' ? 'ر.س / مركبة شهرياً' : 'SAR'}</span>
+                        <span className="text-slate-600 dark:text-slate-350">{language === 'ar' ? 'قيمة الاشتراك الشهري لكل مركبة:' : 'SaaS Price per Vehicle/mo:'}</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="15" 
+                        max="100" 
+                        value={mrrPricePerTruck} 
+                        onChange={(e) => setMrrPricePerTruck(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Calculations visual feedback box */}
+                  <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/25 border border-indigo-100/30 dark:border-indigo-900/10 rounded-2xl grid grid-cols-2 gap-2 text-center">
+                    <div className="border-l border-indigo-100/30 pl-2">
+                      <span className="text-[8.5px] font-bold text-slate-500 dark:text-slate-400 block mb-0.5">{language === 'ar' ? 'الدخل السنوي المتوقع ARR' : 'Projected ARR'}</span>
+                      <strong className="text-[13px] font-mono text-indigo-700 dark:text-indigo-300">
+                        {((targetSubscribers * avgFleetUnits * mrrPricePerTruck) * 12).toLocaleString('ar-SA')} <span className="text-[9px] font-sans">ر.س</span>
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-[8.5px] font-bold text-slate-500 dark:text-slate-400 block mb-0.5">{language === 'ar' ? 'الإيراد الشهري المكرر MRR' : 'Projected MRR'}</span>
+                      <strong className="text-[13px] font-mono text-indigo-700 dark:text-indigo-300">
+                        {(targetSubscribers * avgFleetUnits * mrrPricePerTruck).toLocaleString('ar-SA')} <span className="text-[9px] font-sans">ر.س</span>
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Panel 2: Interactive Sandbox & Simulations generator */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-5 rounded-3xl shadow-soft flex flex-col justify-between space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-850 pb-3">
+                    <span className="p-1 px-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg text-[9.5px] font-black">
+                      {language === 'ar' ? 'بوابة المحاكاة ومراقبة الأداء' : 'Simulation Sandbox'}
+                    </span>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5 justify-end">
+                      <span>{language === 'ar' ? 'مركز محاكاة المبيعات وأتمتة الـ Leads' : 'Sales Simulation Sandbox'}</span>
+                      <Activity size={14} className="text-amber-500" />
+                    </h4>
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed text-right">
+                    {language === 'ar' 
+                      ? 'وفر عناء تعبئة النماذج اليدوية لتجربة اللوحة! قم بتوليد سيناريوهات نمو فوري لقطاع الخدمات والنقل والخدمات البيئية بضغطة زر واحدة لمطابقة البيانات وتحليل الأداء.' 
+                      : 'Generate realistic high-profile leads immediately to test analytics graphs, status progression, and cloud operations.'}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 pb-0.5">
+                    {/* Simulate 5 leads */}
+                    <button
+                      type="button"
+                      onClick={handleSimulateSaudiLeads}
+                      className="p-2.5 hover:-translate-y-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 dark:border-slate-850 dark:bg-slate-950 hover:border-indigo-200 dark:hover:bg-indigo-950/20 rounded-xl text-[10.5px] text-indigo-700 dark:text-indigo-300 font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      title="توليد ٥ صفقات فوري"
+                    >
+                      <Plus size={12} />
+                      <span>{language === 'ar' ? 'توليد ٥ صفقات فوري' : 'Simulate 5 Deals'}</span>
+                    </button>
+
+                    {/* Simulate major WON client */}
+                    <button
+                      type="button"
+                      onClick={handleSimulateMajorWonLead}
+                      className="p-2.5 hover:-translate-y-0.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 dark:border-slate-850 dark:bg-slate-950 hover:border-emerald-200 dark:hover:bg-emerald-950/20 rounded-xl text-[10.5px] text-emerald-700 dark:text-emerald-400 font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      title="محاكاة عقد كود فائز رابح"
+                    >
+                      <Award size={12} />
+                      <span>{language === 'ar' ? 'محاكاة عقد كود فائز رابح' : 'Simulate Won Giant'}</span>
+                    </button>
+                  </div>
+
+                  {/* Clean up action */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-850 text-[9.5px]">
+                    <button
+                      type="button"
+                      onClick={handleClearSimulatedLeads}
+                      className="text-rose-500 hover:text-rose-600 font-extrabold flex items-center gap-1 cursor-pointer"
+                      title="مسح الاشتراكات المحاكية"
+                    >
+                      <Trash2 size={11} />
+                      <span>{language === 'ar' ? 'مسح الاشتراكات المحاكية' : 'Wipe Simulated Deals'}</span>
+                    </button>
+                    <span className="text-slate-400 font-medium">
+                      {language === 'ar' ? `العملاء المحاكون بالجدول حالياً: ${leads.filter(l => l.id.startsWith('sim-')).length}` : `Simulated: ${leads.filter(l => l.id.startsWith('sim-')).length}`}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* -------------------- SEARCH, FILTER, AND Bulk ACTIONS BAR -------------------- */}
+              <div className="bg-slate-50 dark:bg-slate-950/50 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl flex flex-col lg:flex-row gap-3 items-center justify-between select-none">
+                
+                {/* Search & Filter Inputs combo */}
+                <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto text-right">
+                  
+                  {/* Search box */}
+                  <div className="relative flex-1 sm:min-w-[280px]">
+                    <span className="absolute inset-y-0 right-3 flex items-center text-slate-400 pointer-events-none">
+                      <Search size={14} />
+                    </span>
+                    <input
+                      type="text"
+                      value={leadSearchQuery}
+                      onChange={(e) => setLeadSearchQuery(e.target.value)}
+                      placeholder={language === 'ar' ? 'البحث بالاسم، الشركة، الجوال، البريد، المنطقة...' : 'Search Name, Company, Email, Phone...'}
+                      className="w-full text-right p-2.5 pr-9 bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 focus:border-indigo-501 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800 dark:text-slate-100"
+                    />
+                    {leadSearchQuery && (
+                      <button
+                        onClick={() => setLeadSearchQuery('')}
+                        className="absolute inset-y-0 left-3 flex items-center text-[10px] font-bold text-slate-400 hover:text-slate-650 transition-all cursor-pointer"
+                      >
+                        مسح
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Status checklist dropdown selector */}
+                  <div className="relative">
+                    <span className="absolute inset-y-0 right-3 flex items-center text-slate-400 pointer-events-none">
+                      <Filter size={13} />
+                    </span>
+                    <select
+                      value={leadStatusFilter}
+                      onChange={(e: any) => setLeadStatusFilter(e.target.value)}
+                      className="text-right p-2.5 pr-8 pl-8 bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 outline-none rounded-xl text-xs text-slate-700 dark:text-slate-300 cursor-pointer appearance-none min-w-[140px] font-black"
+                    >
+                      <option value="all">{language === 'ar' ? 'فلترة بكافة الحالات' : 'All Statuses'}</option>
+                      <option value="new">{language === 'ar' ? 'جديدة (انتظار)' : 'New Leads'}</option>
+                      <option value="contacted">{language === 'ar' ? 'قيد التواصل والمتابعة' : 'Contacted'}</option>
+                      <option value="won">{language === 'ar' ? 'مقبولة وتأهيل ناجح' : 'Converted / Won'}</option>
+                      <option value="lost">{language === 'ar' ? 'مرفوضة / منتهية' : 'Lost'}</option>
+                    </select>
+                    <span className="absolute inset-y-0 left-3.5 flex items-center text-slate-400 pointer-events-none">
+                      <ChevronDown size={12} />
+                    </span>
+                  </div>
+
+                </div>
+
+                {/* Bulk Actions buttons */}
+                <div className="flex gap-2 w-full lg:w-auto justify-end">
+                  
+                  {/* Export CSV for Excel */}
+                  <button
+                    type="button"
+                    onClick={exportLeadsToCsv}
+                    className="p-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-705 text-slate-700 dark:text-slate-300 font-black text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer select-none"
+                  >
+                    <Download size={13} />
+                    <span>{language === 'ar' ? 'تصدير إكسل CSV' : 'Export Excel'}</span>
+                  </button>
+
+                  {/* Add manual lead */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAddLeadModal(true)}
+                    className="p-2 px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-soft select-none white-space-nowrap"
+                  >
+                    <Plus size={14} />
+                    <span>{language === 'ar' ? 'إضافة عميل مبيعات يدوياً' : 'Add Manual Deal'}</span>
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* -------------------- MAIN DATA TABLE / CARDS LIST -------------------- */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl overflow-hidden shadow-soft">
+                <div className="p-5 border-b border-slate-100 dark:border-slate-850/60 bg-slate-50 dark:bg-slate-950/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-right select-none">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900 dark:text-white">قائمة الاشتراكات وتوجيه صفقات الهبوط</h3>
+                    <p className="text-[10px] text-slate-400 mt-0.5">انقر على أي كرت لتحليل كامل تفاصيل التواصل مع العميل، وإتمام التفعيل والتعميد السحابي للأسطول.</p>
+                  </div>
+                  <span className="p-1 px-2.5 bg-indigo-100/50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 rounded-xl text-[10px] font-black font-mono">
+                    {filteredLeads.length} Matches Found
+                  </span>
+                </div>
+
+                {filteredLeads.length === 0 ? (
+                  <div className="p-16 text-center text-slate-400 dark:text-slate-505 text-xs font-semibold space-y-1.5">
+                    <Users size={28} className="mx-auto text-slate-300 dark:text-slate-700 block mb-1" />
+                    <p>{language === 'ar' ? 'لا توجد نتائج مطابقة لبحثك الجاري.' : 'No matching pipeline leads found.'}</p>
+                    <button
+                      onClick={() => { setLeadSearchQuery(''); setLeadStatusFilter('all'); }}
+                      className="text-xs text-indigo-600 hover:underline cursor-pointer"
+                    >
+                      إعادة تصفية الجدول
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto divide-y divide-slate-100 dark:divide-slate-850 font-sans text-right">
+                    {filteredLeads.map((l) => (
+                      <div 
+                        key={l.id} 
+                        className={`p-5 hover:bg-slate-50/70 dark:hover:bg-slate-850/30 transition-all grid grid-cols-1 md:grid-cols-12 gap-4 items-center group cursor-pointer ${
+                          selectedLeadForDetail?.id === l.id ? 'bg-indigo-50/15 dark:bg-indigo-950/15 border-r-4 border-indigo-500' : ''
+                        }`}
+                      >
+                        {/* Name & Contact Info */}
+                        <div className="md:col-span-3 space-y-1.5" onClick={() => setSelectedLeadForDetail(l)}>
+                          <div className="flex items-center gap-1.5 justify-end">
+                            <span className="text-[12px] font-black text-slate-850 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{l.name}</span>
+                            <span className="p-1 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono text-[8px]">{l.id.slice(0, 8)}</span>
+                          </div>
+                          <div className="space-y-1 text-[10.5px] text-slate-500 dark:text-slate-450 select-all font-mono leading-relaxed">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span>{l.phone}</span>
+                              <Phone size={10} className="text-slate-450 shrink-0" />
+                            </div>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span>{l.email}</span>
+                              <Mail size={10} className="text-slate-450 shrink-0" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Company & Location */}
+                        <div className="md:col-span-3 space-y-1.5" onClick={() => setSelectedLeadForDetail(l)}>
+                          <div className="flex items-center gap-1.5 justify-end text-slate-800 dark:text-slate-205">
+                            <span className="text-[12px] font-black">{l.company}</span>
+                            <Building2 size={12} className="text-indigo-500 shrink-0" />
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
+                            <p>{l.province} • {l.country}</p>
+                            <p className="font-sans font-bold text-slate-655 dark:text-slate-300">
+                              {language === 'ar' ? 'حجم الأسطول المقدر:' : 'Fleet Size:'}{' '}
+                              <span className="text-indigo-650 dark:text-indigo-400 font-mono font-black">{l.fleetSize} {language === 'ar' ? 'سيارة' : 'units'}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Notes Section with Direct Edit box */}
+                        <div className="md:col-span-3 space-y-1">
+                          <span className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold block">{language === 'ar' ? 'آخر الملحوظات التقديرية:' : 'Quick Notes:'}</span>
+                          <textarea
+                            value={l.notes || ''}
+                            onChange={(e) => updateLeadNotes(l.id, e.target.value)}
+                            placeholder={language === 'ar' ? 'اكتب تدوينة، كإشعار العقد أو تاريخ التواصل القادم...' : 'Write team follow up logs...'}
+                            className="w-full p-2 h-12 text-[10px] rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:border-indigo-501 text-slate-700 dark:text-slate-205 leading-snug"
+                          />
+                        </div>
+
+                        {/* Actions & Status */}
+                        <div className="md:col-span-3 flex flex-row md:flex-col items-center md:items-end justify-between gap-2.5 text-right">
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-slate-400 text-right font-mono block leading-none">{l.date} via {l.source || 'Landing'}</span>
+                            <div className="flex items-center gap-1 leading-none mt-0.5" onClick={() => setSelectedLeadForDetail(l)}>
+                              {getStatusBadge(l.status)}
+                            </div>
+                          </div>
+
+                          {/* Quick CRM status toggles & Detail actions */}
+                          <div className="flex gap-1 flex-wrap justify-end">
+                            <button
+                              onClick={() => setSelectedLeadForDetail(l)}
+                              className="p-1 px-1.5 bg-indigo-55 bg-indigo-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-705 text-indigo-700 dark:text-slate-200 rounded-lg text-[9px] font-black cursor-pointer transition-all flex items-center gap-1 border border-indigo-100/30"
+                              title="تحليل ملف العميل ومتابعة التواصل"
+                            >
+                              <Eye size={10} />
+                              <span>المتابعة</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteLead(l.id)}
+                              className="p-1 px-1.5 bg-slate-100 hover:bg-rose-600 dark:bg-slate-800 hover:text-white text-slate-500 dark:text-slate-400 rounded-lg text-[9px] font-bold cursor-pointer transition-all border border-transparent"
+                              title="حذف الطلب نهائياً"
+                            >
+                              <Trash2 size={10} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* -------------------- MODAL: MANUALLY ADD TEAM LEAD -------------------- */}
+              <AnimatePresence>
+                {showAddLeadModal && (
+                  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 overflow-y-auto">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                      className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl text-right font-sans"
+                    >
+                      <div className="p-4 px-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddLeadModal(false)}
+                          className="p-1.5 text-slate-400 hover:text-slate-650 dark:hover:text-slate-100 rounded-lg text-xs font-bold cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                        <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <span>إضافة صفقة مبيعات / عميل مهتم بـ SaaS</span>
+                          <Users size={14} className="text-indigo-500" />
+                        </h4>
+                      </div>
+
+                      <form onSubmit={handleAddNewLead} className="p-6 space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          
+                          {/* Name Input */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">اسم الشخص المسؤول *</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="مثال: أ. فيصل الغامدي"
+                              value={newLeadForm.name}
+                              onChange={(e) => setNewLeadForm({ ...newLeadForm, name: e.target.value })}
+                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+
+                          {/* Company Input */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">اسم الشركة / الجهة *</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="مثال: شركة غامدي لنقل البترول"
+                              value={newLeadForm.company}
+                              onChange={(e) => setNewLeadForm({ ...newLeadForm, company: e.target.value })}
+                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+
+                          {/* Email */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">البريد الإلكتروني الرسمي</label>
+                            <input
+                              type="email"
+                              placeholder="f.ghandi@ghandigroup.com"
+                              value={newLeadForm.email}
+                              onChange={(e) => setNewLeadForm({ ...newLeadForm, email: e.target.value })}
+                              className="w-full text-left p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none direction-ltr placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+
+                          {/* Phone */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">جوال الاتصال للتواصل *</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="+966 54 112 0000"
+                              value={newLeadForm.phone}
+                              onChange={(e) => setNewLeadForm({ ...newLeadForm, phone: e.target.value })}
+                              className="w-full text-left p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none direction-ltr placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+
+                          {/* Fleet Size */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">حجم الأسطول المتوقع (معدة وشاحنة)</label>
+                            <input
+                              type="number"
+                              placeholder="25"
+                              value={newLeadForm.fleetSize}
+                              onChange={(e) => setNewLeadForm({ ...newLeadForm, fleetSize: Number(e.target.value) || 12 })}
+                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+
+                          {/* Province */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">المنطقة الجغرافية للفرع</label>
+                            <select
+                              value={newLeadForm.province}
+                              onChange={(e) => setNewLeadForm({ ...newLeadForm, province: e.target.value })}
+                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none text-slate-700 dark:text-slate-100"
+                            >
+                              <option value="المنطقة الشرقية">المنطقة الشرقية (الدمام والجبيل)</option>
+                              <option value="المنطقة الوسطى">المنطقة الوسطى (الرياض)</option>
+                              <option value="المنطقة الغربية">المنطقة الغربية (جدة ومكة)</option>
+                              <option value="المنطقة الشمالية">المنطقة الشمالية (تبوك وحائل)</option>
+                              <option value="المنطقة الجنوبية">المنطقة الجنوبية (أبها وجازان)</option>
+                            </select>
+                          </div>
+
+                        </div>
+
+                        {/* Status Select */}
+                        <div className="space-y-1">
+                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">حالة الصفقة المبدئية</label>
+                          <div className="grid grid-cols-3 gap-2 select-none">
+                            {[
+                              { id: 'new', label: 'جديدة / انتظار', color: 'border-indigo-200 text-indigo-700 bg-indigo-50/10' },
+                              { id: 'contacted', label: 'جاري التواصل', color: 'border-amber-200 text-amber-655 bg-amber-50/10' },
+                              { id: 'won', label: 'مقبول / تعميد', color: 'border-emerald-200 text-emerald-700 bg-emerald-50/10' }
+                            ].map(st => (
+                              <button
+                                key={st.id}
+                                type="button"
+                                onClick={() => setNewLeadForm({ ...newLeadForm, status: st.id as any })}
+                                className={`p-2 rounded-xl text-[10px] font-black border text-center transition-all cursor-pointer ${
+                                  newLeadForm.status === st.id 
+                                    ? 'border-indigo-600 bg-indigo-650 text-white shadow-soft' 
+                                    : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:text-slate-350'
+                                }`}
+                              >
+                                {st.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Note area */}
+                        <div className="space-y-1">
+                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">مذكرة وخلفية الصفقة المبيعية</label>
+                          <textarea
+                            placeholder="تدوين أي مباحثات تمت مع العميل هاتفياً، تفضيلات الصيانة الفنية، المتطلبات الخاصة..."
+                            value={newLeadForm.notes}
+                            onChange={(e) => setNewLeadForm({ ...newLeadForm, notes: e.target.value })}
+                            className="w-full h-16 text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none text-slate-700 dark:text-slate-100 placeholder-slate-405"
+                          />
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddLeadModal(false)}
+                            className="p-2 px-4 text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
+                          >
+                            إلغاء
+                          </button>
+                          <button
+                            type="submit"
+                            className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer"
+                          >
+                            حفظ وتسجيل الصفقة
+                          </button>
+                        </div>
+                      </form>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+
+              {/* -------------------- MODAL / DRAWER: SUBSCRIBER DETAILED FOLLOW-UP HUB & LIVE PROVISIONING -------------------- */}
+              <AnimatePresence>
+                {selectedLeadForDetail && (
+                  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 overflow-y-auto">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                      className="bg-slate-55 dark:bg-[#0c0f16] border border-slate-150 dark:border-slate-800 bg-slate-50 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl text-right font-sans flex flex-col max-h-[85vh]"
+                    >
+                      {/* Header */}
+                      <div className="p-4 px-6 border-b border-slate-150 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0 select-none">
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedLeadForDetail(null); setProvisionSuccessInfo(null); }}
+                          className="p-1.5 text-slate-400 hover:text-slate-650 dark:hover:text-slate-100 rounded-lg text-xs font-bold cursor-pointer"
+                        >
+                          ✕ إغلاق الملف
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                            ملف متابعة العميل: <span className="text-indigo-600 dark:text-indigo-450">{selectedLeadForDetail.company}</span>
+                          </h4>
+                          <span className="p-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg">
+                            <Briefcase size={13} />
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Split Panel Body */}
+                      <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+                        
+                        {/* LEFT COLUMN: Comm Activity Logs & Add FollowUp Note (5 Cols) */}
+                        <div className="md:col-span-5 flex flex-col gap-4">
+                          
+                          {/* Log Follow-up Form */}
+                          <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-4 rounded-2xl shadow-soft space-y-3">
+                            <h5 className="text-[11px] font-black text-slate-800 dark:text-slate-200 flex items-center justify-end gap-1.5">
+                              <span>تسجيل مكالمة أو إجراء متابعة فنية</span>
+                              <PenTool size={11} className="text-indigo-500" />
+                            </h5>
+                            
+                            <div className="space-y-2.5 text-right">
+                              {/* Log Type presets */}
+                              <div className="flex gap-1.5 justify-end text-[10px] select-none">
+                                {[
+                                  { type: 'call', label: 'اتصال هاتف', color: 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-205' },
+                                  { type: 'email', label: 'بريد إلكتروني', color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-205' },
+                                  { type: 'meeting', label: 'اجتماع عمل', color: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-205' },
+                                  { type: 'offer', label: 'تقديم عرض مالي', color: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-205' }
+                                ].map(p => (
+                                  <button
+                                    key={p.type}
+                                    type="button"
+                                    onClick={() => setNewLogType(p.type as any)}
+                                    className={`p-1 px-1.5 rounded-lg border text-[9.5px] font-bold cursor-pointer transition-all ${
+                                      newLogType === p.type 
+                                        ? 'bg-slate-800 dark:bg-slate-700 text-white dark:text-white font-black scale-105 border-transparent' 
+                                        : `${p.color} border`
+                                    }`}
+                                  >
+                                    {p.label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              <textarea
+                                placeholder="اكتب في نقاط موضوع تواصلك: العميل مهتم بباقة الورش، يود اجتماع في فرجه بالجبيل، لديه ٣٠ شاحنة بحاجة لفحص..."
+                                value={newLogNote}
+                                onChange={(e) => setNewLogNote(e.target.value)}
+                                className="w-full h-16 text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none text-slate-705 dark:text-slate-105"
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() => addCommunicationLog(selectedLeadForDetail.id)}
+                                className="w-full p-2 bg-slate-800 hover:bg-slate-900 dark:bg-indigo-650 dark:hover:bg-indigo-700 text-white font-black text-[10.5px] rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                              >
+                                <Save size={12} />
+                                <span>إضافة تقرير المتابعة الحالية</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Chronological Communication Timeline logs */}
+                          <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-4 rounded-2xl shadow-soft flex-1 flex flex-col min-h-[160px]">
+                            <h5 className="text-[11px] font-black text-slate-800 dark:text-slate-200 block mb-3">{language === 'ar' ? 'سجل المباحثات والبيانات والـ Logs:' : 'CRM Touch Timeline:'}</h5>
+                            
+                            <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 max-h-[220px]">
+                              {(!selectedLeadForDetail.communicationLogs || selectedLeadForDetail.communicationLogs.length === 0) ? (
+                                <p className="text-[10px] text-slate-400 text-center py-8">{language === 'ar' ? 'لم يسجل لهذا العميل جهات متابعة حتى الآن.' : 'No communication logs logged.'}</p>
+                              ) : (
+                                (selectedLeadForDetail.communicationLogs as any[]).map((log, idx) => (
+                                  <div key={log.id || idx} className="flex gap-2.5 items-start text-xs border-r border-slate-100 dark:border-slate-850 pr-2 pt-0.5 relative">
+                                    {/* bullet icon depending on log type */}
+                                    <div className="p-1 rounded-md bg-slate-50 dark:bg-slate-950 shrink-0 border border-slate-100 dark:border-slate-850">
+                                      {log.type === 'call' && <Phone size={10} className="text-amber-500" />}
+                                      {log.type === 'email' && <Mail size={10} className="text-blue-500" />}
+                                      {log.type === 'meeting' && <Users size={10} className="text-indigo-500" />}
+                                      {log.type === 'offer' && <Award size={10} className="text-emerald-500" />}
+                                    </div>
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-[9.5px] font-bold text-slate-400">{log.date}</span>
+                                        <span className="p-0.5 px-1 rounded-md bg-slate-50 dark:bg-slate-950 font-mono text-[8px] text-slate-400 border border-slate-100 dark:border-slate-850">{log.agent || 'سيستم'}</span>
+                                      </div>
+                                      <p className="text-[10px] text-slate-650 dark:text-slate-300 leading-normal font-medium">{log.note}</p>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+
+                        </div>
+
+                        {/* RIGHT COLUMN: Business context profile & SaaS Cloud Provisioning (7 Cols) */}
+                        <div className="md:col-span-7 flex flex-col gap-4">
+                          
+                          {/* Client Profile Card */}
+                          <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-5 rounded-2xl shadow-soft space-y-3.5">
+                            <h5 className="text-[11px] font-black text-slate-850 dark:text-slate-100 border-b border-slate-100 dark:border-slate-850 pb-2">{language === 'ar' ? 'البطاقة الفنية للشركة' : 'Business Card Context'}</h5>
+                            
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-3 test-xs leading-normal">
+                              <div>
+                                <span className="text-[9px] text-slate-400 block font-bold">اسم العميل والمسؤول</span>
+                                <span className="text-[11px] font-black text-slate-700 dark:text-slate-205">{selectedLeadForDetail.name}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-400 block font-bold">الجهة / المؤسسة</span>
+                                <span className="text-[11px] font-black text-slate-705 dark:text-slate-200">{selectedLeadForDetail.company}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-400 block font-bold block mb-0.5">البريد الإلكتروني للاتصال</span>
+                                <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300 select-all">{selectedLeadForDetail.email}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-400 block font-bold block mb-0.5">جوال التواصل الفني</span>
+                                <span className="text-[11px] font-mono text-slate-705 dark:text-slate-200 select-all">{selectedLeadForDetail.phone}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-400 block font-bold">الأسطول التقديري للمقارنة</span>
+                                <span className="text-[11px] font-bold text-indigo-600 font-mono">{selectedLeadForDetail.fleetSize} شاحنة ومعدة</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-400 block font-bold">موقع المقر</span>
+                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-350">{selectedLeadForDetail.province}، {selectedLeadForDetail.country}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Interactive SaaS Provisioning Engine panel */}
+                          <div className="bg-indigo-900 border border-indigo-950 text-white rounded-2xl p-5 shadow-inner space-y-4 relative overflow-hidden flex-1 flex flex-col justify-between">
+                            
+                            {/* Abstract glowing background layout */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full filter blur-[50px] opacity-20 pointer-events-none" />
+                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500 rounded-full filter blur-[50px] opacity-20 pointer-events-none" />
+
+                            <div className="space-y-1.5 z-10 text-right">
+                              <h5 className="text-xs font-black text-white flex items-center justify-end gap-1.5 leading-none">
+                                <span>محرك تفعيل وتدشين اشتراكات الـ SaaS</span>
+                                <Zap size={13} className="text-amber-400" />
+                              </h5>
+                              <p className="text-[9.5px] text-slate-300 leading-relaxed">
+                                {language === 'ar' 
+                                  ? 'صلاحيات هذا المحرك تحكم إطلاق النظام الإلكتروني للعميل بشكل فوري. عند الضغط على زر التفعيل السحابي، يتم تمثيل تشغيل قاعدة بيانات ومستودعات عجلات الأسطول وحجز الموارد ومساحة الإذن السحابية المخصصة لأوامر العمل.'
+                                  : 'Provision isolated tenant environment with localized maintenance tables, mechanic credentials, and custom metrics.'}
+                              </p>
+                            </div>
+
+                            {/* Provision form setup */}
+                            <div className="space-y-3 z-10 font-sans">
+                              {/* If already has provisioned specs, show database credentials */}
+                              {selectedLeadForDetail.provisionedDetails ? (
+                                <div className="p-3 bg-slate-950/80 rounded-xl border border-indigo-400/10 space-y-2 font-mono text-[9.5px]">
+                                  <div className="flex items-center justify-between border-b border-slate-900 pb-1.5 text-right font-sans mb-1.5">
+                                    <span className="p-0.5 px-2 bg-emerald-100 text-emerald-750 text-[8px] rounded-md font-extrabold">✓ ACTIVE</span>
+                                    <span className="text-slate-400 font-extrabold">{language === 'ar' ? 'تفاصيل ترخيص المنصة:' : 'Provisioned SaaS Specs:'}</span>
+                                  </div>
+                                  <div className="flex justify-between gap-1 select-all hover:text-white transition-colors direction-ltr">
+                                    <span className="text-emerald-400">{selectedLeadForDetail.provisionedDetails.assignedSubdomain}</span>
+                                    <span className="text-slate-400">SUBDOMAIN:</span>
+                                  </div>
+                                  <div className="flex justify-between gap-1 select-all hover:text-white transition-colors direction-ltr">
+                                    <span className="text-slate-300">{selectedLeadForDetail.provisionedDetails.apiToken}</span>
+                                    <span className="text-slate-400">LICENSE_API:</span>
+                                  </div>
+                                  <div className="flex justify-between gap-1 select-all hover:text-white transition-colors direction-ltr">
+                                    <span className="text-indigo-400">{selectedLeadForDetail.provisionedDetails.databaseSchema}</span>
+                                    <span className="text-slate-400">TENANT_DB:</span>
+                                  </div>
+                                  <div className="flex justify-between gap-1 select-all hover:text-white transition-colors direction-ltr">
+                                    <span className="text-white font-extrabold">{selectedLeadForDetail.provisionedDetails.subscriptionExpires}</span>
+                                    <span className="text-slate-400">EXPIRES_AT:</span>
+                                  </div>
+                                  <div className="pt-2 text-[9px] text-slate-405 text-right font-sans border-t border-slate-900/60 leading-normal">
+                                    {language === 'ar' 
+                                      ? 'تم إرسال بريد التثبيت التلقائي للعميل ورابط الدخول الخاص بفنيي الورش.'
+                                      : 'Onboarding complete. Setup mail generated and dispatched through secure server SMTP.'}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-2.5">
+                                  {/* Select package preset */}
+                                  <div className="grid grid-cols-2 gap-2 text-right">
+                                    <div className="space-y-0.5">
+                                      <label className="text-[9px] font-bold text-slate-300 block">باقة الاشتراك</label>
+                                      <select
+                                        id="provision-package-type"
+                                        className="w-full text-right p-1.5 bg-indigo-950/70 border border-indigo-805 rounded-lg text-[10px] text-white outline-none cursor-pointer"
+                                      >
+                                        <option value="pro">Pro Fleet Admin (٢٥ ريال/مركبة)</option>
+                                        <option value="enterprise">Corporate Enterprise (٥٠ ريال/مركبة)</option>
+                                        <option value="basic">Basic S1-Lite (١٥ ريال/مركبة)</option>
+                                      </select>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      <label className="text-[9px] font-bold text-slate-300 block">فترة الترخيص الأولي</label>
+                                      <select
+                                        id="provision-license-months"
+                                        className="w-full text-right p-1.5 bg-indigo-950/70 border border-indigo-805 rounded-lg text-[10px] text-white outline-none cursor-pointer"
+                                      >
+                                        <option value="12">١٢ شهراً (سنة اشتراك مقدم)</option>
+                                        <option value="24">٢٤ شهراً (سنتين)</option>
+                                        <option value="6">٦ أشهر (باقة تجريبية قياسية)</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    disabled={isProvisioning || selectedLeadForDetail.status === 'lost'}
+                                    onClick={() => {
+                                      const pEl = document.getElementById('provision-package-type') as HTMLSelectElement;
+                                      const mEl = document.getElementById('provision-license-months') as HTMLSelectElement;
+                                      const pVal = pEl ? pEl.value : 'pro';
+                                      const mVal = mEl ? Number(mEl.value) : 12;
+                                      simulateOnboardingProspect(selectedLeadForDetail, pVal, mVal);
+                                    }}
+                                    className="w-full p-2.5 bg-white hover:bg-slate-100 text-indigo-900 disabled:opacity-50 font-black text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-md z-10"
+                                  >
+                                    {isProvisioning ? (
+                                      <>
+                                        <span className="w-3.5 h-3.5 border-2 border-indigo-900 border-t-transparent rounded-full animate-spin" />
+                                        <span>جاري فحص الموارد السحابية وبث الترخيص...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <UserCheck size={14} className="text-indigo-900" />
+                                        <span>تعميد عقد العميل وتفعيل المنصة السحابية</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                        </div>
+
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+
+            </div>
+          )}
+
+        {/* TAB EXTRA: COMPREHENSIVE AI SECURITY & AUTOMATONS REPOSITORY */}
+        {activeSubTab === 'robots' && (
+          <div className="space-y-6 animate-fade-in text-right">
+            
+            {/* Header Description block */}
+            <div className="bg-[#0B132B] text-slate-100 border border-slate-800 p-6 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${brandPrimaryColor}08` }} />
+              <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${brandPrimaryColor}08` }} />
+              
+              <div className="space-y-1.5 text-center md:text-right relative z-10 w-full md:w-auto">
+                <span className="p-1 px-2.5 rounded-lg text-[9px] font-black border inline-block" style={{ backgroundColor: `${brandPrimaryColor}15`, borderColor: `${brandPrimaryColor}25`, color: brandPrimaryColor }}>
+                  {language === 'ar' ? 'مستودع الأتمتة الكلي للـ SaaS' : 'SaaS Automation Autonomous Hub'}
+                </span>
+                <h4 className="text-base font-black text-white mt-1.5">
+                  {language === 'ar' ? 'مستودع ومكتبة روبوتات المبيعات وإسناد المهام الذكي' : 'Smart Autonomous AI Agents & Automatons Repository'}
+                </h4>
+                <p className="text-[11px] text-slate-400 max-w-2xl leading-relaxed">
+                  {language === 'ar' 
+                    ? 'رأس الحكمة لإدارة ساس ميكانيك 360 التلقائي: معالجات ذكية كمدير مشروع محترف تعمل خلف كواليس السيرفر. تقوم بتقليل التدخل البشري والرد الفوري وتوزيع المهام بدقة ١٠٠٪.'
+                    : 'A premium suite of background AI micro-agents working on schedules or events. They streamline client follow-ups, handle transactional analysis, dispatch workload checklists, and respond to incoming support queues autonomously.'}
+                </p>
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => setShowAddRobotModal(true)}
+                className="w-full md:w-auto p-3.5 px-6 text-white font-black text-xs rounded-2xl cursor-pointer transition-all shrink-0 flex items-center justify-center gap-2"
+                style={{ backgroundColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}30` }}
+              >
+                <Plus size={14} />
+                <span>{language === 'ar' ? 'تصميم وإدراج روبوت ذكي جديد' : 'Configure New Robo Agent'}</span>
+              </button>
+            </div>
+
+            {/* MAIN ROBOTICS INTEGRATED PANEL GRID */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start font-sans">
+              
+              {/* LEFT NAVIGATION COLUMN: ROBOTS CATALOG (5 cols) */}
+              <div className="lg:col-span-4 space-y-3.5">
+                <div className="bg-[#0B132B] border border-slate-800 p-4.5 rounded-3xl space-y-3 text-right">
+                  <h3 className="text-xs font-extrabold text-slate-200 flex items-center gap-2 justify-end">
+                    <span>{language === 'ar' ? 'كتالوج معالجات الأوتوماتون' : 'Active Micro-Bots'}</span>
+                    <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: brandPrimaryColor }} />
+                  </h3>
+                  
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {aiRobots.map(bot => {
+                      const isSelected = selectedRobotId === bot.id;
+                      let botIcon = <Users size={15} />;
+                      if (bot.icon === 'dollar') botIcon = <DollarSign size={15} />;
+                      if (bot.icon === 'briefcase') botIcon = <Briefcase size={15} />;
+                      if (bot.icon === 'message') botIcon = <MessageSquare size={15} />;
+                      if (bot.icon === 'zap') botIcon = <Zap size={15} />;
+                      if (bot.icon === 'shield') botIcon = <ShieldCheck size={15} />;
+                      if (bot.icon === 'activity') botIcon = <Activity size={15} />;
+                      if (bot.icon === 'database') botIcon = <Database size={15} />;
+
+                      return (
+                        <div
+                          key={bot.id}
+                          className={`p-3.5 rounded-2xl cursor-pointer transition-all border text-right relative group ${
+                            isSelected 
+                              ? 'bg-slate-900' 
+                              : 'bg-transparent border-slate-800 hover:bg-slate-900/30'
+                          }`}
+                          style={isSelected ? { borderColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}10` } : {}}
+                          onClick={() => setSelectedRobotId(bot.id)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            {/* Toggle & Delete */}
+                            <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRobotActive(bot.id)}
+                                className={`text-[9px] font-black p-1 px-2.5 rounded-lg border transition-all ${
+                                  bot.isActive 
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                                }`}
+                              >
+                                {bot.isActive ? (language === 'ar' ? 'نشط' : 'Active') : (language === 'ar' ? 'معطل' : 'Paused')}
+                              </button>
+                              
+                              {!['leads-auto', 'sales-analyst', 'team-dispatcher', 'support-responder'].includes(bot.id) && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteRobot(bot.id)}
+                                  className="p-1 px-1.5 text-slate-500 hover:text-rose-400 rounded transition-colors"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Bot Details */}
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1 justify-end">
+                              <div className="text-right flex-1 min-w-0">
+                                <h4 className="text-[11px] font-black text-slate-100 truncate group-hover:text-brand-blue-450 transition-colors" style={isSelected ? { color: brandPrimaryColor } : {}}>
+                                  {language === 'ar' ? bot.name : bot.nameEn}
+                                </h4>
+                                <span className="text-[9px] font-bold block mt-0.5 truncate uppercase" style={{ color: brandPrimaryColor }}>
+                                  {language === 'ar' ? bot.triggerEventAr : bot.triggerEvent}
+                                </span>
+                              </div>
+                              <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
+                                bot.isActive 
+                                  ? '' 
+                                  : 'bg-slate-800 text-slate-500 border-slate-700'
+                              }`}
+                              style={bot.isActive ? { backgroundColor: `${brandPrimaryColor}10`, color: brandPrimaryColor, borderColor: `${brandPrimaryColor}20` } : {}}
+                              >
+                                {botIcon}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Live pulse indicator glow */}
+                          {bot.isActive && (
+                            <span className="absolute bottom-2.5 right-2 w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Automation Quick Overview Card */}
+                <div className="bg-[#0B132B]/55 border border-slate-800/80 p-5 rounded-3xl text-right space-y-4">
+                  <h4 className="text-xs font-black text-slate-300">{language === 'ar' ? 'مؤشرات الأداء الكلية للمستودع' : 'Autonomous Performance Indicators'}</h4>
+                  <div className="grid grid-cols-2 gap-3 font-mono">
+                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl text-center">
+                      <span className="text-[8px] text-slate-500 font-extrabold block mb-1">{language === 'ar' ? 'إجمالي جولات الفحص' : 'Global Robo Runs'}</span>
+                      <strong className="text-base text-orange-400 font-extrabold block">
+                        {aiRobots.reduce((acc, b) => acc + b.stats.scansCount, 0)}
+                      </strong>
+                    </div>
+                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl text-center">
+                      <span className="text-[8px] text-slate-500 font-extrabold block mb-1">{language === 'ar' ? 'قرارات واجراءات مؤتمتة' : 'Decisions Triggered'}</span>
+                      <strong className="text-base text-emerald-400 font-extrabold block">
+                        {aiRobots.reduce((acc, b) => acc + b.stats.actionsTaken, 0)}
+                      </strong>
+                    </div>
+                  </div>
+                  <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 flex items-center justify-between text-right">
+                    <span className="text-[10px] text-slate-400 font-bold">{language === 'ar' ? 'معدل دقة الأتمتة الإجمالي' : 'Global Precision'}</span>
+                    <strong className="text-xs font-extrabold font-mono" style={{ color: brandPrimaryColor }}>97.4%</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT WORKBENCH COLUMN: WORK BENCH / TERMINAL LOGS / EMULATOR (7 cols) */}
+              <div className="lg:col-span-8">
+                {(() => {
+                  const bot = aiRobots.find(b => b.id === selectedRobotId);
+                  if (!bot) return null;
+
+                  let botIcon = <Users size={16} />;
+                  if (bot.icon === 'dollar') botIcon = <DollarSign size={16} />;
+                  if (bot.icon === 'briefcase') botIcon = <Briefcase size={16} />;
+                  if (bot.icon === 'message') botIcon = <MessageSquare size={16} />;
+                  if (bot.icon === 'zap') botIcon = <Zap size={16} />;
+                  if (bot.icon === 'shield') botIcon = <ShieldCheck size={16} />;
+                  if (bot.icon === 'activity') botIcon = <Activity size={16} />;
+                  if (bot.icon === 'database') botIcon = <Database size={16} />;
+
+                  return (
+                    <div className="space-y-6">
+                      {/* Robo Focus Details Workbench */}
+                      <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl p-5 shadow-soft space-y-5 text-right">
+                        {/* Upper Section */}
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                            <div className="text-right">
+                              <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2 justify-end">
+                                <span>{language === 'ar' ? bot.name : bot.nameEn}</span>
+                                <span className={`w-2 h-2 rounded-full ${bot.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                              </h3>
+                              <span className="text-[10px] font-bold block mt-0.5" style={{ color: brandPrimaryColor }}>
+                                {language === 'ar' ? `الحدث المثير: ${bot.triggerEventAr}` : `Trigger: ${bot.triggerEvent}`}
+                              </span>
+                            </div>
+                            <span className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border" style={{ backgroundColor: `${brandPrimaryColor}10`, color: brandPrimaryColor, borderColor: `${brandPrimaryColor}20` }}>
+                              {botIcon}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleRobotActive(bot.id)}
+                              className={`p-2 px-3.5 text-xs font-black rounded-xl cursor-pointer transition-all ${
+                                bot.isActive 
+                                  ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-450 border border-rose-200/50 dark:border-rose-900/30' 
+                                  : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/30'
+                              }`}
+                            >
+                              {bot.isActive ? (language === 'ar' ? 'إيقاف مؤقت' : 'Pause Agent') : (language === 'ar' ? 'تفعيل الروبوت' : 'Resume Agent')}
+                            </button>
+                            
+                            <button
+                              type="button"
+                              disabled={robotSimStatus.status !== 'idle'}
+                              onClick={() => handleSimulateRobotExecution(bot.id)}
+                              className={`p-2 px-4 text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 ${
+                                robotSimStatus.status !== 'idle' 
+                                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200' 
+                                  : 'text-white shadow-md hover:-translate-y-0.5'
+                              }`}
+                              style={robotSimStatus.status === 'idle' ? { backgroundColor: brandPrimaryColor, boxShadow: `0 4px 6px -1px ${brandPrimaryColor}20` } : {}}
+                            >
+                              <Zap size={11} className={robotSimStatus.robotId === bot.id ? 'animate-bounce' : ''} />
+                              <span>{language === 'ar' ? 'فحص يدوي فوري' : 'Trigger Manual Loop'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                         {/* Description */}
+                        <div>
+                          <h4 className="text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">{language === 'ar' ? 'هدف ورسالة الروبوت الفنية' : 'Mission & Role Objective'}</h4>
+                          <p className="text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed font-semibold font-sans">
+                            {language === 'ar' ? bot.description : bot.descriptionEn}
+                          </p>
+                        </div>
+
+                        {/* Special Custom Interactive Dashboard for System Integrity Agent */}
+                        {bot.id === 'system-integrity' && (
+                          <div className="p-4 bg-gradient-to-br from-[#0e1628]/95 to-[#080d1a] border border-[#1e2a4a] rounded-2xl text-right space-y-4 shadow-md font-sans">
+                            <div className="flex items-center justify-between border-b border-[#1b253b] pb-2.5">
+                              <div className="flex items-center gap-1.5 font-mono text-[9px] text-[#22c55e]">
+                                <span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full animate-ping" />
+                                <span>100% ONLINE</span>
+                              </div>
+                              <h4 className="text-xs font-black text-white flex items-center gap-2">
+                                <Cpu size={14} className="text-indigo-400" />
+                                <span>{language === 'ar' ? 'فاحص ومحلل التماسك وصيانة منافذ النظام الذكي' : 'Live System Connectivity & Integrity Analyzer'}</span>
+                              </h4>
+                            </div>
+
+                            <p className="text-[10px] text-slate-450 leading-relaxed max-w-xl">
+                              {language === 'ar'
+                                ? 'يقوم الوكيل الذكي بإنقاذ الكاش، فحص ريجسترات التخزين المحلي، واختبار الإتصال السحابي المباشر بقواعد بيانات Firestore وقياس زمن استجابة المنافذ الرقمية تذكرة الدعم والاتصال.'
+                                : 'Perform dynamic diagnostics on cloud tables, API endpoints, and clean local memory blocks.'}
+                            </p>
+
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+                              {/* Remote AI Authorization Checkbox */}
+                              <label className="flex items-center gap-2.5 cursor-pointer select-none bg-[#131b2e] border border-[#202d4a] hover:border-indigo-505/50 p-2.5 rounded-xl transition-all w-full sm:w-auto text-right">
+                                <input 
+                                  type="checkbox"
+                                  checked={isRemoteAuthAuthorized}
+                                  onChange={handleToggleRemoteAuth}
+                                  className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-0 cursor-pointer shrink-0 accent-indigo-650"
+                                />
+                                <div className="text-right">
+                                  <span className="text-[10.5px] font-black text-white block">
+                                    {language === 'ar' ? 'تفويض الصيانة الذكية عن بُعد' : 'Remote Maintenance Authorization'}
+                                  </span>
+                                  <span className="text-[8.5px] text-slate-400 block mt-0.5">
+                                    {isRemoteAuthAuthorized 
+                                      ? (language === 'ar' ? '✓ تم تفويض الروبوت بالتدخل التلقائي' : '✓ Full active cloud permissions granted')
+                                      : (language === 'ar' ? 'قم بتنشيط رخصة الصيانة التلقائية السيرفرية' : 'Grant agent permissions to patch cloud databases')}
+                                  </span>
+                                </div>
+                              </label>
+
+                              {/* Manual Trigger Button */}
+                              <button
+                                type="button"
+                                disabled={robotSimStatus.status !== 'idle'}
+                                onClick={() => handleSimulateRobotExecution('system-integrity')}
+                                className={`w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-black cursor-pointer shadow-md transition-all flex items-center justify-center gap-2 border ${
+                                  robotSimStatus.status !== 'idle'
+                                    ? 'bg-[#1e2530] text-slate-500 border-transparent cursor-not-allowed'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 border-emerald-500 text-white hover:scale-[1.015]'
+                                }`}
+                              >
+                                <span>⚡ {language === 'ar' ? 'تشغيل فحص وصيانة النظام فورا' : 'Trigger Active System Audit'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Config Tab & Performance stats */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-850 text-right">
+                            <span className="text-[8px] text-slate-400 block font-extrabold leading-none mb-1">{language === 'ar' ? 'عدد جولات الفحص' : 'Scans'}</span>
+                            <span className="text-sm font-black text-slate-800 dark:text-slate-200 font-mono leading-none">{bot.stats.scansCount}</span>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-850 text-right">
+                            <span className="text-[8px] text-slate-400 block font-extrabold leading-none mb-1">{language === 'ar' ? 'الإجراءات المؤتمتة الصادرة' : 'Actions Dispatched'}</span>
+                            <span className="text-sm font-black font-mono leading-none" style={{ color: brandPrimaryColor }}>{bot.stats.actionsTaken}</span>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-850 text-right">
+                            <span className="text-[8px] text-slate-400 block font-extrabold leading-none mb-1">{language === 'ar' ? 'مؤشر كفاءة القرار' : 'Success Rate'}</span>
+                            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono leading-none">{bot.stats.efficiencyRating}</span>
+                          </div>
+                        </div>
+
+                        {/* System Prompt Instructions Editor */}
+                        <div className="space-y-2 pt-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-black uppercase font-mono" style={{ color: brandPrimaryColor }}>system_instructions (prompt)</span>
+                            <span className="text-[9px] text-slate-400 font-bold">{language === 'ar' ? 'تعديل السلوك العام للذكاء الاصطناعي' : 'Customize Model Prompt'}</span>
+                          </div>
+                          <div className="relative">
+                            <textarea
+                              rows={3}
+                              defaultValue={bot.prompt}
+                              onBlur={e => handleUpdateRobotPrompt(bot.id, e.target.value)}
+                              className="w-full bg-slate-50 dark:bg-slate-950/80 text-xs font-sans border border-slate-205 dark:border-slate-850 rounded-2xl p-3 text-right focus:outline-none focus:border-brand-blue-500 leading-relaxed text-slate-750 dark:text-slate-300"
+                              placeholder={language === 'ar' ? 'اكتب تعليمات السلوك والهدف لهذا الروبوت البرمجى...' : 'Set the model directive...'}
+                            />
+                            <div className="absolute bottom-2.5 left-2.5">
+                              <span className="p-1 px-2 bg-slate-200 dark:bg-slate-800 text-slate-500 rounded text-[8px] font-black uppercase tracking-wider leading-none pointer-events-none">
+                                {language === 'ar' ? 'يتم الحفظ تلقائياً' : 'Auto Saved'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* SIMULATION VISUAL FEEDBACK BAR */}
+                        {robotSimStatus.status !== 'idle' && robotSimStatus.robotId === bot.id && (
+                          <div className="bg-slate-50 dark:bg-slate-950 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-right space-y-3 animate-pulse">
+                            <div className="flex items-center justify-between text-xs font-extrabold">
+                              <span className="font-mono" style={{ color: brandPrimaryColor }}>{robotSimStatus.progress}%</span>
+                              <span className="text-slate-705 dark:text-slate-300 flex items-center gap-2">
+                                <RefreshCw size={11.5} className="animate-spin" style={{ color: brandPrimaryColor }} />
+                                <span>{robotSimStatus.message}</span>
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{ width: `${robotSimStatus.progress}%`, backgroundColor: brandPrimaryColor }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* LIVE TERMINAL PRINT LOGS CONSOLE */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleClearRobotLogs(bot.id)}
+                                className="p-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-450 text-[9.5px] font-black rounded-lg border border-slate-200/50 dark:border-slate-750/30 transition-colors cursor-pointer"
+                              >
+                                {language === 'ar' ? 'مسح سجل المخرجات' : 'Clear Terminal'}
+                              </button>
+                            </div>
+                            <h4 className="text-[10.5px] font-black text-slate-400 tracking-wider flex items-center gap-1.5 justify-end">
+                              <span>{language === 'ar' ? 'شاشة الرصد والتقارير الحية (Terminal)' : 'Live Agent Output Monitor'}</span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                            </h4>
+                          </div>
+
+                          <div className="bg-slate-950 text-slate-300 font-mono text-[10.5px] p-4 rounded-2xl border border-slate-850 h-[220px] overflow-y-auto space-y-2 px-4.5 text-right select-text text-right" style={{ direction: 'rtl' }}>
+                            {bot.logs && bot.logs.length > 0 ? (
+                              bot.logs.map((logLine, idx) => {
+                                // Add beautiful color highlights based on brackets
+                                let logColor = 'text-slate-300';
+                                if (logLine.includes('[نظام]')) logColor = 'text-indigo-400';
+                                if (logLine.includes('[فحص]')) logColor = 'text-amber-400';
+                                if (logLine.includes('[تحديث]')) logColor = 'text-blue-400';
+                                if (logLine.includes('[تم]') || logLine.includes('[تأكيد]')) logColor = 'text-emerald-400 font-bold';
+                                if (logLine.includes('[أتمتة]') || logLine.includes('[صيانة]')) logColor = 'text-purple-405 font-medium';
+                                if (logLine.includes('[تواصل]')) logColor = 'text-sky-450';
+                                if (logLine.includes('[تفتيش]')) logColor = 'text-yellow-400';
+                                if (logLine.includes('[تخزين]')) logColor = 'text-cyan-400';
+                                if (logLine.includes('[أمن]')) logColor = 'text-rose-400 font-semibold';
+                                if (logLine.includes('[مالي]')) logColor = 'text-emerald-400 font-black';
+                                if (logLine.includes('[ذكاء]')) logColor = 'text-fuchsia-400';
+                                if (logLine.includes('[توقع]')) logColor = 'text-indigo-450';
+                                if (logLine.includes('[توجيه]')) logColor = 'text-orange-400';
+                                if (logLine.includes('[استقبال]')) logColor = 'text-cyan-400';
+                                if (logLine.includes('[تأسيس]')) logColor = 'text-purple-500';
+
+                                return (
+                                  <div key={idx} className={`leading-relaxed tracking-wide ${logColor}`}>
+                                    {logLine}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-center text-slate-650 py-12 font-sans text-xs">
+                                Ready to stream micro-bot signals.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+            </div>
+
+            {/* -------------------- MODAL: CREATE CUSTOM SMART ROBOT AGENT -------------------- */}
+            <AnimatePresence>
+              {showAddRobotModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 overflow-y-auto">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                    className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl text-right font-sans"
+                  >
+                    <div className="p-4 px-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddRobotModal(false)}
+                        className="p-1.5 text-slate-400 hover:text-slate-655 dark:hover:text-slate-100 rounded-lg text-xs font-bold cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>{language === 'ar' ? 'تصميم وإدراج روبوت ذكي جديد فى السحابة' : 'Configure New AI Robo Agent'}</span>
+                        <Sparkles size={14} className="animate-spin duration-5000" style={{ color: brandPrimaryColor }} />
+                      </h4>
+                    </div>
+
+                    <form onSubmit={handleCreateNewRobot} className="p-6 space-y-4">
+                      <div className="space-y-3 text-right">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          {/* Name Ar */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'اسم الروبوت (بالعربية) *' : 'Agent Name (Arabic) *'}</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="مثال: بوت تهنئة الأعياد والمناسبات"
+                              value={newRobotForm.name}
+                              onChange={(e) => setNewRobotForm({ ...newRobotForm, name: e.target.value })}
+                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+
+                          {/* Name En */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'اسم الروبوت (بالإنجليزية)' : 'Agent Name (English)'}</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Holidays Congratulator"
+                              value={newRobotForm.nameEn}
+                              onChange={(e) => setNewRobotForm({ ...newRobotForm, nameEn: e.target.value })}
+                              className="w-full text-left p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Description Ar */}
+                        <div className="space-y-1">
+                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'الوصف ووظيفة الأوتوماتون (بالعربية) *' : 'Agent Objective (Arabic) *'}</label>
+                          <textarea
+                            rows={2}
+                            required
+                            placeholder="اشرح باختصار ووضوح: ماذا يفعل الروبوت ومتى يتدخل..."
+                            value={newRobotForm.description}
+                            onChange={(e) => setNewRobotForm({ ...newRobotForm, description: e.target.value })}
+                            className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-right">
+                          {/* Trigger event */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'الحدث المحفز (Trigger - بالعربية) *' : 'Trigger Event (Arabic) *'}</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="مثال: عند إضافة مراجعة جديدة"
+                              value={newRobotForm.triggerEventAr}
+                              onChange={(e) => setNewRobotForm({ ...newRobotForm, triggerEventAr: e.target.value })}
+                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+
+                          {/* Trigger event En */}
+                          <div className="space-y-1">
+                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'الحدث المحفز (بالإنجليزية)' : 'Trigger Event (English)'}</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. On New Review Submitted"
+                              value={newRobotForm.triggerEvent}
+                              onChange={(e) => setNewRobotForm({ ...newRobotForm, triggerEvent: e.target.value })}
+                              className="w-full text-left p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Icon Selection */}
+                        <div className="space-y-1">
+                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'رمز / أيقونة الروبوت' : 'Select Representative Icon'}</label>
+                          <div className="grid grid-cols-4 gap-2">
+                            {[
+                              { id: 'users', label: language === 'ar' ? 'مستخدمين' : 'Users' },
+                              { id: 'dollar', label: language === 'ar' ? 'مبيعات' : 'Sales' },
+                              { id: 'briefcase', label: language === 'ar' ? 'مهام' : 'Tasks' },
+                              { id: 'zap', label: language === 'ar' ? 'طاقة/فحص' : 'Intelli' },
+                              { id: 'shield', label: language === 'ar' ? 'صيانة/أمن' : 'Shield' },
+                              { id: 'activity', label: language === 'ar' ? 'نبض/نشاط' : 'Activity' },
+                              { id: 'database', label: language === 'ar' ? 'داتا' : 'Data' }
+                            ].map(ic => (
+                              <button
+                                type="button"
+                                key={ic.id}
+                                onClick={() => setNewRobotForm({ ...newRobotForm, icon: ic.id })}
+                                className={`p-2.5 rounded-xl text-[11px] font-black border transition-all cursor-pointer ${
+                                  newRobotForm.icon === ic.id 
+                                    ? 'border' 
+                                    : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-850 text-slate-500 hover:bg-slate-100'
+                                }`}
+                                style={newRobotForm.icon === ic.id ? { backgroundColor: `${brandPrimaryColor}10`, borderColor: brandPrimaryColor, color: brandPrimaryColor } : {}}
+                              >
+                                {ic.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Prompt instructions */}
+                        <div className="space-y-1">
+                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'موجه وتعليمات الذكاء الاصطناعي (Prompt Guide) *' : 'AI Agent Prompt Instructions *'}</label>
+                          <textarea
+                            rows={3}
+                            required
+                            placeholder="مثال: أنت وكيل مخصص لتحديد مناسبات العملاء وإرسال كروت خصم 10% لخدمات صيانة ميكانيك وسوائل الورش..."
+                            value={newRobotForm.prompt}
+                            onChange={(e) => setNewRobotForm({ ...newRobotForm, prompt: e.target.value })}
+                            className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100 leading-relaxed font-sans"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddRobotModal(false)}
+                          className="px-4.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-350 text-xs font-black rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer"
+                        >
+                          {language === 'ar' ? 'إلغاء الأمر' : 'Cancel'}
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-5 py-2.5 text-white text-xs font-black rounded-xl cursor-pointer shadow-md"
+                          style={{ backgroundColor: brandPrimaryColor, boxShadow: `0 4px 6px -1px ${brandPrimaryColor}20` }}
+                        >
+                          {language === 'ar' ? 'إدراج وتفعيل الروبوت' : 'Deploy Robo Agent'}
+                        </button>
+                      </div>
+                    </form>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
+          </div>
+        )}
+
+        {/* TAB EXTRA: COMPREHENSIVE SAAS ENTERPRISE LAUNCH PLANNER (PM MASTER ROADMAP) */}
+        {activeSubTab === 'launch-planner' && (
+          <div className="space-y-6 text-right">
+            
+            {/* PM ROADMAP HEADER & PROGRESS */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl p-6 shadow-soft space-y-6 font-sans">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="space-y-1.5 text-center md:text-right">
+                  <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 p-1 px-3 text-[10px] font-black rounded-lg border border-amber-200/20">
+                    <Award size={12} />
+                    <span>{language === 'ar' ? 'منهجية إدارة الأساطيل والـ SaaS الدولية' : 'SaaS Launch Methodology'}</span>
+                  </div>
+                  <h3 className="text-[17px] font-black text-slate-900 dark:text-white">
+                    {language === 'ar' ? 'خريطة طريق ودليل إطلاق مشروع SaaS المتكامل للشركات' : 'Enterprise SaaS Launch Master Roadmap'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 max-w-2xl leading-relaxed">
+                    {language === 'ar'
+                      ? 'مرحباً بك حضرة مدير المشروع المحترف. إليك التخطيط الاستراتيجي المتكامل خطوة بخطوة لتهيئة وإطلاق نظام الـ SaaS للعملاء والشركات. قم بمتابعة وإثبات إنجاز كل مرحلة لتطبيق الانطلاق الفعلي بثقة.'
+                      : 'Step-by-step master plan to initialize, secure, white-label, and scale your fleet management SaaS platform to corporate clients.'}
+                  </p>
+                </div>
+
+                {/* Progress Circle/Pill */}
+                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850/60 text-center min-w-[150px]">
+                  <span className="text-[9px] text-slate-400 font-bold block mb-1">{language === 'ar' ? 'معدل جاهزية الإطلاق العام' : 'Launch Readiness Rate'}</span>
+                  <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                    {Math.round((launchSteps.filter(s => s.status === 'completed').length / launchSteps.length) * 100)}%
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-805 h-1.5 rounded-full mt-2 overflow-hidden">
+                    <div 
+                      className="bg-indigo-650 h-full rounded-full transition-all duration-550"
+                      style={{ width: `${(launchSteps.filter(s => s.status === 'completed').length / launchSteps.length) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* FIRST STEP & KEY CONTEXT ADVICE */}
+              <div className="p-4 bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100/30 dark:border-indigo-900/10 rounded-2xl flex flex-col md:flex-row gap-4 items-start">
+                <div className="p-2.5 bg-indigo-100 dark:bg-indigo-905 text-indigo-700 dark:text-indigo-400 rounded-xl shrink-0">
+                  <BookOpen size={18} />
+                </div>
+                <div className="space-y-1.5 leading-relaxed">
+                  <h4 className="text-xs font-black text-indigo-900 dark:text-indigo-300">{language === 'ar' ? 'نصيحة المدير التنفيذي للمشروع لرفع الحصة السوقية:' : 'Executive PM Strategy Directive:'}</h4>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400">
+                    {language === 'ar'
+                      ? 'لجعل الشركات تثق بمنتجك وتدفع اشتراكات سنوية عالية، ركّز على تقديم فحص الأمان الذكي للورش عبر نظام "الذكاء الاصطناعي" و "تحصين الأساطيل". هذا ما يبحث عنه صناع القرار ومسؤولو الصيانة. تأكد من تفعيل الاتصال بقاعدة بيانات Firebase لتوفير تجربة ديمو تفاعلية فورية خالية من فترات الانتظار لتجربتها أمام المسؤولين.'
+                      : 'To win large logistics contracts, focus on demonstrating predictive workshop scheduling and enterprise security. Real-time Firebase synchronization ensures customer managers experience direct zero-latency fleet coordination on demo runs.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* INTERACTIVE PM CHECKS GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {launchSteps.map((s, index) => {
+                const isDone = s.status === 'completed';
+                return (
+                  <div 
+                    key={s.id}
+                    className={`bg-white dark:bg-slate-900 border transition-all rounded-3xl p-5 shadow-soft flex flex-col justify-between gap-5 relative overflow-hidden ${
+                      isDone 
+                        ? 'border-emerald-200/60 bg-emerald-50/5 dark:bg-emerald-950/5' 
+                        : 'border-slate-150 dark:border-slate-800'
+                    }`}
+                  >
+                    {/* Phase Banner */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-slate-400 font-mono">STAGE {index + 1} / {launchSteps.length}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleLaunchStep(s.id)}
+                          className={`p-1 px-2.5 rounded-lg text-[9px] font-black cursor-pointer transition-all flex items-center gap-1.5 border ${
+                            isDone 
+                              ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/20' 
+                              : 'bg-slate-50 dark:bg-slate-950 text-slate-500 border-slate-205'
+                          }`}
+                        >
+                          <Check size={10} strokeWidth={3} />
+                          <span>{isDone ? (language === 'ar' ? 'مكتمل' : 'Done') : (language === 'ar' ? 'انتظار...' : 'Pending')}</span>
+                        </button>
+                      </div>
+
+                      <h4 className="text-[12px] font-black text-slate-900 dark:text-white leading-snug">
+                        {language === 'ar' ? s.titleAr : s.titleEn}
+                      </h4>
+                      <p className="text-[10px] text-slate-400 font-bold">
+                        {language === 'ar' ? s.phaseAr : s.phase}
+                      </p>
+                      
+                      <div className="h-px bg-slate-100 dark:bg-slate-850/65 my-2.5" />
+
+                      <p className="text-[10.5px] text-slate-550 dark:text-slate-400 leading-relaxed">
+                        {language === 'ar' ? s.descAr : s.descEn}
+                      </p>
+                    </div>
+
+                    {/* Action Guideline details inside the bento item */}
+                    <div className="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-105 dark:border-slate-850/40 text-[9.5px] text-slate-500 leading-normal flex items-start gap-2">
+                      <Info size={12} className="text-indigo-500 mt-0.5 shrink-0" />
+                      <div>
+                        {index === 0 && (language === 'ar' ? 'الوضع السحابي لـ Firebase معد وجاهز للعمل بمجرد تكوينه ليكون العقد الفعلي آمن ومستدام.' : 'Firebase backend config is ready and fully tested inside local server configuration for production.')}
+                        {index === 1 && (language === 'ar' ? 'عدّل اسم علامتك التجارية ونظام الألوان من التبويب المجاور للتحكم بما يظهر للمشتركين بصفحة الهبوط.' : 'Branding updates dynamically on public pages, establishing premium White-label authority immediately.')}
+                        {index === 2 && (language === 'ar' ? 'يتكامل نظام السداد مع Stripe SDK لتوفير تتبع الإيرادات مباشرة للشركات.' : 'Subscriptions map through checkout routes; webhooks handle auto-provisioning of premium accounts.')}
+                        {index === 3 && (language === 'ar' ? 'تدريع صلاحيات أصحاب الأساطيل ومسؤولي الصيانة يمنع تداخل الورش ويحمي الخصوصية.' : 'Robust policy layers ensure separation of tenant environments in mutli-fleet setups.')}
+                        {index === 4 && (language === 'ar' ? 'أي تجربة تسجيل أو حاسبة ROI ناجحة من موقعك التسويقي تغذي وتغذي هذا الجدول سحابياً.' : 'Public landing registrations and calculators write to Firebase collections directly for full CRM follow-ups.')}
+                        {index === 5 && (language === 'ar' ? 'اربط نطاقك المخصص عبر إعدادات DNS الموجهة لخادم Cloud Run بثوان معدودة.' : 'Simply configure DNS records pointing to the proxy router on container server side.')}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* STRATEGIC STEP BY STEP ACTION PLAN (A TO Z ADVICE FOR SAAS COMPANIES) */}
+            <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-6 shadow-soft space-y-6 text-right font-sans">
+              <div>
+                <h3 className="text-sm font-black text-white flex items-center gap-2 justify-end">
+                  <span>{language === 'ar' ? 'خطة تفعيل وإطلاق نموذج الساس (SaaS Go-To-Market Guide)' : 'SaaS Go-To-Market Execution Steps'}</span>
+                  <Zap size={14} className="text-amber-400" />
+                </h3>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  {language === 'ar' ? 'الخطوات التشغيلية لمدير المشروع لإطلاق الخدمة للشركات الأخرى وإدارتها واحدةً تلو الأخرى:' : 'Chronological operational manual for managers to successfully onboard business clients.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans leading-relaxed">
+                {/* Step 1 Advice */}
+                <div className="p-4 bg-slate-950 rounded-2xl space-y-2 border border-slate-800/40">
+                  <div className="flex items-center gap-2 justify-end">
+                    <span className="text-[10px] font-black text-indigo-400">الخطوة الأولى / Step 1</span>
+                    <span className="w-5 h-5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">1</span>
+                  </div>
+                  <h4 className="text-[11.5px] font-black text-slate-200">{language === 'ar' ? 'اعتماد الهوية والاسم التجاري الفريد' : 'Finalize the Custom Identity'}</h4>
+                  <p className="text-[10px] text-slate-400">
+                    {language === 'ar'
+                      ? 'قبل أي شيء، حدد مسمى المنتج اللائق بفئة الشركات المستهدفة (مثال: أساطيل الخليج، ناقل ٣٦٠). غيّر المسمى السحابي من لوحة الهوية هنا ليتغير الشعار وجميع النصوص على الموقع واللوحة بشكل مؤتمت.'
+                      : 'Define and lock your target brand first. Update it in the Custom Branding panel next to this tab, which automatically replaces layout text and values everywhere.'}
+                  </p>
+                </div>
+
+                {/* Step 2 Advice */}
+                <div className="p-4 bg-slate-950 rounded-2xl space-y-2 border border-slate-800/40">
+                  <div className="flex items-center gap-2 justify-end">
+                    <span className="text-[10px] font-black text-indigo-400">الخطوة الثانية / Step 2</span>
+                    <span className="w-5 h-5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">2</span>
+                  </div>
+                  <h4 className="text-[11.5px] font-black text-slate-200">{language === 'ar' ? 'تفعيل الاتصال السحابي بقاعدة البيانات' : 'Enable Firebase Cloud Mode'}</h4>
+                  <p className="text-[10px] text-slate-400">
+                    {language === 'ar'
+                      ? 'قم بالانتقال إلى وضع السحابة السحابي. ستتصل لوحة تحكمك بقاعدة Firebase Firestore السحابية فورياً لكافة السجلات (المشتركين، العملاء، التقييمات، مميزات الخدمة)، وهي نفس السلة الآمنة التي يتصل بها نموذج الويب التسويقي.'
+                      : 'Switch to Cloud Mode. Your admin dashboard links instantly to Firebase cloud collections. Any demo request or audit lead submitted securely feeds into your central desk.'}
+                  </p>
+                </div>
+
+                {/* Step 3 Advice */}
+                <div className="p-4 bg-slate-950 rounded-2xl space-y-2 border border-slate-800/40">
+                  <div className="flex items-center gap-2 justify-end">
+                    <span className="text-[10px] font-black text-indigo-400">الخطوة الثالثة / Step 3</span>
+                    <span className="w-5 h-5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">3</span>
+                  </div>
+                  <h4 className="text-[11.5px] font-black text-slate-200">{language === 'ar' ? 'تنفيذ عروض ديمو للمهتمين الميدانيين' : 'Execute Pilot Demos & Follow-up'}</h4>
+                  <p className="text-[10px] text-slate-400">
+                    {language === 'ar'
+                      ? 'عند قدوم أي عميل مهتم بصفحة الهبوط (زيادة حجم الأسطول)، يمكنك تتبع بياناته، هاتف، بريد، حجم الأسطول من جدول المشتركين، وكتابة تدوينات الدعم الفني، وتحديد نوع الباقة، والتواصل الفردي لتوقيع العقد الرسمي.'
+                      : 'Once potential subscriber leads land here, track Fleet size, email, phone, and write team notes inside the CRM. Directly convert contacts to paid enterprises on custom terms.'}
+                  </p>
+                </div>
+
+                {/* Step 4 Advice */}
+                <div className="p-4 bg-slate-950 rounded-2xl space-y-2 border border-slate-800/40">
+                  <div className="flex items-center gap-2 justify-end">
+                    <span className="text-[10px] font-black text-indigo-400">الخطوة الرابعة / Step 4</span>
+                    <span className="w-5 h-5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">4</span>
+                  </div>
+                  <h4 className="text-[11.5px] font-black text-slate-200">{language === 'ar' ? 'ربط وإعلان بوابات الدفع الإلكتروني' : 'Deploy Stripe Checkout & Go Public'}</h4>
+                  <p className="text-[10px] text-slate-400">
+                    {language === 'ar'
+                      ? 'ادمج بوابة Stripe لتلقي الأموال آلياً. ثم اربط الدومين المخصص لشركتك، ومبارك عليك! لقد أسست مشروع ساس (SaaS) تجاري متكامل لإدارة الورش والأساطيل قابل للتوسع عالمياً وجني أرباح الاشتراكات الدورية.'
+                      : 'Onboard Stripe directly for global recurring bills, connect your custom commercial domain name, and hit start. You are now running an automated enterprise SaaS business!'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 2: GENERAL IDENTITY SIZING BRAND SETTINGS */}
+        {activeSubTab === 'identity' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-right">
+            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-6 rounded-3xl space-y-5 shadow-soft">
+              <h3 className="text-xs font-black text-slate-900 dark:text-white">إعداد هوية وشعار منظومة الـ SaaS للورش</h3>
+              <p className="text-[10px] text-slate-400 -mt-3.5">هذه الخيارات تحكم مسمى وألوان المنصة في الموقع الخارجي وبوابة الفنيين المجمعة.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-705 text-slate-700 dark:text-slate-200 block">اسم المنصة (العربية)</label>
+                  <input
+                    type="text"
+                    value={saasBrandName}
+                    onChange={(e) => setSaasBrandName(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-sans text-slate-700 dark:text-slate-100"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 dark:text-slate-200 block">نوع ومستوى اللون الأساسي للماركة</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={brandPrimaryColor}
+                      onChange={(e) => setBrandPrimaryColor(e.target.value)}
+                      className="w-12 h-9 p-0.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-xl cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={brandPrimaryColor}
+                      onChange={(e) => setBrandPrimaryColor(e.target.value)}
+                      className="flex-1 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-700 dark:text-slate-100 text-center"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-black text-slate-705 text-slate-700 dark:text-slate-200 block">وصف أو شعار المنصة التسويقي القصير</label>
+                <textarea
+                  value={saasBrandDesc}
+                  onChange={(e) => setSaasBrandDesc(e.target.value)}
+                  className="w-full p-2.5 h-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-700 dark:text-slate-100"
+                  placeholder="شركة موثوقة لحل صيانة سيارات وأسطول ومخازن المؤسسات التجارية والصناعية..."
+                />
+              </div>
+
+              {/* Sample standard presets for color styling */}
+              <div className="space-y-1.5 select-none">
+                <span className="text-[9.5px] uppercase tracking-wider text-slate-400 font-bold block">مجموعات ألوان مفترضة مقترحة:</span>
+                <div className="flex gap-1.5 flex-wrap">
+                  {[
+                    { name: 'الملكي الأزرق', val: '#1e53e4' },
+                    { name: 'الفيروزي الحديث', val: '#0d9488' },
+                    { name: 'الميكانيكي القرمزي', val: '#dc2626' },
+                    { name: 'البركاني الفخم', val: '#f97316' },
+                    { name: 'البنفسجي الإمبريالي', val: '#6d28d9' },
+                    { name: 'منت غلاسيه', val: '#059669' }
+                  ].map((p, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setBrandPrimaryColor(p.val)}
+                      className="p-1 px-2 border border-slate-200 dark:border-slate-800 hover:border-slate-350 dark:hover:border-slate-505 rounded-xl text-[10px] text-slate-700 dark:text-slate-300 transition-all flex items-center gap-1.5 cursor-pointer bg-slate-50 dark:bg-slate-950"
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: p.val }} />
+                      <span>{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-6 rounded-3xl space-y-4 shadow-soft flex flex-col justify-between">
+              <div className="space-y-3">
+                <h3 className="text-xs font-black text-slate-900 dark:text-white">معاينة العلامة المخصصة</h3>
+                <p className="text-[10px] text-slate-400">كيف تظهر الهوية في ترويسة وعناصر النظام الإلكتروني:</p>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-850 space-y-3 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="p-1.5 rounded-lg text-white" style={{ backgroundColor: brandPrimaryColor }}>
+                      <Globe2 size={14} />
+                    </span>
+                    <span className="text-xs font-black text-slate-800 dark:text-white">{saasBrandName || 'Axoventra'}</span>
+                  </div>
+                  <p className="text-[10.5px] text-slate-505 dark:text-slate-400 font-semibold truncate px-3">{saasBrandDesc || 'بوابة الـ SaaS الذكية لصناعة الحركة'}</p>
+                  <button 
+                    className="w-full py-1.5 text-[10px] font-black text-white rounded-lg"
+                    style={{ backgroundColor: brandPrimaryColor }}
+                  >
+                    أريد تجربة مجانية
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-3 bg-indigo-50/40 dark:bg-indigo-950/20 rounded-xl border border-indigo-100/40 dark:border-indigo-900/10 text-[10px] text-indigo-755 dark:text-indigo-400 space-y-2 select-text font-semibold">
+                <div className="flex gap-1 justify-end">
+                  <span>تم تفعيل ميزة مزامنة الهوية الحية مع صفحة التسويق</span>
+                  <Info size={11} className="shrink-0" />
+                </div>
+                <p className="leading-normal">عند تغيير الهوية أو تعديل منسوب التدرجات هنا، يتم تطبيق التناسق على صفحة الهبوط العمومية تلقائياً دون الحاجة لإعادة كتابة الأكواد برمجياً!</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: FEATURES INVENTORY MANAGEMENT */}
+        {activeSubTab === 'features' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl shadow-soft">
+              <span className="text-[10.5px] text-slate-500 font-bold dark:text-slate-405 text-right w-full sm:w-auto">أضف أو عدّل الميزات والعناصر الفنية المعروضة في الموقع التسويقي للمقارنة</span>
+              <button
+                onClick={() => setFeatureForm({ titleAr: '', titleEn: '', descAr: '', descEn: '', iconName: 'Wrench', badgeAr: '', badgeEn: '' })}
+                className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              >
+                <Plus size={14} />
+                <span>إضافة ميزة فنية</span>
+              </button>
+            </div>
+
+            {/* Editing Segment popup/div */}
+            <AnimatePresence>
+              {featureForm && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl space-y-4 shadow-md text-right"
+                >
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white border-b border-slate-100 pb-2">
+                    {featureForm.id ? 'تعديل ميزة قائمة' : 'صياغة ميزة جديدة بالموقع'}
+                  </h4>
+
+                  <form onSubmit={handleFeatureSubmit} className="space-y-4 font-sans text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* Titles */}
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">العنوان في الموقع (عربي)</label>
+                        <input
+                          type="text"
+                          required
+                          value={featureForm.titleAr}
+                          onChange={(e) => setFeatureForm({ ...featureForm, titleAr: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">العنوان في الموقع (English)</label>
+                        <input
+                          type="text"
+                          required
+                          value={featureForm.titleEn}
+                          onChange={(e) => setFeatureForm({ ...featureForm, titleEn: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                        />
+                      </div>
+
+                      {/* Icons & Badge */}
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">أيقونة العرض (الرمز الفني لـ Lucide)</label>
+                        <select
+                          value={featureForm.iconName}
+                          onChange={(e) => setFeatureForm({ ...featureForm, iconName: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                        >
+                          <option value="Truck">شاحنة / Truck</option>
+                          <option value="Wrench">ميكانيكي / Wrench</option>
+                          <option value="Smartphone">شاشة هاتف / Smartphone</option>
+                          <option value="Cpu">معالج ذكي / Cpu</option>
+                          <option value="Activity">نبض الأسر / Activity</option>
+                          <option value="ShieldCheck">أمان وامتثال / ShieldCheck</option>
+                          <option value="Gauge">عداد وقود / Gauge</option>
+                          <option value="Droplets">إضاءة إطارات ومصارف / Droplets</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">وسام تشريفي (أمثلة: جديد، حصري، أساسي)</label>
+                        <input
+                          type="text"
+                          value={featureForm.badgeAr}
+                          onChange={(e) => setFeatureForm({ ...featureForm, badgeAr: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                          placeholder="مثال: جديد بالكامل"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Descriptions */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">الوصف بالتفصيل (عربي)</label>
+                        <textarea
+                          required
+                          value={featureForm.descAr}
+                          onChange={(e) => setFeatureForm({ ...featureForm, descAr: e.target.value })}
+                          className="w-full p-2.5 h-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">الوصف بالتفصيل (English)</label>
+                        <textarea
+                          required
+                          value={featureForm.descEn}
+                          onChange={(e) => setFeatureForm({ ...featureForm, descEn: e.target.value })}
+                          className="w-full p-2.5 h-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setFeatureForm(null)}
+                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer"
+                      >
+                        إلغاء الأمر
+                      </button>
+                      <button
+                        type="submit"
+                        className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-black rounded-xl cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Save size={13} />
+                        <span>حفظ ومزامنة</span>
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Real Grid Loop of Features */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {features.map((f, idx) => (
+                <div key={f.id || idx} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4.5 rounded-2xl flex items-start justify-between gap-3 text-right shadow-soft">
+                  <div className="flex items-start gap-3 justify-end flex-row-reverse text-right">
+                    <span className="p-3 bg-slate-50 dark:bg-slate-950 text-indigo-600 rounded-xl border border-slate-200 dark:border-slate-800 uppercase shrink-0">
+                      {f.iconName}
+                    </span>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 justify-end">
+                        <h4 className="text-[12.5px] font-black text-slate-855 dark:text-white">{f.titleAr}</h4>
+                        {f.badgeAr && (
+                          <span className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/50 text-[8.5px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200/50 rounded">
+                            {f.badgeAr}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">{f.titleEn}</p>
+                      <p className="text-[10.5px] text-slate-600 dark:text-slate-300 leading-normal line-clamp-2">{f.descAr}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button
+                      onClick={() => startEditFeature(f)}
+                      className="p-1 px-1.5 bg-indigo-50 hover:bg-indigo-600 dark:bg-slate-800 hover:text-white text-indigo-700 dark:text-slate-300 rounded-lg text-[10px] cursor-pointer transition-colors"
+                      title="تعديل الميزة"
+                    >
+                      <Edit3 size={11} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteFeature(f.id)}
+                      className="p-1 px-1.5 bg-rose-50 hover:bg-rose-600 dark:bg-slate-800 hover:text-white text-rose-700 dark:text-slate-400 rounded-lg text-[10px] cursor-pointer transition-colors"
+                      title="حذف تشغيلي"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: CLIENT COMPANIES CRUD */}
+        {activeSubTab === 'clients' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl shadow-soft">
+              <span className="text-[10.5px] text-slate-550 dark:text-slate-400 font-bold text-right w-full sm:w-auto">أضف الشعارات والشركات والبلديات الكبرى المستفيدة والمعتمدة للموقع</span>
+              <button
+                onClick={() => setClientForm({ name: '', industryAr: '', industryEn: '', rating: 5, yearJoint: '2026', activeVehicles: '25', logoSeed: 'CL' })}
+                className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              >
+                <Plus size={14} />
+                <span>إضافة شعار عميل</span>
+              </button>
+            </div>
+
+            {/* Editor client popup section */}
+            <AnimatePresence>
+              {clientForm && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl space-y-4 shadow-md text-right"
+                >
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                    {clientForm.id ? 'تعديل بيانات العميل الحالي' : 'إدراج عميل جديد للشركاء'}
+                  </h4>
+
+                  <form onSubmit={handleClientSubmit} className="space-y-4 font-sans text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">اسم الشركة/الهيئة التجارية</label>
+                        <input
+                          type="text"
+                          required
+                          value={clientForm.name}
+                          onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          placeholder="مثال: أرامكو للخدمات الأرضية"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">رمز الاختصار الثنائي (لشعار اللوتس التجريدي)</label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={2}
+                          value={clientForm.logoSeed}
+                          onChange={(e) => setClientForm({ ...clientForm, logoSeed: e.target.value.toUpperCase() })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center font-bold text-slate-850 dark:text-slate-100 rounded-xl"
+                          placeholder="مثال: AR"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">القطاع الصناعي (عربي)</label>
+                        <input
+                          type="text"
+                          required
+                          value={clientForm.industryAr}
+                          onChange={(e) => setClientForm({ ...clientForm, industryAr: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">القطاع الصناعي (English)</label>
+                        <input
+                          type="text"
+                          required
+                          value={clientForm.industryEn}
+                          onChange={(e) => setClientForm({ ...clientForm, industryEn: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">سنة الانضمام للتطبيق</label>
+                        <input
+                          type="text"
+                          value={clientForm.yearJoint}
+                          onChange={(e) => setClientForm({ ...clientForm, yearJoint: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-center"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">حجم المعدات/الشاحنات النشط لديهم</label>
+                        <input
+                          type="text"
+                          value={clientForm.activeVehicles}
+                          onChange={(e) => setClientForm({ ...clientForm, activeVehicles: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-center"
+                          placeholder="مثال: 320 سيارة"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setClientForm(null)}
+                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-xl cursor-pointer"
+                      >
+                        إلغاء الأمر
+                      </button>
+                      <button
+                        type="submit"
+                        className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Save size={13} />
+                        <span>حفظ الشريك</span>
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Client Lists elements */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {clients.map((c, idx) => (
+                <div key={c.id || idx} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl text-center space-y-3 shadow-soft relative group">
+                  <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <button
+                      onClick={() => startEditClient(c)}
+                      className="p-1 bg-white hover:bg-indigo-650 hover:text-white border border-slate-200 text-slate-500 rounded-md cursor-pointer text-[9px]"
+                      title="تحرير"
+                    >
+                      <Edit3 size={10} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClient(c.id)}
+                      className="p-1 bg-white hover:bg-rose-600 hover:text-white border border-slate-200 text-slate-500 rounded-md cursor-pointer text-[9px]"
+                      title="إزالة"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="w-11 h-11 rounded-full bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-705 dark:text-indigo-400 font-extrabold mx-auto flex items-center justify-center border border-indigo-100/50 dark:border-slate-800 font-mono text-sm leading-none shrink-0 select-none shadow-3xs">
+                    {c.logoSeed}
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <h5 className="text-[11.5px] font-black text-slate-850 dark:text-slate-105 truncate px-1">{c.name}</h5>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400 truncate">{c.industryAr}</p>
+                  </div>
+
+                  <div className="p-1.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-850 text-[9px] text-slate-600 dark:text-slate-405 font-mono space-y-0.5">
+                    <div className="flex justify-between flex-row-reverse">
+                      <span>المركبات:</span>
+                      <span className="font-bold text-indigo-650 dark:text-[#a5b4fc]">{c.activeVehicles}</span>
+                    </div>
+                    <div className="flex justify-between flex-row-reverse">
+                      <span>انضمام:</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">{c.yearJoint}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: TESTIMONIALS / REVIEWS EDITORS & LISTING */}
+        {activeSubTab === 'testimonials' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl shadow-soft">
+              <span className="text-[10.5px] text-slate-550 dark:text-slate-400 font-bold text-right w-full sm:w-auto">أضف وأدر التقييمات وآراء مهندسي أساطيل العملاء الفعليين المعتمدة</span>
+              <button
+                onClick={() => setReviewForm({ authorName: '', roleAr: '', roleEn: '', company: '', contentAr: '', contentEn: '', rating: 5 })}
+                className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              >
+                <Plus size={14} />
+                <span>إضافة رأي عميل</span>
+              </button>
+            </div>
+
+            {/* Testimonial Form editing div */}
+            <AnimatePresence>
+              {reviewForm && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl space-y-4 shadow-md text-right"
+                >
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                    {reviewForm.id ? 'تحرير تقييم العميل المعتمد' : 'إنشاء تقييم فني وإضافته للواجهة'}
+                  </h4>
+
+                  <form onSubmit={handleReviewSubmit} className="space-y-4 font-sans text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">اسم المهندس/العميل المقيم</label>
+                        <input
+                          type="text"
+                          required
+                          value={reviewForm.authorName}
+                          onChange={(e) => setReviewForm({ ...reviewForm, authorName: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          placeholder="مثال: م. فهد عسيري"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">اسم المنشأة/الشركة التابع لها</label>
+                        <input
+                          type="text"
+                          required
+                          value={reviewForm.company}
+                          onChange={(e) => setReviewForm({ ...reviewForm, company: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">المسمى الوظيفي للمقيم (عربي)</label>
+                        <input
+                          type="text"
+                          required
+                          value={reviewForm.roleAr}
+                          onChange={(e) => setReviewForm({ ...reviewForm, roleAr: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">المسمى الوظيفي (English)</label>
+                        <input
+                          type="text"
+                          required
+                          value={reviewForm.roleEn}
+                          onChange={(e) => setReviewForm({ ...reviewForm, roleEn: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">تصنيف النجوم (1 - 5)</label>
+                        <select
+                          value={reviewForm.rating}
+                          onChange={(e) => setReviewForm({ ...reviewForm, rating: parseFloat(e.target.value) })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                        >
+                          <option value="5">⭐⭐⭐⭐⭐ 5 نجوم كاملة</option>
+                          <option value="4.5">⭐⭐⭐⭐ 4.5 نجمة</option>
+                          <option value="4">⭐⭐⭐⭐ 4 نجوم</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">محتوى التقييم والقول المأثور (عربي)</label>
+                        <textarea
+                          required
+                          value={reviewForm.contentAr}
+                          onChange={(e) => setReviewForm({ ...reviewForm, contentAr: e.target.value })}
+                          className="w-full p-2.5 h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300">محتوى التقييم والقول المأثور (English)</label>
+                        <textarea
+                          required
+                          value={reviewForm.contentEn}
+                          onChange={(e) => setReviewForm({ ...reviewForm, contentEn: e.target.value })}
+                          className="w-full p-2.5 h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setReviewForm(null)}
+                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-xl cursor-pointer"
+                      >
+                        إلغاء الأمر
+                      </button>
+                      <button
+                        type="submit"
+                        className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Save size={13} />
+                        <span>إضافة التقييم</span>
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Render Reviews grid lists */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {reviews.map((r, idx) => (
+                <div key={r.id || idx} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-5 rounded-3xl space-y-4 text-right shadow-soft relative flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-2 flex-row">
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          onClick={() => startEditReview(r)}
+                          className="p-1 px-1.5 bg-indigo-50 hover:bg-indigo-600 dark:bg-slate-800 hover:text-white text-indigo-700 dark:text-slate-300 rounded-lg text-[9px] cursor-pointer"
+                          title="تحرير"
+                        >
+                          <Edit3 size={11} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReview(r.id)}
+                          className="p-1 px-1.5 bg-rose-50 hover:bg-rose-600 dark:bg-slate-800 hover:text-white text-rose-700 dark:text-slate-400 rounded-lg text-[9px] cursor-pointer"
+                          title="حذف"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-row-reverse text-right">
+                        <img
+                          src={r.avatar || 'https://picsum.photos/seed/face/150/150'}
+                          alt={r.authorName}
+                          referrerPolicy="no-referrer"
+                          className="w-10 h-10 rounded-full border border-slate-200 shadow-3xs object-cover"
+                        />
+                        <div>
+                          <strong className="text-[12px] font-black text-slate-800 dark:text-white block">{r.authorName}</strong>
+                          <span className="text-[9.5px] text-slate-500 dark:text-slate-450 block font-semibold">{r.roleAr} ({r.company})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-0.5 justify-end text-amber-500 font-bold text-[10.5px]">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={11} fill={i < Math.floor(r.rating) ? 'currentColor' : 'none'} />
+                      ))}
+                    </div>
+
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 italic leading-relaxed text-right">
+                      &ldquo;{r.contentAr}&rdquo;
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: DYNAMIC FOOTER COLUMNS & LINKS */}
+        {activeSubTab === 'footer' && (
+          <div className="space-y-6 animate-fade-in text-right">
+            
+            {/* Header Description block */}
+            <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="space-y-1">
+                <span className="p-1 px-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 rounded-lg text-[9px] font-bold">إقرار وتحكم فوري</span>
+                <h4 className="text-xs font-black text-slate-900 dark:text-white mt-1">تخصيص كامل تذييل المظهر وقوائم ومصادر أسفل الموقع الإلكتروني</h4>
+                <p className="text-[10px] text-slate-500">مقسمة طبقًا للقوائم المعروضة بمصادر الأنظمة الكبرى مع القدرة على تعديل النصوص بالعربية والإنجليزية.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetFooterDefault}
+                className="p-2 px-3.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-700 dark:text-rose-450 text-[10.5px] font-black rounded-xl border border-rose-200/50 cursor-pointer transition-all"
+              >
+                استعادة القوائم والروابط الافتراضية للشركة
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* Left Column: Footer Meta (Inputs for Copyrights, Badges, Legal, Socials) */}
+              <div className="lg:col-span-12 xl:col-span-5 space-y-4">
+                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl p-5 shadow-soft space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-850 pb-3 flex-row-reverse justify-between">
+                    <span className="p-1 px-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[9.5px] font-black">العلاقات العامة والهوية برمجياً</span>
+                    <strong className="text-[11px] font-black text-slate-800 dark:text-white">تفاصيل وملحقات التذييل العامة</strong>
+                  </div>
+
+                  <div className="space-y-3 font-sans text-xs">
+                    
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block">نص حقوق الحفظ والنشر (عربي)</label>
+                      <textarea
+                        rows={2}
+                        value={footerMeta.copyrightAr || ""}
+                        onChange={(e) => saveFooterMeta({ ...footerMeta, copyrightAr: e.target.value })}
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl leading-normal text-right focus:ring-1 focus:ring-indigo-500 animate-none"
+                        placeholder="حقوق النشر © ميكانيك ٣٦٠"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-700 dark:text-slate-300 block">Copyright Legal Text (English)</label>
+                      <textarea
+                        rows={2}
+                        value={footerMeta.copyrightEn || ""}
+                        onChange={(e) => saveFooterMeta({ ...footerMeta, copyrightEn: e.target.value })}
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl leading-normal text-left focus:ring-1 focus:ring-indigo-500 animate-none"
+                        placeholder="Copyright © Axoventra"
+                      />
+                    </div>
+
+                    <hr className="border-slate-100 dark:border-slate-850" />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-right">ملصق سياسة الخصوصية (عربي)</label>
+                        <input
+                          type="text"
+                          value={footerMeta.privacyLabelAr || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, privacyLabelAr: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-right font-black"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-left">Privacy Label (English)</label>
+                        <input
+                          type="text"
+                          value={footerMeta.privacyLabelEn || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, privacyLabelEn: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-left font-black"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-right">ملصق شروط الخدمة (عربي)</label>
+                        <input
+                          type="text"
+                          value={footerMeta.termsLabelAr || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, termsLabelAr: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-right font-black"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-left">Terms Label (English)</label>
+                        <input
+                          type="text"
+                          value={footerMeta.termsLabelEn || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, termsLabelEn: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-left font-black"
+                        />
+                      </div>
+                    </div>
+
+                    <hr className="border-slate-100 dark:border-slate-850" />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-right">بوابة تطبيقات Google Play</label>
+                        <input
+                          type="text"
+                          value={footerMeta.playStoreUrl || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, playStoreUrl: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl select-all text-left font-mono text-[9px] font-black"
+                          placeholder="https://play.google.com/..."
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-left">بوابة iOS App Store</label>
+                        <input
+                          type="text"
+                          value={footerMeta.appStoreUrl || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, appStoreUrl: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl select-all text-left font-mono text-[9px] font-black"
+                          placeholder="https://apps.apple.com/..."
+                        />
+                      </div>
+                    </div>
+
+                    <hr className="border-slate-100 dark:border-slate-850" />
+
+                    <h5 className="font-black text-[10px] text-slate-800 dark:text-slate-200 flex items-center justify-end gap-1.5 pt-1 font-sans">
+                      <span>روابط التواصل الاجتماعي وشركاء الأساطيل</span>
+                      <Settings size={12} className="text-indigo-600" />
+                    </h5>
+
+                    <div className="space-y-2">
+                      <div className="flex gap-2 items-center flex-row">
+                        <input
+                          type="text"
+                          value={footerMeta.socialX || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, socialX: e.target.value })}
+                          className="flex-1 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-lg text-left text-[11px] font-mono"
+                          placeholder="https://x.com/..."
+                        />
+                        <span className="p-2 px-3 bg-slate-100 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-lg text-[10px] font-bold min-w-[70px] text-center">X (Twitter)</span>
+                      </div>
+
+                      <div className="flex gap-2 items-center flex-row">
+                        <input
+                          type="text"
+                          value={footerMeta.socialLinkedin || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, socialLinkedin: e.target.value })}
+                          className="flex-1 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-lg text-left text-[11px] font-mono"
+                          placeholder="https://linkedin.com/company/..."
+                        />
+                        <span className="p-2 px-3 bg-slate-100 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-lg text-[10px] font-bold min-w-[70px] text-center">LinkedIn</span>
+                      </div>
+
+                      <div className="flex gap-2 items-center flex-row">
+                        <input
+                          type="text"
+                          value={footerMeta.socialInstagram || ""}
+                          onChange={(e) => saveFooterMeta({ ...footerMeta, socialInstagram: e.target.value })}
+                          className="flex-1 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 text-left text-[11px] font-mono rounded-lg"
+                          placeholder="https://instagram.com/..."
+                        />
+                        <span className="p-2 px-3 bg-slate-100 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-lg text-[10px] font-bold min-w-[70px] text-center">Instagram</span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Interactive Columns Links Editor */}
+              <div className="lg:col-span-12 xl:col-span-7 space-y-4">
+                
+                {/* Column tabs select */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl p-5 shadow-soft space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-3 flex-row-reverse">
+                    <span className="text-[11px] font-black text-slate-800 dark:text-white">أعمدة روابط أسفل الموقع ({footerColumns.length} قوائم)</span>
+                    <span className="text-[9.5px] p-1 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400 rounded-lg font-bold">بنية مرنة بالكامل</span>
+                  </div>
+
+                  <div className="flex flex-row-reverse gap-1 overflow-x-auto pb-1 border-b border-slate-100 dark:border-slate-850 select-none">
+                    {footerColumns.map((col) => (
+                      <button
+                        key={col.id}
+                        type="button"
+                        onClick={() => setSelectedColId(col.id)}
+                        className={`p-2 px-3 text-[11px] font-black whitespace-nowrap cursor-pointer rounded-xl transition-all ${
+                          selectedColId === col.id 
+                            ? 'bg-indigo-600 text-white shadow-soft' 
+                            : 'bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {language === 'ar' ? col.titleAr : col.titleEn}
+                        <span className="mx-1 p-0.5 px-1 bg-black/10 rounded text-[9px] font-mono leading-none">{col.items.length}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Active Selected Column Editing Form */}
+                  {footerColumns.filter(c => c.id === selectedColId).map((activeCol) => (
+                    <div key={activeCol.id} className="space-y-4 pt-1">
+                      
+                      {/* Column Title inputs */}
+                      <div className="grid grid-cols-2 gap-3 text-right">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 dark:text-slate-300 text-xs block">اسم هذه القائمة بالعربية</label>
+                          <input
+                            type="text"
+                            value={activeCol.titleAr}
+                            onChange={(e) => handleUpdateColumnTitle(activeCol.id, e.target.value, activeCol.titleEn)}
+                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-right font-black text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 dark:text-slate-300 text-xs block">Column Title (English)</label>
+                          <input
+                            type="text"
+                            value={activeCol.titleEn}
+                            onChange={(e) => handleUpdateColumnTitle(activeCol.id, activeCol.titleAr, e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-left font-black text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Add link Item to active column inline */}
+                      <div className="p-4 bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-950/20 rounded-2xl space-y-3">
+                        <strong className="text-[10.5px] font-black text-indigo-900 dark:text-indigo-300 block">إضافة رابط فرعي جديد للقائمة النشطة</strong>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-sans">
+                          <div className="space-y-1 text-right">
+                            <label className="text-[10px] text-slate-500 font-bold block">عنوان الرابط (عربي)</label>
+                            <input
+                              type="text"
+                              value={newColItemAr}
+                              onChange={(e) => setNewColItemAr(e.target.value)}
+                              className="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-right text-xs"
+                              placeholder="مثال: ورش المنطقة الوسطى"
+                            />
+                          </div>
+                          <div className="space-y-1 text-right">
+                            <label className="text-[10px] text-slate-500 font-bold block">Link Label (English)</label>
+                            <input
+                              type="text"
+                              value={newColItemEn}
+                              onChange={(e) => setNewColItemEn(e.target.value)}
+                              className="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-left text-xs"
+                              placeholder="e.g. Riyadh Central Workshop"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleAddFooterItem(activeCol.id)}
+                            className="p-1.5 px-4 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg cursor-pointer flex items-center gap-1.5 transition-all"
+                          >
+                            <Plus size={12} />
+                            <span>أضف للعمود النشط</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Display items of active selected column list with delete keys */}
+                      <div className="space-y-2 select-none font-sans">
+                        <span className="text-[10px] text-slate-400 block font-bold">الروابط المضافة والمنشورة حالياً ({activeCol.items.length} روابط):</span>
+                        <div className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-850">
+                          {activeCol.items.length === 0 ? (
+                            <div className="p-8 text-center text-[11px] text-slate-400 font-semibold bg-slate-50/50 dark:bg-slate-950/10">
+                              لا توجد روابط مضافة في هذا العمود حالياً. أضف روابط جديدة في الأعلى.
+                            </div>
+                          ) : (
+                            activeCol.items.map((item: any, itemIdx: number) => (
+                              <div key={item.id || itemIdx} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between hover:bg-slate-50/55 dark:hover:bg-slate-850/20 transition-all flex-row-reverse">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteFooterItem(activeCol.id, item.id)}
+                                  className="p-1 px-2 border border-rose-200 hover:bg-rose-600 hover:text-white dark:border-rose-950/20 rounded-lg text-rose-600 text-[10px] cursor-pointer"
+                                  title="حذف هذا الرابط"
+                                >
+                                  ✕
+                                </button>
+                                <div className="text-right flex items-center gap-3 flex-row-reverse">
+                                  <div className="p-1 px-1.5 bg-slate-50 dark:bg-slate-800 text-[9px] text-slate-400 font-mono rounded">
+                                    {itemIdx + 1}
+                                  </div>
+                                  <div className="text-right">
+                                    <strong className="text-xs text-slate-800 dark:text-slate-200 block text-right">{item.labelAr}</strong>
+                                    <span className="text-[10px] text-slate-400 block font-mono text-right">{item.labelEn}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+                  ))}
+
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* End of display panel */}
+        </div>
+      {/* End of side-by-side wrapper */}
+      </div>
+    </div>
+  );
+}
