@@ -166,3 +166,38 @@ export interface SafetyInspection {
   signature?: string;
 }
 
+export function hasGranularPermission(permissionId: string, userRole: string): boolean {
+  try {
+    const saved = localStorage.getItem('saas_granular_permissions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const perm = parsed.find((p: any) => p.id === permissionId);
+        if (perm && perm.roles) {
+          return !!perm.roles[userRole];
+        }
+      }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  
+  // Default fallbacks
+  const defaults: Record<string, Record<string, boolean>> = {
+    'delete-maintenance-record': { admin: true, fleet_manager: false, technician: false, viewer: false },
+    'edit-vehicle-data': { admin: true, fleet_manager: true, technician: false, viewer: false },
+    'issue-financial-report': { admin: true, fleet_manager: true, technician: false, viewer: false },
+    'bypass-safety-checklist': { admin: true, fleet_manager: false, technician: false, viewer: false },
+    'approve-parts-issuance': { admin: true, fleet_manager: true, technician: false, viewer: false },
+    'edit-completed-orders': { admin: true, fleet_manager: false, technician: false, viewer: false },
+    'force-reset-password': { admin: true, fleet_manager: false, technician: false, viewer: false }
+  };
+  
+  const permDefault = defaults[permissionId];
+  if (permDefault) {
+    return !!permDefault[userRole];
+  }
+  return false;
+}
+
+

@@ -38,7 +38,11 @@ import {
   Calendar,
   CreditCard,
   Wrench,
-  Bot
+  Bot,
+  Sliders,
+  Info,
+  Trash2,
+  User as UserIcon
 } from 'lucide-react';
 import { 
   db, 
@@ -287,6 +291,166 @@ export default function SecurityAudit({ user }: { user?: User }) {
   const [showAddPermissionModal, setShowAddPermissionModal] = useState(false);
   const [newPermissionLabel, setNewPermissionLabel] = useState('');
 
+  // Sub-tabs for security audit
+  const [activeSubTab, setActiveSubTab] = useState<'features' | 'matrix' | 'granular' | 'team' | 'logs' | 'preview'>('features');
+  const [featuresSaveFeedback, setFeaturesSaveFeedback] = useState<string | null>(null);
+
+  // Custom feature permissions mapping
+  const [customFeatures, setCustomFeatures] = useState<Record<string, Record<'admin' | 'fleet_manager' | 'technician' | 'viewer', boolean>>>(() => {
+    const saved = localStorage.getItem('saas_rbac_custom_features');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    // Default system permissions mapping (matching MENU_ITEMS roles)
+    return {
+      dashboard: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      'maintenance-bot': { admin: true, fleet_manager: true, technician: true, viewer: true },
+      reports: { admin: true, fleet_manager: true, technician: false, viewer: true },
+      vehicles: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      drivers: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      'driver-handover': { admin: true, fleet_manager: true, technician: true, viewer: true },
+      workshops: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      maintenance: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      'periodic-maintenance': { admin: true, fleet_manager: true, technician: true, viewer: true },
+      technicians: { admin: true, fleet_manager: false, technician: false, viewer: false },
+      inventory: { admin: true, fleet_manager: true, technician: true, viewer: false },
+      vendors: { admin: true, fleet_manager: true, technician: true, viewer: false },
+      'security-audit': { admin: true, fleet_manager: false, technician: false, viewer: false },
+      'firebase-sync': { admin: true, fleet_manager: false, technician: false, viewer: false },
+      'saas-billing': { admin: true, fleet_manager: false, technician: false, viewer: false },
+    };
+  });
+
+  const handleToggleFeatureAccess = (featureId: string, role: 'admin' | 'fleet_manager' | 'technician' | 'viewer') => {
+    // Fail-safe: Prevent Admin from locking themselves out of Security Audit or Billing
+    if (role === 'admin' && (featureId === 'security-audit' || featureId === 'saas-billing')) {
+      return;
+    }
+
+    setCustomFeatures(prev => {
+      const updated = {
+        ...prev,
+        [featureId]: {
+          ...prev[featureId],
+          [role]: !prev[featureId][role]
+        }
+      };
+      
+      // Auto save locally
+      localStorage.setItem('saas_rbac_custom_features', JSON.stringify(updated));
+      window.dispatchEvent(new Event('rbac-updated'));
+
+      // Add a log to compliance audit trail
+      const featureLabels: Record<string, string> = {
+        dashboard: 'لوحة التحكم',
+        'maintenance-bot': 'مساعد AI ذكي',
+        reports: 'التقارير والإحصائيات',
+        vehicles: 'إدارة المركبات',
+        drivers: 'إدارة السائقين',
+        'driver-handover': 'تسليم واستلام العجلات',
+        workshops: 'إدارة الورش',
+        maintenance: 'أوامر الصيانة',
+        'periodic-maintenance': 'الصيانة الدورية',
+        technicians: 'إدارة الفنيين',
+        inventory: 'المخزن والقطع',
+        vendors: 'الموردين والتوريد',
+        'security-audit': 'صلاحيات الموظفين والامتثال',
+        'firebase-sync': 'بوابة المزامنة',
+        'saas-billing': 'الاشتراك والفوترة'
+      };
+
+      const roleLabels: Record<string, string> = {
+        admin: 'مدير نظام',
+        fleet_manager: 'مدير حركة',
+        technician: 'فني صيانة',
+        viewer: 'مشاهد ومراقب'
+      };
+
+      const newLog: AuditLog = {
+        id: `log-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        user: 'المهندس خالد',
+        role: 'مدير نظام',
+        action: 'تخصيص وصول الميزات (RBAC)',
+        category: 'users',
+        ipAddress: '197.82.16.42',
+        status: 'تنبيه',
+        details: `قام بتغيير صلاحية الوصول لميزة (${featureLabels[featureId] || featureId}) لدور (${roleLabels[role]}) لتصبح: ${!prev[featureId][role] ? 'متاحة ومفتوحة' : 'محجوبة ومغلقة 🔒'}`
+      };
+      setAuditLogs(logs => [newLog, ...logs]);
+
+      return updated;
+    });
+  };
+
+  const handleSaveFeaturesGlobally = () => {
+    localStorage.setItem('saas_rbac_custom_features', JSON.stringify(customFeatures));
+    window.dispatchEvent(new Event('rbac-updated'));
+    
+    // Add audit log
+    const newLog: AuditLog = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      user: 'المهندس خالد',
+      role: 'مدير نظام',
+      action: 'حفظ وتعميم السياسة الأمنية للميزات',
+      category: 'users',
+      ipAddress: '197.82.16.42',
+      status: 'نجاح',
+      details: 'تم بنجاح حفظ وتعميم السياسة الأمنية المخصصة لمنافذ وتراخيص الميزات الجانبية لكافة موظفي المنظمة.'
+    };
+    setAuditLogs(logs => [newLog, ...logs]);
+
+    setFeaturesSaveFeedback('تم تعميم وحفظ إعدادات الصلاحيات المخصصة لجميع موظفي المنشأة بنجاح! تم تحديث شريط التنقل الجانبي فورياً.');
+    setTimeout(() => {
+      setFeaturesSaveFeedback(null);
+    }, 4500);
+  };
+
+  const handleResetFeaturesToDefault = () => {
+    const defaultFeatures = {
+      dashboard: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      'maintenance-bot': { admin: true, fleet_manager: true, technician: true, viewer: true },
+      reports: { admin: true, fleet_manager: true, technician: false, viewer: true },
+      vehicles: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      drivers: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      'driver-handover': { admin: true, fleet_manager: true, technician: true, viewer: true },
+      workshops: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      maintenance: { admin: true, fleet_manager: true, technician: true, viewer: true },
+      'periodic-maintenance': { admin: true, fleet_manager: true, technician: true, viewer: true },
+      technicians: { admin: true, fleet_manager: false, technician: false, viewer: false },
+      inventory: { admin: true, fleet_manager: true, technician: true, viewer: false },
+      vendors: { admin: true, fleet_manager: true, technician: true, viewer: false },
+      'security-audit': { admin: true, fleet_manager: false, technician: false, viewer: false },
+      'firebase-sync': { admin: true, fleet_manager: false, technician: false, viewer: false },
+      'saas-billing': { admin: true, fleet_manager: false, technician: false, viewer: false },
+    };
+
+    setCustomFeatures(defaultFeatures);
+    localStorage.setItem('saas_rbac_custom_features', JSON.stringify(defaultFeatures));
+    window.dispatchEvent(new Event('rbac-updated'));
+
+    const newLog: AuditLog = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      user: 'المهندس خالد',
+      role: 'مدير نظام',
+      action: 'إعادة ضبط مصنع صلاحيات الميزات',
+      category: 'users',
+      ipAddress: '197.82.16.42',
+      status: 'تنبيه',
+      details: 'تمت إعادة تعيين صلاحيات تفعيل وحظر ميزات المنصة إلى القيم والمحددات القياسية للشركة.'
+    };
+    setAuditLogs(logs => [newLog, ...logs]);
+
+    setFeaturesSaveFeedback('تمت إعادة تعيين صلاحيات الوصول للميزات إلى الإعدادات القياسية للشركة بنجاح!');
+    setTimeout(() => {
+      setFeaturesSaveFeedback(null);
+    }, 4500);
+  };
+
   // Handle toggling permission dynamically to show interactive state
   const handleTogglePermission = (permissionId: string, role: 'admin' | 'fleet_manager' | 'technician' | 'viewer') => {
     // Modify permission in state
@@ -326,24 +490,131 @@ export default function SecurityAudit({ user }: { user?: User }) {
 
   // Simulated Granular Permissions (صلاحيات إضافية تفصيلية للعمليات الصغرى)
   const [granularPermissions, setGranularPermissions] = useState(() => {
-    const saved = localStorage.getItem('saas_granular_permissions');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* fallback */ }
-    }
-    return [
-      { id: 'delete-maintenance-record', label: 'حذف سجل أو أمر صيانة نهائياً من الأرشيف', roles: { admin: true, fleet_manager: false, technician: false, viewer: false } },
-      { id: 'edit-vehicle-data', label: 'تعديل حقول مواصفات المركبات الأساسية (رقم الهيكل، الموديل)', roles: { admin: true, fleet_manager: true, technician: false, viewer: false } },
+    const defaultList = [
+      { id: 'delete-maintenance-record', label: 'حذف سجل أو أمر صيانة نهائياً من الأرشيف (حذف سجل صيانة)', roles: { admin: true, fleet_manager: false, technician: false, viewer: false } },
+      { id: 'edit-vehicle-data', label: 'تعديل مواصفات وبيانات المركبة الأساسية ورقم الهيكل (تعديل رقم هيكل المركبة)', roles: { admin: true, fleet_manager: true, technician: false, viewer: false } },
+      { id: 'issue-financial-report', label: 'إصدار وتصدير التقارير المالية والتحليلات وعقود الفوترة (إصدار تقرير مالي)', roles: { admin: true, fleet_manager: true, technician: false, viewer: false } },
       { id: 'bypass-safety-checklist', label: 'تجاوز وإعفاء أمر صيانة من قائمة فحص السلامة الإلزامية', roles: { admin: true, fleet_manager: false, technician: false, viewer: false } },
       { id: 'approve-parts-issuance', label: 'اعتماد وموافقة طلبات صرف قطع الغيار والمستلزمات المكلفة', roles: { admin: true, fleet_manager: true, technician: false, viewer: false } },
       { id: 'edit-completed-orders', label: 'إعادة فتح وتعديل فواتير أوامر صيانة مغلقة ومرحلة مالياً', roles: { admin: true, fleet_manager: false, technician: false, viewer: false } },
       { id: 'assign-external-contractor', label: 'إسناد وتفويض عمليات الصيانة لورش عمل وجهات خارجية', roles: { admin: true, fleet_manager: true, technician: false, viewer: false } },
       { id: 'force-reset-password', label: 'إعادة تعيين كلمة مرور موظف قسرياً من لوحة التحكم', roles: { admin: true, fleet_manager: false, technician: false, viewer: false } },
     ];
+
+    const saved = localStorage.getItem('saas_granular_permissions');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Check if any of our items are missing and add them
+          let modified = false;
+          if (!parsed.some((p: any) => p.id === 'issue-financial-report')) {
+            parsed.push({ id: 'issue-financial-report', label: 'إصدار وتصدير التقارير المالية والتحليلات وعقود الفوترة (إصدار تقرير مالي)', roles: { admin: true, fleet_manager: true, technician: false, viewer: false } });
+            modified = true;
+          }
+          // Also ensure edit-vehicle-data and delete-maintenance-record labels are updated for clarity
+          parsed.forEach((p: any) => {
+            if (p.id === 'edit-vehicle-data' && !p.label.includes('هيكل')) {
+              p.label = 'تعديل مواصفات وبيانات المركبة الأساسية ورقم الهيكل (تعديل رقم هيكل المركبة)';
+              modified = true;
+            }
+            if (p.id === 'delete-maintenance-record' && !p.label.includes('حذف سجل صيانة')) {
+              p.label = 'حذف سجل أو أمر صيانة نهائياً من الأرشيف (حذف سجل صيانة)';
+              modified = true;
+            }
+          });
+          if (modified) {
+            localStorage.setItem('saas_granular_permissions', JSON.stringify(parsed));
+          }
+          return parsed;
+        }
+      } catch (e) { /* fallback */ }
+    }
+    return defaultList;
   });
 
   const [granularSearchQuery, setGranularSearchQuery] = useState('');
   const [showAddGranularModal, setShowAddGranularModal] = useState(false);
   const [newGranularLabel, setNewGranularLabel] = useState('');
+
+  const [criticalLogs, setCriticalLogs] = useState<AuditLog[]>(() => {
+    const defaultCriticalLogs: AuditLog[] = [
+      {
+        id: 'crit-mock-1',
+        timestamp: '2026-07-04 14:15:22',
+        user: 'المهندس خالد',
+        role: 'مدير نظام',
+        action: 'تعديل رقم هيكل المركبة',
+        category: 'vehicles',
+        ipAddress: '197.82.16.42',
+        status: 'نجاح',
+        details: 'قام بتعديل مواصفات ورقم هيكل شاحنة نقل ثقيل (لوحة: أ ب ج 1234) لتصحيح خطأ إدخال مصنعي.'
+      },
+      {
+        id: 'crit-mock-2',
+        timestamp: '2026-07-04 11:05:40',
+        user: 'المهندس خالد',
+        role: 'مدير نظام',
+        action: 'حذف سجل صيانة',
+        category: 'maintenance',
+        ipAddress: '197.82.16.42',
+        status: 'نجاح',
+        details: 'قام بحذف وإلغاء أمر صيانة منتهي وإرجاع قطع الغيار المصروفة لمخزن القطع.'
+      }
+    ];
+    try {
+      const saved = localStorage.getItem('saas_critical_audit_logs');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return [...parsed, ...defaultCriticalLogs];
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return defaultCriticalLogs;
+  });
+
+  useEffect(() => {
+    if (activeSubTab === 'granular') {
+      try {
+        const defaultCriticalLogs: AuditLog[] = [
+          {
+            id: 'crit-mock-1',
+            timestamp: '2026-07-04 14:15:22',
+            user: 'المهندس خالد',
+            role: 'مدير نظام',
+            action: 'تعديل رقم هيكل المركبة',
+            category: 'vehicles',
+            ipAddress: '197.82.16.42',
+            status: 'نجاح',
+            details: 'قام بتعديل مواصفات ورقم هيكل شاحنة نقل ثقيل (لوحة: أ ب ج 1234) لتصحيح خطأ إدخال مصنعي.'
+          },
+          {
+            id: 'crit-mock-2',
+            timestamp: '2026-07-04 11:05:40',
+            user: 'المهندس خالد',
+            role: 'مدير نظام',
+            action: 'حذف سجل صيانة',
+            category: 'maintenance',
+            ipAddress: '197.82.16.42',
+            status: 'نجاح',
+            details: 'قام بحذف وإلغاء أمر صيانة منتهي وإرجاع قطع الغيار المصروفة لمخزن القطع.'
+          }
+        ];
+        const saved = localStorage.getItem('saas_critical_audit_logs');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setCriticalLogs([...parsed, ...defaultCriticalLogs]);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [activeSubTab]);
 
   // Handle toggling granular permission dynamically
   const handleToggleGranularPermission = (permissionId: string, role: 'admin' | 'fleet_manager' | 'technician' | 'viewer') => {
@@ -502,7 +773,53 @@ export default function SecurityAudit({ user }: { user?: User }) {
     return roles;
   }, [permissions]);
 
+  const renderFeatureRow = (feat: { id: string, label: string, icon: React.ReactNode, desc: string }) => {
+    const roles: ('admin' | 'fleet_manager' | 'technician' | 'viewer')[] = ['admin', 'fleet_manager', 'technician', 'viewer'];
+    return (
+      <tr key={feat.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-900/10 transition-colors">
+        <td className="py-3.5 pr-2">
+          <div className="flex items-start gap-2.5">
+            <div className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg shrink-0 mt-0.5">
+              {feat.icon}
+            </div>
+            <div className="space-y-0.5">
+              <h4 className="text-xs font-bold text-slate-800 dark:text-white">{feat.label}</h4>
+              <p className="text-[10px] text-slate-400 leading-relaxed max-w-sm">{feat.desc}</p>
+            </div>
+          </div>
+        </td>
+        {roles.map(role => {
+          const isEnabled = customFeatures[feat.id]?.[role] ?? false;
+          // Fail-safe: Admin can never lock themselves out of Security Audit or Billing
+          const isLocked = role === 'admin' && (feat.id === 'security-audit' || feat.id === 'saas-billing');
+          return (
+            <td key={role} className="py-3.5 text-center">
+              <div className="flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => !isLocked && handleToggleFeatureAccess(feat.id, role)}
+                  disabled={isLocked}
+                  className={`w-9 h-5 rounded-full p-0.5 transition-all duration-200 flex items-center cursor-pointer ${
+                    isLocked 
+                      ? 'bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed justify-start' 
+                      : isEnabled 
+                        ? 'bg-emerald-500 justify-start' 
+                        : 'bg-slate-200 dark:bg-slate-700 justify-end'
+                  }`}
+                  title={isLocked ? 'محمية لمنع قفل النظام' : `انقر للتغيير`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white shadow-md transition-all duration-200`} />
+                </button>
+              </div>
+            </td>
+          );
+        })}
+      </tr>
+    );
+  };
+
   return (
+
     <div className="space-y-6 text-right pb-12 font-sans" dir="rtl" id="security-audit-container">
       {/* Page Title */}
       <div>
@@ -543,8 +860,173 @@ export default function SecurityAudit({ user }: { user?: User }) {
         </p>
       </div>
 
-      {/* Grid: Permissions Matrix alongside Teammate invitation lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Sub-tabs for security audit */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100/60 dark:bg-slate-900 border border-slate-150 dark:border-slate-850 rounded-2xl max-w-max select-none">
+        {[
+          { key: 'features', labelAr: 'التحكم بميزات المنصة (Feature Access)', icon: <Sliders size={13} />, isNew: true },
+          { key: 'matrix', labelAr: 'مصفوفة الصلاحيات والسياسات (RBAC Matrix)', icon: <ShieldAlert size={13} /> },
+          { key: 'granular', labelAr: 'العمليات الحرجة (Granular Permissions)', icon: <Key size={13} /> },
+          { key: 'team', labelAr: 'طاقم العمل والدعوات (Team & Invites)', icon: <Users size={13} /> },
+          { key: 'logs', labelAr: 'سجل الرصد والربط (Audit & Firebase Sync)', icon: <History size={13} /> },
+          { key: 'preview', labelAr: 'محاكي الواجهات الحي (UX Simulator)', icon: <Eye size={13} /> }
+        ].map(tab => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => {
+              setActiveSubTab(tab.key as any);
+              if (tab.key === 'preview') {
+                setIsPreviewActive(true);
+              }
+            }}
+            className={`flex items-center gap-2 p-2 px-3.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+              activeSubTab === tab.key
+                ? 'bg-violet-600 text-white shadow-md shadow-violet-500/10 scale-[1.02]'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+            }`}
+          >
+            {tab.icon}
+            <span>{language === 'ar' ? tab.labelAr : tab.labelAr}</span>
+            {tab.isNew && (
+              <span className="text-[8px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black animate-pulse">جديد</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab 1: Features Access Matrix */}
+      {activeSubTab === 'features' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Banner */}
+          {featuresSaveFeedback && (
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl text-xs font-bold flex items-center gap-2 animate-bounce">
+              <CheckCircle2 size={16} className="text-emerald-500" />
+              <span>{featuresSaveFeedback}</span>
+            </div>
+          )}
+
+          {/* Explanation Alert Card */}
+          <div className="bg-gradient-to-l from-violet-500/5 to-transparent border border-violet-500/10 dark:border-violet-950/35 p-5 rounded-3xl space-y-3 text-right">
+            <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400">
+              <Info size={16} />
+              <h3 className="text-xs font-black">نظام التحكم بالميزات والصلاحيات المخصصة (RBAC Sub-Panel)</h3>
+            </div>
+            <p className="text-[11px] text-slate-650 dark:text-slate-300 leading-relaxed">
+              أنت تلج الآن إلى لوحة تحكم ميزات المنصة بصفتك <strong>مديراً للصيانة</strong>. يتيح لك هذا القسم المطور التحكم المطلق والدقيق في إتاحة أو حجب أي ميزة من الميزات والتبويبات المتاحة بالنظام لكل فئة وظيفية بشكل مستقل. عند إلغاء تفعيل أي ميزة لدور معين، سيتم <strong>حجب التبويب المقابل فوراً</strong> من شريط التنقل الجانبي ولن يتمكن هذا المستخدم من رؤيتها أو الوصول إليها.
+            </p>
+          </div>
+
+          {/* Features Grid */}
+          <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-4">
+              <div className="flex items-center gap-2">
+                <Sliders size={18} className="text-violet-600 dark:text-violet-400" />
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">جدول تخصيص ميزات المنصة والأقسام</h3>
+                  <p className="text-[10px] text-slate-500 mt-0.5">قم بتفعيل أو تعطيل التبويبات لكل دور وظيفي لتحديد صلاحياته بدقة فائقة.</p>
+                </div>
+              </div>
+              <div className="flex gap-2 self-start sm:self-center">
+                <button
+                  type="button"
+                  onClick={handleResetFeaturesToDefault}
+                  className="p-1.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  إعادة ضبط القياسيات
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveFeaturesGlobally}
+                  className="p-1.5 px-3.5 bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-black rounded-xl transition-all shadow-xs cursor-pointer"
+                >
+                  حفظ وتعميم السياسة الجانبية
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-right border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800/80">
+                    <th className="py-3 text-[11px] font-black text-slate-400">اسم الميزة والتبويب</th>
+                    <th className="py-3 text-[11px] font-black text-slate-400 text-center">مدير نظام (Admin)</th>
+                    <th className="py-3 text-[11px] font-black text-slate-400 text-center">مدير حركة (Fleet)</th>
+                    <th className="py-3 text-[11px] font-black text-slate-400 text-center">فني صيانة (Tech)</th>
+                    <th className="py-3 text-[11px] font-black text-slate-400 text-center">مراقب وجودة (Viewer)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100/50 dark:divide-slate-800/40 font-bold text-slate-700 dark:text-slate-300">
+                  {/* Group 1: القيادة والتحكم الإستراتيجي */}
+                  <tr>
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                      القيادة والتحكم الإستراتيجي (Command & Control)
+                    </td>
+                  </tr>
+                  {[
+                    { id: 'dashboard', label: 'لوحة التحكم والتحليلات الفورية', icon: <LayoutDashboard size={14} />, desc: 'الشاشة الرئيسية التي تعرض إحصائيات عامة عن الأسطول وتنبيهات الورش.' },
+                    { id: 'maintenance-bot', label: 'مركز التحكم بوكلاء الـ AI', icon: <Bot size={14} />, desc: 'المساعد الذكي المبني بالـ AI لتحليل أوامر الصيانة والتشخيص التلقائي.' },
+                    { id: 'reports', label: 'التقارير والإحصائيات الكبرى', icon: <BarChart3 size={14} />, desc: 'التقارير التفصيلية المتقدمة ومخططات البيانية لمراقبة الأداء والهدر.' },
+                  ].map(feat => renderFeatureRow(feat))}
+
+                  {/* Group 2: إدارة الحركة والعمليات */}
+                  <tr>
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                      إدارة الحركة والعمليات (Operations)
+                    </td>
+                  </tr>
+                  {[
+                    { id: 'vehicles', label: 'إدارة المعدات ومركبات الأسطول', icon: <Truck size={14} />, desc: 'إدخال وجرد الشاحنات والحافلات وعرض تفاصيل استهلاك الوقود.' },
+                    { id: 'drivers', label: 'إدارة السائقين والتفويضات', icon: <Users size={14} />, desc: 'تسجيل السائقين ورخص القيادة وربطهم بالتفويضات الميدانية النشطة.' },
+                    { id: 'driver-handover', label: 'تسليم واستلام العجلات الفني', icon: <FileText size={14} />, desc: 'استمارات فحص تسليم واستلام السائقين للمركبات مع ميزة التوقيع المباشر.' },
+                  ].map(feat => renderFeatureRow(feat))}
+
+                  {/* Group 3: إدارة الهندسة والصيانة الفنية */}
+                  <tr>
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                      إدارة الهندسة والصيانة الفنية (Engineering)
+                    </td>
+                  </tr>
+                  {[
+                    { id: 'workshops', label: 'إدارة الورش والضغط الميداني', icon: <Building2 size={14} />, desc: 'توزيع المهام بين ورش الرياض، جدة، والدمام وقياس سعة الاستيعاب الحالية.' },
+                    { id: 'maintenance', label: 'إدارة أوامر الصيانة وتذاكر الإصلاح', icon: <Wrench size={14} />, desc: 'إنشاء ومتابعة تذاكر الأعطال الطارئة وأعمال الكهرباء والميكانيكا المفتوحة.' },
+                    { id: 'periodic-maintenance', label: 'إدارة الصيانة الدورية المجدولة', icon: <Calendar size={14} />, desc: 'إعداد خطط غيار الزيت والإطارات والفحص الفني بناءً على المسافة أو التاريخ.' },
+                    { id: 'technicians', label: 'إدارة الفنيين والعاملين بالمنظمة', icon: <Users size={14} />, desc: 'توزيع فئات المهندسين ومراقبة إنتاجيتهم وسجلات حضورهم اليومي بالورش.' },
+                  ].map(feat => renderFeatureRow(feat))}
+
+                  {/* Group 4: إدارة التموين وسلاسل الإمداد */}
+                  <tr>
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                      سلاسل التموين والإمداد (Logistics)
+                    </td>
+                  </tr>
+                  {[
+                    { id: 'inventory', label: 'إدارة المخازن وقطع الغيار', icon: <Warehouse size={14} />, desc: 'جرد المحركات، الإطارات، الفلاتر والتحكم الدقيق بحدود إعادة الطلب الآلي.' },
+                    { id: 'vendors', label: 'إدارة الموردين والتوريد والمشتريات', icon: <Users size={14} />, desc: 'عقود الموردين الخارجيين وفواتير شراء قطع الغيار واعتماد كشوف الحساب.' },
+                  ].map(feat => renderFeatureRow(feat))}
+
+                  {/* Group 5: الحوكمة والتفتيش والأمان */}
+                  <tr>
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                      الحوكمة والتفتيش والأمان (Compliance & Governance)
+                    </td>
+                  </tr>
+                  {[
+                    { id: 'security-audit', label: 'صلاحيات الموظفين والامتثال (RBAC)', icon: <ShieldCheck size={14} />, desc: 'الفضاء الأمني للتحكم بالصلاحيات، فحص سجل العمليات وإدارة الحسابات.' },
+                    { id: 'firebase-sync', label: 'بوابة المزامنة والربط السحابي (Firebase)', icon: <Cloud size={14} />, desc: 'تصدير واستيراد ونسخ البيانات الحية احتياطياً بشكل سحابي كامل.' },
+                    { id: 'saas-billing', label: 'إدارة الاشتراك والفوترة وعقود الـ SaaS', icon: <CreditCard size={14} />, desc: 'التحكم بباقات الاشتراك، الدفع الإلكتروني، وتتبع فواتير SaaS للشركة.' },
+                  ].map(feat => renderFeatureRow(feat))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Standard RBAC Matrices */}
+      {activeSubTab === 'matrix' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
         
         {/* Permission Matrix Toggles */}
         <div className="lg:col-span-2 bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-5" id="interactive-matrix-grid">
@@ -1196,120 +1678,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
           </div>
         </div>
 
-      </div>
-
-      {/* SECTION: GRANULAR PERMISSIONS (صلاحيات إضافية للعمليات الصغرى) */}
-      <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-5" id="granular-permissions-panel">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-150/50 dark:border-slate-800/60 gap-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded-xl">
-              <Key size={18} />
-            </div>
-            <div>
-              <h2 className="text-sm font-black text-slate-900 dark:text-white">
-                {language === 'ar' ? 'صلاحيات إضافية تفصيلية للعمليات (Granular Permissions)' : 'Granular Permissions & Operations Access'}
-              </h2>
-              <p className="text-[10px] text-slate-500 mt-0.5">
-                {language === 'ar' 
-                  ? 'تحكم دقيق بمستوى تنفيذ العمليات والقرارات التشغيلية الحساسة (مثل حذف سجلات الصيانة أو تعديل بيانات المركبات)' 
-                  : 'Fine-tune authorization down to micro-level database and workshop actions'}
-              </p>
-            </div>
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Search Input */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={language === 'ar' ? 'بحث في الصلاحيات التفصيلية...' : 'Search granular rules...'}
-                value={granularSearchQuery}
-                onChange={(e) => setGranularSearchQuery(e.target.value)}
-                className="w-48 text-[11px] p-2 pr-8 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-violet-500 rounded-xl transition-all outline-none dark:text-white"
-              />
-              <Search size={12} className="absolute right-2.5 top-3.5 text-slate-400" />
-            </div>
-
-            {/* Add Custom Button */}
-            <button
-              onClick={() => setShowAddGranularModal(true)}
-              className="p-2 px-3 bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-black rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-sm"
-            >
-              <Plus size={12} />
-              <span>{language === 'ar' ? 'إضافة صلاحية تفصيلية' : 'Add Granular Rule'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Info banner */}
-        <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex items-start gap-2.5">
-          <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
-          <div className="text-[10px] text-slate-600 dark:text-slate-400 leading-relaxed">
-            {language === 'ar' 
-              ? 'تتجاوز هذه الإعدادات القيود العامة للتبويبات؛ حيث تتيح تخصيص الإجراءات عالية الخطورة وتوثيق التخويل بالتبديل المباشر لمنع الحوادث وضمان امتثال السلامة في الورشة.'
-              : 'These rules enforce strict row-level action constraints. Changes are audited with immediate cloud token updates.'}
-          </div>
-        </div>
-
-        {/* Granular Matrix Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-[11px] border-collapse min-w-[600px]">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 font-bold">
-                <th className="py-2 px-3 text-right">
-                  {language === 'ar' ? 'القرار التشغيلي / الإجراء الدقيق' : 'Granular Operational Decision / Action'}
-                </th>
-                <th className="py-2 px-2 text-center w-28">{language === 'ar' ? 'مدير نظام (Admin)' : 'Admin'}</th>
-                <th className="py-2 px-2 text-center w-28">{language === 'ar' ? 'مدير حركة (Manager)' : 'Fleet Manager'}</th>
-                <th className="py-2 px-2 text-center w-28">{language === 'ar' ? 'فني صيانة (Technician)' : 'Technician'}</th>
-                <th className="py-2 px-2 text-center w-28">{language === 'ar' ? 'مشاهد ومراقب (Viewer)' : 'Viewer'}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {granularPermissions
-                .filter(p => p.label.includes(granularSearchQuery) || p.id.includes(granularSearchQuery))
-                .map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-colors">
-                    <td className="py-3 px-3">
-                      <div>
-                        <div className="font-bold text-slate-800 dark:text-slate-200 text-[11.5px]">{p.label}</div>
-                        <span className="text-[8.5px] text-violet-500/80 font-mono tracking-wide uppercase mt-0.5 block">{p.id}</span>
-                      </div>
-                    </td>
-
-                    {/* Checkboxes for each role */}
-                    {(['admin', 'fleet_manager', 'technician', 'viewer'] as const).map((roleKey) => {
-                      const isChecked = !!p.roles[roleKey];
-                      return (
-                        <td key={roleKey} className="py-3 px-2 text-center">
-                          <div className="flex items-center justify-center">
-                            <label className="relative flex items-center justify-center cursor-pointer select-none group/gbox">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => handleToggleGranularPermission(p.id, roleKey)}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-5.5 h-5.5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 transform group-hover/gbox:scale-110 active:scale-95 ${
-                                  isChecked
-                                    ? 'border-violet-600 bg-violet-600 dark:border-violet-500 dark:bg-violet-500 text-white shadow-xs'
-                                    : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-transparent hover:border-violet-400'
-                                }`}
-                              >
-                                <Check size={12} className={`stroke-[3.5] transition-transform duration-200 ${isChecked ? 'scale-100' : 'scale-0'}`} />
-                              </div>
-                            </label>
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       {/* ADVANCED CUSTOM RBAC CONFIGURATION PANEL */}
       <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-6" id="rbac-advanced-panel">
@@ -1649,9 +2018,210 @@ export default function SecurityAudit({ user }: { user?: User }) {
           </p>
         </div>
       </div>
+      </div>
+      )}
+
+
+      {/* Tab 2.5: Granular Operations Permissions */}
+      {activeSubTab === 'granular' && (
+        <div className="space-y-6 animate-fade-in text-right" dir="rtl">
+          {/* SECTION: GRANULAR PERMISSIONS (صلاحيات إضافية للعمليات الصغرى) */}
+          <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-5" id="granular-permissions-panel">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-150/50 dark:border-slate-800/60 gap-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-violet-500/10 text-violet-600 dark:text-violet-400 rounded-xl">
+                  <Key size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 dark:text-white">
+                    {language === 'ar' ? 'صلاحيات العمليات الدقيقة والحرجة (Granular Permissions)' : 'Granular Permissions & Operations Access'}
+                  </h2>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    {language === 'ar' 
+                      ? 'التحكم التفصيلي في العمليات التشغيلية الحساسة للورشة كبديل عن الصلاحيات العامة للتبويبات.' 
+                      : 'Fine-tune authorization down to micro-level database and workshop actions'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Search Input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={language === 'ar' ? 'بحث في الصلاحيات التفصيلية...' : 'Search granular rules...'}
+                    value={granularSearchQuery}
+                    onChange={(e) => setGranularSearchQuery(e.target.value)}
+                    className="w-48 text-[11px] p-2 pr-8 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-violet-500 rounded-xl transition-all outline-none dark:text-white"
+                  />
+                  <Search size={12} className="absolute right-2.5 top-3.5 text-slate-400" />
+                </div>
+
+                {/* Add Custom Button */}
+                <button
+                  onClick={() => setShowAddGranularModal(true)}
+                  className="p-2 px-3 bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-black rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-sm"
+                >
+                  <Plus size={12} />
+                  <span>{language === 'ar' ? 'إضافة صلاحية تفصيلية' : 'Add Granular Rule'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Info banner */}
+            <div className="p-3 bg-violet-500/5 border border-violet-500/10 rounded-2xl flex items-start gap-2.5">
+              <AlertCircle size={14} className="text-violet-500 mt-0.5 shrink-0" />
+              <div className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                {language === 'ar' 
+                  ? 'هذه الصلاحيات تمنح مديري النظام والورشة تحكماً دقيقاً في العمليات الحرجة والحساسة (مثل حذف سجل صيانة، تعديل رقم هيكل المركبة، وإصدار تقارير مالية). تم دمجها كلياً داخل هذا القسم المخصص لتسهيل الامتثال والتحكم البرمجي بدلاً من السياسات العامة لتبويبات النظام.'
+                  : 'These permissions allow system administrators and fleet managers to control critical operations (such as deleting maintenance records, editing VINs, and issuing financial reports) independently of general tab permissions.'}
+              </div>
+            </div>
+
+            {/* Granular Matrix Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-[11px] border-collapse min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-500 font-bold">
+                    <th className="py-2 px-3 text-right">
+                      {language === 'ar' ? 'القرار التشغيلي / الإجراء الدقيق' : 'Granular Operational Decision / Action'}
+                    </th>
+                    <th className="py-2 px-2 text-center w-28">{language === 'ar' ? 'مدير نظام (Admin)' : 'Admin'}</th>
+                    <th className="py-2 px-2 text-center w-28">{language === 'ar' ? 'مدير حركة (Manager)' : 'Fleet Manager'}</th>
+                    <th className="py-2 px-2 text-center w-28">{language === 'ar' ? 'فني صيانة (Technician)' : 'Technician'}</th>
+                    <th className="py-2 px-2 text-center w-28">{language === 'ar' ? 'مشاهد ومراقب (Viewer)' : 'Viewer'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                  {granularPermissions
+                    .filter(p => p.label.includes(granularSearchQuery) || p.id.includes(granularSearchQuery))
+                    .map((p) => (
+                      <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-colors">
+                        <td className="py-3 px-3">
+                          <div>
+                            <div className="font-bold text-slate-800 dark:text-slate-200 text-[11.5px]">{p.label}</div>
+                            <span className="text-[8.5px] text-violet-500/80 font-mono tracking-wide uppercase mt-0.5 block">{p.id}</span>
+                          </div>
+                        </td>
+
+                        {/* Checkboxes for each role */}
+                        {(['admin', 'fleet_manager', 'technician', 'viewer'] as const).map((roleKey) => {
+                          const isChecked = !!p.roles[roleKey];
+                          return (
+                            <td key={roleKey} className="py-3 px-2 text-center">
+                              <div className="flex items-center justify-center">
+                                <label className="relative flex items-center justify-center cursor-pointer select-none group/gbox">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => handleToggleGranularPermission(p.id, roleKey)}
+                                    className="sr-only"
+                                  />
+                                  {/* Beautiful Sliding Toggle Switch */}
+                                  <div
+                                    className={`w-10 h-5.5 rounded-full p-0.5 transition-all duration-300 transform group-hover/gbox:scale-105 active:scale-95 flex items-center ${
+                                      isChecked
+                                        ? 'bg-violet-600 dark:bg-violet-500 justify-end'
+                                        : 'bg-slate-200 dark:bg-slate-800 justify-start'
+                                    }`}
+                                  >
+                                    <span className="sr-only">Toggle</span>
+                                    <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md transition-all duration-300" />
+                                  </div>
+                                </label>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* NEW SECTION: Critical Operations Audit Log */}
+          <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4 mt-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 font-sans">
+                <ShieldAlert size={18} className="text-rose-500 animate-pulse" />
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white">سجل العمليات الحرجة والرقابة الفورية (Critical Action Audit Log)</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">سجل زمني حي وغير قابل للتعديل يوثق كافة العمليات الحساسة التي يجريها مدراء النظام والمهندسون.</p>
+                </div>
+              </div>
+              <span className="text-[9px] font-black px-2.5 py-1 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-full border border-rose-500/10 select-none">
+                منطقة مراقبة الامتثال المباشر
+              </span>
+            </div>
+
+            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+              {criticalLogs.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-[11px] font-sans">
+                  لا توجد عمليات حرجة مسجلة حالياً في هذه الجلسة.
+                </div>
+              ) : (
+                criticalLogs.map((log) => (
+                  <div 
+                    key={log.id}
+                    className="p-3.5 bg-slate-50/50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-200"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${
+                        log.action.includes('حذف') 
+                          ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400' 
+                          : 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400'
+                      }`}>
+                        {log.action.includes('حذف') ? <Trash2 size={14} /> : <Settings2 size={14} />}
+                      </div>
+                      <div className="space-y-1 font-sans text-right" dir="rtl">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-black text-slate-800 dark:text-white">{log.action}</span>
+                          <span className={`text-[9px] px-1.5 py-0.5 font-bold rounded-md ${
+                            log.action.includes('حذف')
+                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+                              : 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
+                          }`}>
+                            {log.category === 'maintenance' ? 'إدارة الصيانة' : 'أسطول المركبات'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-400 font-bold leading-relaxed">
+                          {log.details}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400">
+                          <span className="flex items-center gap-1 font-mono">
+                            <Clock size={11} />
+                            <span>{log.timestamp}</span>
+                          </span>
+                          <span className="flex items-center gap-1 font-semibold text-slate-500 dark:text-slate-450">
+                            <UserIcon size={11} className="text-slate-400" />
+                            <span>{log.user} ({log.role})</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center md:flex-col items-end gap-2 md:gap-1 shrink-0 font-sans">
+                      <span className="text-[9.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/10 flex items-center gap-1 select-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {log.status}
+                      </span>
+                      <span className="text-[9px] font-mono text-slate-450">
+                        IP: {log.ipAddress}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Teammates management directory list (Interactive suspend/active actions) */}
-      <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+      {activeSubTab === 'team' && (
+      <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4 animate-fade-in">
         <div className="flex items-center justify-between font-sans pb-1">
           <div className="flex items-center gap-2">
             <Users size={16} className="text-brand-blue-500" />
@@ -1696,6 +2266,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
                   <span className="font-bold">{tm.status === 'active' ? 'حساب فعال' : 'حساب موقوف'}</span>
                 </div>
                 <button 
+                  type="button"
                   onClick={() => handleToggleMemberStatus(tm.id)}
                   className={`text-[9.5px] p-1.5 px-3 rounded-lg font-black transition-colors shrink-0 flex items-center gap-1 cursor-pointer ${
                     tm.status === 'active' 
@@ -1720,9 +2291,86 @@ export default function SecurityAudit({ user }: { user?: User }) {
           ))}
         </div>
       </div>
+      )}
 
-      {/* Audit Logs compliance Search and List module */}
-      <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+
+      {/* Audit Logs & Firebase Connection Module */}
+      {activeSubTab === 'logs' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Firebase Core Sync Terminal Block */}
+          <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Cloud size={18} className="text-violet-600 dark:text-violet-400 animate-pulse" />
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 dark:text-white">بوابة المزامنة والربط السحابي (Google Firebase Core Connector)</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">مزامنة فوريّة وتأمين السجلات المحليّة مباشرة مع قاعدة البيانات السحابية Firestore.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 p-1.5 px-3 rounded-full border border-slate-100 dark:border-slate-800">
+                <span className={`w-2.5 h-2.5 rounded-full ${isDbConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500 animate-pulse'}`} />
+                <span className="text-[9.5px] font-black text-slate-700 dark:text-slate-300">
+                  {isDbConnected ? 'متصل سحابياً (Firestore Active)' : 'وضع المحاكاة المحلي (Offline Emulation)'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Actions */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-3 flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-black text-slate-400 block uppercase">العمليات السحابية المتاحة</span>
+                  <p className="text-[10.5px] text-slate-650 dark:text-slate-450 mt-1">قم بتحديث النسخة الاحتياطية السحابية يدوياً أو استيراد كتل التغيير لتحديث الجلسات النشطة.</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={handleUploadBackup}
+                      disabled={isSyncing}
+                      className="p-2.5 bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-black rounded-xl transition-all shadow-md shadow-violet-500/10 flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ArrowUpRight size={12} />
+                      <span>رفع ومزامنة للـ Cloud</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadRestore}
+                      disabled={isSyncing}
+                      className="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-black rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ArrowDownLeft size={12} />
+                      <span>استرداد البيانات</span>
+                    </button>
+                  </div>
+                  <p className="text-[9px] text-slate-400 text-right">آخر مزامنة ناجحة: <strong className="text-slate-700 dark:text-slate-300 font-mono">{lastSyncTime || 'لا يوجد'}</strong></p>
+                </div>
+              </div>
+
+              {/* Status Terminal */}
+              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-850 font-mono text-left" dir="ltr">
+                <div className="flex items-center justify-between pb-1.5 border-b border-slate-900">
+                  <span className="text-[8px] text-slate-500 font-bold uppercase">CLOUD FIREBASE CORE LOGS</span>
+                  <span className="text-[8.5px] text-emerald-500 font-bold animate-pulse">● CONSOLE ONLINE</span>
+                </div>
+                <div className="h-20 overflow-y-auto text-[9.5px] text-emerald-400/95 leading-relaxed pt-2 space-y-1 font-mono">
+                  <p className="text-slate-500">&gt; Connection probe established on cloud database.</p>
+                  {syncFeedbackLog ? (
+                    <p className="text-white">&gt; {syncFeedbackLog}</p>
+                  ) : (
+                    <p>&gt; Awaiting operational synchronization instructions...</p>
+                  )}
+                  {isSyncing && (
+                    <p className="text-yellow-400 animate-pulse">&gt; Syncing data chunks with cloud cluster... Please hold.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Audit Logs compliance Search and List module */}
+          <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
+
         
         {/* Module Header with Live Filter Controls */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans border-b border-slate-150/50 dark:border-slate-800/60 pb-3">
@@ -1839,8 +2487,224 @@ export default function SecurityAudit({ user }: { user?: User }) {
           )}
         </div>
       </div>
+      </div>
+      )}
 
-      {/* Modal for adding custom permission */}
+
+      {/* Tab 5: Live UX Simulator */}
+      {activeSubTab === 'preview' && (
+        <div className="space-y-6 animate-fade-in text-right">
+          <div className="bg-gradient-to-l from-violet-500/5 to-transparent border border-violet-500/10 dark:border-violet-950/35 p-5 rounded-3xl space-y-3">
+            <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400">
+              <Eye size={16} />
+              <h3 className="text-xs font-black">محاكي واجهات المستخدم الحي (Dynamic UX Simulator Desk)</h3>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              هذا الفضاء التفاعلي مخصص لاختبار واجهات العميل والتحقق من الأمان فورياً. حدد دوراً وظيفياً بالأسفل، وشاهد كيف تتكيف القائمة الجانبية (Sidebar Navigation) والشاشات الفرعية والصلاحيات الدقيقة بشكل فوريّ بالبوابة بناءً على السياسة الإدارية ومصفوفة الصلاحيات المخصصة التي قمت بحفظها للتو في التبويب الأول.
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-6">
+            {/* Role Selection & Simulated Profile */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800/80 gap-4">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">تغيير هوية ودور المعاينة</span>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {(['admin', 'fleet_manager', 'technician', 'viewer'] as const).map((role) => {
+                    const isActive = selectedPreviewRole === role;
+                    const label = { admin: 'مدير نظام كامل', fleet_manager: 'مدير حركة الأسطول', technician: 'فني صيانة ورشة', viewer: 'مشاهد ومراقب جودة' }[role];
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setSelectedPreviewRole(role)}
+                        className={`p-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-violet-600 text-white shadow-md'
+                            : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* simulated session active status info */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-[10.5px] text-slate-550 dark:text-slate-400 space-y-1">
+                <p>الجلسة المحاكية: <strong className="text-slate-800 dark:text-white font-mono">laheeblaheeb0@gmail.com</strong></p>
+                <p className="flex items-center gap-1"><Clock size={11} /> آخر مزامنة للمتصفح: <span className="font-mono text-violet-500">نشطة الآن</span></p>
+              </div>
+            </div>
+
+            {/* Simulated Desktop Workbench Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-3xl border border-slate-150 dark:border-slate-850" dir="rtl">
+              
+              {/* Simulated Left Sidebar (or Right in RTL) */}
+              <div className="lg:col-span-1 bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-150 dark:border-slate-800 p-4 space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="w-6 h-6 rounded-lg bg-violet-600 flex items-center justify-center text-white text-xs font-black">م</div>
+                  <div>
+                    <h4 className="text-[11px] font-black text-slate-900 dark:text-white leading-none">ميكانيكي 360</h4>
+                    <span className="text-[8px] text-slate-400">بوابة الصيانة والامتثال</span>
+                  </div>
+                </div>
+
+                {/* Navigation Items filtered dynamically by BOTH standard role check and customFeaturePermissions! */}
+                <div className="space-y-1 text-right">
+                  {[
+                    { id: 'dashboard', label: 'لوحة التحكم والتحليلات', icon: <LayoutDashboard size={12} /> },
+                    { id: 'maintenance-bot', label: 'مركز مساعد الذكاء الاصطناعي', icon: <Bot size={12} /> },
+                    { id: 'vehicles', label: 'إدارة أسطول المركبات', icon: <Truck size={12} /> },
+                    { id: 'drivers', label: 'سجلات وبيانات السائقين', icon: <Users size={12} /> },
+                    { id: 'maintenance', label: 'أوامر وتذاكر الصيانة', icon: <Wrench size={12} /> },
+                    { id: 'periodic-maintenance', label: 'خطط الصيانة الدورية', icon: <Calendar size={12} /> },
+                    { id: 'inventory', label: 'المخازن وقطع الغيار', icon: <Warehouse size={12} /> },
+                    { id: 'saas-billing', label: 'إدارة الاشتراك والفوترة', icon: <CreditCard size={12} /> },
+                    { id: 'security-audit', label: 'الأمان والامتثال (RBAC)', icon: <ShieldCheck size={12} /> },
+                  ].map((item) => {
+                    // Check if role is admin (unrestricted unless custom flag disables it), or matches customFeatures for this role
+                    const isAllowedByRole = selectedPreviewRole === 'admin' || (
+                      item.id === 'dashboard' ? true :
+                      item.id === 'saas-billing' ? false :
+                      item.id === 'security-audit' ? false : true
+                    );
+                    const isCustomEnabled = customFeatures[item.id]?.[selectedPreviewRole] ?? isAllowedByRole;
+                    const isItemVisible = isCustomEnabled;
+
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => isItemVisible && setSelectedPreviewItem(item.id)}
+                        className={`w-full p-2 rounded-xl text-[10px] font-bold flex items-center gap-2 transition-all text-right ${
+                          !isItemVisible
+                            ? 'opacity-25 cursor-not-allowed text-slate-400 bg-slate-50/20'
+                            : selectedPreviewItem === item.id
+                              ? 'bg-violet-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+                        }`}
+                        title={!isItemVisible ? 'محجوب بواسطة مدير الصيانة عبر ميزة RBAC' : 'عرض المحاكاة'}
+                      >
+                        {item.icon}
+                        <span className="truncate">{item.label}</span>
+                        {!isItemVisible && (
+                          <span className="mr-auto text-[7px] bg-rose-500 text-white px-1 py-0.2 rounded font-black">🔒 محجوب</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Simulated Screen Viewport */}
+              <div className="lg:col-span-3 bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-150 dark:border-slate-800 p-5 space-y-4 relative overflow-hidden min-h-[300px]">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
+                    <h4 className="text-xs font-black text-slate-850 dark:text-white">
+                      محاكاة شاشة: {
+                        selectedPreviewItem === 'dashboard' ? 'لوحة التحكم والتحليلات الفورية' :
+                        selectedPreviewItem === 'maintenance-bot' ? 'مركز التحكم بوكلاء الذكاء الاصطناعي' :
+                        selectedPreviewItem === 'vehicles' ? 'إدارة المركبات والأسطول' :
+                        selectedPreviewItem === 'drivers' ? 'إدارة السائقين ورخص العمل الميداني' :
+                        selectedPreviewItem === 'maintenance' ? 'إدارة أوامر صيانة وتذاكر الأعطال' :
+                        selectedPreviewItem === 'periodic-maintenance' ? 'الصيانة الدورية المجدولة وغيار القطع' :
+                        selectedPreviewItem === 'inventory' ? 'مستودع ومخزون قطع الغيار' :
+                        selectedPreviewItem === 'saas-billing' ? 'إدارة الاشتراك والفوترة وعقود SaaS' :
+                        'الرقابة وصلاحيات الموظفين والامتثال (RBAC)'
+                      }
+                    </h4>
+                  </div>
+                  <span className="text-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black border border-emerald-500/15">
+                    حالة الوصول: مسموح
+                  </span>
+                </div>
+
+                {/* Content mockup depending on active view */}
+                <div className="space-y-4">
+                  {selectedPreviewItem === 'dashboard' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-2 text-right">
+                        <div className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[8px] text-slate-400 block font-bold">الأسطول النشط</span>
+                          <span className="text-xs font-black text-violet-600 dark:text-violet-400 mt-0.5 block">18 شاحنة وحافلة</span>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[8px] text-slate-400 block font-bold">أوامر الصيانة المعلقة</span>
+                          <span className="text-xs font-black text-amber-600 dark:text-amber-400 mt-0.5 block">4 تذاكر نشطة</span>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[8px] text-slate-400 block font-bold">إيرادات الورش والتشغيل</span>
+                          <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">$14,820</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1">
+                        <span className="text-[8px] font-black text-slate-500 block">رصد الفعاليات بالورش الميدانية</span>
+                        <p className="text-[9.5px] text-slate-600 dark:text-slate-400">آخر عملية: تم اكتمال غيار طقم المكابح الإلزامي لشاحنة مرسيدس بنجاح.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPreviewItem !== 'dashboard' && (
+                    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3">
+                      <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                        واجهة محاكاة كاملة تمكّنك من استعراض ميزات البوابة واختبار مستويات الترخيص. في بيئة التشغيل الفعلية، سيقوم النظام بالتحقق التلقائي ضد مصفوفة الصلاحيات لتمكين أو قفل الميزات الحساسة مثل:
+                      </p>
+                      <div className="space-y-1.5 text-[8.5px] text-slate-500 font-mono">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1">
+                          <span>1. حذف سجل/أمر صيانة نهائياً من الأرشيف:</span>
+                          <span className={granularPermissions.find(p => p.id === 'delete-maintenance-record')?.roles[selectedPreviewRole] ? 'text-emerald-500 font-bold' : 'text-red-500 font-bold'}>
+                            {granularPermissions.find(p => p.id === 'delete-maintenance-record')?.roles[selectedPreviewRole] ? '✓ مصرح به' : '🔒 مقيد'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1">
+                          <span>2. إعادة فتح وتعديل فواتير الصيانة المغلقة:</span>
+                          <span className={granularPermissions.find(p => p.id === 'edit-completed-orders')?.roles[selectedPreviewRole] ? 'text-emerald-500 font-bold' : 'text-red-500 font-bold'}>
+                            {granularPermissions.find(p => p.id === 'edit-completed-orders')?.roles[selectedPreviewRole] ? '✓ مصرح به' : '🔒 مقيد'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1">
+                          <span>3. موافقة واعتماد طلبات صرف القطع الثمينة ($100+):</span>
+                          <span className={granularPermissions.find(p => p.id === 'approve-parts-issuance')?.roles[selectedPreviewRole] ? 'text-emerald-500 font-bold' : 'text-red-500 font-bold'}>
+                            {granularPermissions.find(p => p.id === 'approve-parts-issuance')?.roles[selectedPreviewRole] ? '✓ موافقة مباشرة' : '🔒 موافقة المدير المالي'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Simulated lockout warning backdrop if this view is completely disabled */}
+                {(() => {
+                  const isAllowedByRole = selectedPreviewRole === 'admin' || (
+                    selectedPreviewItem === 'dashboard' ? true :
+                    selectedPreviewItem === 'saas-billing' ? false :
+                    selectedPreviewItem === 'security-audit' ? false : true
+                  );
+                  const isCustomEnabled = customFeatures[selectedPreviewItem]?.[selectedPreviewRole] ?? isAllowedByRole;
+                  
+                  if (!isCustomEnabled) {
+                    return (
+                      <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center text-white space-y-3">
+                        <Lock size={32} className="text-rose-500 animate-bounce" />
+                        <h4 className="text-sm font-black text-rose-400">واجهة محجوبة أمنياً (Access Denied)</h4>
+                        <p className="text-[10px] text-slate-350 max-w-xs leading-relaxed">
+                          لقد قام مدير الصيانة بتعطيل الوصول إلى تبويب (<strong>{selectedPreviewItem}</strong>) لحسابات الموظفين المسجلين تحت فئة <strong>{selectedPreviewRole}</strong> عبر لوحة تخصيص الصلاحيات المخصصة (RBAC).
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAddPermissionModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 text-right" dir="rtl">

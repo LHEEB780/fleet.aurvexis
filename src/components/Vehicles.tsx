@@ -29,10 +29,11 @@ import {
   QrCode,
   LayoutGrid,
   List,
-  Trash2
+  Trash2,
+  Edit
 } from 'lucide-react';
 import { vehicles as initialVehicles } from '../data';
-import { VehicleStatus, Vehicle, User } from '../types';
+import { VehicleStatus, Vehicle, User, hasGranularPermission } from '../types';
 import VehicleHistory from './VehicleHistory';
 import VehicleQrModal from './VehicleQrModal';
 import { maintenanceOrders, technicians as initialTechnicians } from '../data';
@@ -213,6 +214,8 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const [expandedVehicleIds, setExpandedVehicleIds] = useState<Record<string, boolean>>({});
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
+  const [tempChassisValue, setTempChassisValue] = useState('');
 
   const toggleExpand = (vehicleId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -220,6 +223,41 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
       ...prev,
       [vehicleId]: !prev[vehicleId]
     }));
+  };
+
+  const handleSaveChassis = (vehicleId: string) => {
+    if (!tempChassisValue.trim()) {
+      alert(language === 'ar' ? 'الرجاء إدخال رقم هيكل صحيح!' : 'Please enter a valid chassis number!');
+      return;
+    }
+    const targetVehicle = vehicleList.find(v => v.id === vehicleId);
+    const updated = vehicleList.map(v => v.id === vehicleId ? { ...v, chassisNumber: tempChassisValue.trim() } : v);
+    setVehicleList(updated);
+    localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updated));
+
+    // Create a critical audit log entry and store in localStorage
+    try {
+      const newLog = {
+        id: 'crit-log-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        user: user.name || 'مستخدم النظام',
+        role: (user.role as string) === 'admin' ? 'مدير نظام' : (user.role as string) === 'fleet_manager' ? 'مدير حركة' : (user.role as string) === 'technician' ? 'فني صيانة' : 'مشاهد ومراقب',
+        action: 'تعديل رقم هيكل المركبة',
+        category: 'vehicles',
+        ipAddress: '197.82.16.42',
+        status: 'نجاح',
+        details: `قام بتعديل مواصفات ورقم هيكل المركبة لوحة: ${targetVehicle?.plateNumber || 'غير محدد'} (${targetVehicle?.type || 'شاحنة'}) إلى: ${tempChassisValue.trim()}`
+      };
+      const savedLogs = localStorage.getItem('saas_critical_audit_logs');
+      const logsArray = savedLogs ? JSON.parse(savedLogs) : [];
+      logsArray.unshift(newLog);
+      localStorage.setItem('saas_critical_audit_logs', JSON.stringify(logsArray));
+    } catch (e) {
+      console.error('Error logging critical vehicle edit:', e);
+    }
+
+    setEditingVehicleId(null);
+    alert(language === 'ar' ? 'تم تحديث رقم الهيكل بنجاح!' : 'Chassis number updated successfully!');
   };
 
   const getLatestMaintenanceOrderAndTech = (vehicleId: string) => {
@@ -1261,9 +1299,54 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                                   {language === 'ar' ? 'مواصفات المركبة الهيكلية والتأمين:' : 'Chassis Specs & Insurance:'}
                                 </div>
                                 <div className="grid grid-cols-2 gap-3 text-xs font-semibold">
-                                  <div className="p-2 bg-slate-50/60 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-850">
-                                    <span className="text-slate-400 block mb-0.5 text-[10px]">{language === 'ar' ? 'رقم الهيكل (الشاصيه):' : 'Chassis Number:'}</span>
-                                    <span className="text-slate-750 dark:text-slate-300 font-mono text-[11px] truncate block">{vehicle.chassisNumber || 'N/A'}</span>
+                                  <div className="p-2 bg-slate-50/60 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-850 flex flex-col justify-between min-h-[58px]">
+                                    <div>
+                                      <span className="text-slate-400 block mb-0.5 text-[10px]">{language === 'ar' ? 'رقم الهيكل (الشاصيه):' : 'Chassis Number:'}</span>
+                                      {editingVehicleId === vehicle.id ? (
+                                        <input
+                                          type="text"
+                                          value={tempChassisValue}
+                                          onChange={(e) => setTempChassisValue(e.target.value)}
+                                          className="text-xs font-mono p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 text-slate-900 dark:text-white rounded-lg w-full outline-none focus:border-brand-blue-500"
+                                        />
+                                      ) : (
+                                        <span className="text-slate-750 dark:text-slate-300 font-mono text-[11px] truncate block">{vehicle.chassisNumber || 'N/A'}</span>
+                                      )}
+                                    </div>
+                                    {hasGranularPermission('edit-vehicle-data', user.role) && (
+                                      <div className="mt-1 flex justify-end gap-1">
+                                        {editingVehicleId === vehicle.id ? (
+                                          <>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSaveChassis(vehicle.id)}
+                                              className="text-[9px] px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded cursor-pointer"
+                                            >
+                                              {language === 'ar' ? 'حفظ' : 'Save'}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setEditingVehicleId(null)}
+                                              className="text-[9px] px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded cursor-pointer"
+                                            >
+                                              {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setEditingVehicleId(vehicle.id);
+                                              setTempChassisValue(vehicle.chassisNumber || '');
+                                            }}
+                                            className="text-[9px] text-brand-blue-600 dark:text-brand-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer font-black"
+                                          >
+                                            <Edit size={10} />
+                                            <span>{language === 'ar' ? 'تعديل البيانات' : 'Edit'}</span>
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="p-2 bg-slate-50/60 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-850">
                                     <span className="text-slate-400 block mb-0.5 text-[10px]">{language === 'ar' ? 'نوع الوقود:' : 'Fuel Type:'}</span>

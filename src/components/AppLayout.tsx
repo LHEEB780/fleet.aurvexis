@@ -414,11 +414,54 @@ export default function AppLayout({
     return MENU_ITEMS.map(item => item.id);
   });
 
-  const filteredMenuItems = MENU_ITEMS.filter(item => 
-    item.id !== 'marketing-admin' &&
-    item.roles.includes(user.role) && 
-    (item.id === 'dashboard' || item.id === 'maintenance-bot' || item.id === 'firebase-sync' || item.id === 'saas-billing' || item.id === 'marketing-portal' || enabledModuleIds.includes(item.id))
-  );
+  // Load custom RBAC feature permissions from storage
+  const [customFeaturePermissions, setCustomFeaturePermissions] = useState<Record<string, Record<string, boolean>> | null>(() => {
+    const saved = localStorage.getItem('saas_rbac_custom_features');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return null;
+  });
+
+  // Listen to custom RBAC updates
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('saas_rbac_custom_features');
+      if (saved) {
+        try { setCustomFeaturePermissions(JSON.parse(saved)); } catch (e) {}
+      } else {
+        setCustomFeaturePermissions(null);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('rbac-updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('rbac-updated', handleStorageChange);
+    };
+  }, []);
+
+  const filteredMenuItems = MENU_ITEMS.filter(item => {
+    if (item.id === 'marketing-admin') return false;
+    
+    // Check if there are custom manager rules for feature visibility
+    if (customFeaturePermissions && customFeaturePermissions[item.id]) {
+      const isAllowedByManager = !!customFeaturePermissions[item.id][user.role];
+      if (!isAllowedByManager) return false;
+    } else {
+      // Fallback to static role validation
+      if (!item.roles.includes(user.role)) return false;
+    }
+    
+    return (
+      item.id === 'dashboard' || 
+      item.id === 'maintenance-bot' || 
+      item.id === 'firebase-sync' || 
+      item.id === 'saas-billing' || 
+      item.id === 'marketing-portal' || 
+      enabledModuleIds.includes(item.id)
+    );
+  });
 
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
   const [scannedFeedback, setScannedFeedback] = useState<string | null>(null);

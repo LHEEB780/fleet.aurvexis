@@ -45,7 +45,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { maintenanceOrders as initialMaintenanceOrders, vehicles as staticVehicles, technicians as staticTechnicians } from '../data';
-import { User, MaintenanceOrder, Vehicle, Technician, InventoryItem } from '../types';
+import { User, MaintenanceOrder, Vehicle, Technician, InventoryItem, hasGranularPermission } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateAIPERepairSteps } from '../services/aiService';
 import VoiceNoteField from './VoiceNoteField';
@@ -885,6 +885,28 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
     setOrders(prev => prev.filter(o => o.id !== orderIdToDelete));
     setSelectedOrder(null);
     applySystemWideIntegrations(findOrder, 'deleted');
+
+    // Create a critical audit log entry and store in localStorage
+    try {
+      const newLog = {
+        id: 'crit-log-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        user: user.name || 'مستخدم النظام',
+        role: (user.role as string) === 'admin' ? 'مدير نظام' : (user.role as string) === 'fleet_manager' ? 'مدير حركة' : (user.role as string) === 'technician' ? 'فني صيانة' : 'مشاهد ومراقب',
+        action: 'حذف سجل صيانة',
+        category: 'maintenance',
+        ipAddress: '197.82.16.42',
+        status: 'نجاح',
+        details: `قام بحذف وإلغاء أمر الصيانة رقم #${findOrder.id} لمركبة لوحة: ${findOrder.plateNumber || 'غير محدد'} (${findOrder.type || 'صيانة'})`
+      };
+      const savedLogs = localStorage.getItem('saas_critical_audit_logs');
+      const logsArray = savedLogs ? JSON.parse(savedLogs) : [];
+      logsArray.unshift(newLog);
+      localStorage.setItem('saas_critical_audit_logs', JSON.stringify(logsArray));
+    } catch (e) {
+      console.error('Error logging critical operation:', e);
+    }
+
     setOrderIdToDelete(null);
     alert(language === 'en'
       ? 'Maintenance tracking has been removed and consumed assets returned successfully.'
@@ -3437,13 +3459,15 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                                   </button>
                                 )}
 
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveOrder(selectedOrder.id)}
-                                  className="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 text-xs font-black rounded-xl cursor-pointer"
-                                >
-                                  تفكيك وإزالة
-                                </button>
+                                {hasGranularPermission('delete-maintenance-record', user.role) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveOrder(selectedOrder.id)}
+                                    className="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 text-xs font-black rounded-xl cursor-pointer"
+                                  >
+                                    تفكيك وإزالة
+                                  </button>
+                                )}
                               </>
                             )}
                           </div>

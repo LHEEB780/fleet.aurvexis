@@ -176,7 +176,20 @@ export default function App() {
     const currentMenuItem = MENU_ITEMS.find(item => item.id === tab);
     const userRole = currentUser?.role || 'admin';
     if (isLoggedIn && currentMenuItem) {
-      if (currentMenuItem.roles.includes(userRole)) {
+      let isAllowed = currentMenuItem.roles.includes(userRole);
+      
+      // Load custom RBAC feature permissions from storage if set
+      const savedCustom = localStorage.getItem('saas_rbac_custom_features');
+      if (savedCustom) {
+        try {
+          const parsed = JSON.parse(savedCustom);
+          if (parsed[tab]) {
+            isAllowed = !!parsed[tab][userRole];
+          }
+        } catch (e) {}
+      }
+
+      if (isAllowed) {
         setActiveTabState(tab);
         localStorage.setItem('saas_active_tab', tab);
       } else {
