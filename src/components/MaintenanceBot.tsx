@@ -582,10 +582,10 @@ export default function MaintenanceBot({
                       </span>
 
                       {/* Bubble Text Card */}
-                      <div className={`p-4 md:p-5 rounded-3xl text-xs md:text-sm font-semibold leading-relaxed shadow-sm border ${
+                      <div className={`p-4 md:p-5 rounded-3xl text-xs md:text-sm leading-relaxed shadow-md border transition-all duration-300 ${
                         isModel 
-                          ? 'bg-white dark:bg-[#111625] text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-800 rounded-tl-none' 
-                          : 'bg-violet-600 text-white border-transparent rounded-tr-none text-right font-semibold'
+                          ? 'bg-gradient-to-br from-indigo-50/70 to-white dark:from-[#11172b] dark:to-[#0c1020] text-slate-800 dark:text-slate-100 border-indigo-100/80 dark:border-indigo-950/40 rounded-tl-none border-l-4 border-l-indigo-650 dark:border-l-indigo-500 font-medium shadow-[0_4px_12px_rgba(99,102,241,0.04)]' 
+                          : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-transparent rounded-tr-none text-right font-semibold shadow-lg shadow-indigo-600/10'
                       }`}>
                         <div className="whitespace-pre-wrap leading-relaxed select-text font-medium">
                           {msg.text}

@@ -2240,10 +2240,10 @@ Regarding: "${text}", live data metrics match our general parameters:
                             : (language === 'ar' ? 'أنت (القيادة والعمليات)' : 'You (Strategic Director)')}
                         </span>
 
-                        <div className={`p-4 md:p-5 leading-relaxed max-w-[85%] md:max-w-[75%] border shadow-xs relative group/msg ${
+                        <div className={`p-4 md:p-5 leading-relaxed max-w-[85%] md:max-w-[75%] border relative group/msg transition-all duration-300 ${
                           isUser 
-                            ? 'bg-violet-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black' 
-                            : `bg-white dark:bg-[#111526] text-slate-800 dark:text-slate-200 rounded-3xl rounded-bl-none border-slate-150 dark:border-slate-800 font-semibold ${
+                            ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black shadow-lg shadow-indigo-600/10' 
+                            : `bg-gradient-to-br from-indigo-50/70 to-white dark:from-[#11172b] dark:to-[#0c1020] text-slate-800 dark:text-slate-200 rounded-3xl rounded-bl-none border-indigo-100/80 dark:border-indigo-950/40 border-l-4 border-l-indigo-600 dark:border-l-indigo-500 font-medium shadow-[0_6px_20px_rgba(99,102,241,0.04)] ${
                                 isRtl ? 'text-right' : 'text-left'
                               }`
                         }`}>
@@ -2824,10 +2824,10 @@ Regarding: "${text}", live data metrics match our general parameters:
                             : (language === 'ar' ? 'أنت (المسؤول الفني)' : 'You (Fleet Engineer)')}
                         </span>
 
-                        <div className={`p-4 md:p-5 leading-relaxed max-w-[85%] md:max-w-[75%] border shadow-xs relative group/msg ${
+                        <div className={`p-4 md:p-5 leading-relaxed max-w-[85%] md:max-w-[75%] border relative group/msg transition-all duration-300 ${
                           isUser 
-                            ? 'bg-amber-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black' 
-                            : `bg-white dark:bg-[#111526] text-slate-800 dark:text-slate-200 rounded-3xl rounded-bl-none border-slate-150 dark:border-slate-800 font-semibold ${
+                            ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black shadow-lg shadow-amber-600/10' 
+                            : `bg-gradient-to-br from-amber-50/40 to-white dark:from-[#131725] dark:to-[#0d101c] text-slate-800 dark:text-slate-200 rounded-3xl rounded-bl-none border-amber-100/70 dark:border-amber-950/30 border-l-4 border-l-amber-500 dark:border-l-amber-400 font-medium shadow-[0_6px_20px_rgba(245,158,11,0.03)] ${
                                 isRtl ? 'text-right' : 'text-left'
                               }`
                         }`}>
@@ -3271,7 +3271,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                           /* Render side-by-side advice cards */
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-full">
                             {/* PM Strategic Response Card */}
-                            <div className="p-4 bg-white dark:bg-[#111526] rounded-3xl border border-slate-150 dark:border-slate-800/60 shadow-xs flex flex-col justify-between">
+                            <div className="p-4 bg-gradient-to-br from-indigo-50/60 to-white dark:from-[#11172b] dark:to-[#0c1020] rounded-3xl border border-indigo-100 dark:border-indigo-950/40 border-l-4 border-l-indigo-600 dark:border-l-indigo-500 shadow-md flex flex-col justify-between transition-all duration-300">
                               <div>
                                 <div className={`flex items-center gap-1.5 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800/60 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                   <Sparkles size={14} className="text-violet-600 dark:text-violet-400 animate-pulse" />
@@ -3318,7 +3318,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                             </div>
 
                             {/* Mechanic Assistant Response Card */}
-                            <div className="p-4 bg-white dark:bg-[#111526] rounded-3xl border border-amber-100 dark:border-amber-950/40 shadow-xs flex flex-col justify-between">
+                            <div className="p-4 bg-gradient-to-br from-amber-50/50 to-white dark:from-[#15131f] dark:to-[#0e0c15] rounded-3xl border border-amber-100 dark:border-amber-950/40 border-l-4 border-l-amber-500 dark:border-l-amber-400 shadow-md flex flex-col justify-between transition-all duration-300">
                               <div>
                                 <div className={`flex items-center gap-1.5 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800/60 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                   <Wrench size={14} className="text-amber-600 dark:text-amber-400" />
@@ -3429,6 +3429,8 @@ Regarding: "${text}", live data metrics match our general parameters:
               </div>
             </motion.div>
           )}
+        </AnimatePresence>
+      </div>
 
       {/* 1. PROJECT MANAGER QUICK GUIDE MODAL */}
       <AnimatePresence>
@@ -3604,44 +3606,130 @@ Regarding: "${text}", live data metrics match our general parameters:
                     <span>{language === 'ar' ? 'ما هي طبيعة عمل هذا الروبوت؟' : 'What is the nature of this robot?'}</span>
                   </h4>
                   <p className={`text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold ${isRtl ? 'text-right' : 'text-left'}`}>
-                    {language === 'ar'
-                      ? 'يعمل هذا الوكيل المي�              {/* Main Chat Drawer Container (Evolving Brand Identity Dark Purple Palette) */}
-              <motion.div 
-                initial={{ scale: 0.95, y: 30, opacity: 0 }} 
-                animate={{ scale: 1, y: 0, opacity: 1 }} 
-                exit={{ scale: 0.95, y: 30, opacity: 0 }}
-                className="bg-gradient-to-br from-indigo-950 via-purple-900 to-violet-950 text-slate-100 w-full h-full md:max-w-6xl md:h-[92vh] flex flex-col md:rounded-3xl shadow-[0_20px_60px_rgba(109,40,217,0.4)] border-2 border-purple-500/30 overflow-hidden z-[111]"
-                dir={isRtl ? 'rtl' : 'ltr'}
-              >
-                {/* Header with Dark Glassmorphic Purple Brand Identity */}
-                <div className="py-3 px-5 border-b border-white/10 bg-black/30 backdrop-blur-md flex items-center justify-between shadow-md">
+                                        {language === 'ar'
+                      ? 'يعمل هذا الوكيل الميداني كخبير هندسي وأمين مخزن متقن. يركز على تتبع ومعاينة قطع الغيار داخل المخزن ومطابقة كميات الأرفف بالحدود الآمنة للمؤسسة، مع توفير أدلة فنية تفصيلية ورموز عزم شد البراغي وخطوات تفكيك وتعمير المحركات والأنظمة الهيدروليكية.'
+                      : 'This agent acts as a direct workshop companion. It monitors parts shelves depth, checks stock levels against safety margins, and provides torque specs, engine repair overhauls, and hydraulic guidance.'}
+                  </p>
+                </div>
+
+                {/* Section 2: Live Data Sources */}
+                <div className="p-4 bg-amber-50/50 dark:bg-amber-950/10 rounded-2xl border border-amber-100 dark:border-amber-900/40 space-y-2.5">
+                  <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <Database size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                    <strong className="text-xs font-black text-amber-800 dark:text-amber-350">
+                      {language === 'ar' ? 'بيانات المستودع المتصل بالروبوت:' : 'Live warehouse data connections:'}
+                    </strong>
+                  </div>
+                  <div className={`grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-400 ${isRtl ? 'text-right' : 'text-left'}`}>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-[#070a13] p-1.5 px-2.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
+                      <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
+                      <span>{language === 'ar' ? 'جرد كميات قطع الغيار' : 'Inventory Stock Count'}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white dark:bg-[#070a13] p-1.5 px-2.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
+                      <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
+                      <span>{language === 'ar' ? 'أماكن التخزين والأرفف' : 'Shelf & Bin Locations'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Clickable suggestions */}
+                <div className="space-y-2.5">
+                  <h4 className={`text-xs font-black text-slate-800 dark:text-slate-150 flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                    <MessageSquare size={14} className="text-amber-500 shrink-0" />
+                    <span>{language === 'ar' ? 'الدليل السريع: اضغط على أي سؤال للبدء فوراً' : 'Quick Guide: Click any inquiry to execute'}</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {mechSuggestions.map((sug, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleMechSuggestionClick(sug.text)}
+                        className={`p-3 bg-slate-50 hover:bg-amber-50/50 dark:bg-[#111625] dark:hover:bg-[#141d33] border border-slate-200/50 dark:border-slate-800 rounded-2xl cursor-pointer transition-colors text-right flex flex-col gap-1 ${
+                          isRtl ? 'items-end' : 'items-start text-left'
+                        }`}
+                      >
+                        <span className="text-xs font-extrabold text-slate-800 dark:text-slate-150 group-hover:text-amber-600">{sug.label}</span>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500 leading-normal font-semibold">{sug.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setMechGuideModalOpen(false)}
+                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black cursor-pointer transition-colors border-0"
+                >
+                  {language === 'ar' ? 'فهمت، ابدأ الاستعلام' : 'Got it, let’s query'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 3. DEDICATED ROBOT INTERACTIVE CHAT DRAWER */}
+      <AnimatePresence>
+        {activeChatAgent && (() => {
+          const activeChatMessages = agentChats[activeChatAgent.id] || [];
+          const rawSuggestionsList = dynamicSuggestions[activeChatAgent.id] || getAgentSuggestions(activeChatAgent.id, language === 'ar');
+          const currentSuggestions = rawSuggestionsList.map((sugText) => ({
+            text: sugText,
+            label: sugText,
+            desc: language === 'ar' ? 'استعلم من خلال هذا السؤال الموصى به' : 'Query using this recommended advice.'
+          }));
+          const isWelcomeState = activeChatMessages.length <= 1;
+
+          return (
+            <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-end md:justify-center p-0 md:p-6">
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveChatAgent(null)} 
+              className="absolute inset-0 bg-slate-950/65 backdrop-blur-xs" 
+            />
+
+            {/* Main Chat Drawer Container (Sleek light/dark adaptive premium theme) */}
+            <motion.div 
+              initial={{ scale: 0.95, y: 30, opacity: 0 }} 
+              animate={{ scale: 1, y: 0, opacity: 1 }} 
+              exit={{ scale: 0.95, y: 30, opacity: 0 }}
+              className="bg-white dark:bg-[#0c101d] text-slate-800 dark:text-slate-100 w-full h-full md:max-w-4xl md:h-[90vh] flex flex-col md:rounded-3xl shadow-[0_20px_50px_rgba(109,40,217,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-slate-200 dark:border-slate-800 overflow-hidden z-[111]"
+              dir={isRtl ? 'rtl' : 'ltr'}
+            >
+                {/* Header with Glassmorphic Clean Style */}
+                <div className="py-4 px-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-[#111726] flex items-center justify-between shadow-xs">
                   <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
                     {/* Dynamic Colorized Avatar */}
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm bg-white/10 text-purple-250 border border-white/10">
-                      <div className="scale-110 text-purple-200">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border border-violet-200/50 dark:border-violet-850">
+                      <div className="scale-110">
                         {renderAgentIcon(activeChatAgent.id, activeChatAgent.color)}
                       </div>
                     </div>
                     <div>
                       <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <h3 className="text-xs md:text-sm font-black text-white tracking-tight">
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                           {language === 'ar' ? activeChatAgent.nameAr : activeChatAgent.nameEn}
                         </h3>
                         {/* Active Status Badge */}
-                        <span className="text-[9px] px-2 py-0.5 rounded-full font-black bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 animate-pulse">
+                        <span className="text-[9px] px-2.5 py-0.5 rounded-full font-black bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/30 animate-pulse">
                           {activeChatAgent.isActive 
-                            ? (language === 'ar' ? '🟢 نشط في الخلفية' : '🟢 Active in BG') 
+                            ? (language === 'ar' ? '🟢 نشط' : '🟢 Active') 
                             : (language === 'ar' ? '⏸️ متوقف مؤقتاً' : '⏸️ Paused')}
                         </span>
                       </div>
-                      <p className={`text-[10px] text-purple-300 mt-0.5 font-extrabold ${isRtl ? 'text-right' : 'text-left'}`}>
+                      <p className={`text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-extrabold ${isRtl ? 'text-right' : 'text-left'}`}>
                         {activeChatAgent.roles.join(' | ')}
                       </p>
                     </div>
                   </div>
                   <button 
                     onClick={() => setActiveChatAgent(null)} 
-                    className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl cursor-pointer transition-colors border border-white/10 shadow-xs"
+                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 hover:dark:text-white hover:bg-slate-200/60 hover:dark:bg-white/10 rounded-xl cursor-pointer transition-colors border border-slate-200 dark:border-slate-800 shadow-xs"
                   >
                     <X size={15} />
                   </button>
@@ -3650,14 +3738,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                 {/* Message Streams Area */}
                 <div
                   ref={agentChatScrollRef}
-                  className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 bg-radial-at-t from-violet-50/10 via-transparent to-transparent scrollbar-thin scrollbar-thumb-violet-200"
+                  className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/70 dark:bg-[#070a13] scrollbar-thin scrollbar-thumb-violet-200 dark:scrollbar-thumb-slate-850"
                 >
                   {/* If in Welcome Landing State, render the stunning landing greeting inside scroll container */}
                   {isWelcomeState ? (
-                    <div className="flex flex-col justify-center min-h-[50vh] text-center max-w-4xl mx-auto py-10">
+                    <div className="flex flex-col justify-center min-h-[50vh] text-center max-w-2xl mx-auto py-10">
                       {/* Centered Brand Logo */}
                       <div className="flex items-center justify-center mb-6">
-                        <div className="relative w-20 h-20 flex items-center justify-center bg-violet-500/5 rounded-full p-4 border border-violet-500/10 shadow-[0_0_30px_rgba(139,92,246,0.05)]">
+                        <div className="relative w-20 h-20 flex items-center justify-center bg-violet-100 dark:bg-violet-950/30 rounded-full p-4 border border-violet-250 dark:border-violet-800 shadow-[0_0_30px_rgba(139,92,246,0.05)]">
                           <svg className="w-12 h-12 text-violet-500 dark:text-violet-400 animate-pulse" viewBox="0 0 100 100" fill="currentColor">
                             <path d="M50,15 L72,37 L63,40 L50,29 L37,40 L28,37 Z" />
                             <path d="M20,68 L42,50 L45,59 L33,68 L45,77 L42,86 Z" transform="rotate(120 50 50)" />
@@ -3667,10 +3755,10 @@ Regarding: "${text}", live data metrics match our general parameters:
                       </div>
 
                       {/* Greeting */}
-                      <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight mb-2">
+                      <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white tracking-tight mb-2">
                         {language === 'ar' ? 'مرحباً يا لهيب 👋' : 'Hello, Lahib 👋'}
                       </h2>
-                      <p className="text-xs md:text-sm text-slate-600 font-bold max-w-xl mx-auto leading-relaxed mb-6">
+                      <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 font-bold max-w-xl mx-auto leading-relaxed mb-6">
                         {language === 'ar' 
                           ? `أنا مساعدك الذكي ${activeChatAgent.nameAr}، كيف يمكنني خدمتك اليوم في إدارة الصيانة والعمليات؟`
                           : `I am your AI assistant ${activeChatAgent.nameEn}. How can I assist you in managing maintenance and operations today?`}
@@ -3678,8 +3766,8 @@ Regarding: "${text}", live data metrics match our general parameters:
 
                       {/* Recommended Quick Query Cards (centered, huge, interactive, purple brand identity) */}
                       <div className="space-y-3 max-w-xl mx-auto px-4">
-                        <div className="flex items-center justify-center gap-2 text-violet-600 text-xs font-black tracking-wider uppercase mb-1">
-                          <Compass size={13} className="text-violet-500" />
+                        <div className="flex items-center justify-center gap-2 text-violet-600 dark:text-violet-400 text-xs font-black tracking-wider uppercase mb-1">
+                          <Compass size={13} className="text-violet-500 dark:text-violet-400" />
                           <span>{language === 'ar' ? 'استعلامات سريعة موصى بها من الوكيل' : 'RECOMMENDED QUICK QUERIES'}</span>
                         </div>
                         <div className="grid grid-cols-1 gap-2.5">
@@ -3687,14 +3775,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                             <button
                               key={idx}
                               type="button"
-                              onClick={() => handleAgentSendMessage(activeChatAgent.id, sug)}
-                              className="group relative flex items-center justify-between p-3.5 text-right bg-white hover:bg-violet-50/80 border border-slate-200 hover:border-violet-200 rounded-xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 shadow-xs hover:shadow-md text-slate-700 hover:text-slate-900 animate-fadeIn"
+                              onClick={() => handleAgentSendMessage(activeChatAgent.id, sug.text)}
+                              className="group relative flex items-center justify-between p-3.5 text-right bg-white dark:bg-[#151c2e] hover:bg-violet-50/80 dark:hover:bg-violet-950/20 border border-slate-200 dark:border-slate-800 hover:border-violet-200 dark:hover:border-violet-500 rounded-xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 shadow-xs hover:shadow-md text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white animate-fadeIn"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
+                                <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-400 flex items-center justify-center group-hover:bg-violet-100 dark:group-hover:bg-violet-900 transition-colors">
                                   <Compass size={14} />
                                 </div>
-                                <span className="text-xs md:text-[13px] font-black leading-snug">{sug}</span>
+                                <span className="text-xs md:text-[13px] font-black leading-snug">{sug.label}</span>
                               </div>
                               <span className="text-xs text-violet-400 group-hover:text-violet-600 group-hover:translate-x-1 transition-all">
                                 {isRtl ? '←' : '→'}
@@ -3713,27 +3801,35 @@ Regarding: "${text}", live data metrics match our general parameters:
                           key={i}
                           className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full`}
                         >
-                          <span className={`text-[10px] font-extrabold text-slate-400 block px-2 mb-1`}>
+                          <span className={`text-[10px] font-extrabold text-slate-400 dark:text-slate-500 block px-2 mb-1`}>
                             {isUser 
                               ? (language === 'ar' ? 'المدير التنفيذي لهيب' : 'Executive Director Lahib') 
                               : (language === 'ar' ? `الوكيل ${activeChatAgent.nameAr} 🤖` : `${activeChatAgent.nameEn} 🤖`)}
                           </span>
 
-                          <div className={`p-4 leading-relaxed max-w-[85%] border shadow-xs relative group transition-all ${
+                           <div className={`p-4 leading-relaxed max-w-[85%] border relative group transition-all duration-300 ${
                             isUser 
-                              ? 'bg-violet-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent font-black shadow-[0_4px_14px_rgba(109,40,217,0.25)]' 
-                              : 'bg-white text-slate-800 rounded-2.5xl rounded-bl-none border-slate-200/80 font-semibold shadow-xs'
+                              ? 'bg-gradient-to-br from-violet-50/90 to-indigo-50/60 dark:from-violet-950/20 dark:to-indigo-950/15 text-violet-950 dark:text-violet-200 rounded-2xl rounded-tr-none px-5 py-3.5 border-violet-200/60 dark:border-violet-500/15 font-semibold shadow-[0_6px_18px_rgba(139,92,246,0.08)]' 
+                              : 'bg-gradient-to-br from-indigo-50/70 to-white dark:from-[#11172b] dark:to-[#0c1020] text-slate-800 dark:text-slate-100 rounded-2xl rounded-tl-none border-violet-500/20 dark:border-violet-400/15 font-medium shadow-[0_6px_24px_rgba(109,40,217,0.03)]'
                           } ${isRtl ? 'text-right' : 'text-left'}`}>
+                            
+                            {!isUser && (
+                              <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100/60 dark:border-slate-800/40 text-[10px] font-black text-violet-600 dark:text-violet-400 select-none">
+                                <Sparkles size={11} className="animate-pulse shrink-0" />
+                                <span>{language === 'ar' ? 'توصية الوكيل الذكي' : 'Verified AI Agent Recommendation'}</span>
+                              </div>
+                            )}
+
                             <div className="select-text text-[14px] md:text-[15px]">
                               {isUser ? msg.text : renderRichMessageText(msg.text, `agent-chat-${activeChatAgent.id}-${i}`)}
                             </div>
 
                             {!isUser && (
-                              <div className="flex items-center gap-3.5 mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-400 font-bold select-none">
+                              <div className="flex items-center gap-3.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 dark:text-slate-500 font-bold select-none">
                                 <button
                                   type="button"
                                   onClick={() => handleToggleSpeakMessage(`agent-chat-${activeChatAgent.id}-${i}`, msg.text)}
-                                  className="flex items-center gap-1.5 hover:text-violet-600 cursor-pointer transition-colors"
+                                  className="flex items-center gap-1.5 hover:text-violet-600 dark:hover:text-violet-400 cursor-pointer transition-colors"
                                 >
                                   {activeAudioMessageId === `agent-chat-${activeChatAgent.id}-${i}` && isPlayingAudio ? (
                                     <>
@@ -3753,7 +3849,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                   onClick={() => {
                                     navigator.clipboard.writeText(msg.text);
                                   }}
-                                  className="flex items-center gap-1.5 hover:text-violet-600 cursor-pointer transition-colors"
+                                  className="flex items-center gap-1.5 hover:text-violet-600 dark:hover:text-violet-400 cursor-pointer transition-colors"
                                 >
                                   <Copy size={13} />
                                   <span>{language === 'ar' ? 'نسخ التوصية' : 'Copy'}</span>
@@ -3773,7 +3869,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                       });
                                       setQuickOrderModalOpen(true);
                                     }}
-                                    className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition-colors ml-auto mr-auto"
+                                    className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline cursor-pointer transition-colors ml-auto mr-auto"
                                   >
                                     <Wrench size={13} />
                                     <span>{language === 'ar' ? '⚙️ توليد أمر صيانة سريع' : '⚙️ Quick Work Order'}</span>
@@ -3789,10 +3885,10 @@ Regarding: "${text}", live data metrics match our general parameters:
 
                   {agentChatLoading[activeChatAgent.id] && (
                     <div className={`flex items-start gap-3 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                      <div className="w-8 h-8 rounded-xl bg-violet-550/10 text-violet-600 border border-violet-500/20 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-850 flex items-center justify-center shrink-0">
                         <Loader2 size={16} className="animate-spin" />
                       </div>
-                      <div className="p-3.5 bg-white text-slate-600 rounded-2xl rounded-tl-none border border-slate-200 text-xs font-bold animate-pulse shadow-xs">
+                      <div className="p-3.5 bg-white dark:bg-[#111726] text-slate-600 dark:text-slate-300 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-800 text-xs font-bold animate-pulse shadow-xs">
                         {language === 'ar' ? 'يقوم الوكيل بتحليل الحالة الراهنة وتوليد التوصيات...' : 'Agent analyzing state and preparing action steps...'}
                       </div>
                     </div>
@@ -3801,25 +3897,25 @@ Regarding: "${text}", live data metrics match our general parameters:
 
                 {/* Evolving Recommended Suggestions */}
                 {!isWelcomeState && (
-                  <div className="px-5 py-3 bg-violet-50/20 border-t border-violet-100 flex flex-col gap-2 select-none shadow-inner animate-fadeIn">
-                    <div className={`flex items-center gap-1.5 text-[11px] text-slate-500 font-extrabold pr-1 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
+                  <div className="px-5 py-3 bg-violet-50/10 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800/80 flex flex-col gap-2 select-none shadow-inner animate-fadeIn">
+                    <div className={`flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-extrabold pr-1 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
                       <Lightbulb size={13} className="text-amber-500 animate-pulse shrink-0" />
                       <span>{language === 'ar' ? 'توصيات ومتابعات موصى بها من الوكيل:' : 'Recommended Next Steps:'}</span>
                     </div>
-                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-violet-200/50 no-scrollbar snap-x max-w-full">
+                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-violet-200/50 dark:scrollbar-thumb-slate-800 no-scrollbar snap-x max-w-full">
                       {currentSuggestions.map((sug, idx) => (
                         <button
                           key={idx}
                           type="button"
                           disabled={agentChatLoading[activeChatAgent.id]}
-                          onClick={() => setSelectedReadingSuggestion(sug)}
-                          className="flex items-center gap-2 text-xs font-black bg-white hover:bg-violet-50 text-slate-700 hover:text-violet-700 px-4 py-2 rounded-full border border-slate-200 hover:border-violet-300 cursor-pointer transition-all duration-200 shadow-xs shrink-0 snap-center max-w-[280px] text-ellipsis overflow-hidden whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => setSelectedReadingSuggestion(sug.text)}
+                          className="flex items-center gap-2 text-xs font-black bg-white dark:bg-[#151c2e] hover:bg-violet-50 dark:hover:bg-violet-950/20 text-slate-700 dark:text-slate-200 hover:text-violet-700 dark:hover:text-violet-400 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-500 cursor-pointer transition-all duration-200 shadow-xs shrink-0 snap-center max-w-[280px] text-ellipsis overflow-hidden whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <span className="truncate">{sug}</span>
+                          <span className="truncate">{sug.label}</span>
                           {isRtl ? (
-                            <ArrowLeft size={11} className="text-violet-600 shrink-0 font-bold" />
+                            <ArrowLeft size={11} className="text-violet-600 dark:text-violet-400 shrink-0 font-bold" />
                           ) : (
-                            <ArrowRight size={11} className="text-violet-600 shrink-0 font-bold" />
+                            <ArrowRight size={11} className="text-violet-600 dark:text-violet-400 shrink-0 font-bold" />
                           )}
                         </button>
                       ))}
@@ -3828,7 +3924,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                 )}
 
                 {/* Chat Input form with Violet Accents */}
-                <div className="p-4 border-t border-violet-300 bg-gradient-to-r from-violet-100/40 via-white to-violet-100/40 shadow-md">
+                <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-[#0c101d] shadow-md">
                   <form 
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -3842,12 +3938,12 @@ Regarding: "${text}", live data metrics match our general parameters:
                       onChange={(e) => setAgentInputText(e.target.value)}
                       disabled={agentChatLoading[activeChatAgent.id]}
                       placeholder={language === 'ar' ? 'اكتب تساؤلاً أو طلباً تنظيمياً للوكيل...' : 'Type a query or action command...'}
-                      className="flex-1 p-3.5 bg-white border border-violet-300 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-violet-600 focus:ring-1 focus:ring-violet-600/20 transition-all disabled:opacity-60"
+                      className="flex-1 p-3.5 bg-white dark:bg-[#151c2e] border border-slate-200 dark:border-slate-800/80 rounded-2xl text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-violet-600 dark:focus:border-violet-400 focus:ring-1 focus:ring-violet-600/20 dark:focus:ring-violet-400/20 transition-all disabled:opacity-60"
                     />
                     <button
                       type="submit"
                       disabled={!agentInputText.trim() || agentChatLoading[activeChatAgent.id]}
-                      className="p-3.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-100 text-white disabled:text-slate-400 rounded-2xl cursor-pointer transition-all duration-200 border-0 flex items-center justify-center shrink-0 disabled:cursor-not-allowed shadow-[0_4px_14_rgba(109,40,217,0.32)] hover:shadow-[0_4px_18_rgba(109,40,217,0.45)]"
+                      className="p-3.5 bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600 disabled:bg-slate-150 disabled:dark:bg-slate-800 text-white disabled:text-slate-400 dark:disabled:text-slate-500 rounded-2xl cursor-pointer transition-all duration-200 border-0 flex items-center justify-center shrink-0 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(109,40,217,0.32)] hover:shadow-[0_4px_18_rgba(109,40,217,0.45)] dark:shadow-none"
                     >
                       {agentChatLoading[activeChatAgent.id] ? (
                         <Loader2 size={16} className="animate-spin" />

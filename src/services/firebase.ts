@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { 
+  initializeFirestore,
   getFirestore, 
   doc, 
   setDoc, 
@@ -18,13 +19,22 @@ const app = initializeApp(firebaseConfig);
 let dbInstance: any = null;
 try {
   const dbId = firebaseConfig.firestoreDatabaseId;
+  const settings = {
+    experimentalForceLongPolling: true,
+    ignoreUndefinedProperties: true
+  };
   dbInstance = (dbId && dbId !== "" && dbId !== "(default)")
-    ? getFirestore(app, dbId)
-    : getFirestore(app);
+    ? initializeFirestore(app, settings, dbId)
+    : initializeFirestore(app, settings);
 } catch (error) {
-  console.warn("Could not initialize Firestore with custom firestoreDatabaseId, trying normal fallback:", error);
+  console.warn("Could not initialize Firestore with custom settings/firestoreDatabaseId, trying fallback:", error);
   try {
-    dbInstance = getFirestore(app);
+    const dbId = firebaseConfig.firestoreDatabaseId;
+    if (dbId && dbId !== "" && dbId !== "(default)") {
+      dbInstance = getFirestore(app, dbId);
+    } else {
+      dbInstance = getFirestore(app);
+    }
   } catch (err2) {
     console.error("Firestore is completely unavailable or not enabled on this Firebase project:", err2);
     dbInstance = null;
@@ -89,8 +99,12 @@ export async function testFirestoreConnection(): Promise<boolean> {
     return false;
   }
   try {
-    // Attempt a lightweight server lookup
-    await getDocFromServer(doc(db, 'settings', 'live-test'));
+    // Attempt a lightweight server lookup with a fast timeout (2.5s) to avoid blocking
+    const fetchPromise = getDocFromServer(doc(db, 'settings', 'live-test'));
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Timeout after 2500ms")), 2500)
+    );
+    await Promise.race([fetchPromise, timeoutPromise]);
     return true;
   } catch (error) {
     console.warn("Firestore connection check failed, using local fallback state", error);
