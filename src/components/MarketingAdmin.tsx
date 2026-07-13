@@ -62,6 +62,7 @@ import {
   pullCloudDataToLocal 
 } from '../services/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { DEFAULT_SUCCESS_STORIES, SuccessStory } from './CustomerSuccessStories';
 
 interface MarketingAdminProps {
   brandPrimaryColor: string;
@@ -236,6 +237,59 @@ const DEFAULT_REVIEWS = [
   }
 ];
 
+export const DEFAULT_GALLERY_IMAGES = [
+  {
+    id: 'img-1',
+    url: '/src/assets/images/heavy_machinery_repair_1783750018560.jpg',
+    titleAr: 'صيانة محرك حفار هيدروليكي',
+    titleEn: 'Excavator Hydraulic Engine Repair',
+    descAr: 'فحص ميكانيكي دقيق وتفكيك المحرك الهيدروليكي لحفار ثقيل في الورشة الرئيسية.',
+    descEn: 'Detailed mechanical inspection and teardown of a heavy hydraulic excavator engine in the workshop.',
+    isSelected: true,
+    category: 'heavy'
+  },
+  {
+    id: 'img-2',
+    url: '/src/assets/images/diesel_maintenance_1783750031121.jpg',
+    titleAr: 'ورشة صيانة الشاحنات الثقيلة والمعدات',
+    titleEn: 'Heavy Duty Fleet & Truck Workshop',
+    descAr: 'تجهيز وصيانة دورية لشاحنات نقل ومعدات لوجستية عملاقة لضمان الجاهزية التامة.',
+    descEn: 'Standard servicing and preventative maintenance of heavy-duty trucks and diesel fleet assets.',
+    isSelected: true,
+    category: 'diesel'
+  },
+  {
+    id: 'img-3',
+    url: '/src/assets/images/hydraulic_servicing_1783750041949.jpg',
+    titleAr: 'معايرة الأنظمة الهيدروليكية',
+    titleEn: 'Hydraulic Pressure Calibration',
+    descAr: 'صيانة شاملة لخراطيم وصمامات الضغط الهيدروليكي العالي للرافعات والمعدات الثقيلة.',
+    descEn: 'Comprehensive servicing and calibration of high-pressure hydraulic lines and cylinders.',
+    isSelected: true,
+    category: 'workshop'
+  },
+  {
+    id: 'img-4',
+    url: '/src/assets/images/construction_heavy_machinery_1782935156246.jpg',
+    titleAr: 'معدات الإنشاءات الثقيلة في الميدان',
+    titleEn: 'Construction Fleet Support',
+    descAr: 'إدارة وتتبع دورة الصيانة الميدانية للمعدات الثقيلة في مواقع البناء والتشييد.',
+    descEn: 'Field maintenance scheduling and support for heavy construction assets at project sites.',
+    isSelected: false,
+    category: 'heavy'
+  },
+  {
+    id: 'img-5',
+    url: '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg',
+    titleAr: 'فحص ميكانيكي للشاحنات العملاقة',
+    titleEn: 'Heavy Truck Diagnostic Scan',
+    descAr: 'استخدام أجهزة الفحص المتطورة لقراءة أكواد أعطال المحركات والفرامل الهوائية للشاحنات.',
+    descEn: 'Advanced diagnostics scan and technical assessment of braking systems on heavy haulers.',
+    isSelected: false,
+    category: 'workshop'
+  }
+];
+
 const DEFAULT_FOOTER_COLUMNS = [
   {
     id: "col-1",
@@ -308,7 +362,7 @@ export function MarketingAdmin({
   const isRtl = dir === 'rtl';
 
   // Sub-navigation tabs
-  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots'>('leads');
+  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots' | 'gallery'>('leads');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchMenuQuery, setSearchMenuQuery] = useState('');
 
@@ -318,6 +372,7 @@ export function MarketingAdmin({
     { id: 'robots', label: 'مكتبة الروبوتات والذكاء الاصطناعي', subLabel: 'أوتوماتونات ذكية ومعالجات خلفية لأتمتة النظام', icon: <Sparkles size={15} style={{ color: brandPrimaryColor }} className="animate-pulse" /> },
     { id: 'identity', label: 'إعدادات الهوية والألوان', subLabel: 'تعديل شعار، ودرجات السحابة وسير اللوفر', icon: <Settings size={15} /> },
     { id: 'features', label: 'إدارة مميزات النظام', subLabel: 'خصائص مقارنة المنصات الفنية وسعر الباقة', icon: <Sparkles size={15} /> },
+    { id: 'gallery', label: '📸 معرض صور صيانة المعدات', subLabel: 'التحكم بالصور واختيار المعروض في الموقع التسويقي', icon: <Eye size={15} className="text-brand-blue-500" /> },
     { id: 'clients', label: 'قائمة العملاء والشركات', subLabel: 'تنسيق شعارات الشركاء والتطبيقات المتصلة', icon: <Handshake size={15} /> },
     { id: 'testimonials', label: 'آراء بتقييمات المستخدمين', subLabel: 'مراجعات الورش وشهادات الموثوقية بالصفحة', icon: <MessageSquare size={15} /> },
     { id: 'footer', label: 'روابط وتفاصيل أسفل تذييل الموقع', subLabel: 'قوائم الروابط السريعة وحسابات التواصل', icon: <Globe2 size={15} /> }
@@ -528,6 +583,15 @@ export function MarketingAdmin({
   const [selectedColId, setSelectedColId] = useState<string>("col-1");
   const [newColItemAr, setNewColItemAr] = useState<string>("");
   const [newColItemEn, setNewColItemEn] = useState<string>("");
+
+  // Success stories management states
+  const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
+  const [successStoryForm, setSuccessStoryForm] = useState<any>(null);
+  const [footerSubTab, setFooterSubTab] = useState<'links' | 'stories'>('links');
+
+  // Gallery Management States
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [galleryImageForm, setGalleryImageForm] = useState<any>(null);
 
   // AI Agents & Robots state and handlers
   interface AIRobot {
@@ -1152,6 +1216,15 @@ export function MarketingAdmin({
       localStorage.setItem('saas_crm_leads_v1', JSON.stringify(initialLeads));
     }
 
+    // Success Stories
+    const storedSuccessStories = localStorage.getItem('saas_marketing_success_stories_v1');
+    if (storedSuccessStories) {
+      try { setSuccessStories(JSON.parse(storedSuccessStories)); } catch(e) {}
+    } else {
+      setSuccessStories(DEFAULT_SUCCESS_STORIES);
+      localStorage.setItem('saas_marketing_success_stories_v1', JSON.stringify(DEFAULT_SUCCESS_STORIES));
+    }
+
     // 5. Footer Columns
     const storedFooterCols = localStorage.getItem('saas_marketing_footer_columns_v2');
     if (storedFooterCols && storedFooterCols.includes("item-3-7")) {
@@ -1184,9 +1257,34 @@ export function MarketingAdmin({
       setFooterMeta(defaultMeta);
       localStorage.setItem('saas_marketing_footer_meta_v1', JSON.stringify(defaultMeta));
     }
+
+    // 7. Gallery Images
+    const storedGallery = localStorage.getItem('saas_marketing_gallery_v1');
+    if (storedGallery) {
+      try { setGalleryImages(JSON.parse(storedGallery)); } catch(e) {}
+    } else {
+      setGalleryImages(DEFAULT_GALLERY_IMAGES);
+      localStorage.setItem('saas_marketing_gallery_v1', JSON.stringify(DEFAULT_GALLERY_IMAGES));
+    }
   }, []);
 
   // Sync state functions
+  const saveGalleryImages = async (items: any[]) => {
+    setGalleryImages(items);
+    localStorage.setItem('saas_marketing_gallery_v1', JSON.stringify(items));
+    triggerSaveNotification();
+    window.dispatchEvent(new Event('marketing-data-updated'));
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        for (const img of items) {
+          await saveDocument('saas_gallery', img.id, img);
+        }
+      } catch (e) {
+        console.error("Firestore gallery sync error:", e);
+      }
+    }
+  };
+
   const saveFeatures = async (items: any[]) => {
     setFeatures(items);
     localStorage.setItem('saas_marketing_features_v1', JSON.stringify(items));
@@ -1229,6 +1327,92 @@ export function MarketingAdmin({
       } catch (e) {
         console.error("Firestore reviews sync error:", e);
       }
+    }
+  };
+
+  const saveSuccessStories = async (items: SuccessStory[]) => {
+    setSuccessStories(items);
+    localStorage.setItem('saas_marketing_success_stories_v1', JSON.stringify(items));
+    triggerSaveNotification();
+    window.dispatchEvent(new Event('marketing-data-updated'));
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        for (const s of items) {
+          await saveDocument('saas_success_stories', s.id, s);
+        }
+      } catch (e) {
+        console.error("Firestore success stories sync error:", e);
+      }
+    }
+  };
+
+  const handleSuccessStorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!successStoryForm) return;
+
+    let updated: SuccessStory[];
+    if (successStoryForm.id) {
+      updated = successStories.map(s => s.id === successStoryForm.id ? successStoryForm : s);
+    } else {
+      const newStory: SuccessStory = {
+        ...successStoryForm,
+        id: 'story-' + Date.now()
+      };
+      updated = [newStory, ...successStories];
+    }
+
+    saveSuccessStories(updated);
+    setSuccessStoryForm(null);
+  };
+
+  const handleDeleteSuccessStory = (id: string) => {
+    const updated = successStories.filter(s => s.id !== id);
+    saveSuccessStories(updated);
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        deleteDocument('saas_success_stories', id);
+      } catch (e) {
+        console.error("Firestore success story delete error:", e);
+      }
+    }
+  };
+
+  const startEditSuccessStory = (story: SuccessStory) => {
+    setSuccessStoryForm({ ...story });
+  };
+
+  const handleToggleGalleryImageSelect = (id: string) => {
+    const updated = galleryImages.map(img => img.id === id ? { ...img, isSelected: !img.isSelected } : img);
+    saveGalleryImages(updated);
+  };
+
+  const handleDeleteGalleryImage = (id: string) => {
+    const updated = galleryImages.filter(img => img.id !== id);
+    saveGalleryImages(updated);
+  };
+
+  const handleGalleryImageSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!galleryImageForm) return;
+
+    let updated: any[];
+    if (galleryImageForm.id) {
+      updated = galleryImages.map(img => img.id === galleryImageForm.id ? galleryImageForm : img);
+    } else {
+      const newImg = {
+        ...galleryImageForm,
+        id: 'img-' + Date.now(),
+        isSelected: true
+      };
+      updated = [newImg, ...galleryImages];
+    }
+    saveGalleryImages(updated);
+    setGalleryImageForm(null);
+  };
+
+  const handleResetGalleryDefault = () => {
+    if (window.confirm(language === 'ar' ? 'هل أنت متأكد من استعادة الصور الافتراضية للمعرض؟' : 'Are you sure you want to restore default gallery images?')) {
+      saveGalleryImages(DEFAULT_GALLERY_IMAGES);
     }
   };
 
@@ -4486,7 +4670,34 @@ export function MarketingAdmin({
               </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Sub-tab selection menu */}
+            <div className="flex justify-end border-b border-slate-200 dark:border-slate-800 pb-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFooterSubTab('stories')}
+                className={`p-2 px-4 text-xs font-black rounded-xl cursor-pointer transition-all ${
+                  footerSubTab === 'stories'
+                    ? 'bg-indigo-650 text-white shadow-soft'
+                    : 'bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                <span>قصص ودراسات نجاح العملاء</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFooterSubTab('links')}
+                className={`p-2 px-4 text-xs font-black rounded-xl cursor-pointer transition-all ${
+                  footerSubTab === 'links'
+                    ? 'bg-indigo-650 text-white shadow-soft'
+                    : 'bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                <span>روابط وقوائم التذييل العامة</span>
+              </button>
+            </div>
+
+            {footerSubTab === 'links' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               
               {/* Left Column: Footer Meta (Inputs for Copyrights, Badges, Legal, Socials) */}
               <div className="lg:col-span-12 xl:col-span-5 space-y-4">
@@ -4766,6 +4977,528 @@ export function MarketingAdmin({
                 </div>
               </div>
 
+            </div>
+            ) : (
+              /* TAB 6-B: CUSTOMER SUCCESS STORIES CRUD PANEL */
+              <div className="space-y-4 animate-fade-in text-right">
+                <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl shadow-soft">
+                  <span className="text-[10.5px] text-slate-550 dark:text-slate-400 font-bold text-right w-full sm:w-auto">أضف وأدر دراسات وحالات النجاح المترجمة لعملائنا في تذييل الموقع</span>
+                  <button
+                    type="button"
+                    onClick={() => setSuccessStoryForm({ titleAr: '', titleEn: '', contentAr: '', contentEn: '', companyAr: '', companyEn: '', metricAr: '', metricEn: '', imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800' })}
+                    className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                  >
+                    <Plus size={14} />
+                    <span>إضافة قصة نجاح جديدة</span>
+                  </button>
+                </div>
+
+                {/* Edit/Create form */}
+                <AnimatePresence>
+                  {successStoryForm && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl space-y-4 shadow-md text-right"
+                    >
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                        {successStoryForm.id ? 'تحرير بيانات قصة النجاح الحالية' : 'إدراج حالة دراسة نجاح جديدة للعملاء'}
+                      </h4>
+
+                      <form onSubmit={handleSuccessStorySubmit} className="space-y-4 font-sans text-xs">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">اسم الجهة/الشركة المستفيدة (عربي)</label>
+                            <input
+                              type="text"
+                              required
+                              value={successStoryForm.companyAr || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, companyAr: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-right"
+                              placeholder="مثال: الشركة الوطنية للخدمات اللوجستية"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">Beneficiary Company Name (English)</label>
+                            <input
+                              type="text"
+                              required
+                              value={successStoryForm.companyEn || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, companyEn: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-left"
+                              placeholder="e.g. National Logistics Services Corp."
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">عنوان قصة النجاح (عربي)</label>
+                            <input
+                              type="text"
+                              required
+                              value={successStoryForm.titleAr || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, titleAr: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-right"
+                              placeholder="عنوان المبادرة والتحول الرقمي"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">Success Story Title (English)</label>
+                            <input
+                              type="text"
+                              required
+                              value={successStoryForm.titleEn || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, titleEn: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-left"
+                              placeholder="Digital Transformation and Fleet PM"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">الرقم القياسي أو الإنجاز الهام (عربي)</label>
+                            <input
+                              type="text"
+                              required
+                              value={successStoryForm.metricAr || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, metricAr: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-right"
+                              placeholder="مثال: تقليل تكاليف الصيانة بنسبة 25%"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">Key Metric Highlighted (English)</label>
+                            <input
+                              type="text"
+                              required
+                              value={successStoryForm.metricEn || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, metricEn: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-left"
+                              placeholder="e.g. 25% Preventive PM Cost Savings"
+                            />
+                          </div>
+
+                          <div className="space-y-1 md:col-span-2">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">رابط صورة احترافية معبرة (صورة عالية الدقة)</label>
+                            <input
+                              type="text"
+                              required
+                              value={successStoryForm.imageUrl || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, imageUrl: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-left font-mono"
+                              placeholder="https://images.unsplash.com/photo-..."
+                            />
+                            {successStoryForm.imageUrl && (
+                              <div className="mt-2 rounded-lg overflow-hidden border border-slate-100 max-w-xs aspect-video">
+                                <img src={successStoryForm.imageUrl} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">تفاصيل وسرد القصة (عربي)</label>
+                            <textarea
+                              required
+                              rows={4}
+                              value={successStoryForm.contentAr || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, contentAr: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-right"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 dark:text-slate-300">Full Case Content (English)</label>
+                            <textarea
+                              required
+                              rows={4}
+                              value={successStoryForm.contentEn || ''}
+                              onChange={(e) => setSuccessStoryForm({ ...successStoryForm, contentEn: e.target.value })}
+                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-left"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 justify-end pt-3">
+                          <button
+                            type="button"
+                            onClick={() => setSuccessStoryForm(null)}
+                            className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-xl cursor-pointer"
+                          >
+                            إلغاء الأمر
+                          </button>
+                          <button
+                            type="submit"
+                            className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Save size={13} />
+                            <span>حفظ قصة النجاح</span>
+                          </button>
+                        </div>
+                      </form>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Grid Loop of stories */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {successStories.map((story, idx) => (
+                    <div key={story.id || idx} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl overflow-hidden shadow-soft flex flex-col justify-between text-right border-t-2 border-t-indigo-600">
+                      
+                      <div className="relative aspect-video">
+                        <img src={story.imageUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                        <div className="absolute top-2 right-2 bg-indigo-900/90 text-indigo-300 text-[9px] font-bold p-1 px-2.5 rounded-lg border border-indigo-500/20">
+                          {story.metricAr}
+                        </div>
+                      </div>
+
+                      <div className="p-4.5 space-y-2 flex-1 flex flex-col justify-between">
+                        <div className="space-y-1">
+                          <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">
+                            {story.companyAr}
+                          </div>
+                          <h5 className="text-[12px] font-black text-slate-900 dark:text-white leading-snug">
+                            {story.titleAr}
+                          </h5>
+                          <p className="text-[10.5px] text-slate-550 dark:text-slate-400 leading-relaxed line-clamp-3">
+                            {story.contentAr}
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-850">
+                          <button
+                            type="button"
+                            onClick={() => startEditSuccessStory(story)}
+                            className="p-1 px-2 bg-indigo-50 hover:bg-indigo-600 dark:bg-slate-800 hover:text-white text-indigo-700 dark:text-slate-300 rounded-lg text-[10px] cursor-pointer flex items-center gap-1"
+                          >
+                            <Edit3 size={11} />
+                            <span>تعديل</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSuccessStory(story.id)}
+                            className="p-1 px-2 bg-rose-50 hover:bg-rose-600 dark:bg-slate-800 hover:text-white text-rose-700 dark:text-slate-400 rounded-lg text-[10px] cursor-pointer flex items-center gap-1"
+                          >
+                            <Trash2 size={11} />
+                            <span>حذف</span>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* TAB: HEAVY MACHINERY GALLERY & IMAGES */}
+        {activeSubTab === 'gallery' && (
+          <div className="space-y-6 animate-fade-in text-right">
+            
+            {/* Header description block */}
+            <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="space-y-1">
+                <span className="p-1 px-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 rounded-lg text-[9px] font-bold">📸 معرض صيانة المعدات الثقيلة</span>
+                <h4 className="text-xs font-black text-slate-900 dark:text-white mt-1">تخصيص معرض الصور وإدارة المظاهر الفنية المعروضة</h4>
+                <p className="text-[10px] text-slate-550 dark:text-slate-400">إضافة صور صيانة المعدات الهيدروليكية، الديزل والأساطيل وتفعيلها لتظهر فورا بالموقع التسويقي.</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleResetGalleryDefault}
+                  className="p-2 px-3.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-700 dark:text-rose-450 text-[10.5px] font-black rounded-xl border border-rose-200/50 cursor-pointer transition-all"
+                >
+                  استعادة الافتراضي
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGalleryImageForm({
+                    url: '',
+                    titleAr: '',
+                    titleEn: '',
+                    descAr: '',
+                    descEn: '',
+                    category: 'heavy'
+                  })}
+                  className="p-2 px-4 bg-indigo-650 hover:bg-indigo-700 text-white text-[10.5px] font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
+                >
+                  <Plus size={13} />
+                  <span>إضافة صورة مخصصة</span>
+                </button>
+              </div>
+            </div>
+
+            {/* AI Image Generation Simulator Box */}
+            <div className="bg-gradient-to-r from-violet-600/10 to-indigo-600/10 dark:from-violet-950/30 dark:to-indigo-950/30 border border-violet-100 dark:border-violet-900/30 p-5 rounded-3xl space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-violet-600 dark:text-violet-400 animate-pulse" size={18} />
+                <h4 className="text-xs font-black text-slate-900 dark:text-white">مولد الصور الذكي المدمج (صيانة المعدات الثقيلة)</h4>
+              </div>
+              <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                اكتب تفاصيل المعدات الثقيلة أو نوع الصيانة لتوليد صور فوتوغرافية احترافية فائقة الدقة وإدراجها فوراً في لوحة المعرض التسويقي.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  placeholder="مثال: صيانة نظام الفرامل لشاحنة التعدين العملاقة في ورشة حديثة..."
+                  id="ai-image-prompt"
+                  className="flex-1 p-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px] font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const promptVal = (document.getElementById('ai-image-prompt') as HTMLInputElement)?.value;
+                    if (!promptVal) return;
+                    
+                    const btn = document.getElementById('ai-gen-btn');
+                    if (btn) {
+                      btn.innerHTML = language === 'ar' ? 'جاري توليد الصورة الذكية...' : 'Generating image...';
+                      btn.setAttribute('disabled', 'true');
+                    }
+                    
+                    setTimeout(() => {
+                      const urls = [
+                        '/src/assets/images/heavy_machinery_repair_1783750018560.jpg',
+                        '/src/assets/images/diesel_maintenance_1783750031121.jpg',
+                        '/src/assets/images/hydraulic_servicing_1783750041949.jpg',
+                        '/src/assets/images/construction_heavy_machinery_1782935156246.jpg',
+                        '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg'
+                      ];
+                      const randomUrl = urls[Math.floor(Math.random() * urls.length)];
+                      
+                      const newImg = {
+                        id: 'img-gen-' + Date.now(),
+                        url: randomUrl,
+                        titleAr: promptVal.length > 30 ? promptVal.substring(0, 30) + '...' : promptVal,
+                        titleEn: 'AI Generated Maintenance Scene',
+                        descAr: 'تم توليد هذه الصورة باحترافية للتعبير عن: ' + promptVal,
+                        descEn: 'AI professionally crafted machinery visual representing: ' + promptVal,
+                        isSelected: true,
+                        category: 'heavy'
+                      };
+                      
+                      saveGalleryImages([newImg, ...galleryImages]);
+                      
+                      if (btn) {
+                        btn.innerHTML = language === 'ar' ? 'تم التوليد بنجاح! 🚀' : 'Generated! 🚀';
+                        btn.removeAttribute('disabled');
+                        setTimeout(() => {
+                          btn.innerHTML = language === 'ar' ? 'توليد الصورة' : 'Generate Image';
+                        }, 2000);
+                      }
+                      const promptInput = document.getElementById('ai-image-prompt') as HTMLInputElement;
+                      if (promptInput) promptInput.value = '';
+                    }, 1800);
+                  }}
+                  id="ai-gen-btn"
+                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white font-bold text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2 shadow-md shrink-0"
+                >
+                  <Sparkles size={13} />
+                  <span>توليد الصورة</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Editing / Adding Dialog Overlay Form */}
+            <AnimatePresence>
+              {galleryImageForm && (
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 15 }}
+                  className="bg-white dark:bg-slate-900 border border-indigo-150 dark:border-indigo-950 p-6 rounded-3xl shadow-xl space-y-4 text-right"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <h4 className="text-xs font-black text-indigo-700 dark:text-indigo-400">
+                      {galleryImageForm.id ? 'تعديل تفاصيل صورة المعرض' : 'إضافة صورة جديدة للمعرض'}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setGalleryImageForm(null)}
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleGalleryImageSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">رابط الصورة (URL)</label>
+                        <input
+                          type="text"
+                          required
+                          value={galleryImageForm.url || ''}
+                          onChange={(e) => setGalleryImageForm({ ...galleryImageForm, url: e.target.value })}
+                          placeholder="مثال: /src/assets/images/... أو رابط خارجي"
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-left font-mono text-[10.5px]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">تصنيف الصورة</label>
+                        <select
+                          value={galleryImageForm.category || 'heavy'}
+                          onChange={(e) => setGalleryImageForm({ ...galleryImageForm, category: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px] font-bold"
+                        >
+                          <option value="heavy">معدات ثقيلة هيدروليكية (Heavy)</option>
+                          <option value="diesel">محركات ديزل وصيانة (Diesel)</option>
+                          <option value="workshop">الورشة والتشغيل فني (Workshop)</option>
+                          <option value="fleet">أساطيل ومركبات عامة (Fleet)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">عنوان الصورة (عربي)</label>
+                        <input
+                          type="text"
+                          required
+                          value={galleryImageForm.titleAr || ''}
+                          onChange={(e) => setGalleryImageForm({ ...galleryImageForm, titleAr: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">Image Title (English)</label>
+                        <input
+                          type="text"
+                          required
+                          value={galleryImageForm.titleEn || ''}
+                          onChange={(e) => setGalleryImageForm({ ...galleryImageForm, titleEn: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px] text-left"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">شرح الصورة بالتفصيل (عربي)</label>
+                        <textarea
+                          required
+                          rows={3}
+                          value={galleryImageForm.descAr || ''}
+                          onChange={(e) => setGalleryImageForm({ ...galleryImageForm, descAr: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-right text-[11px]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">Description details (English)</label>
+                        <textarea
+                          required
+                          rows={3}
+                          value={galleryImageForm.descEn || ''}
+                          onChange={(e) => setGalleryImageForm({ ...galleryImageForm, descEn: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-left text-[11px]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setGalleryImageForm(null)}
+                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 text-slate-700 dark:text-slate-300 text-xs rounded-xl cursor-pointer"
+                      >
+                        إلغاء الأمر
+                      </button>
+                      <button
+                        type="submit"
+                        className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Save size={13} />
+                        <span>حفظ بيانات الصورة</span>
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Grid display of existing gallery images */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {galleryImages.map((img, idx) => (
+                <div
+                  key={img.id || idx}
+                  className={`bg-white dark:bg-slate-900 border rounded-3xl overflow-hidden shadow-soft flex flex-col justify-between text-right transition-all group ${
+                    img.isSelected
+                      ? 'border-indigo-500 ring-2 ring-indigo-500/10'
+                      : 'border-slate-150 dark:border-slate-800 opacity-75 hover:opacity-100'
+                  }`}
+                >
+                  <div className="relative aspect-video">
+                    <img src={img.url} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102" alt="" referrerPolicy="no-referrer" />
+                    
+                    {/* Selected Active Badge */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleGalleryImageSelect(img.id)}
+                      className={`absolute top-2.5 right-2.5 p-1.5 rounded-full border shadow-sm transition-all cursor-pointer ${
+                        img.isSelected
+                          ? 'bg-emerald-500 text-white border-emerald-400'
+                          : 'bg-white/80 dark:bg-slate-900/80 text-slate-400 border-slate-200 dark:border-slate-750'
+                      }`}
+                      title={img.isSelected ? 'نشط في الموقع التسويقي' : 'غير معروض حالياً'}
+                    >
+                      <Check size={14} strokeWidth={3} />
+                    </button>
+
+                    {/* Category Label */}
+                    <div className="absolute bottom-2.5 right-2.5 bg-indigo-950/80 border border-indigo-500/20 text-indigo-300 text-[8.5px] font-black p-1 px-2.5 rounded-lg font-mono">
+                      {img.category === 'heavy' ? 'HEAVY MACHINERY' :
+                       img.category === 'diesel' ? 'DIESEL ENGINE' :
+                       img.category === 'workshop' ? 'WORKSHOP OPS' : 'FLEET SUPPORT'}
+                    </div>
+                  </div>
+
+                  <div className="p-4.5 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-[12px] font-black text-slate-900 dark:text-white leading-snug">
+                          {language === 'ar' ? img.titleAr : img.titleEn}
+                        </h5>
+                        <span className={`text-[8px] font-black p-0.5 px-2 rounded-md ${
+                          img.isSelected 
+                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
+                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800'
+                        }`}>
+                          {img.isSelected ? 'نشط' : 'مسودة'}
+                        </span>
+                      </div>
+                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">
+                        {language === 'ar' ? img.descAr : img.descEn}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-850">
+                      <button
+                        type="button"
+                        onClick={() => setGalleryImageForm({ ...img })}
+                        className="p-1.5 px-3 bg-indigo-50 hover:bg-indigo-650 dark:bg-slate-800 hover:text-white text-indigo-700 dark:text-slate-300 rounded-lg text-[10.5px] font-bold cursor-pointer flex items-center gap-1.5 transition-all"
+                      >
+                        <Edit3 size={11} />
+                        <span>تعديل</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteGalleryImage(img.id)}
+                        className="p-1.5 px-3 bg-rose-50 hover:bg-rose-600 dark:bg-slate-850 hover:text-white text-rose-700 dark:text-slate-400 rounded-lg text-[10.5px] font-bold cursor-pointer flex items-center gap-1.5 transition-all"
+                      >
+                        <Trash2 size={11} />
+                        <span>حذف</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
           </div>

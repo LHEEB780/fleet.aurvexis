@@ -1,6 +1,6 @@
 {
-  "name": "Axoventra",
-  "description": "نظام احترافي لإدارة صيانة المركبات والمعدات الثقيلة للمؤسسات الرسمية، بأسلوب حديث ومنظم.",
+  "name": "FleetAurvexis",
+  "description": "نظام FleetAurvexis الاحترافي لإدارة صيانة المركبات والمعدات الثقيلة للمؤسسات الرسمية، بأسلوب حديث ومنظم.",
   "requestFramePermissions": ["microphone", "camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

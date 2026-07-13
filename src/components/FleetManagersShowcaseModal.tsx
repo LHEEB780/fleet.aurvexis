@@ -666,7 +666,7 @@ export default function FleetManagersShowcaseModal({
                     onClick={() => setActiveTab(sol.id)}
                     className={`px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 cursor-pointer border ${
                       isActive
-                        ? 'bg-indigo-600 text-white border-indigo-650 shadow-md hover:bg-indigo-700'
+                        ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-md hover:opacity-90'
                         : 'bg-white text-slate-600 hover:text-indigo-650 border-slate-200/80 hover:border-indigo-300/60 shadow-3xs'
                     }`}
                   >
@@ -717,7 +717,7 @@ export default function FleetManagersShowcaseModal({
                       <button
                         type="button"
                         onClick={onStartTrial}
-                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-lg transition-all active:scale-95 cursor-pointer"
+                        className="px-6 py-3 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white font-black text-xs rounded-xl shadow-lg transition-all active:scale-95 cursor-pointer"
                       >
                         {isRtl ? 'ابدأ الآن' : 'Start Trial Now'}
                       </button>
@@ -1389,7 +1389,7 @@ export default function FleetManagersShowcaseModal({
                           onClose();
                           onStartTrial();
                         }}
-                        className="px-7 py-3.5 bg-indigo-650 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                        className="px-7 py-3.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white font-black text-xs rounded-xl shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                       >
                         اطلب عرضاً تجريبياً
                       </button>
@@ -1607,7 +1607,7 @@ export default function FleetManagersShowcaseModal({
                     onClose();
                     onStartTrial();
                   }}
-                  className="px-6 py-3.5 bg-indigo-650 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-transform"
+                  className="px-6 py-3.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white font-black text-xs rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-transform"
                 >
                   {isRtl ? 'اطلب عرضاً تجريبياً مجانياً الآن ⚡' : 'Request Free Product Demo ⚡'}
                 </button>

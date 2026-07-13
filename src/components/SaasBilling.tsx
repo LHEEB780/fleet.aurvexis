@@ -791,7 +791,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                 className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all text-center ${
                   activePlan === 'enterprise' 
                     ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed' 
-                    : 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer'
+                    : 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white cursor-pointer'
                 }`}
               >
                 {activePlan === 'enterprise' ? 'الباقة الحالية' : 'التحويل لهذه الباقة 🚀'}

@@ -6,17 +6,17 @@
   --font-inter: "Inter", "Plus Jakarta Sans", sans-serif;
   --font-jakarta: "Plus Jakarta Sans", "Inter", sans-serif;
   
-  /* Vibrant, Professional Enterprise Tech-Blue (Creatio inspired) */
-  --color-brand-blue-50: #f0f5ff;
-  --color-brand-blue-100: #e0ebff;
-  --color-brand-blue-200: #c2d7ff;
-  --color-brand-blue-300: #94b7ff;
-  --color-brand-blue-400: #5c8eff;
-  --color-brand-blue-500: #1e53e4;   /* Creatio royal tech-blue */
-  --color-brand-blue-600: #0f40ca;   /* Stable contrast blue */
-  --color-brand-blue-700: #0e33ab;
-  --color-brand-blue-800: #0a247a;
-  --color-brand-blue-900: #081a54;
+  /* Vibrant, Professional Enterprise Tech-Purple (Luxury Royal Purple inspired) */
+  --color-brand-blue-50: #f5f2ff;
+  --color-brand-blue-100: #eae4ff;
+  --color-brand-blue-200: #d6cbff;
+  --color-brand-blue-300: #bca8ff;
+  --color-brand-blue-400: #9778ff;
+  --color-brand-blue-500: #673de6;   /* Rich, premium Hostinger violet-purple */
+  --color-brand-blue-600: #5429cf;   /* Saturated active deep purple */
+  --color-brand-blue-700: #431bb5;   /* Luxurious royal dark purple */
+  --color-brand-blue-800: #321191;
+  --color-brand-blue-900: #21086e;
 
   --color-brand-red-50: #fff5f5;
   --color-brand-red-100: #ffe3e3;
@@ -74,8 +74,8 @@
   }
 
   .dark body {
-    background-color: #0b0f19 !important;
-    background-image: radial-gradient(circle at 12% 16%, rgba(37, 99, 235, 0.05) 0%, transparent 45%), radial-gradient(circle at 88% 84%, rgba(59, 130, 246, 0.03) 0%, transparent 50%) !important;
+    background-color: #05070a !important;
+    background-image: radial-gradient(circle at 12% 16%, rgba(103, 61, 230, 0.08) 0%, transparent 45%), radial-gradient(circle at 88% 84%, rgba(84, 41, 207, 0.04) 0%, transparent 50%) !important;
     color: #f8fafc !important;
     min-height: 100vh;
   }
@@ -151,17 +151,17 @@
 .dark .bg-sky-100,
 .dark .dark\:bg-sky-950\/50,
 .dark .bg-brand-blue-50 {
-  background-color: rgba(30, 83, 228, 0.08) !important;
-  color: #60a5fa !important;
-  border-color: rgba(30, 83, 228, 0.2) !important;
+  background-color: rgba(103, 61, 230, 0.1) !important;
+  color: #c4b5fd !important;
+  border-color: rgba(103, 61, 230, 0.25) !important;
 }
 
 .dark .bg-fuchsia-50,
 .dark .bg-fuchsia-100,
 .dark .bg-[#fae8ff] {
-  background-color: rgba(139, 92, 246, 0.08) !important;
-  color: #c084fc !important;
-  border-color: rgba(139, 92, 246, 0.2) !important;
+  background-color: rgba(103, 61, 230, 0.1) !important;
+  color: #c4b5fd !important;
+  border-color: rgba(103, 61, 230, 0.25) !important;
 }
 
 /* Cohesive typography contrasts matching the luxurious deep-tech aesthetic */
@@ -213,34 +213,34 @@
 /* Glowing tech interactive items */
 .dark .bg-brand-blue-500/10,
 .dark .dark\:bg-brand-blue-500\/20 {
-  background-color: rgba(37, 99, 235, 0.12) !important;
-  border-color: rgba(37, 99, 235, 0.25) !important;
+  background-color: rgba(103, 61, 230, 0.15) !important;
+  border-color: rgba(103, 61, 230, 0.3) !important;
 }
 
 .dark .text-brand-blue-800,
 .dark .dark\:text-\[\#34d399\],
 .dark .text-brand-blue-700,
 .dark .dark\:text-slate-300:hover {
-  color: #60a5fa !important;
+  color: #c4b5fd !important;
 }
 
 /* Sidebar navigation active state */
 .dark .bg-brand-blue-600 {
-  background: linear-gradient(135deg, #1e53e4 0%, #1d4ed8 100%) !important;
-  box-shadow: 0 4px 12px rgba(30, 83, 228, 0.25) !important;
+  background: linear-gradient(135deg, #673de6 0%, #5429cf 100%) !important;
+  box-shadow: 0 4px 14px rgba(103, 61, 230, 0.3) !important;
 }
 
-/* Cohesive premium tech-blue buttons instead of the disconnected purples */
+/* Cohesive premium tech-purple buttons */
 .dark .bg-brand-blue-50,
 .dark .bg-brand-blue-500,
 .dark .dark\:bg-brand-blue-500,
 .dark .bg-brand-blue-600,
 .dark .bg-brand-blue-700,
 .dark .bg-brand-blue-800 {
-  background: linear-gradient(135deg, #1e53e4 0%, #1d4ed8 100%) !important;
+  background: linear-gradient(135deg, #673de6 0%, #5429cf 100%) !important;
   border-color: #1e293b !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(30, 83, 228, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(103, 61, 230, 0.25) !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
@@ -249,7 +249,7 @@
 .dark .bg-brand-blue-600:hover,
 .dark .bg-brand-blue-700:hover {
   opacity: 0.95;
-  box-shadow: 0 6px 16px rgba(30, 83, 228, 0.35) !important;
+  box-shadow: 0 6px 18px rgba(103, 61, 230, 0.4) !important;
   transform: translateY(-0.5px);
 }
 
@@ -296,6 +296,38 @@
 .dark .card-gradient {
   background: linear-gradient(135deg, #111827 0%, #0c111d 100%) !important;
   border: 1px solid #1e293b !important;
+}
+
+/* 🌟 Read-Only Mode CSS overrides to instantly hide add/edit/delete buttons */
+body[data-read-only="true"] button:has(svg.lucide-plus),
+body[data-read-only="true"] button:has(svg.lucide-plus-circle),
+body[data-read-only="true"] button:has(svg.lucide-pencil),
+body[data-read-only="true"] button:has(svg.lucide-edit),
+body[data-read-only="true"] button:has(svg.lucide-edit-2),
+body[data-read-only="true"] button:has(svg.lucide-trash),
+body[data-read-only="true"] button:has(svg.lucide-trash-2),
+body[data-read-only="true"] button:has(svg.lucide-x-circle),
+body[data-read-only="true"] button:has(svg.lucide-user-plus),
+body[data-read-only="true"] button:has(svg.lucide-folder-plus),
+body[data-read-only="true"] button:has(svg.lucide-file-plus),
+body[data-read-only="true"] button:has(svg.lucide-user-check),
+body[data-read-only="true"] a:has(svg.lucide-plus),
+body[data-read-only="true"] a:has(svg.lucide-pencil),
+body[data-read-only="true"] a:has(svg.lucide-edit),
+body[data-read-only="true"] [id*="add-"],
+body[data-read-only="true"] [id*="edit-"],
+body[data-read-only="true"] [id*="delete-"],
+body[data-read-only="true"] button[title*="إضافة"],
+body[data-read-only="true"] button[title*="اضافة"],
+body[data-read-only="true"] button[title*="تعديل"],
+body[data-read-only="true"] button[title*="حذف"],
+body[data-read-only="true"] button[title*="تأكيد"],
+body[data-read-only="true"] button[title*="Add"],
+body[data-read-only="true"] button[title*="Edit"],
+body[data-read-only="true"] button[title*="Delete"],
+body[data-read-only="true"] button[title*="New"],
+body[data-read-only="true"] button[title*="Remove"] {
+  display: none !important;
 }
 
 

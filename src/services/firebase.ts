@@ -195,11 +195,13 @@ export async function pushLocalDataToCloud(): Promise<{ success: boolean; count:
     const brandDesc = localStorage.getItem('saas_brand_desc') || '';
     const brandLogo = localStorage.getItem('saas_brand_logo') || '';
     const brandColor = localStorage.getItem('saas_brand_color') || 'blue';
+    const brandPrimaryColor = localStorage.getItem('saas_brand_primary_color') || '#6d28d9';
     await saveDocument('settings', 'branding', {
       name: brandName,
       description: brandDesc,
       logo: brandLogo,
       color: brandColor,
+      primaryColor: brandPrimaryColor,
       updatedAt: new Date().toISOString()
     });
     count++;
@@ -286,6 +288,7 @@ export async function pullCloudDataToLocal(): Promise<{ success: boolean; count:
       if (bData.description) localStorage.setItem('saas_brand_desc', bData.description);
       if (bData.logo) localStorage.setItem('saas_brand_logo', bData.logo);
       if (bData.color) localStorage.setItem('saas_brand_color', bData.color);
+      if (bData.primaryColor) localStorage.setItem('saas_brand_primary_color', bData.primaryColor);
       count++;
     }
 
@@ -311,4 +314,187 @@ export async function pullCloudDataToLocal(): Promise<{ success: boolean; count:
     console.error("Bulk restore error", error);
     return { success: false, count };
   }
+}
+
+export interface ConflictItem {
+  id: string;
+  collection: string;
+  localData: any;
+  cloudData: any;
+  label: string;
+}
+
+export function deepEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  
+  const keysA = Object.keys(a).filter(k => k !== 'syncedAt' && k !== 'lastUpdated' && k !== 'updatedAt');
+  const keysB = Object.keys(b).filter(k => k !== 'syncedAt' && k !== 'lastUpdated' && k !== 'updatedAt');
+  
+  if (keysA.length !== keysB.length) return false;
+  
+  for (const key of keysA) {
+    if (!keysB.includes(key)) return false;
+    if (!deepEqual(a[key], b[key])) return false;
+  }
+  
+  return true;
+}
+
+export async function getSyncConflicts(): Promise<ConflictItem[]> {
+  const conflicts: ConflictItem[] = [];
+  if (!db) return conflicts;
+
+  try {
+    // 1. Vehicles
+    const localVehiclesStr = localStorage.getItem('fleet_vehicles_v3') || localStorage.getItem('fleet_vehicles_v2') || '[]';
+    const localVehicles = JSON.parse(localVehiclesStr);
+    const vehiclesSnap = await getDocs(collection(db, 'vehicles'));
+    const cloudVehicles: Record<string, any> = {};
+    vehiclesSnap.forEach(d => { cloudVehicles[d.id] = d.data(); });
+
+    localVehicles.forEach((lv: any) => {
+      if (lv.id && cloudVehicles[lv.id]) {
+        const cv = cloudVehicles[lv.id];
+        if (!deepEqual(lv, cv)) {
+          conflicts.push({
+            id: lv.id,
+            collection: 'vehicles',
+            localData: lv,
+            cloudData: cv,
+            label: lv.plateNumber || lv.name || lv.model || lv.id
+          });
+        }
+      }
+    });
+
+    // 2. Orders
+    const localOrdersStr = localStorage.getItem('fleet_maintenance_orders_v2') || '[]';
+    const localOrders = JSON.parse(localOrdersStr);
+    const ordersSnap = await getDocs(collection(db, 'maintenance_orders'));
+    const cloudOrders: Record<string, any> = {};
+    ordersSnap.forEach(d => { cloudOrders[d.id] = d.data(); });
+
+    localOrders.forEach((lo: any) => {
+      if (lo.id && cloudOrders[lo.id]) {
+        const co = cloudOrders[lo.id];
+        if (!deepEqual(lo, co)) {
+          conflicts.push({
+            id: lo.id,
+            collection: 'maintenance_orders',
+            localData: lo,
+            cloudData: co,
+            label: lo.type ? `${lo.type} (${lo.id})` : lo.id
+          });
+        }
+      }
+    });
+
+    // 3. Technicians
+    const localTechsStr = localStorage.getItem('fleet_technicians_v2') || '[]';
+    const localTechs = JSON.parse(localTechsStr);
+    const techsSnap = await getDocs(collection(db, 'technicians'));
+    const cloudTechs: Record<string, any> = {};
+    techsSnap.forEach(d => { cloudTechs[d.id] = d.data(); });
+
+    localTechs.forEach((lt: any) => {
+      if (lt.id && cloudTechs[lt.id]) {
+        const ct = cloudTechs[lt.id];
+        if (!deepEqual(lt, ct)) {
+          conflicts.push({
+            id: lt.id,
+            collection: 'technicians',
+            localData: lt,
+            cloudData: ct,
+            label: lt.name || lt.id
+          });
+        }
+      }
+    });
+
+    // 4. Inventory
+    const localInvStr = localStorage.getItem('fleet_inventory_v2') || '[]';
+    const localInv = JSON.parse(localInvStr);
+    const invSnap = await getDocs(collection(db, 'inventory'));
+    const cloudInv: Record<string, any> = {};
+    invSnap.forEach(d => { cloudInv[d.id] = d.data(); });
+
+    localInv.forEach((li: any) => {
+      if (li.id && cloudInv[li.id]) {
+        const ci = cloudInv[li.id];
+        if (!deepEqual(li, ci)) {
+          conflicts.push({
+            id: li.id,
+            collection: 'inventory',
+            localData: li,
+            cloudData: ci,
+            label: li.name ? `${li.name} (${li.id})` : li.id
+          });
+        }
+      }
+    });
+
+    // 5. Safety Inspections
+    const localInspectionsStr = localStorage.getItem('fleet_safety_inspections') || '[]';
+    const localInspections = JSON.parse(localInspectionsStr);
+    let cloudInspections: Record<string, any> = {};
+    try {
+      const inspectionsSnap = await getDocs(collection(db, 'safety_inspections'));
+      inspectionsSnap.forEach(d => { cloudInspections[d.id] = d.data(); });
+    } catch (err) {
+      console.warn("Could not load safety inspections from Cloud:", err);
+    }
+
+    localInspections.forEach((li: any) => {
+      if (li.id && cloudInspections[li.id]) {
+        const ci = cloudInspections[li.id];
+        if (!deepEqual(li, ci)) {
+          conflicts.push({
+            id: li.id,
+            collection: 'safety_inspections',
+            localData: li,
+            cloudData: ci,
+            label: li.inspectorName ? `${li.inspectorName} (${li.id})` : li.id
+          });
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error detecting conflicts", error);
+  }
+
+  return conflicts;
+}
+
+export async function resolveConflictKeepLocal(conflict: ConflictItem): Promise<void> {
+  await saveDocument(conflict.collection, conflict.id, conflict.localData);
+}
+
+export function resolveConflictKeepCloud(conflict: ConflictItem) {
+  const collectionToStorageKey: Record<string, string[]> = {
+    'vehicles': ['fleet_vehicles_v3', 'fleet_vehicles_v2'],
+    'maintenance_orders': ['fleet_maintenance_orders_v2'],
+    'technicians': ['fleet_technicians_v2'],
+    'inventory': ['fleet_inventory_v2'],
+    'safety_inspections': ['fleet_safety_inspections']
+  };
+
+  const keys = collectionToStorageKey[conflict.collection];
+  if (keys) {
+    for (const key of keys) {
+      const localStr = localStorage.getItem(key);
+      if (localStr) {
+        const list = JSON.parse(localStr);
+        if (Array.isArray(list)) {
+          const idx = list.findIndex((item: any) => item.id === conflict.id);
+          if (idx > -1) {
+            list[idx] = conflict.cloudData;
+            localStorage.setItem(key, JSON.stringify(list));
+          }
+        }
+      }
+    }
+  }
+  window.dispatchEvent(new Event('storage'));
 }

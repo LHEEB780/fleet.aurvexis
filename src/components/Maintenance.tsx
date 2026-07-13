@@ -42,7 +42,10 @@ import {
   Volume2,
   GripVertical,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Camera,
+  History,
+  UploadCloud
 } from 'lucide-react';
 import { maintenanceOrders as initialMaintenanceOrders, vehicles as staticVehicles, technicians as staticTechnicians } from '../data';
 import { User, MaintenanceOrder, Vehicle, Technician, InventoryItem, hasGranularPermission } from '../types';
@@ -54,6 +57,7 @@ import TechnicalInspectionChecklist from './TechnicalInspectionChecklist';
 import CameraCapture from './CameraCapture';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
+import SmartDiagnostic from './SmartDiagnostic';
 
 const SYSTEM_ANCHOR_DATE = '2026-05-19';
 
@@ -197,7 +201,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
   }, [localInventory]);
 
   // Project Manager Visual Toggles & View Mode
-  const [managerMode, setManagerMode] = useState<'kanban' | 'list' | 'calendar'>('kanban'); // 'kanban' style Gantt Project manager view is default
+  const [managerMode, setManagerMode] = useState<'kanban' | 'list' | 'calendar' | 'diagnostic'>('kanban'); // 'kanban' style Gantt Project manager view is default
   
   // State for interactive Calendar month/year navigation
   const [currentCalDate, setCurrentCalDate] = useState(() => new Date(SYSTEM_ANCHOR_DATE));
@@ -221,6 +225,8 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
 
   // Modals / Detail Overlays
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [vehicleSearchQuery, setVehicleSearchQuery] = useState('');
+  const [isVehicleDropdownOpen, setIsVehicleDropdownOpen] = useState(false);
   
   const [draftMilestones, setDraftMilestones] = useState<{ title: string; checked: boolean }[]>([]);
   const [newMilestoneText, setNewMilestoneText] = useState<Record<string, string>>({});
@@ -677,8 +683,82 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
     setPartQtyToAdd(1);
   };
 
+  // Create work order from AI Smart Diagnostics
+  const handleSmartDiagnosticOrder = (partialOrder: Partial<MaintenanceOrder>) => {
+    const brandNewOrder: MaintenanceOrder = {
+      id: `WO-${Date.now()}`,
+      vehicleId: partialOrder.vehicleId || '',
+      orderNumber: `WO-2026-${Math.floor(100 + Math.random() * 900)}`,
+      date: SYSTEM_ANCHOR_DATE,
+      description: partialOrder.description || '',
+      category: partialOrder.category || 'mechanical',
+      status: 'in-progress',
+      technicianId: partialOrder.technicianId,
+      workshopId: partialOrder.workshopId,
+      priority: partialOrder.priority || 'medium',
+      cost: partialOrder.cost,
+      partsUsed: partialOrder.partsUsed,
+      isArchived: false,
+      progress: partialOrder.progress || 20,
+      milestones: partialOrder.milestones,
+      lastUpdate: SYSTEM_ANCHOR_DATE,
+      techNotes: partialOrder.techNotes || '',
+    };
+
+    // Deduct stock of matched suggested parts if possible
+    if (partialOrder.partsUsed && partialOrder.partsUsed.length > 0) {
+      setLocalInventory(prev => prev.map(item => {
+        const isMatch = partialOrder.partsUsed?.some(partName => 
+          item.name.toLowerCase().includes(partName.toLowerCase()) || 
+          partName.toLowerCase().includes(item.name.toLowerCase())
+        );
+        if (isMatch && item.quantity > 0) {
+          return {
+            ...item,
+            quantity: Math.max(0, item.quantity - 1)
+          };
+        }
+        return item;
+      }));
+    }
+
+    setOrders(prev => [brandNewOrder, ...prev]);
+    applySystemWideIntegrations(brandNewOrder, 'created');
+    setManagerMode('kanban');
+
+    // Dispatch status change custom event
+    const matchedVeh = localVehicles.find(v => v.id === brandNewOrder.vehicleId);
+    const vehName = matchedVeh ? `${matchedVeh.name} (${matchedVeh.plateNumber})` : `مركبة #${brandNewOrder.vehicleId}`;
+    window.dispatchEvent(new CustomEvent('maintenance-order-status-changed', {
+      detail: {
+        orderId: brandNewOrder.id,
+        oldStatus: 'pending',
+        newStatus: 'in-progress',
+        descriptionAr: brandNewOrder.description,
+        descriptionEn: brandNewOrder.description,
+        vehicleName: vehName
+      }
+    }));
+  };
+
   // Switch Kanban project columns dynamically
   const moveOrderKanbanStatus = (orderId: string, nextStatus: 'pending' | 'in-progress' | 'completed') => {
+    const targetOrder = orders.find(o => o.id === orderId);
+    if (targetOrder && targetOrder.status !== nextStatus) {
+      const matchedVeh = localVehicles.find(v => v.id === targetOrder.vehicleId);
+      const vehName = matchedVeh ? `${matchedVeh.name} (${matchedVeh.plateNumber})` : `مركبة #${targetOrder.vehicleId}`;
+      window.dispatchEvent(new CustomEvent('maintenance-order-status-changed', {
+        detail: {
+          orderId,
+          oldStatus: targetOrder.status,
+          newStatus: nextStatus,
+          descriptionAr: targetOrder.description,
+          descriptionEn: targetOrder.description,
+          vehicleName: vehName
+        }
+      }));
+    }
+
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
         // Automatically request updating the spare parts from inventory if transitioning to completed
@@ -761,6 +841,21 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
         // Fire state synchronization
         applySystemWideIntegrations(updated, 'updated');
 
+        if (status !== o.status) {
+          const matchedVeh = localVehicles.find(v => v.id === o.vehicleId);
+          const vehName = matchedVeh ? `${matchedVeh.name} (${matchedVeh.plateNumber})` : `مركبة #${o.vehicleId}`;
+          window.dispatchEvent(new CustomEvent('maintenance-order-status-changed', {
+            detail: {
+              orderId,
+              oldStatus: o.status,
+              newStatus: status,
+              descriptionAr: o.description,
+              descriptionEn: o.description,
+              vehicleName: vehName
+            }
+          }));
+        }
+
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(updated);
         }
@@ -799,6 +894,22 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
         }
 
         applySystemWideIntegrations(updated, 'updated');
+
+        if (status !== o.status) {
+          const matchedVeh = localVehicles.find(v => v.id === o.vehicleId);
+          const vehName = matchedVeh ? `${matchedVeh.name} (${matchedVeh.plateNumber})` : `مركبة #${o.vehicleId}`;
+          window.dispatchEvent(new CustomEvent('maintenance-order-status-changed', {
+            detail: {
+              orderId,
+              oldStatus: o.status,
+              newStatus: status,
+              descriptionAr: o.description,
+              descriptionEn: o.description,
+              vehicleName: vehName
+            }
+          }));
+        }
+
         return updated;
       }
       return o;
@@ -959,20 +1070,111 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
             <form onSubmit={handleAddOrder} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
-                {/* Vehicle Selector */}
-                <div className="space-y-1">
+                {/* Vehicle Selector with Search Bar */}
+                <div className="space-y-1 relative" id="vehicle-select-container">
                   <label className="text-[11px] font-black text-slate-700 dark:text-slate-300">المركبة / الآلية المشتكية:<span className="text-rose-500">*</span></label>
-                  <select
-                    value={newOrder.vehicleId}
-                    required
-                    onChange={(e) => setNewOrder(prev => ({ ...prev, vehicleId: e.target.value }))}
-                    className="w-full p-3 bg-slate-50 dark:bg-slate-850 border border-slate-200/60 dark:border-slate-705 rounded-xl text-[12px] font-black"
+                  
+                  {/* Dropdown Trigger */}
+                  <div 
+                    onClick={() => setIsVehicleDropdownOpen(!isVehicleDropdownOpen)}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-850 border border-slate-200/60 dark:border-slate-705 rounded-xl text-[12px] font-black flex items-center justify-between cursor-pointer select-none hover:border-indigo-550 dark:hover:border-indigo-500 transition-colors"
                   >
-                    <option value="">اختر المركبة من الأسطول...</option>
-                    {localVehicles.map(v => (
-                      <option key={v.id} value={v.id}>{v.name} ({v.plateNumber}) • {v.status === 'active' ? 'نشطة' : 'متوقفة أو بالصيانة'}</option>
-                    ))}
-                  </select>
+                    <span className={newOrder.vehicleId ? "text-slate-900 dark:text-white" : "text-slate-450 dark:text-slate-400"}>
+                      {newOrder.vehicleId ? (
+                        (() => {
+                          const matched = localVehicles.find(v => v.id === newOrder.vehicleId);
+                          return matched ? `${matched.name} (${matched.plateNumber}) • ${matched.status === 'active' ? 'نشطة' : 'متوقفة أو بالصيانة'}` : "مركبة غير معروفة";
+                        })()
+                      ) : (
+                        "اختر المركبة من الأسطول..."
+                      )}
+                    </span>
+                    <span className={`text-[10px] text-slate-400 dark:text-slate-500 transform transition-transform duration-200 ${isVehicleDropdownOpen ? 'rotate-180' : ''}`}>▼</span>
+                  </div>
+
+                  {/* Dropdown Overlay / Portal Box */}
+                  {isVehicleDropdownOpen && (
+                    <>
+                      {/* Back-drop layer to close on clicking outside */}
+                      <div className="fixed inset-0 z-40" onClick={() => setIsVehicleDropdownOpen(false)} />
+                      
+                      <div className="absolute right-0 left-0 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                        {/* Search Bar Input */}
+                        <div className="p-2.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/20">
+                          <Search size={14} className="text-slate-450 dark:text-slate-500" />
+                          <input
+                            type="text"
+                            placeholder="ابحث بالاسم، الموديل، أو رقم اللوحة..."
+                            value={vehicleSearchQuery}
+                            onChange={(e) => setVehicleSearchQuery(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full bg-transparent border-0 p-1 text-[11px] font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-0 placeholder-slate-450 dark:placeholder-slate-550"
+                            autoFocus
+                          />
+                          {vehicleSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setVehicleSearchQuery(''); }}
+                              className="text-[10px] text-slate-400 hover:text-slate-650 dark:hover:text-slate-200"
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Options List */}
+                        <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/50">
+                          {(() => {
+                            const filtered = localVehicles.filter(v => {
+                              const q = vehicleSearchQuery.trim().toLowerCase();
+                              if (!q) return true;
+                              return (
+                                v.name.toLowerCase().includes(q) ||
+                                v.plateNumber.toLowerCase().includes(q) ||
+                                (v.status === 'active' ? 'نشطة' : 'متوقفة أو بالصيانة').toLowerCase().includes(q)
+                              );
+                            });
+
+                            if (filtered.length === 0) {
+                              return (
+                                <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500">
+                                  لا توجد مركبات مطابقة للبحث
+                                </div>
+                              );
+                            }
+
+                            return filtered.map(v => (
+                              <div
+                                key={v.id}
+                                onClick={() => {
+                                  setNewOrder(prev => ({ ...prev, vehicleId: v.id }));
+                                  setIsVehicleDropdownOpen(false);
+                                  setVehicleSearchQuery('');
+                                }}
+                                className={`p-3 text-[12px] font-medium transition-colors cursor-pointer flex items-center justify-between hover:bg-indigo-50/60 dark:hover:bg-indigo-950/20 ${
+                                  newOrder.vehicleId === v.id 
+                                    ? 'bg-indigo-50/80 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-bold' 
+                                    : 'text-slate-700 dark:text-slate-300'
+                                }`}
+                              >
+                                <div className="flex flex-col gap-0.5 text-right">
+                                  <span className="font-bold">{v.name}</span>
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-500">{v.plateNumber}</span>
+                                </div>
+                                <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-lg ${
+                                  v.status === 'active' 
+                                    ? 'bg-emerald-550/10 text-emerald-500' 
+                                    : 'bg-amber-550/10 text-amber-500'
+                                }`}>
+                                  {v.status === 'active' ? 'نشطة' : 'متوقفة أو بالصيانة'}
+                                </span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Workshop Location Assignment */}
@@ -1481,13 +1683,27 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                       value={newOrder.workshopId}
                       required
                       onChange={(e) => setNewOrder(prev => ({ ...prev, workshopId: e.target.value }))}
-                      className="w-full p-2 bg-slate-50 dark:bg-slate-855 border border-slate-200/60 dark:border-slate-705 rounded-xl text-[11px] font-bold"
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-855 border border-slate-200/60 dark:border-slate-705 rounded-xl text-[11px] font-bold text-slate-900 dark:text-white"
                     >
                       <option value="">اختر الورشة المتاحة لتسكين الآلية...</option>
                       {localWorkshops.map(w => (
-                        <option key={w.id} value={w.id}>{w.name} ({w.activeBays} فجوات صيانة مأخوذة من {w.capacity})</option>
+                        <option key={w.id} value={w.id}>
+                          {w.isExternal ? '🔮 ورشة خارجية: ' : '🏢 '}
+                          {w.name} {w.isExternal ? '' : `(${w.activeBays} / ${w.capacity} مركبة حالياً)`}
+                        </option>
                       ))}
                     </select>
+                    {(() => {
+                      const chosenWs = localWorkshops.find(w => w.id === newOrder.workshopId);
+                      if (chosenWs && chosenWs.isExternal) {
+                        return (
+                          <div className="mt-1 bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/10 p-1.5 rounded-lg text-[9px] text-purple-700 dark:text-purple-400 font-bold leading-tight">
+                            ⚙️ تم اختيار ورشة خارجية معتمدة (صيانة تعاقدية). سيتيح النظام تتبع رقم الفاتورة الخارجية وتكلفتها والتسوية المالية تلقائياً من صفحة تفاصيل الطلب.
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
 
                   {/* Category of repairs */}
@@ -2100,6 +2316,18 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                     <Calendar size={10} />
                     <span>التقويم</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setManagerMode('diagnostic')}
+                    className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] transition-all cursor-pointer ${
+                      managerMode === 'diagnostic'
+                        ? 'bg-brand-blue-600 text-white shadow-xs font-black'
+                        : 'text-violet-600 dark:text-violet-400 hover:text-slate-700 dark:hover:text-slate-300 font-bold'
+                    }`}
+                  >
+                    <Sparkles size={10} className="animate-pulse" />
+                    <span>التشخيص الذكي 🪄</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -2180,7 +2408,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                     <button
                       onClick={archiveCompletedTasksOlderThan30Days}
                       disabled={isArchiving30Days}
-                      className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-brand-blue-600 hover:from-indigo-700 hover:to-brand-blue-700 text-white rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                     >
                       {isArchiving30Days ? <Loader2 size={13} className="animate-spin" /> : <Database size={13} />}
                       <span>تفعيل الأرشفة الذكية (+30 يوم)</span>
@@ -2488,6 +2716,17 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                   </tbody>
                 </table>
               </div>
+            </div>
+          ) : managerMode === 'diagnostic' ? (
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft">
+              <SmartDiagnostic 
+                vehicles={localVehicles}
+                technicians={localTechnicians}
+                inventory={localInventory}
+                workshops={localWorkshops}
+                onAddOrder={handleSmartDiagnosticOrder}
+                onCancel={() => setManagerMode('kanban')}
+              />
             </div>
           ) : (
             /* RENDERING SCREEN: INTERACTIVE CALENDAR VIEW */
@@ -3356,6 +3595,91 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                         </div>
                       </div>
 
+                      {/* External Workshop Invoice & Financial Tracking Panel */}
+                      {ws?.isExternal && (
+                        <div className="p-4 bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 dark:border-purple-500/15 rounded-2xl space-y-3 border-dashed">
+                          <div className="flex items-center justify-between border-b border-purple-500/10 pb-2">
+                            <span className="text-xs font-black text-purple-700 dark:text-purple-400 flex items-center gap-1.5">
+                              <span>📋</span>
+                              <span>بيانات الصيانة الخارجية والمالية</span>
+                            </span>
+                            <span className="text-[9px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-black">
+                              ورشة صيانة خارجية
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Invoice Number */}
+                            <div className="space-y-1 text-right">
+                              <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">رقم الفاتورة الخارجية:</label>
+                              <input
+                                type="text"
+                                value={selectedOrder.externalInvoiceNo || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setOrders(prev => prev.map(o => {
+                                    if (o.id === selectedOrder.id) {
+                                      const updated = { ...o, externalInvoiceNo: val, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                      setSelectedOrder(updated);
+                                      return updated;
+                                    }
+                                    return o;
+                                  }));
+                                }}
+                                placeholder="مثال: INV-2026-08"
+                                className="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-xl font-mono text-right outline-none focus:border-purple-500/50"
+                              />
+                            </div>
+
+                            {/* Invoice Cost */}
+                            <div className="space-y-1 text-right">
+                              <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">التكلفة الفعلية (ر.س):</label>
+                              <input
+                                type="number"
+                                value={selectedOrder.cost || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value ? parseFloat(e.target.value) : undefined;
+                                  setOrders(prev => prev.map(o => {
+                                    if (o.id === selectedOrder.id) {
+                                      const updated = { ...o, cost: val, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                      setSelectedOrder(updated);
+                                      return updated;
+                                    }
+                                    return o;
+                                  }));
+                                }}
+                                placeholder="مثال: 4500"
+                                className="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-xl font-mono text-right outline-none focus:border-purple-500/50"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Invoice Status Selector */}
+                          <div className="space-y-1 text-right">
+                            <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">حالة التسوية والفوترة:</label>
+                            <select
+                              value={selectedOrder.externalInvoiceStatus || 'pending_invoice'}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setOrders(prev => prev.map(o => {
+                                  if (o.id === selectedOrder.id) {
+                                    const updated = { ...o, externalInvoiceStatus: val as any, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                    setSelectedOrder(updated);
+                                    return updated;
+                                  }
+                                  return o;
+                                }));
+                              }}
+                              className="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-xl font-bold cursor-pointer outline-none focus:border-purple-500/50 text-slate-900 dark:text-white"
+                            >
+                              <option value="pending_invoice">⏳ بانتظار إصدار الفاتورة من الورشة</option>
+                              <option value="received_unpaid">💵 تم استلام الفاتورة - بانتظار السداد</option>
+                              <option value="paid">✅ تم السداد المالي بالكامل وإغلاق القيد</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-3.5">
                         <div className="p-4 bg-slate-50 dark:bg-slate-905 border border-slate-150 dark:border-slate-850 rounded-2xl text-right">
                           <span className="text-[10px] text-slate-400 font-bold block pb-1">مجموع التكاليف المقدرة:</span>
@@ -3374,28 +3698,254 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                         </div>
                       </div>
 
-                      {/* Breakdown defect Photo */}
-                      {selectedOrder.photoUrl && (
-                        <div className="space-y-2 border-t border-slate-150 dark:border-slate-800/80 pt-5">
-                          <span className="text-xs font-black text-slate-500 block">📷 صورة توثيق العيوب والأعطال:</span>
-                          <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-sm group">
-                            <img 
-                              src={selectedOrder.photoUrl} 
-                              alt="Defect breakdown photo" 
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" 
-                              referrerPolicy="no-referrer"
-                            />
-                            <a 
-                              href={selectedOrder.photoUrl}
-                              target="_blank"
-                              rel="noreferrer" 
-                              className="absolute bottom-2 left-2 px-2.5 py-1 bg-black/60 hover:bg-black/85 text-white text-[9px] font-black rounded-lg cursor-pointer transition-all"
-                            >
-                              عرض الصورة بالحجم الكامل ↗
-                            </a>
+                      {/* --- START OF 4 SMART MECHANIC ADDITIONS --- */}
+                      <div className="border-t border-slate-150 dark:border-slate-800/80 pt-5 space-y-4 text-right" dir="rtl">
+                        <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 block flex items-center gap-1">
+                          <Wrench size={14} />
+                          <span>{language === 'ar' ? 'التحديثات والمميزات الـ 4 المتقدمة للفني والورشة:' : '4 Advanced Technician & Workshop Additions:'}</span>
+                        </span>
+
+                        {/* POINT 1: Detailed Technical Notes with Auto-Save */}
+                        <div className="space-y-1 bg-white dark:bg-[#121829]/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[11px] font-black text-slate-450 block">
+                            {language === 'ar' ? '✍️ ملاحظات وتقرير الفني التفصيلي (حفظ تلقائي):' : '✍️ Detailed Tech Notes (Auto-save):'}
+                          </span>
+                          <textarea
+                            value={selectedOrder.techNotes || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setOrders(prev => prev.map(o => {
+                                if (o.id === selectedOrder.id) {
+                                  const updated = { ...o, techNotes: val, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                  setSelectedOrder(updated);
+                                  return updated;
+                                }
+                                return o;
+                              }));
+                            }}
+                            placeholder={language === 'ar' ? 'اكتب ملاحظات الفحص، الأجزاء المفكوكة، حالة الإصلاح، أو تفاصيل الأعطال التفصيلية هنا...' : 'Write inspection details, disassembled parts, repair state, or detailed fault notes here...'}
+                            className="w-full p-2 text-[11px] font-bold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-indigo-500/50 text-slate-700 dark:text-slate-300"
+                            rows={2}
+                          />
+                        </div>
+
+                        {/* POINT 2: Field Fault and Inspection Photo Upload (Drag & Drop or Click) */}
+                        <div className="space-y-1.5 bg-white dark:bg-[#121829]/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[11px] font-black text-slate-450 block flex items-center gap-1">
+                            <Camera size={13} className="text-indigo-500" />
+                            <span>{language === 'ar' ? '📸 صور معاينة الأعطال والموقع الميداني (سحب وإفلات أو نقر):' : '📸 Field Fault & Inspection Photos (Drag & Drop or Click):'}</span>
+                          </span>
+                          
+                          <div 
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const file = e.dataTransfer.files?.[0];
+                              if (file && file.type.startsWith('image/')) {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  const val = reader.result as string;
+                                  setOrders(prev => prev.map(o => {
+                                    if (o.id === selectedOrder.id) {
+                                      const updated = { ...o, photoUrl: val, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                      setSelectedOrder(updated);
+                                      return updated;
+                                    }
+                                    return o;
+                                  }));
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            className="border border-dashed border-slate-205 dark:border-slate-800 hover:border-indigo-500 rounded-xl p-3 text-center transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-950/20 relative"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              input.onchange = (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = () => {
+                                    const val = reader.result as string;
+                                    setOrders(prev => prev.map(o => {
+                                      if (o.id === selectedOrder.id) {
+                                        const updated = { ...o, photoUrl: val, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                        setSelectedOrder(updated);
+                                        return updated;
+                                      }
+                                      return o;
+                                    }));
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              };
+                              input.click();
+                            }}
+                          >
+                            {selectedOrder.photoUrl ? (
+                              <div className="space-y-2">
+                                <img src={selectedOrder.photoUrl} alt="Inspection preview" className="max-h-28 mx-auto rounded-lg border border-slate-200 dark:border-slate-850 shadow-xs" referrerPolicy="no-referrer" />
+                                <div className="flex items-center justify-center gap-2">
+                                  <span className="text-[9px] text-slate-400 font-bold">{language === 'ar' ? 'تم تحميل الصورة بنجاح' : 'Image loaded successfully'}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOrders(prev => prev.map(o => {
+                                        if (o.id === selectedOrder.id) {
+                                          const updated = { ...o, photoUrl: undefined, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                          setSelectedOrder(updated);
+                                          return updated;
+                                        }
+                                        return o;
+                                      }));
+                                    }}
+                                    className="text-rose-500 hover:text-rose-600 font-black text-[9px] px-2 py-0.5 bg-rose-50 dark:bg-rose-950/40 rounded-md border border-rose-100 dark:border-rose-900/30"
+                                  >
+                                    {language === 'ar' ? 'حذف الصورة' : 'Delete Photo'}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="py-2 space-y-1">
+                                <UploadCloud size={18} className="mx-auto text-slate-400 animate-bounce" />
+                                <p className="text-[10px] font-black text-slate-600 dark:text-slate-350">{language === 'ar' ? 'اسحب وأفلت صورة المعاينة هنا، أو انقر للتصفح' : 'Drag & drop inspection photo here, or click to browse'}</p>
+                                <p className="text-[8px] text-slate-400 font-bold">{language === 'ar' ? 'يدعم صيغ الصور (PNG, JPG)' : 'Supports images (PNG, JPG)'}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      )}
+
+                        {/* POINT 3: Direct Inline Part Request & Dispatch */}
+                        <div className="space-y-1.5 bg-white dark:bg-[#121829]/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[11px] font-black text-slate-450 block flex items-center gap-1">
+                            <Package size={13} className="text-emerald-500" />
+                            <span>{language === 'ar' ? '⚙️ طلب وصرف قطع غيار مباشر لهذه المهمة (خصم فوري):' : '⚙️ Direct Spare Parts Dispatch (Instant Stock Deduction):'}</span>
+                          </span>
+
+                          {selectedOrder.partsUsed && selectedOrder.partsUsed.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                              {selectedOrder.partsUsed.map((partName, idx) => (
+                                <span key={idx} className="inline-flex items-center gap-1 text-[9px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/10">
+                                  <span>{partName}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updatedParts = (selectedOrder.partsUsed || []).filter((_, pIdx) => pIdx !== idx);
+                                      setOrders(prev => prev.map(o => {
+                                        if (o.id === selectedOrder.id) {
+                                          const updated = { ...o, partsUsed: updatedParts, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                          setSelectedOrder(updated);
+                                          return updated;
+                                        }
+                                        return o;
+                                      }));
+                                    }}
+                                    className="text-emerald-700 hover:text-rose-500 font-bold ml-1 text-xs"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[9px] text-slate-400 font-bold mb-2">{language === 'ar' ? 'لم يتم صرف قطع غيار مسجلة للمهمة بعد.' : 'No registered parts issued yet.'}</p>
+                          )}
+
+                          <select
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) {
+                                const item = localInventory.find(i => i.id === val);
+                                if (item) {
+                                  if (item.quantity <= 0) {
+                                    alert(language === 'ar' ? 'عذراً، هذه القطعة غير متوفرة في المستودع حالياً!' : 'Sorry, this part is currently out of stock!');
+                                    return;
+                                  }
+                                  const currentParts = selectedOrder.partsUsed || [];
+                                  if (currentParts.includes(`${item.name} (${item.partNumber})`)) {
+                                    alert(language === 'ar' ? 'هذه القطعة مضافة بالفعل!' : 'This part is already added!');
+                                    return;
+                                  }
+                                  const updatedParts = [...currentParts, `${item.name} (${item.partNumber})`];
+                                  
+                                  setOrders(prev => prev.map(o => {
+                                    if (o.id === selectedOrder.id) {
+                                      const updated = { ...o, partsUsed: updatedParts, lastUpdate: SYSTEM_ANCHOR_DATE };
+                                      setSelectedOrder(updated);
+                                      return updated;
+                                    }
+                                    return o;
+                                  }));
+
+                                  setLocalInventory(prev => prev.map(invItem => {
+                                    if (invItem.id === item.id) {
+                                      return { ...invItem, quantity: Math.max(0, invItem.quantity - 1) };
+                                    }
+                                    return invItem;
+                                  }));
+                                }
+                              }
+                            }}
+                            className="w-full text-[10px] font-bold p-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-800 rounded-lg outline-none text-slate-700 dark:text-slate-350 cursor-pointer"
+                          >
+                            <option value="">{language === 'ar' ? '-- اختر قطعة من المستودع لصرفها فوراً للورشة --' : '-- Choose a part from inventory to issue instantly --'}</option>
+                            {localInventory.map(item => (
+                              <option key={item.id} value={item.id} disabled={item.quantity <= 0}>
+                                {item.name} ({item.partNumber}) - {language === 'ar' ? 'متوفر' : 'Stock'}: {item.quantity} {item.quantity <= 0 ? '❌' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* POINT 4: Vehicle Historical Maintenance Logs */}
+                        <div className="space-y-1.5 bg-white dark:bg-[#121829]/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="text-[11px] font-black text-slate-450 block flex items-center gap-1">
+                            <History size={13} className="text-blue-500" />
+                            <span>{language === 'ar' ? '📋 سجل صيانة المركبة التاريخي وسوابق الأعطال:' : '📋 Vehicle Historical Maintenance & Defect Logs:'}</span>
+                          </span>
+
+                          {(() => {
+                            const previousOrders = orders.filter(o => o.vehicleId === selectedOrder.vehicleId && o.id !== selectedOrder.id);
+                            const mockHistories = [
+                              { id: 'h1', date: '2026-04-12', desc: language === 'ar' ? 'فحص دوري واستبدال زيت المحرك والفلتر التصفوي' : 'Periodic inspection and replacement of engine oil and filter', tech: 'م. خالد الحربي', status: 'completed' },
+                              { id: 'h2', date: '2026-05-18', desc: language === 'ar' ? 'معايرة ضغط الفرامل الهيدروليكية الأمامية' : 'Calibration of front hydraulic brake pressure', tech: 'م. أحمد الرشيد', status: 'completed' }
+                            ];
+
+                            const displayHistory = previousOrders.length > 0 
+                              ? previousOrders.map(po => ({
+                                  id: po.id,
+                                  date: po.date,
+                                  desc: po.description,
+                                  tech: po.technicianId === '201' ? 'الفني أحمد حميد' : 'فني الورشة ب',
+                                  status: po.status
+                                }))
+                              : mockHistories;
+
+                            return (
+                              <div className="space-y-1 max-h-32 overflow-y-auto divide-y divide-slate-150 dark:divide-slate-800/40 text-right">
+                                {displayHistory.map((hist) => (
+                                  <div key={hist.id} className="py-1.5 first:pt-0 last:pb-0 text-[10px] flex items-start justify-between gap-2">
+                                    <div className="space-y-0.5">
+                                      <span className="font-bold text-slate-700 dark:text-slate-300 block">{hist.desc}</span>
+                                      <div className="flex items-center gap-2 text-[8px] text-slate-400 font-bold">
+                                        <span>📅 {hist.date}</span>
+                                        <span>•</span>
+                                        <span>👤 {hist.tech}</span>
+                                      </div>
+                                    </div>
+                                    <span className="text-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-black shrink-0">
+                                      {language === 'ar' ? 'مكتمل' : 'Completed'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      {/* --- END OF 4 SMART MECHANIC ADDITIONS --- */}
 
                       {/* Digital Safety Inspection Checklist & Verification */}
                       <div className="space-y-3.5 border-t border-slate-150 dark:border-slate-800/80 pt-5">

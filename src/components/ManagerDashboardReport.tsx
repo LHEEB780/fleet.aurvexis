@@ -876,9 +876,9 @@ export function ManagerDashboardReport({ vehicles, orders, language, isDarkMode 
                   {t.noCostData}
                 </div>
               ) : (
-                <div className="w-full h-full text-xs font-semibold">
+                <div className="w-full h-full text-xs font-semibold" dir="ltr">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={costsByIndividualVehicle} margin={{ top: 15, right: 10, left: -10, bottom: 5 }} layout="vertical">
+                    <BarChart data={costsByIndividualVehicle} margin={{ top: 15, right: 15, left: 5, bottom: 5 }} layout="vertical">
                       <defs>
                         <linearGradient id="barCostGrad" x1="0" y1="0" x2="1" y2="0">
                           <stop offset="0%" stopColor="#10b981" />

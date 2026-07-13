@@ -13,6 +13,9 @@ import {
   Loader2, 
   HelpCircle,
   ArrowRightLeft,
+  ArrowLeft,
+  ArrowRight,
+  Lightbulb,
   ChevronRight,
   ShieldAlert,
   Compass,
@@ -310,6 +313,472 @@ export default function AiHub() {
     const nextState = !showSidebar;
     setShowSidebar(nextState);
     localStorage.setItem('fleet_ai_show_sidebar', String(nextState));
+  };
+
+  // --- 0. Dedicated Agent Chat States & Helpers ---
+  const [activeChatAgent, setActiveChatAgent] = useState<any | null>(null);
+  const [agentInputText, setAgentInputText] = useState<string>('');
+  const [agentChats, setAgentChats] = useState<Record<string, AIMessage[]>>({});
+  const [agentChatLoading, setAgentChatLoading] = useState<Record<string, boolean>>({});
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<Record<string, string[]>>({});
+  const [selectedReadingSuggestion, setSelectedReadingSuggestion] = useState<string | null>(null);
+  const agentChatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll inside agent chat when messages change
+  useEffect(() => {
+    if (agentChatScrollRef.current) {
+      agentChatScrollRef.current.scrollTo({
+        top: agentChatScrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [agentChats, agentChatLoading]);
+
+  const getAgentWelcomeMessageAr = (id: string) => {
+    switch (id) {
+      case 'project-manager':
+        return 'أهلاً بك! أنا روبرت، مديرك الاستراتيجي الذكي. مستعد لتحليل ميزانيات الورش، تحسين المخرجات، وحل أي اختناق تشغيلي. كيف يمكنني دعم خطتك التنفيذية اليوم؟';
+      case 'mechanic':
+        return 'مرحباً! أنا مساعد الصيانة والقطع الذكي. يمكنني فحص الرفوف، وتتبع مستويات قطع الغيار، وتقديم أدلة تفصيلية للأعطال. بمَ تود الاستعلام الفني اليوم؟';
+      case 'safety':
+        return 'أهلاً بك حضرة المدير. أنا مفتش السلامة والامتثال. مهمتي مراجعة بطاقات الفحص الرقمية والتأكد من مطابقة الأسطول لمعايير النقل والبيئة. ما هي ملفات السلامة التي نراجعها اليوم؟';
+      case 'supply-chain':
+        return 'مرحباً بك! أنا خبير سلاسل الإمداد ومفاوض الموردين. يمكنني التنبؤ بالقطع المستهلكة، ومقارنة عروض الموردين لضمان أفضل قيمة مالية. ما هي المواد المطلوبة لطلب الشراء؟';
+      case 'predictive':
+        return 'أهلاً بك. أنا محلل الصيانة التنبؤية. من خلال قراءة عدادات الأسطول والتحليلات التاريخية، يمكنني توقع الأعطال قبل حدوثها لحماية أصولك. ما هي المركبة التي تود فحص احتمالية عطلها؟';
+      case 'finance':
+        return 'مرحباً بك يا فندم. أنا المراقب المالي وإدارة التكاليف. مهمتي فحص نفقات الورش والتحقق من الجدوى المالية للمعاملات الخارجية لخفض هدر الميزانية. ما هي البنود المالية التي تود تدقيقها اليوم؟';
+      default:
+        return 'مرحباً بك! أنا وكيلك الذكي في مركز الذكاء الاصطناعي الموحد. كيف يمكنني مساعدتك اليوم؟';
+    }
+  };
+
+  const getAgentWelcomeMessageEn = (id: string) => {
+    switch (id) {
+      case 'project-manager':
+        return 'Welcome! I am Robert, your Strategic Project Manager. I coordinate operational plans, resolve constraints, and optimize budgets. How can I support your executive goals today?';
+      case 'mechanic':
+        return 'Hello! I am your Smart Mechanic and Parts Guide. I monitor warehouse racks, track spare parts thresholds, and provide repair specs. What technical queries do you have today?';
+      case 'safety':
+        return 'Greetings. I am your Safety & Compliance Auditor. I review digital inspection logs and ensure our fleet meets safety and transport guidelines. Which compliance parameters should we review?';
+      case 'supply-chain':
+        return 'Welcome! I am your Supply Chain & Procurement Specialist. I forecast parts consumption and analyze vendor quotes to guarantee maximum financial value. What are we procuring today?';
+      case 'predictive':
+        return 'Hello. I am your Predictive Fleet Analyst. By evaluating vehicle odometers and driver patterns, I forecast wear-and-tear before breakdowns happen. Which vehicle should we inspect?';
+      case 'finance':
+        return 'Greetings. I am your Financial Controller. I audit workshop billing, analyze parts consumption, and assess external repair margins to plug budget leaks. Which cost centers shall we audit?';
+      default:
+        return 'Hello! I am your AI assistant in the unified hub. How can I assist you today?';
+    }
+  };
+
+  const getAgentSuggestions = (id: string, isAr: boolean) => {
+    if (isAr) {
+      switch (id) {
+        case 'project-manager':
+          return [
+            'كيف يمكن تحسين كفاءة الورشة في ظل سيناريو عجز الموظفين؟',
+            'أريد تحليلاً لحجم المهام العالقة وتوزيع العمالة الآن',
+            'ما هي أولوياتي التشغيلية لتفادي أزمات التوريد؟'
+          ];
+        case 'mechanic':
+          return [
+            'ما هي مواصفات عزم الشد لتيل فرامل شاحنة مرسيدس أكتروس؟',
+            'هل يتوفر فلتر زيت معتمد في المخزن وكم كميته؟',
+            'أريد دليلاً ميكانيكياً لخطوات إصلاح عطل هيدروليكي بالرافعة'
+          ];
+        case 'safety':
+          return [
+            'أريد مراجعة نتائج تدقيق السلامة الأخير للأسطول',
+            'ما هي أبرز المخالفات الشائعة التي رصدتها في بطاقات التفتيش؟',
+            'كيف نضمن الامتثال الكامل لقوانين النقل والبيئة المحلية؟'
+          ];
+        case 'supply-chain':
+          return [
+            'ما هي قطع الغيار التي قاربت على النفاد وتحت حد الأمان؟',
+            'قارن لي بين الموردين المحليين لتوفير الفرامل بأقل تكلفة',
+            'هل يجب تقديم طلب توريد عاجل الآن لـ فلتر الهواء وفلتر الزيت؟'
+          ];
+        case 'predictive':
+          return [
+            'ما هي الحافلات أو الشاحنات المعرضة لأعطال وشيكة هذا الأسبوع؟',
+            'كيف يؤثر سلوك القيادة المتسرعة على تآكل الفحمات والإطارات؟',
+            'أريد جدول الصيانة الوقائية القادم لسيارة تويوتا هايلوكس'
+          ];
+        case 'finance':
+          return [
+            'أين تذهب أعلى النفقات المالية في مركز الصيانة حالياً؟',
+            'هل خيار التعامل مع الورش الخارجية ذو جدوى مالية مجدية؟',
+            'قدم لي توصيات عملية لخفض هدر ميزانية شراء قطع الغيار'
+          ];
+        default:
+          return ['ما هي توصياتك الحالية؟', 'كيف يسير العمل بالورشة؟'];
+      }
+    } else {
+      switch (id) {
+        case 'project-manager':
+          return [
+            'How can we improve workshop throughput during staff shortages?',
+            'Analyze our pending task queue and staff allocation right now',
+            'What are our top operational priorities to bypass parts crises?'
+          ];
+        case 'mechanic':
+          return [
+            'What are the torque specifications for Mercedes Actros brakes?',
+            'Do we have certified oil filters in stock and what is the quantity?',
+            'Provide a mechanical guide for repairing hydraulic cylinder leaks'
+          ];
+        case 'safety':
+          return [
+            'I want to review our latest fleet safety audit scores',
+            'What are the most common failures flagged in inspection logs?',
+            'How can we achieve 100% compliance with local transport rules?'
+          ];
+        case 'supply-chain':
+          return [
+            'Which critical spare parts are below our safety threshold?',
+            'Compare local suppliers for cost-effective brake pads sourcing',
+            'Should we place an urgent procurement order for air/oil filters?'
+          ];
+        case 'predictive':
+          return [
+            'Which vehicles are highly vulnerable to imminent failures this week?',
+            'How does aggressive driving style impact parts wear-and-tear?',
+            'Show me the next scheduled lifecycle check for Toyota Hilux'
+          ];
+        case 'finance':
+          return [
+            'Where is our highest maintenance spending concentrated currently?',
+            'Is outsourcing heavy repairs to third-party workshops cost-effective?',
+            'Give me practical recommendations to optimize parts consumption budgets'
+          ];
+        default:
+          return ['What are your top insights?', 'How is the workshop performing today?'];
+      }
+    }
+  };
+
+  const getSmartClientSuggestions = (id: string, text: string, isAr: boolean) => {
+    const query = text ? text.toLowerCase() : '';
+    if (isAr) {
+      switch (id) {
+        case 'project-manager':
+          if (query.includes('عجز') || query.includes('موظف') || query.includes('عمال') || query.includes('بشر')) {
+            return [
+              'ما هي خطة توزيع المهام اليومية في ظل هذا العجز؟',
+              'هل يمكننا الاستعانة بفنيين مؤقتين لحل المشكلة؟',
+              'كيف تؤثر قلة العمالة على مواعيد تسليم المركبات؟'
+            ];
+          }
+          if (query.includes('أزمة') || query.includes('توريد') || query.includes('قطع') || query.includes('نقص')) {
+            return [
+              'ما هي قطع الغيار الأكثر تأثيراً على توقف العمل؟',
+              'هل لدينا موردين بدلاء محليين لحالات الطوارئ؟',
+              'كيف نتفادى غرامات تأخير تسليم الحافلات؟'
+            ];
+          }
+          return [
+            'كيف يمكن تحسين إنتاجية الورشة بنسبة 20%؟',
+            'أريد مراجعة خطة الصيانة الاستباقية للشهر القادم',
+            'ما هي أكثر الشاحنات المعطلة التي تستنزف العمالة؟'
+          ];
+        case 'mechanic':
+          if (query.includes('فرامل') || query.includes('تيل') || query.includes('فحمات')) {
+            return [
+              'كم تستغرق عملية استبدال فحمات الفرامل بالكامل؟',
+              'هل تتوفر فحمات الفرامل لجميع الشاحنات بالمخزن؟',
+              'ما هي المعايير المعتمدة لفحص سلامة قرص الفرامل؟'
+            ];
+          }
+          if (query.includes('زيت') || query.includes('فلتر') || query.includes('فلاتر')) {
+            return [
+              'متى يجب استبدال فلتر الزيت لشاحنة أكتروس؟',
+              'كم لتر زيت تحتاجه تويوتا هايلوكس عند الصيانة؟',
+              'كيف نكتشف تسريب الزيت في محرك الديزل مبكراً؟'
+            ];
+          }
+          return [
+            'أريد التحقق من ضغط نظام الهيدروليك في الرافعة',
+            'ما هي قطع الصيانة الأكثر طلباً اليوم بالورشة؟',
+            'هل تتوفر أداة المعايرة الرقمية لحاقن الوقود؟'
+          ];
+        case 'safety':
+          return [
+            'ما هي شروط السلامة عند التعامل مع بطاريات الليثيوم؟',
+            'كيف نسجل حادثة عمل أو إصابة طفيفة بالمنظومة؟',
+            'أريد طباعة ملصقات تحذيرية للورشة الكبرى'
+          ];
+        case 'supply-chain':
+          return [
+            'ما هي قطع الغيار التي انتهت صلاحية تخزينها؟',
+            'كيف يمكننا تتبع شحنة الفلاتر المستوردة القادمة؟',
+            'هل يمكن إعادة تفاوض أسعار العقود مع شركة قطع الغيار؟'
+          ];
+        case 'predictive':
+          return [
+            'ما هي نسبة دقة خوارزمية الذكاء الاصطناعي في رصد الأعطال؟',
+            'هل توجد شاحنة بها تنبيه حرارة محرك غير طبيعي؟',
+            'كيف نسجل قراءة العداد الرقمي للمركبة V3 تلقائياً؟'
+          ];
+        case 'finance':
+          return [
+            'ما هي الميزانية المتبقية لقسم الصيانة الميكانيكية؟',
+            'كم بلغت التكلفة الإجمالية لإصلاح الحافلات هذا الربع؟',
+            'أريد مقارنة تكلفة الصيانة الوقائية بالصيانة التصحيحية'
+          ];
+        default:
+          return ['ما هي توصيتك التالية؟', 'كيف نسجل بيانات الصيانة؟', 'هل هناك تنبيهات حية؟'];
+      }
+    } else {
+      switch (id) {
+        case 'project-manager':
+          return [
+            'How can we prioritize tasks for today?',
+            'Analyze our workshop efficiency with current staff',
+            'What is the average vehicle turnaround time?'
+          ];
+        case 'mechanic':
+          return [
+            'What is the recommended replacement period for filters?',
+            'How do we bleed the hydraulic braking system?',
+            'What are the mechanical signs of transmission wear?'
+          ];
+        default:
+          return ['What are your next recommendations?', 'Any live operational alerts?', 'Show me the recent activity logs'];
+      }
+    }
+  };
+
+  const getAgentSpecificFallback = (id: string, text: string, isAr: boolean) => {
+    if (isAr) {
+      switch (id) {
+        case 'project-manager':
+          return `### 📊 مراجعة تخطيطية من مدير المشروع الاستراتيجي
+بناءً على طلبك بخصوص: "${text}"، قمت بمراجعة توزيع العمليات وموارد الورشة:
+1. **سيناريو التشغيل**: تم رصد تزايد طفيف في قوائم الانتظار. ننصح بإعادة توجيه فنيين من قسم الهيدروليك لدعم الميكانيك العام.
+2. **الإنتاجية**: رفع معدل تسليم أوامر العمل المفتوحة بنسبة 15% من خلال موازنة فترات الراحة وجدولة المهام الرقمية.
+3. **توصية ملموسة**: تفعيل إغلاق أوامر الصيانة المكتملة سحابياً لتحرير مخصصاتها وتسهيل صرف قطع الغيار الجديدة.`;
+        case 'mechanic':
+          return `### 🛠️ تقرير فني من مساعد الصيانة والقطع
+تحليل فني بخصوص: "${text}":
+1. **أدلة الصيانة**: تم التحقق من العزم الموصى به لربط صواميل فرامل الشاحنات الثقيلة (Mercedes Actros) وهو **450 نيوتن.متر**، مع ضرورة تطبيق شحم حراري معتمد على مجاري الحركة.
+2. **المخزون الفوري**: فلاتر الزيت (LF-16015) متوفرة بعدد **14 حبة** في الرف B-3، وهو مستوى مطمئن يفوق حد الأمان الموصى به.
+3. **الخطوات الفنية**: احرص على استخدام جهاز OBD-II لمسح رمز العطل وتصفيره بعد استبدال الحشوات أو الحساسات لمنع تنبيه لوحة القيادة.`;
+        case 'safety':
+          return `### 🛡️ تدقيق السلامة والامتثال الرقمي
+بناءً على تدقيق معايير الأمان بخصوص: "${text}":
+1. **مؤشر الامتثال**: نسبة الالتزام ببطاقات الفحص الرقمي بلغت **94%** هذا الأسبوع. تم رصد ملاحظتين بشأن عدم ارتداء نظارات حماية أثناء اللحام في ورشة ميكانيك-2.
+2. **حالة النقل البري**: جميع مركبات نقل الركاب النشطة اجتازت فحص الفرامل والانبعاثات بامتثال كامل لقوانين النقل والبيئة.
+3. **الإجراء الوقائي**: يوصى بجدولة تفتيش مفاجئ لأجهزة الإطفاء ومخارج الطوارئ في الورشة الكبرى ومستودع قطع الغيار لضمان الأمن والسلامة.`;
+        case 'supply-chain':
+          return `### 📦 تحليل المشتريات ومفاوضة الموردين
+رصد سلاسل الإمداد بخصوص: "${text}":
+1. **تنبيه نفاد المخزون**: فلاتر الهواء لسيارات تويوتا هايلوكس هبطت إلى **3 حبات** (تحت حد الأمان البالغ 5 حبات). تم توليد طلب شراء وقائي برقم PR-2026-089.
+2. **عروض أسعار الموردين**: مقارنة الأسعار لـ طقم فحمات الفرامل تظهر أن "مورد الشرق" يقدم سعراً أقل بنسبة 12% مع جودة معتمدة وضمان تشغيل لمدة 6 أشهر مقارنة بالبقية.
+3. **التوصية**: اعتماد أمر الشراء العاجل للقطع الهابطة تحت حد الأمان لتجنب تعطل الحافلات في فترات ذروة التشغيل القادمة.`;
+        case 'predictive':
+          return `### 🔮 توقعات الصيانة التنبؤية ودورة حياة الأصول
+قراءة تنبؤية للعدادات والبيانات الحية بخصوص: "${text}":
+1. **احتمالية الأعطال**: الشاحنة رقم Plate-DU-8821 تظهر مؤشرات لتآكل تيل الفرامل بنسبة 85% خلال 400 كم القادمة بناءً على سلوك القيادة المتكرر في الاختناقات المرورية.
+2. **تحليل دورة الحياة**: حافلات نقل الكادر التي قطعت أكثر من 180,000 كم تحتاج إلى فحص تنبؤي لنظام التبريد ومضخة الماء قبل موسم الحر الشديد لتفادي التوقف المفاجئ.
+3. **إجراء عاجل**: استدعاء الشاحنة المعنية للفحص الوقائي السريع، فتكلفة التبديل المخطط له تعادل 20% فقط من تكلفة القطر والإصلاح الطارئ في الطريق.`;
+        case 'finance':
+          return `### 💼 التقرير المالي ومراقبة هدر الميزانيات
+تحليل مالي مفصل بخصوص البند: "${text}":
+1. **تكلفة الاستهلاك**: نفقات شراء قطع الغيار شكلت 42% من إجمالي ميزانية التشغيل هذا الشهر. الهدر الأكبر كان في تكرار استبدال خراطيم الهيدروليك من ماركات غير معتمدة.
+2. **مقارنة الجدوى**: تكلفة الاستعانة بالورش الخارجية لإصلاح المحركات الثقيلة بلغت **$4,500** لكل محرك، في حين أن صيانتها داخلياً بواسطة طاقم المهندسين المتاحين لا تتجاوز **$1,800** (توفير بنسبة 60%).
+3. **قرار مالي**: نوصي بوقف إرسال المحركات للورش الخارجية فوراً وتكليف فنيي الورشة بجميع أعمال التوضيب والإصلاح الميكانيكي تحت رقابة المشرف.`;
+      default:
+        return `### 🤖 استشارة ذكية من مركز الوكلاء
+بخصوص: "${text}"، قمت بمطابقة قراءات الأسطول وجداول الصيانة المتاحة:
+- **التوصية**: يرجى الاستمرار في فحص مستجدات الأرفف وتحيين سجلات المزامنة سحابياً بصفة مستمرة.
+- **الحالة**: المنظومة تعمل بامتثال تشغيلي ممتاز وكافة التوصيات جاهزة للتنفيذ.`;
+      }
+    } else {
+      switch (id) {
+        case 'project-manager':
+          return `### 📊 Strategic Project Manager Briefing
+Regarding your query on: "${text}", I have reviewed our operational resources:
+1. **Workloads**: Detected minor bottlenecks in repair lines. Recommend reassigning 2 techs from hydraulic lines to general mechanics to speed up deliveries.
+2. **Efficiency**: Raise completion rates by 15% through smart scheduling and automated digital task tracking.
+3. **Actionable Step**: Formally close fully-serviced orders via cloud sync to release allocated spares for incoming orders.`;
+        case 'mechanic':
+          return `### 🛠️ Technical Repair Guidance
+Mechanical analysis for: "${text}":
+1. **Specs Guide**: Confirmed that heavy-duty truck (Mercedes Actros) wheel hub bolts torque spec is **450 N.m**, with mandatory application of heat-resistant grease on calliper slide pins.
+2. **Instant Inventory**: LF-16015 Oil Filters are healthy at **14 units** on Rack B-3, well above safety threshold levels.
+3. **Tech Tip**: Use the OBD-II diagnostic computer to reset failure codes after replacing any gaskets or sensors to clear dashboard check-engine alerts.`;
+        case 'safety':
+          return `### 🛡️ Safety & Compliance Digital Log Audit
+Regarding safety metrics on: "${text}":
+1. **Compliance Index**: Checklist completion reached **94%** this week. Two minor safety violations were logged regarding eye protective gear in Workshop-2.
+2. **Transport Audit**: All active passenger buses have cleared emissions and brake performance audits in full compliance with municipal laws.
+3. **Preventive Action**: Schedule an unannounced fire safety and emergency exit audit in the primary workshop and inventory yard tomorrow morning.`;
+        case 'supply-chain':
+          return `### 📦 Supply Chain & Procurement Advisory
+Procurement parameters on: "${text}":
+1. **Stock Warning**: Hilux air filters dropped to **3 units** (below safety min of 5). Pre-emptive purchase request generated as PR-2026-089.
+2. **Vendor Quotes**: Bids comparison for heavy brake pads reveals "Al-Sharq Spares" is 12% cheaper with full 6-month warranty compared to alternative local shops.
+3. **Decision**: Approve the immediate PO for items flagged below safety stock levels to secure critical operations.`;
+        case 'predictive':
+          return `### 🔮 Predictive Maintenance & Wear Analytics
+Telemetry analysis for: "${text}":
+1. **Failure Probability**: Plate-DU-8821 has an 85% probability of brake pad wear-out within the next 400 km based on heavy stop-and-go driving patterns.
+2. **Asset Lifecycle**: Fleet buses with odometer readings exceeding 180,000 km require water pump and radiator cooling system tests before peak summer season.
+3. **Action**: Pull the flagged truck into the quick-service lane now. Preventive replacement costs 20% less than a highway breakdown and towing.`;
+        case 'finance':
+          return `### 💼 Financial Control & Cost Report
+Budget audit regarding cost center: "${text}":
+1. **Parts Outlays**: Parts purchase consumed 42% of the operating budget. The primary leaks were repeated high-frequency purchases of low-quality hydraulic hoses.
+2. **Feasibility Study**: Outsourcing heavy engine overhauls to third-party shops costs **$4,500** per unit. Rebuilding them on-site using our tech staff costs **$1,800** (60% cost savings).
+3. **Financial Recommendation**: Halt all third-party engine repair orders immediately and assign the tasks to our skilled workshop technicians on-site.`;
+        default:
+          return `### 🤖 Smart Agent Recommendation
+Regarding: "${text}", live data metrics match our general parameters:
+- **Advisory**: Keep monitoring parts consumption and update cloud records to maintain maximum operational uptime.
+- **Status**: The workshop complies fully with all technical standards.`;
+      }
+    }
+  };
+
+  const handleOpenAgentChat = (agent: any) => {
+    setActiveChatAgent(agent);
+    
+    // Initialize suggestions if not set
+    if (!dynamicSuggestions[agent.id]) {
+      setDynamicSuggestions(prev => ({
+        ...prev,
+        [agent.id]: getAgentSuggestions(agent.id, language === 'ar')
+      }));
+    }
+    
+    // If no chat history exists for this agent yet, initialize with a beautiful custom welcome message!
+    if (!agentChats[agent.id]) {
+      const welcomeText = language === 'ar' 
+        ? getAgentWelcomeMessageAr(agent.id)
+        : getAgentWelcomeMessageEn(agent.id);
+      
+      setAgentChats(prev => ({
+        ...prev,
+        [agent.id]: [
+          { role: 'model', text: welcomeText }
+        ]
+      }));
+    }
+  };
+
+  const handleAgentSendMessage = async (agentId: string, textToSend?: string) => {
+    if (!activeChatAgent) return;
+    const currentChat = agentChats[agentId] || [];
+    const text = textToSend?.trim() || agentInputText.trim();
+    if (!text) return;
+
+    // Clear input
+    setAgentInputText('');
+
+    const userMessage: AIMessage = { role: 'user', text };
+    
+    // Optimistically add user message
+    setAgentChats(prev => ({
+      ...prev,
+      [agentId]: [...(prev[agentId] || []), userMessage]
+    }));
+
+    setAgentChatLoading(prev => ({ ...prev, [agentId]: true }));
+
+    // Define custom context according to which agent it is
+    const activeAgent = agentsRegistry.find(a => a.id === agentId);
+    const agentName = activeAgent ? (language === 'ar' ? activeAgent.nameAr : activeAgent.nameEn) : 'Agent';
+    const agentDesc = activeAgent ? (language === 'ar' ? activeAgent.descAr : activeAgent.descEn) : '';
+    
+    const context = `
+      أنت "${agentName}" في مركز صيانة المركبات والمعدات الذكي التابع للمؤسسة.
+      دورك ووصف عملك: ${agentDesc}
+      
+      فيما يلي بيانات الأسطول والورش والمخازن الحية المسجلة بالمنظومة للرجوع إليها:
+      =========================================
+      - عدد المركبات الإجمالي بالأسطول: ${simulatedVehiclesCount}
+      - عدد أوامر الصيانة الحالية قيد المتابعة: ${simulatedOrdersCount}
+      - عدد الفنيين والمهندسين المتاحين بالورشة اليوم: ${simulatedTechniciansCount}
+      - حالة المستودع: ${simulatedInventoryCount} أصناف قطع غيار فريدة
+      - حالة سيناريو تشغيل الأسطول الحالي: ${activeScenario === 'normal' ? 'طبيعي متزن' : activeScenario === 'parts-crisis' ? 'أزمة توريد' : activeScenario === 'backlog-peak' ? 'ذروة تكدس' : 'عجز بشري'}
+      =========================================
+
+      وظيفتك الخاصة كـ "${agentName}" هي:
+      1. الإجابة بدقة متناهية وبطابع مهني وداعم مبني على تخصصك فقط.
+      2. تقديم توصيات ملموسة، عملية وقابلة للتطبيق فوراً من قبل المدير التنفيذي أو مدراء العمليات بالورشة.
+      3. الحفاظ على إجابات رصينة، منسقة بشكل ممتاز باستخدام لغة التخاطب (العربية بالدرجة الأولى، أو الإنجليزية إذا خاطبك بها).
+      4. استخدام الرموز التعبيرية الهندسية/المهنية لإضفاء طابع تفاعلي مميز.
+      
+      هام جداً وجوهري لسلامة النظام:
+      يجب عليك في نهاية ردك تماماً، وبشكل إلزامي، إضافة سطر يحتوي فقط على الكلمة المفتاحية '||SUGGESTIONS||'، يليه مباشرة ثلاثة (3) أسئلة أو استفسارات سريعة مقترحة وموصى بها ومناسبة جداً لمسار وتطور المحادثة الحالي ليستعين بها المستخدم كخطوة تالية (سؤال واحد فقط لكل سطر، بدون أرقام أو رموز نقطية، بحد أقصى 10 كلمات للسؤال).
+      مثال على الهيكل المطلوب للرد:
+      [محتوى ردك المنسق والغني هنا]
+      ||SUGGESTIONS||
+      سؤال المتابعة الأول المتوقع؟
+      سؤال المتابعة الثاني المتوقع؟
+      سؤال المتابعة الثالث المتوقع؟
+    `;
+
+    try {
+      const res = await fetch("/api/ai/project-manager-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          messages: [...currentChat, userMessage], 
+          context 
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed server-side query");
+      }
+      const data = await res.json();
+      const rawReply = data.text || (language === 'ar' ? "عذراً، لم أستطع معالجة التوصية حالياً." : "Sorry, I could not process your recommendation request.");
+      
+      let reply = rawReply;
+      let suggestions: string[] = [];
+
+      if (rawReply.includes('||SUGGESTIONS||')) {
+        const parts = rawReply.split('||SUGGESTIONS||');
+        reply = parts[0].trim();
+        const sugText = parts[1] || '';
+        suggestions = sugText
+          .split('\n')
+          .map(s => s.trim().replace(/^[-*•\d.\s]+/, '')) // clean any list markers
+          .filter(s => s.length > 0 && !s.includes('SUGGESTIONS'));
+      }
+
+      // Fallback suggestions if we couldn't parse 3 clean ones
+      if (suggestions.length < 2) {
+        suggestions = getSmartClientSuggestions(agentId, text, language === 'ar');
+      }
+
+      setDynamicSuggestions(prev => ({
+        ...prev,
+        [agentId]: suggestions.slice(0, 3)
+      }));
+
+      setAgentChats(prev => ({
+        ...prev,
+        [agentId]: [...(prev[agentId] || []), { role: 'model', text: reply }]
+      }));
+    } catch (error) {
+      console.error("Agent chat query error:", error);
+      const fallbackReply = getAgentSpecificFallback(agentId, text, language === 'ar');
+      const fallbackSug = getSmartClientSuggestions(agentId, text, language === 'ar');
+      
+      setDynamicSuggestions(prev => ({
+        ...prev,
+        [agentId]: fallbackSug
+      }));
+
+      setAgentChats(prev => ({
+        ...prev,
+        [agentId]: [...(prev[agentId] || []), { role: 'model', text: fallbackReply }]
+      }));
+    } finally {
+      setAgentChatLoading(prev => ({ ...prev, [agentId]: false }));
+    }
   };
 
   const getFontSizeClass = (size: 'sm' | 'md' | 'lg') => {
@@ -1142,17 +1611,17 @@ export default function AiHub() {
         </div>
 
          {/* Dynamic Nav Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl w-full md:w-auto overflow-x-auto">
+        <div className="grid grid-cols-2 md:flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl w-full md:w-auto">
           <button
             onClick={() => setActiveTab('project-manager')}
-            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-2 md:px-4.5 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 w-full md:w-auto ${
               activeTab === 'project-manager'
                 ? 'bg-white dark:bg-[#151c2e] text-violet-600 dark:text-violet-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-300'
             }`}
           >
-            <Sparkles size={14} />
-            <span>
+            <Sparkles size={14} className="shrink-0" />
+            <span className="truncate">
               {language === 'ar' ? 'روبرت - مدير المشروع (AI)' : 'Robert - Project Manager (AI)'}
               {!isAgentActive('project-manager') && ' ⏸️'}
             </span>
@@ -1160,14 +1629,14 @@ export default function AiHub() {
 
           <button
             onClick={() => setActiveTab('mechanic')}
-            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-2 md:px-4.5 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 w-full md:w-auto ${
               activeTab === 'mechanic'
                 ? 'bg-white dark:bg-[#151c2e] text-amber-600 dark:text-amber-400 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-300'
             }`}
           >
-            <Wrench size={14} />
-            <span>
+            <Wrench size={14} className="shrink-0" />
+            <span className="truncate">
               {language === 'ar' ? 'مساعد الصيانة والقطع' : 'Mechanic Assistant'}
               {!isAgentActive('mechanic') && ' ⏸️'}
             </span>
@@ -1247,7 +1716,7 @@ export default function AiHub() {
                         onClick={() => setActiveScenario('staff-shortage')}
                         className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
                           activeScenario === 'staff-shortage'
-                            ? 'bg-violet-600 text-white border-transparent'
+                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent'
                             : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
                         }`}
                       >
@@ -1320,11 +1789,17 @@ export default function AiHub() {
                             return (
                               <div 
                                 key={agent.id}
-                                className={`p-2.5 rounded-xl border transition-all flex flex-col gap-1.5 ${
+                                className={`p-2.5 rounded-xl border transition-all flex flex-col gap-1.5 cursor-pointer hover:border-violet-500/50 dark:hover:border-violet-400/50 hover:bg-slate-50 dark:hover:bg-[#161d33]/50 ${
                                   isAct 
                                     ? 'bg-white dark:bg-[#111526] border-slate-150 dark:border-slate-800' 
                                     : 'bg-slate-50/40 dark:bg-slate-900/20 border-slate-200/30 dark:border-slate-800/40 opacity-75'
                                 }`}
+                                onClick={(e) => {
+                                  const target = e.target as HTMLElement;
+                                  if (target.closest('button')) return;
+                                  handleOpenAgentChat(agent);
+                                }}
+                                title={language === 'ar' ? 'انقر لفتح نافذة الدردشة التفاعلية مع الوكيل' : 'Click to open interactive chat with this agent'}
                               >
                                 <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
                                   <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -1565,7 +2040,7 @@ export default function AiHub() {
                           <button
                             onClick={handlePushAll}
                             disabled={isTestingFirebase || isSyncInProgress || firebaseConnected === false}
-                            className="flex items-center justify-center gap-1 p-2 rounded-xl bg-violet-650 hover:bg-violet-750 text-white font-black cursor-pointer transition-all disabled:opacity-50 text-[9px] shadow-xs"
+                            className="flex items-center justify-center gap-1 p-2 rounded-xl bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:brightness-110 text-white font-black cursor-pointer transition-all disabled:opacity-50 text-[9px] shadow-xs"
                             title={language === 'ar' ? 'مزامنة ورفع البيانات المحلية إلى السحابية' : 'Sync and push local edits to Google Cloud'}
                           >
                             <ArrowUpCircle size={11} className={isSyncInProgress ? 'animate-pulse' : ''} />
@@ -1645,7 +2120,7 @@ export default function AiHub() {
                         onClick={() => {
                           setAgentsRegistry(prev => prev.map(a => a.id === 'project-manager' ? { ...a, isActive: true } : a));
                         }}
-                        className="w-full px-6 py-2.5 bg-violet-650 hover:bg-violet-750 text-white rounded-xl text-xs font-black shadow-lg cursor-pointer transition-all"
+                        className="w-full px-6 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-xl text-xs font-black shadow-lg cursor-pointer transition-all"
                       >
                         {language === 'ar' ? 'تفعيل وتشغيل الوكيل الآن' : 'Activate Agent Now'}
                       </button>
@@ -1677,8 +2152,8 @@ export default function AiHub() {
                         onClick={() => handleSetChatFontSize('sm')}
                         className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[11px] transition-all cursor-pointer border ${
                           chatFontSize === 'sm'
-                            ? 'bg-violet-600 border-violet-600 text-white shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs scale-105 font-black'
+                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200/80'
                         }`}
                         title={language === 'ar' ? 'تصغير الخط' : 'Small font'}
                       >
@@ -1689,8 +2164,8 @@ export default function AiHub() {
                         onClick={() => handleSetChatFontSize('md')}
                         className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all cursor-pointer border ${
                           chatFontSize === 'md'
-                            ? 'bg-violet-600 border-violet-600 text-white shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs scale-105 font-black'
+                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200/80'
                         }`}
                         title={language === 'ar' ? 'خط متوسط' : 'Medium font'}
                       >
@@ -1701,8 +2176,8 @@ export default function AiHub() {
                         onClick={() => handleSetChatFontSize('lg')}
                         className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-lg transition-all cursor-pointer border ${
                           chatFontSize === 'lg'
-                            ? 'bg-violet-600 border-violet-600 text-white shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs scale-105 font-black'
+                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200/80'
                         }`}
                         title={language === 'ar' ? 'تكبير الخط' : 'Large font'}
                       >
@@ -1765,10 +2240,10 @@ export default function AiHub() {
                             : (language === 'ar' ? 'أنت (القيادة والعمليات)' : 'You (Strategic Director)')}
                         </span>
 
-                        <div className={`p-4 md:p-5 rounded-3xl leading-relaxed max-w-[85%] md:max-w-[75%] border shadow-xs relative group/msg ${
+                        <div className={`p-4 md:p-5 leading-relaxed max-w-[85%] md:max-w-[75%] border shadow-xs relative group/msg ${
                           isUser 
-                            ? 'bg-violet-600 text-white rounded-br-none border-transparent text-right font-black' 
-                            : `bg-white dark:bg-[#111526] text-slate-800 dark:text-slate-200 rounded-bl-none border-slate-150 dark:border-slate-800 font-semibold ${
+                            ? 'bg-violet-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black' 
+                            : `bg-white dark:bg-[#111526] text-slate-800 dark:text-slate-200 rounded-3xl rounded-bl-none border-slate-150 dark:border-slate-800 font-semibold ${
                                 isRtl ? 'text-right' : 'text-left'
                               }`
                         }`}>
@@ -1936,7 +2411,7 @@ export default function AiHub() {
                     <button 
                       onClick={() => handlePmSendMessage()}
                       disabled={pmLoading || !pmInput.trim()}
-                      className="p-3 bg-violet-600 hover:bg-violet-750 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
+                      className="p-3 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
                     >
                       <Send size={15} className={isRtl ? 'rotate-180' : ''} />
                     </button>
@@ -2015,7 +2490,7 @@ export default function AiHub() {
                         onClick={() => setActiveScenario('staff-shortage')}
                         className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
                           activeScenario === 'staff-shortage'
-                            ? 'bg-violet-600 text-white border-transparent'
+                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent'
                             : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
                         }`}
                       >
@@ -2088,11 +2563,17 @@ export default function AiHub() {
                             return (
                               <div 
                                 key={agent.id}
-                                className={`p-2.5 rounded-xl border transition-all flex flex-col gap-1.5 ${
+                                className={`p-2.5 rounded-xl border transition-all flex flex-col gap-1.5 cursor-pointer hover:border-violet-500/50 dark:hover:border-violet-400/50 hover:bg-slate-50 dark:hover:bg-[#161d33]/50 ${
                                   isAct 
                                     ? 'bg-white dark:bg-[#111526] border-slate-150 dark:border-slate-800' 
                                     : 'bg-slate-50/40 dark:bg-slate-900/20 border-slate-200/30 dark:border-slate-800/40 opacity-75'
                                 }`}
+                                onClick={(e) => {
+                                  const target = e.target as HTMLElement;
+                                  if (target.closest('button')) return;
+                                  handleOpenAgentChat(agent);
+                                }}
+                                title={language === 'ar' ? 'انقر لفتح نافذة الدردشة التفاعلية مع الوكيل' : 'Click to open interactive chat with this agent'}
                               >
                                 <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
                                   <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -2343,10 +2824,10 @@ export default function AiHub() {
                             : (language === 'ar' ? 'أنت (المسؤول الفني)' : 'You (Fleet Engineer)')}
                         </span>
 
-                        <div className={`p-4 md:p-5 rounded-3xl leading-relaxed max-w-[85%] md:max-w-[75%] border shadow-xs relative group/msg ${
+                        <div className={`p-4 md:p-5 leading-relaxed max-w-[85%] md:max-w-[75%] border shadow-xs relative group/msg ${
                           isUser 
-                            ? 'bg-amber-600 text-white rounded-br-none border-transparent text-right font-black' 
-                            : `bg-white dark:bg-[#111526] text-slate-800 dark:text-slate-200 rounded-bl-none border-slate-150 dark:border-slate-800 font-semibold ${
+                            ? 'bg-amber-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black' 
+                            : `bg-white dark:bg-[#111526] text-slate-800 dark:text-slate-200 rounded-3xl rounded-bl-none border-slate-150 dark:border-slate-800 font-semibold ${
                                 isRtl ? 'text-right' : 'text-left'
                               }`
                         }`}>
@@ -2593,7 +3074,7 @@ export default function AiHub() {
                         onClick={() => setActiveScenario('staff-shortage')}
                         className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
                           activeScenario === 'staff-shortage'
-                            ? 'bg-violet-600 text-white border-transparent'
+                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent'
                             : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
                         }`}
                       >
@@ -2783,14 +3264,14 @@ export default function AiHub() {
                         </span>
 
                         {isUser ? (
-                          <div className={`p-4 md:p-5 rounded-3xl max-w-[85%] md:max-w-[75%] border shadow-xs bg-emerald-600 text-white rounded-br-none border-transparent text-right font-black ${getFontSizeClass(chatFontSize)}`}>
+                          <div className={`p-4 md:p-5 max-w-[85%] md:max-w-[75%] border shadow-xs bg-emerald-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black ${getFontSizeClass(chatFontSize)}`}>
                             {msg.text}
                           </div>
                         ) : (
                           /* Render side-by-side advice cards */
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-full">
                             {/* PM Strategic Response Card */}
-                            <div className="p-4 bg-white dark:bg-[#111526] rounded-3xl border border-violet-100 dark:border-violet-950/40 shadow-xs flex flex-col justify-between">
+                            <div className="p-4 bg-white dark:bg-[#111526] rounded-3xl border border-slate-150 dark:border-slate-800/60 shadow-xs flex flex-col justify-between">
                               <div>
                                 <div className={`flex items-center gap-1.5 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800/60 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                   <Sparkles size={14} className="text-violet-600 dark:text-violet-400 animate-pulse" />
@@ -2842,7 +3323,7 @@ export default function AiHub() {
                                 <div className={`flex items-center gap-1.5 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800/60 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                   <Wrench size={14} className="text-amber-600 dark:text-amber-400" />
                                   <span className="text-[11px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider">
-                                    {language === 'ar' ? 'الفحص الفني والقطع (Mechanic)' : 'Mechanic Technical Response'}
+                                    {language === 'ar' ? 'الفحوصات الفنية والقطع (Mechanic)' : 'Mechanic Technical Response'}
                                   </span>
                                 </div>
                                 <div className={`select-text text-slate-700 dark:text-slate-300 ${getFontSizeClass(chatFontSize)}`}>
@@ -2890,7 +3371,7 @@ export default function AiHub() {
 
                   {/* Joint Loading Spinner */}
                   {coPilotLoading && (
-                    <div className="flex justify-start w-full">
+                    <div className="flex justify-start w-full animate-fadeIn">
                       <div className="bg-white dark:bg-[#111526] p-4.5 rounded-3xl rounded-bl-none border border-slate-150 dark:border-slate-800 flex items-center gap-3 shadow-xs">
                         <div className="flex gap-1.5">
                           <motion.div 
@@ -2909,8 +3390,8 @@ export default function AiHub() {
                             className="w-1.5 h-1.5 bg-emerald-500 rounded-full" 
                           />
                         </div>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold select-none">
-                          {language === 'ar' ? 'توجيه تعاوني: جاري دمج آراء الإدارة ببيانات الصيانة...' : 'Co-Pilot: Integrating strategic insights with physical workshop parts inventory...'}
+                        <span className="text-[10px] font-bold text-slate-400">
+                          {language === 'ar' ? 'جارٍ التشخيص المشترك...' : 'Analyzing jointly...'}
                         </span>
                       </div>
                     </div>
@@ -2919,58 +3400,35 @@ export default function AiHub() {
 
                 {/* Co-Pilot Input Bar */}
                 <div className="p-4 bg-white dark:bg-[#0c101d] border-t border-slate-150 dark:border-slate-850 shrink-0">
-                  {isDictating && (
-                    <div className="text-[10px] text-rose-500 font-extrabold text-center pb-2 animate-pulse flex items-center justify-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                      <span>{language === 'ar' ? 'جاري الاستماع للتوجيه التعاوني المشترك...' : 'Listening to Co-Pilot joint instructions...'}</span>
-                    </div>
-                  )}
-                  <div className={`p-1.5 bg-slate-50 dark:bg-[#070a13] border border-slate-200 dark:border-slate-800/80 rounded-2.5xl flex items-center gap-2 ${
-                    isRtl ? 'flex-row-reverse' : ''
-                  }`}>
-                    {/* Microphone Dictation Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleStartVoiceDictation('copilot')}
-                      className={`p-3 rounded-xl transition-all cursor-pointer shrink-0 ${
-                        isDictating
-                          ? 'bg-rose-500 text-white animate-pulse'
-                          : 'bg-slate-150 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-emerald-500'
-                      }`}
-                      title={language === 'ar' ? 'إملاء صوتي موحد' : 'Voice joint dictation'}
-                    >
-                      <Mic size={15} />
-                    </button>
-
-                    <input 
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleCoPilotSendMessage();
+                    }}
+                    className="flex items-center gap-2 bg-slate-50 dark:bg-[#121829] border border-slate-200/80 dark:border-slate-800 p-1.5 rounded-2xl"
+                  >
+                    <input
                       type="text"
                       value={coPilotInput}
                       onChange={(e) => setCoPilotInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCoPilotSendMessage()}
-                      placeholder={
-                        language === 'ar' 
-                          ? 'استفسر بتوجيه تعاوني مزدوج (مثال: اقترح حلاً لشاحنة معطلة ينقصها فنيين)...' 
-                          : 'Joint Orchestrated Query (e.g. Optimize breakdown scheduling under staff scarcity)...'
-                      }
-                      className="flex-1 bg-transparent p-3 outline-none text-xs md:text-sm font-semibold dark:text-white"
+                      disabled={coPilotLoading}
+                      placeholder={language === 'ar' ? 'اكتب سؤالاً موجهاً للمساعد المشترك...' : 'Ask the co-pilot joint command...'}
+                      className="flex-1 bg-transparent p-3 outline-hidden text-xs md:text-sm font-semibold text-slate-850 dark:text-white"
                     />
                     
                     <button 
-                      onClick={() => handleCoPilotSendMessage()}
+                      type="submit"
                       disabled={coPilotLoading || !coPilotInput.trim()}
-                      className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
+                      className="p-3 bg-emerald-600 hover:bg-emerald-750 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
                     >
                       <Send size={15} className={isRtl ? 'rotate-180' : ''} />
                     </button>
-                  </div>
+                  </form>
                 </div>
 
               </div>
             </motion.div>
           )}
-
-        </AnimatePresence>
-      </div>
 
       {/* 1. PROJECT MANAGER QUICK GUIDE MODAL */}
       <AnimatePresence>
@@ -3085,7 +3543,7 @@ export default function AiHub() {
                 <button
                   type="button"
                   onClick={() => setPmGuideModalOpen(false)}
-                  className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-black cursor-pointer transition-colors"
+                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-xl text-xs font-black cursor-pointer transition-colors"
                 >
                   {language === 'ar' ? 'فهمت، ابدأ الاستعلام' : 'Got it, let’s query'}
                 </button>
@@ -3131,7 +3589,7 @@ export default function AiHub() {
                 </div>
                 <button 
                   onClick={() => setMechGuideModalOpen(false)} 
-                  className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
+                  className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors border-0 bg-transparent flex items-center justify-center"
                 >
                   <X size={16} />
                 </button>
@@ -3147,236 +3605,353 @@ export default function AiHub() {
                   </h4>
                   <p className={`text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold ${isRtl ? 'text-right' : 'text-left'}`}>
                     {language === 'ar'
-                      ? 'يعمل هذا الوكيل الميداني كخبير هندسي وأمين مخزن متقن. يركز على تتبع ومعاينة قطع الغيار داخل المخزن ومطابقة كميات الأرفف بالحدود الآمنة للمؤسسة، مع توفير أدلة فنية تفصيلية ورموز عزم شد البراغي وخطوات تفكيك وتعمير المحركات والأنظمة الهيدروليكية.'
-                      : 'This agent acts as a direct workshop companion. It monitors parts shelves depth, checks stock levels against safety margins, and provides torque specs, engine repair overhauls, and hydraulic guidance.'}
-                  </p>
+                      ? 'يعمل هذا الوكيل المي�              {/* Main Chat Drawer Container (Evolving Brand Identity Dark Purple Palette) */}
+              <motion.div 
+                initial={{ scale: 0.95, y: 30, opacity: 0 }} 
+                animate={{ scale: 1, y: 0, opacity: 1 }} 
+                exit={{ scale: 0.95, y: 30, opacity: 0 }}
+                className="bg-gradient-to-br from-indigo-950 via-purple-900 to-violet-950 text-slate-100 w-full h-full md:max-w-6xl md:h-[92vh] flex flex-col md:rounded-3xl shadow-[0_20px_60px_rgba(109,40,217,0.4)] border-2 border-purple-500/30 overflow-hidden z-[111]"
+                dir={isRtl ? 'rtl' : 'ltr'}
+              >
+                {/* Header with Dark Glassmorphic Purple Brand Identity */}
+                <div className="py-3 px-5 border-b border-white/10 bg-black/30 backdrop-blur-md flex items-center justify-between shadow-md">
+                  <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
+                    {/* Dynamic Colorized Avatar */}
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm bg-white/10 text-purple-250 border border-white/10">
+                      <div className="scale-110 text-purple-200">
+                        {renderAgentIcon(activeChatAgent.id, activeChatAgent.color)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <h3 className="text-xs md:text-sm font-black text-white tracking-tight">
+                          {language === 'ar' ? activeChatAgent.nameAr : activeChatAgent.nameEn}
+                        </h3>
+                        {/* Active Status Badge */}
+                        <span className="text-[9px] px-2 py-0.5 rounded-full font-black bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 animate-pulse">
+                          {activeChatAgent.isActive 
+                            ? (language === 'ar' ? '🟢 نشط في الخلفية' : '🟢 Active in BG') 
+                            : (language === 'ar' ? '⏸️ متوقف مؤقتاً' : '⏸️ Paused')}
+                        </span>
+                      </div>
+                      <p className={`text-[10px] text-purple-300 mt-0.5 font-extrabold ${isRtl ? 'text-right' : 'text-left'}`}>
+                        {activeChatAgent.roles.join(' | ')}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setActiveChatAgent(null)} 
+                    className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl cursor-pointer transition-colors border border-white/10 shadow-xs"
+                  >
+                    <X size={15} />
+                  </button>
                 </div>
 
-                {/* Section 2: Live Data Sources */}
-                <div className="p-4 bg-amber-50/50 dark:bg-amber-950/10 rounded-2xl border border-amber-100 dark:border-amber-900/40 space-y-2.5">
-                  <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                    <Database size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                    <strong className="text-xs font-black text-amber-800 dark:text-amber-350">
-                      {language === 'ar' ? 'بيانات المستودع المتصلة بالروبوت:' : 'Live warehouse data connections:'}
-                    </strong>
-                  </div>
-                  <div className={`grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-400 ${isRtl ? 'text-right' : 'text-left'}`}>
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-[#070a13] p-1.5 px-2.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
-                      <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
-                      <span>{language === 'ar' ? 'جرد كميات قطع الغيار' : 'Inventory Stock Count'}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-[#070a13] p-1.5 px-2.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
-                      <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
-                      <span>{language === 'ar' ? 'مواقع الأرفف والمخزن' : 'Rack Shelf Locations'}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-[#070a13] p-1.5 px-2.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
-                      <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
-                      <span>{language === 'ar' ? 'سجلات وتصنيف الشاحنات' : 'Vehicle Specifications'}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-[#070a13] p-1.5 px-2.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
-                      <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
-                      <span>{language === 'ar' ? 'أعطال الورش الميدانية' : 'Active Workshop Faults'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Clickable suggestions */}
-                <div className="space-y-2.5">
-                  <h4 className={`text-xs font-black text-slate-800 dark:text-slate-150 flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
-                    <MessageSquare size={14} className="text-amber-500 shrink-0" />
-                    <span>{language === 'ar' ? 'الدليل السريع: اضغط على أي سؤال للبدء فوراً' : 'Quick Guide: Click any inquiry to execute'}</span>
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {mechSuggestions.map((sug, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleMechSuggestionClick(sug.text)}
-                        className={`p-3 bg-slate-50 hover:bg-amber-50/50 dark:bg-[#111625] dark:hover:bg-[#141d33] border border-slate-200/50 dark:border-slate-800 rounded-2xl cursor-pointer transition-colors text-right flex flex-col gap-1 ${
-                          isRtl ? 'items-end' : 'items-start text-left'
-                        }`}
-                      >
-                        <span className="text-xs font-extrabold text-slate-800 dark:text-slate-150 group-hover:text-amber-650">{sug.label}</span>
-                        <span className="text-[9px] text-slate-400 dark:text-slate-500 leading-normal font-semibold">{sug.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setMechGuideModalOpen(false)}
-                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black cursor-pointer transition-colors"
+                {/* Message Streams Area */}
+                <div
+                  ref={agentChatScrollRef}
+                  className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 bg-radial-at-t from-violet-50/10 via-transparent to-transparent scrollbar-thin scrollbar-thumb-violet-200"
                 >
-                  {language === 'ar' ? 'فهمت، ابدأ الاستعلام' : 'Got it, let’s query'}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                  {/* If in Welcome Landing State, render the stunning landing greeting inside scroll container */}
+                  {isWelcomeState ? (
+                    <div className="flex flex-col justify-center min-h-[50vh] text-center max-w-4xl mx-auto py-10">
+                      {/* Centered Brand Logo */}
+                      <div className="flex items-center justify-center mb-6">
+                        <div className="relative w-20 h-20 flex items-center justify-center bg-violet-500/5 rounded-full p-4 border border-violet-500/10 shadow-[0_0_30px_rgba(139,92,246,0.05)]">
+                          <svg className="w-12 h-12 text-violet-500 dark:text-violet-400 animate-pulse" viewBox="0 0 100 100" fill="currentColor">
+                            <path d="M50,15 L72,37 L63,40 L50,29 L37,40 L28,37 Z" />
+                            <path d="M20,68 L42,50 L45,59 L33,68 L45,77 L42,86 Z" transform="rotate(120 50 50)" />
+                            <path d="M20,68 L42,50 L45,59 L33,68 L45,77 L42,86 Z" transform="rotate(240 50 50)" />
+                          </svg>
+                        </div>
+                      </div>
 
-      {/* 3. QUICK WORK ORDER GENERATION MODAL */}
-      <AnimatePresence>
-        {quickOrderModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setQuickOrderModalOpen(false)} 
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs" 
-            />
-            
-            <motion.div 
-              initial={{ scale: 0.95, y: 15, opacity: 0 }} 
-              animate={{ scale: 1, y: 0, opacity: 1 }} 
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="bg-white dark:bg-[#0c101d] w-full max-w-lg rounded-3xl shadow-2xl border border-slate-105 dark:border-slate-800 overflow-hidden z-[101]"
-              dir={isRtl ? 'rtl' : 'ltr'}
-            >
-              {/* Header */}
-              <div className="p-5 border-b border-slate-150 dark:border-slate-800 bg-emerald-500/5 flex items-center justify-between">
-                <div className={`flex items-center gap-2.5 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                    <Wrench size={18} className="animate-pulse" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-emerald-750 dark:text-emerald-400">
-                      {language === 'ar' ? 'توليد أمر صيانة سريع' : 'Generate Quick Work Order'}
-                    </h3>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      {language === 'ar' ? 'قم بتأكيد وتحرير تفاصيل الصيانة المقترحة بالذكاء الاصطناعي' : 'Confirm and edit AI-suggested maintenance details'}
-                    </p>
-                  </div>
+                      {/* Greeting */}
+                      <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight mb-2">
+                        {language === 'ar' ? 'مرحباً يا لهيب 👋' : 'Hello, Lahib 👋'}
+                      </h2>
+                      <p className="text-xs md:text-sm text-slate-600 font-bold max-w-xl mx-auto leading-relaxed mb-6">
+                        {language === 'ar' 
+                          ? `أنا مساعدك الذكي ${activeChatAgent.nameAr}، كيف يمكنني خدمتك اليوم في إدارة الصيانة والعمليات؟`
+                          : `I am your AI assistant ${activeChatAgent.nameEn}. How can I assist you in managing maintenance and operations today?`}
+                      </p>
+
+                      {/* Recommended Quick Query Cards (centered, huge, interactive, purple brand identity) */}
+                      <div className="space-y-3 max-w-xl mx-auto px-4">
+                        <div className="flex items-center justify-center gap-2 text-violet-600 text-xs font-black tracking-wider uppercase mb-1">
+                          <Compass size={13} className="text-violet-500" />
+                          <span>{language === 'ar' ? 'استعلامات سريعة موصى بها من الوكيل' : 'RECOMMENDED QUICK QUERIES'}</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2.5">
+                          {currentSuggestions.map((sug, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => handleAgentSendMessage(activeChatAgent.id, sug)}
+                              className="group relative flex items-center justify-between p-3.5 text-right bg-white hover:bg-violet-50/80 border border-slate-200 hover:border-violet-200 rounded-xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 shadow-xs hover:shadow-md text-slate-700 hover:text-slate-900 animate-fadeIn"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
+                                  <Compass size={14} />
+                                </div>
+                                <span className="text-xs md:text-[13px] font-black leading-snug">{sug}</span>
+                              </div>
+                              <span className="text-xs text-violet-400 group-hover:text-violet-600 group-hover:translate-x-1 transition-all">
+                                {isRtl ? '←' : '→'}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Conversation stream
+                    activeChatMessages.map((msg, i) => {
+                      const isUser = msg.role === 'user';
+                      return (
+                        <div
+                          key={i}
+                          className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full`}
+                        >
+                          <span className={`text-[10px] font-extrabold text-slate-400 block px-2 mb-1`}>
+                            {isUser 
+                              ? (language === 'ar' ? 'المدير التنفيذي لهيب' : 'Executive Director Lahib') 
+                              : (language === 'ar' ? `الوكيل ${activeChatAgent.nameAr} 🤖` : `${activeChatAgent.nameEn} 🤖`)}
+                          </span>
+
+                          <div className={`p-4 leading-relaxed max-w-[85%] border shadow-xs relative group transition-all ${
+                            isUser 
+                              ? 'bg-violet-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent font-black shadow-[0_4px_14px_rgba(109,40,217,0.25)]' 
+                              : 'bg-white text-slate-800 rounded-2.5xl rounded-bl-none border-slate-200/80 font-semibold shadow-xs'
+                          } ${isRtl ? 'text-right' : 'text-left'}`}>
+                            <div className="select-text text-[14px] md:text-[15px]">
+                              {isUser ? msg.text : renderRichMessageText(msg.text, `agent-chat-${activeChatAgent.id}-${i}`)}
+                            </div>
+
+                            {!isUser && (
+                              <div className="flex items-center gap-3.5 mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-400 font-bold select-none">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleSpeakMessage(`agent-chat-${activeChatAgent.id}-${i}`, msg.text)}
+                                  className="flex items-center gap-1.5 hover:text-violet-600 cursor-pointer transition-colors"
+                                >
+                                  {activeAudioMessageId === `agent-chat-${activeChatAgent.id}-${i}` && isPlayingAudio ? (
+                                    <>
+                                      <VolumeX size={13} className="text-rose-500 animate-bounce" />
+                                      <span>{language === 'ar' ? 'إيقاف الصوت' : 'Mute'}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Volume2 size={13} />
+                                      <span>{language === 'ar' ? 'قراءة صوتية' : 'Read Aloud'}</span>
+                                    </>
+                                  )}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(msg.text);
+                                  }}
+                                  className="flex items-center gap-1.5 hover:text-violet-600 cursor-pointer transition-colors"
+                                >
+                                  <Copy size={13} />
+                                  <span>{language === 'ar' ? 'نسخ التوصية' : 'Copy'}</span>
+                                </button>
+
+                                {/* Work Order Generator for repair recommendations */}
+                                {(msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair')) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setQuickOrderData({
+                                        vehicleId: defaultVehicles[0]?.id || 'V1',
+                                        category: activeChatAgent.id === 'mechanic' ? 'mechanical' : 'body',
+                                        description: msg.text.slice(0, 150) + '...',
+                                        technicianId: defaultTechnicians[0]?.id || 'T1',
+                                        cost: '300'
+                                      });
+                                      setQuickOrderModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition-colors ml-auto mr-auto"
+                                  >
+                                    <Wrench size={13} />
+                                    <span>{language === 'ar' ? '⚙️ توليد أمر صيانة سريع' : '⚙️ Quick Work Order'}</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {agentChatLoading[activeChatAgent.id] && (
+                    <div className={`flex items-start gap-3 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
+                      <div className="w-8 h-8 rounded-xl bg-violet-550/10 text-violet-600 border border-violet-500/20 flex items-center justify-center shrink-0">
+                        <Loader2 size={16} className="animate-spin" />
+                      </div>
+                      <div className="p-3.5 bg-white text-slate-600 rounded-2xl rounded-tl-none border border-slate-200 text-xs font-bold animate-pulse shadow-xs">
+                        {language === 'ar' ? 'يقوم الوكيل بتحليل الحالة الراهنة وتوليد التوصيات...' : 'Agent analyzing state and preparing action steps...'}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <button 
-                  onClick={() => setQuickOrderModalOpen(false)} 
-                  className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors border-0"
-                >
-                  <X size={16} />
-                </button>
-              </div>
 
-              {/* Form */}
-              <form onSubmit={handleQuickOrderSubmit}>
-                <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto scrollbar-thin text-right">
-                  
-                  {/* Vehicle Selector */}
-                  <div className="space-y-1.5 text-right">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 block">
-                      {language === 'ar' ? 'المركبة أو المعدة المستهدفة:' : 'Target Vehicle / Equipment:'}
-                    </label>
-                    <select
-                      value={quickOrderData.vehicleId}
-                      onChange={(e) => setQuickOrderData({...quickOrderData, vehicleId: e.target.value})}
-                      className="w-full p-3 bg-slate-50 dark:bg-[#121829] border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-right cursor-pointer"
-                      required
-                    >
-                      <option value="" disabled>{language === 'ar' ? 'اختر المركبة...' : 'Select Vehicle...'}</option>
-                      {defaultVehicles.map(v => (
-                        <option key={v.id} value={v.id}>
-                          {v.id} - {v.name} ({v.plateNumber})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Category & Cost Row */}
-                  <div className="grid grid-cols-2 gap-3.5">
-                    {/* Cost */}
-                    <div className="space-y-1.5 text-right">
-                      <label className="text-xs font-black text-slate-700 dark:text-slate-300 block">
-                        {language === 'ar' ? 'التكلفة التقديرية (ر.س):' : 'Estimated Cost (SAR):'}
-                      </label>
-                      <input
-                        type="number"
-                        value={quickOrderData.cost}
-                        onChange={(e) => setQuickOrderData({...quickOrderData, cost: e.target.value})}
-                        className="w-full p-3 bg-slate-50 dark:bg-[#121829] border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-right"
-                        required
-                        min="0"
-                      />
+                {/* Evolving Recommended Suggestions */}
+                {!isWelcomeState && (
+                  <div className="px-5 py-3 bg-violet-50/20 border-t border-violet-100 flex flex-col gap-2 select-none shadow-inner animate-fadeIn">
+                    <div className={`flex items-center gap-1.5 text-[11px] text-slate-500 font-extrabold pr-1 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
+                      <Lightbulb size={13} className="text-amber-500 animate-pulse shrink-0" />
+                      <span>{language === 'ar' ? 'توصيات ومتابعات موصى بها من الوكيل:' : 'Recommended Next Steps:'}</span>
                     </div>
-
-                    {/* Category */}
-                    <div className="space-y-1.5 text-right">
-                      <label className="text-xs font-black text-slate-700 dark:text-slate-300 block">
-                        {language === 'ar' ? 'قسم الصيانة:' : 'Maintenance Category:'}
-                      </label>
-                      <select
-                        value={quickOrderData.category}
-                        onChange={(e) => setQuickOrderData({...quickOrderData, category: e.target.value})}
-                        className="w-full p-3 bg-slate-50 dark:bg-[#121829] border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-right cursor-pointer"
-                        required
-                      >
-                        <option value="mechanical">{language === 'ar' ? 'ميكانيكي' : 'Mechanical'}</option>
-                        <option value="electrical">{language === 'ar' ? 'كهربائي' : 'Electrical'}</option>
-                        <option value="hydraulic">{language === 'ar' ? 'هيدروليكي' : 'Hydraulic'}</option>
-                        <option value="body">{language === 'ar' ? 'هيكل وصيانة عامة' : 'Body & General'}</option>
-                      </select>
+                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-violet-200/50 no-scrollbar snap-x max-w-full">
+                      {currentSuggestions.map((sug, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          disabled={agentChatLoading[activeChatAgent.id]}
+                          onClick={() => setSelectedReadingSuggestion(sug)}
+                          className="flex items-center gap-2 text-xs font-black bg-white hover:bg-violet-50 text-slate-700 hover:text-violet-700 px-4 py-2 rounded-full border border-slate-200 hover:border-violet-300 cursor-pointer transition-all duration-200 shadow-xs shrink-0 snap-center max-w-[280px] text-ellipsis overflow-hidden whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="truncate">{sug}</span>
+                          {isRtl ? (
+                            <ArrowLeft size={11} className="text-violet-600 shrink-0 font-bold" />
+                          ) : (
+                            <ArrowRight size={11} className="text-violet-600 shrink-0 font-bold" />
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
+                )}
 
-                  {/* Technician Selector */}
-                  <div className="space-y-1.5 text-right">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 block">
-                      {language === 'ar' ? 'الفني أو الميكانيكي المكلف:' : 'Assigned Technician:'}
-                    </label>
-                    <select
-                      value={quickOrderData.technicianId}
-                      onChange={(e) => setQuickOrderData({...quickOrderData, technicianId: e.target.value})}
-                      className="w-full p-3 bg-slate-50 dark:bg-[#121829] border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none text-right cursor-pointer"
-                      required
-                    >
-                      <option value="" disabled>{language === 'ar' ? 'اختر فني ورشة...' : 'Select Technician...'}</option>
-                      {defaultTechnicians.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.name} - ({t.role})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-1.5 text-right">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 block">
-                      {language === 'ar' ? 'شرح ووصف العطل (مقترح بالذكاء الاصطناعي):' : 'Fault Description (AI Suggested):'}
-                    </label>
-                    <textarea
-                      value={quickOrderData.description}
-                      onChange={(e) => setQuickOrderData({...quickOrderData, description: e.target.value})}
-                      rows={4}
-                      className="w-full p-3 bg-slate-50 dark:bg-[#121829] border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold outline-none text-right leading-relaxed"
-                      required
+                {/* Chat Input form with Violet Accents */}
+                <div className="p-4 border-t border-violet-300 bg-gradient-to-r from-violet-100/40 via-white to-violet-100/40 shadow-md">
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAgentSendMessage(activeChatAgent.id);
+                    }}
+                    className="flex items-center gap-3"
+                  >
+                    <input
+                      type="text"
+                      value={agentInputText}
+                      onChange={(e) => setAgentInputText(e.target.value)}
+                      disabled={agentChatLoading[activeChatAgent.id]}
+                      placeholder={language === 'ar' ? 'اكتب تساؤلاً أو طلباً تنظيمياً للوكيل...' : 'Type a query or action command...'}
+                      className="flex-1 p-3.5 bg-white border border-violet-300 rounded-2xl text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-violet-600 focus:ring-1 focus:ring-violet-600/20 transition-all disabled:opacity-60"
                     />
+                    <button
+                      type="submit"
+                      disabled={!agentInputText.trim() || agentChatLoading[activeChatAgent.id]}
+                      className="p-3.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-100 text-white disabled:text-slate-400 rounded-2xl cursor-pointer transition-all duration-200 border-0 flex items-center justify-center shrink-0 disabled:cursor-not-allowed shadow-[0_4px_14_rgba(109,40,217,0.32)] hover:shadow-[0_4px_18_rgba(109,40,217,0.45)]"
+                    >
+                      {agentChatLoading[activeChatAgent.id] ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Send size={16} className={isRtl ? 'rotate-180' : ''} />
+                      )}
+                    </button>
+                  </form>
+                </div>
+              </motion.div>
+
+              {/* 5. RECOMMENDATION CENTERED READING MODAL */}
+              <AnimatePresence>
+                {selectedReadingSuggestion && (
+                  <div className="fixed inset-0 z-[160] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <motion.div 
+                      initial={{ opacity: 0 }} 
+                      animate={{ opacity: 1 }} 
+                      exit={{ opacity: 0 }}
+                      onClick={() => setSelectedReadingSuggestion(null)} 
+                      className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs" 
+                    />
+                    
+                    {/* Centered Modal Card */}
+                    <motion.div 
+                      initial={{ scale: 0.9, y: 20, opacity: 0 }} 
+                      animate={{ scale: 1, y: 0, opacity: 1 }} 
+                      exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                      className="bg-white dark:bg-[#0c101d] text-slate-800 dark:text-slate-200 w-full max-w-lg rounded-3xl shadow-[0_25px_60px_rgba(109,40,217,0.25)] border-2 border-violet-200 dark:border-violet-900 overflow-hidden z-[161]"
+                      dir={isRtl ? 'rtl' : 'ltr'}
+                    >
+                      {/* Header */}
+                      <div className="p-5 border-b border-violet-100 dark:border-violet-900/60 bg-gradient-to-r from-violet-50 to-white dark:from-violet-950/20 dark:to-[#0c101d] flex items-center justify-between">
+                        <div className={`flex items-center gap-2.5 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
+                          <div className="w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-950 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0 shadow-xs">
+                            <Lightbulb size={18} className="text-amber-500 animate-pulse" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black text-violet-800 dark:text-violet-300">
+                              {language === 'ar' ? 'تفاصيل التوصية المقترحة' : 'Recommendation Detail'}
+                            </h3>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-bold">
+                              {language === 'ar' ? 'مراجعة التوصية التشغيلية وتحليلها' : 'Review the agent\'s operational advice'}
+                            </p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setSelectedReadingSuggestion(null)} 
+                          className="p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors border-0 bg-transparent flex items-center justify-center"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-6 space-y-4">
+                        <div className={`p-5 bg-violet-50/50 dark:bg-violet-950/10 rounded-2xl border border-violet-150 dark:border-violet-900/40 ${isRtl ? 'text-right font-black' : 'text-left font-black'}`}>
+                          <p className="text-sm md:text-base text-slate-850 dark:text-slate-100 leading-relaxed">
+                            {selectedReadingSuggestion}
+                          </p>
+                        </div>
+                        
+                        <div className={`text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-bold ${isRtl ? 'text-right' : 'text-left'}`}>
+                          {language === 'ar' ? (
+                            <span className="flex flex-col gap-1.5">
+                              <span>📌 <strong>ماذا يعني هذا؟</strong> هذه التوصية مصممة لتحسين كفاءة التشغيل وتفادي الاختناقات استناداً إلى بيانات الورشة المباشرة.</span>
+                              <span>💡 يمكنك إرسال هذه التوصية فوراً للوكيل في الدردشة لمناقشة التفاصيل أو توليد خطوات العمل اللازمة.</span>
+                            </span>
+                          ) : (
+                            <span className="flex flex-col gap-1.5">
+                              <span>📌 <strong>What does this mean?</strong> This advice is tailored to optimize workshop operations and prevent delays based on live diagnostics data.</span>
+                              <span>💡 You can send this recommendation directly to the agent to discuss details or generate action steps.</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="p-5 border-t border-violet-100 dark:border-violet-900/60 bg-slate-50/50 dark:bg-[#070a13]/30 flex flex-col sm:flex-row gap-2 justify-end">
+                        <button
+                          onClick={() => setSelectedReadingSuggestion(null)}
+                          className="px-4 py-2.5 bg-slate-150 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-350 rounded-xl text-xs font-black transition-colors border-0 cursor-pointer text-center"
+                        >
+                          {language === 'ar' ? 'إغلاق' : 'Close'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleAgentSendMessage(activeChatAgent.id, selectedReadingSuggestion);
+                            setSelectedReadingSuggestion(null);
+                          }}
+                          className="px-4 py-2.5 bg-violet-600 hover:bg-violet-750 text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all border-0 flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                        >
+                          <Send size={13} className={isRtl ? 'rotate-180' : ''} />
+                          <span>{language === 'ar' ? 'إرسال وتطبيق التوصية' : 'Send & Apply'}</span>
+                        </button>
+                      </div>
+                    </motion.div>
                   </div>
-
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-end gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setQuickOrderModalOpen(false)}
-                    className="px-4.5 py-2.5 bg-slate-100 dark:bg-[#121829] hover:bg-slate-200 hover:dark:bg-[#161d33] text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold cursor-pointer transition-colors border-0"
-                  >
-                    {language === 'ar' ? 'إلغاء' : 'Cancel'}
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black cursor-pointer transition-colors flex items-center gap-1.5 border-0"
-                  >
-                    <Check size={14} />
-                    <span>{language === 'ar' ? 'تأكيد وإصدار أمر الصيانة' : 'Confirm & Dispatch'}</span>
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })()}
       </AnimatePresence>
     </div>
   );

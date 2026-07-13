@@ -97,7 +97,7 @@ export default function Vendors({ user }: VendorsProps) {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab2] = useState<'vendors' | 'orders' | 'reports'>('vendors');
+  const [activeTab, setActiveTab2] = useState<'vendors' | 'external_workshops' | 'orders' | 'reports'>('vendors');
   const [vendorFilter, setVendorFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [orderFilter, setOrderFilter] = useState<'all' | 'pending' | 'delivered' | 'cancelled' | 'delayed'>('all');
 
@@ -117,7 +117,8 @@ export default function Vendors({ user }: VendorsProps) {
     address: '',
     reliability: 5,
     categories: '',
-    status: 'active' as 'active' | 'suspended'
+    status: 'active' as 'active' | 'suspended',
+    type: 'supplier' as 'supplier' | 'external_workshop' | 'both'
   });
 
   // Form State - Supply Order
@@ -156,7 +157,8 @@ export default function Vendors({ user }: VendorsProps) {
           address: 'المنطقة الصناعية الثانية، الرياض، المملكة العربية السعودية',
           reliability: 5,
           categories: ['فرامل', 'محركات', 'فلاتر'],
-          status: 'active'
+          status: 'active',
+          type: 'supplier'
         },
         {
           id: 'v2',
@@ -167,7 +169,8 @@ export default function Vendors({ user }: VendorsProps) {
           address: 'طريق الخرج، الرياض، المملكة العربية السعودية',
           reliability: 4,
           categories: ['كهرباء', 'هيدروليك', 'إطارات'],
-          status: 'active'
+          status: 'active',
+          type: 'both'
         },
         {
           id: 'v3',
@@ -178,7 +181,8 @@ export default function Vendors({ user }: VendorsProps) {
           address: 'شارع الضباب، الرياض، المملكة العربية السعودية',
           reliability: 5,
           categories: ['إطارات', 'توازن ومقاصات'],
-          status: 'active'
+          status: 'active',
+          type: 'supplier'
         },
         {
           id: 'v4',
@@ -189,11 +193,25 @@ export default function Vendors({ user }: VendorsProps) {
           address: 'الدمام، المنطقة الشرقية، المملكة العربية السعودية',
           reliability: 3,
           categories: ['زيوت وسوائل', 'فلاتر'],
-          status: 'suspended'
+          status: 'suspended',
+          type: 'supplier'
+        },
+        {
+          id: 'v5',
+          name: 'مركز صيانة الأخوين المعتمد والورشة الخارجية المفتوحة',
+          contactName: 'المهندس طلال السويدي (أبو محمد)',
+          phone: '0559123456',
+          email: 'alkhawain@service.com',
+          address: 'المنطقة الصناعية الثالثة، طريق الخرج، الرياض، المملكة العربية السعودية',
+          reliability: 5,
+          categories: ['ميكانيك عام', 'توضيب محركات', 'صيانة ناقل الحركة', 'أعمال هيدروليكية'],
+          status: 'active',
+          type: 'external_workshop'
         }
       ];
       setVendors(initialVendors);
       localStorage.setItem('fleet_vendors_v2', JSON.stringify(initialVendors));
+      setTimeout(() => syncVendorsWithWorkshops(initialVendors), 100);
     }
 
     // 2. Load Supply Orders
@@ -292,10 +310,69 @@ export default function Vendors({ user }: VendorsProps) {
     }
   }, []);
 
+  const syncVendorsWithWorkshops = (updatedVendors: Vendor[]) => {
+    const savedWorkshops = localStorage.getItem('fleet_workshops');
+    let workshopsList: any[] = [];
+    if (savedWorkshops) {
+      try {
+        workshopsList = JSON.parse(savedWorkshops);
+      } catch (e) {
+        console.error('Error parsing fleet_workshops', e);
+      }
+    }
+
+    // Filter out external workshops linked to deleted vendors or ones that changed type
+    workshopsList = workshopsList.filter(ws => {
+      if (!ws.isExternal) return true;
+      const linkedVendor = updatedVendors.find(v => v.id === ws.id || ws.id === `ws-v-${v.id}`);
+      return linkedVendor && (linkedVendor.type === 'external_workshop' || linkedVendor.type === 'both');
+    });
+
+    // Add/Update external workshops
+    updatedVendors.forEach(v => {
+      if (v.type === 'external_workshop' || v.type === 'both') {
+        const existingIndex = workshopsList.findIndex(ws => ws.id === v.id || ws.id === `ws-v-${v.id}`);
+        const wsObj = {
+          id: v.id,
+          name: v.name,
+          specialization: (v.categories && v.categories[0] as any) || 'mechanical',
+          supervisor: v.contactName || 'مدير المركز الخارجي',
+          capacity: 15,
+          activeBays: 0,
+          currentVehicles: [],
+          status: v.status === 'active' ? 'operational' : 'maintenance',
+          equipment: v.categories && v.categories.length > 0 ? v.categories : ['معدات صيانة وإصلاح خارجية'],
+          kpiFtr: `${(v.reliability || 5) * 20}%`,
+          avgTurnaround: 'حسب عقد الخدمة والاتفاق',
+          location: v.address || 'موقع الورشة الخارجية المعتمد',
+          isExternal: true
+        };
+
+        if (existingIndex > -1) {
+          workshopsList[existingIndex] = {
+            ...workshopsList[existingIndex],
+            name: wsObj.name,
+            supervisor: wsObj.supervisor,
+            location: wsObj.location,
+            status: wsObj.status,
+            kpiFtr: wsObj.kpiFtr,
+            equipment: wsObj.equipment,
+            specialization: wsObj.specialization
+          };
+        } else {
+          workshopsList.push(wsObj);
+        }
+      }
+    });
+
+    localStorage.setItem('fleet_workshops', JSON.stringify(workshopsList));
+  };
+
   // Sync to localStorage
   const saveVendorsToStore = (newVendors: Vendor[]) => {
     setVendors(newVendors);
     localStorage.setItem('fleet_vendors_v2', JSON.stringify(newVendors));
+    syncVendorsWithWorkshops(newVendors);
   };
 
   const saveOrdersToStore = (newOrders: SupplyOrder[]) => {
@@ -372,7 +449,7 @@ export default function Vendors({ user }: VendorsProps) {
   // --- HANDLERS CONTROLLERS ---
 
   // Handle open Vendor add / edit modal
-  const handleOpenVendorModal = (vendor: Vendor | null = null) => {
+  const handleOpenVendorModal = (vendor: Vendor | null = null, defaultType: 'supplier' | 'external_workshop' | 'both' = 'supplier') => {
     if (user.role === 'viewer') {
       triggerFeedback('عذراً، لا تمتلك الصلاحية لإجراء هذه العملية.', 'error');
       return;
@@ -387,7 +464,8 @@ export default function Vendors({ user }: VendorsProps) {
         address: vendor.address,
         reliability: vendor.reliability,
         categories: vendor.categories.join('، '),
-        status: vendor.status
+        status: vendor.status,
+        type: vendor.type || 'supplier'
       });
     } else {
       setEditingVendor(null);
@@ -399,7 +477,8 @@ export default function Vendors({ user }: VendorsProps) {
         address: '',
         reliability: 5,
         categories: '',
-        status: 'active'
+        status: 'active',
+        type: defaultType
       });
     }
     setIsVendorModalOpen(true);
@@ -431,7 +510,8 @@ export default function Vendors({ user }: VendorsProps) {
             address: vendorForm.address.trim(),
             reliability: vendorForm.reliability,
             categories: parsedCategories,
-            status: vendorForm.status
+            status: vendorForm.status,
+            type: vendorForm.type
           };
         }
         return v;
@@ -449,7 +529,8 @@ export default function Vendors({ user }: VendorsProps) {
         address: vendorForm.address.trim(),
         reliability: vendorForm.reliability,
         categories: parsedCategories,
-        status: vendorForm.status
+        status: vendorForm.status,
+        type: vendorForm.type
       };
       saveVendorsToStore([...vendors, newVendor]);
       triggerFeedback('تم إضافة المورد الجديد بنجاح');
@@ -673,11 +754,23 @@ export default function Vendors({ user }: VendorsProps) {
           </div>
           
           <button
-            onClick={activeTab === 'vendors' ? () => handleOpenVendorModal() : handleOpenOrderModal}
+            onClick={
+              activeTab === 'vendors'
+                ? () => handleOpenVendorModal()
+                : activeTab === 'external_workshops'
+                ? () => handleOpenVendorModal(null, 'external_workshop')
+                : handleOpenOrderModal
+            }
             className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand-blue-500 to-sky-600 hover:from-brand-blue-600 hover:to-sky-700 text-white text-xs font-black rounded-2xl shadow-xl transition-all hover:scale-[1.02] cursor-pointer shrink-0"
           >
             <Plus size={16} />
-            <span>{activeTab === 'vendors' ? 'إضافة مورد معتمد' : 'تسجيل طلب توريد جديد'}</span>
+            <span>
+              {activeTab === 'vendors'
+                ? 'إضافة مورد معتمد'
+                : activeTab === 'external_workshops'
+                ? 'إضافة ورشة صيانة خارجية'
+                : 'تسجيل طلب توريد جديد'}
+            </span>
           </button>
         </div>
       </div>
@@ -749,7 +842,18 @@ export default function Vendors({ user }: VendorsProps) {
               }`}
             >
               <Building2 size={14} />
-              <span>قائمة الموردين ({vendors.length})</span>
+              <span>قائمة الموردين ({vendors.filter(v => v.type === 'supplier' || v.type === 'both' || !v.type).length})</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab2('external_workshops'); setSearchTerm(''); }}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'external_workshops' 
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-md' 
+                  : 'text-slate-400 hover:text-slate-650 dark:hover:text-slate-300'
+              }`}
+            >
+              <Sliders size={14} />
+              <span>الورش الخارجية ({vendors.filter(v => v.type === 'external_workshop' || v.type === 'both').length})</span>
             </button>
             <button
               onClick={() => { setActiveTab2('orders'); setSearchTerm(''); }}
@@ -781,7 +885,7 @@ export default function Vendors({ user }: VendorsProps) {
               <div className="relative flex-1 md:w-48">
                 <input
                   type="text"
-                  placeholder={activeTab === 'vendors' ? 'ابحث باسم المورد، التصنيف، الهاتف...' : 'ابحث باسم القطعة، المورد، رقم التوريد...'}
+                  placeholder={(activeTab === 'vendors' || activeTab === 'external_workshops') ? 'ابحث باسم المورد، التصنيف، الهاتف...' : 'ابحث باسم القطعة، المورد، رقم التوريد...'}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-3 pr-10 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-850 text-xs rounded-2xl outline-none text-slate-900 dark:text-white focus:border-brand-blue-500/50 focus:bg-white"
@@ -790,7 +894,7 @@ export default function Vendors({ user }: VendorsProps) {
               </div>
 
               {/* Quick preset dropdown according to targeted views */}
-              {activeTab === 'vendors' ? (
+              {(activeTab === 'vendors' || activeTab === 'external_workshops') ? (
                 <div className="flex items-center gap-1.5 font-bold text-[11px] text-slate-450">
                   <Filter size={12} className="text-slate-400" />
                   <select
@@ -825,21 +929,32 @@ export default function Vendors({ user }: VendorsProps) {
 
         {/* --- DYNAMIC SECTION CONTENT --- */}
         <div className="p-5">
-          {activeTab === 'vendors' ? (
-            /* --- TAB: VENDORS --- */
-            filteredVendors.length === 0 ? (
-              <div className="py-16 text-center space-y-4">
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
-                  <Building2 size={28} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-700 dark:text-slate-300">لم يتم العثور على أي موردين معتمدين</h3>
-                  <p className="text-[10px] text-slate-450 mt-1">تأكد من شروط البحث أو قم بإدراج كرت مورد جديد للمصنع.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-                {filteredVendors.map((vendor) => {
+          {(activeTab === 'vendors' || activeTab === 'external_workshops') ? (
+            /* --- TAB: VENDORS / EXTERNAL WORKSHOPS --- */
+            (() => {
+              const items = activeTab === 'vendors'
+                ? filteredVendors.filter(v => v.type === 'supplier' || v.type === 'both' || !v.type)
+                : filteredVendors.filter(v => v.type === 'external_workshop' || v.type === 'both');
+
+              if (items.length === 0) {
+                return (
+                  <div className="py-16 text-center space-y-4">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+                      {activeTab === 'vendors' ? <Building2 size={28} /> : <Sliders size={28} />}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-700 dark:text-slate-300">
+                        {activeTab === 'vendors' ? 'لم يتم العثور على أي موردين معتمدين' : 'لم يتم العثور على أي ورش صيانة خارجية معتمدة'}
+                      </h3>
+                      <p className="text-[10px] text-slate-450 mt-1">تأكد من شروط البحث أو قم بإدراج كرت جديد بالسيستم.</p>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                  {items.map((vendor) => {
                   const linkedParts = inventoryItems.filter(
                     item => item.supplier === vendor.name || item.supplier === vendor.id
                   );
@@ -867,17 +982,35 @@ export default function Vendors({ user }: VendorsProps) {
                           </div>
                           
                           {/* Badges */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
-                              vendor.status === 'active'
-                                ? 'bg-emerald-500/15 border border-emerald-500/20 text-emerald-500'
-                                : 'bg-rose-500/15 border border-rose-500/20 text-rose-500'
-                            }`}>
-                              {vendor.status === 'active' ? 'نشط ومعتمد' : 'موقوف مؤقتاً'}
-                            </span>
+                          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                                vendor.status === 'active'
+                                  ? 'bg-emerald-500/15 border border-emerald-500/20 text-emerald-500'
+                                  : 'bg-rose-500/15 border border-rose-500/20 text-rose-500'
+                              }`}>
+                                {vendor.status === 'active' ? 'نشط ومعتمد' : 'موقوف مؤقتاً'}
+                              </span>
+
+                              {vendor.type === 'external_workshop' && (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-purple-500/15 border border-purple-500/20 text-purple-600 dark:text-purple-400" title="تم مزامنته كورشة صيانة خارجية بنجاح">
+                                  🔧 ورشة خارجية
+                                </span>
+                              )}
+                              {vendor.type === 'both' && (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400" title="تم مزامنته كورشة ومورد بنفس الوقت">
+                                  ⚙️ ورشة ومورّد
+                                </span>
+                              )}
+                              {(vendor.type === 'supplier' || !vendor.type) && (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-slate-500/15 border border-slate-500/20 text-slate-600 dark:text-slate-400">
+                                  📦 مورد قطع
+                                </span>
+                              )}
+                            </div>
                             
                             {/* Stars rating */}
-                            <div className="flex bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-800">
+                            <div className="flex bg-slate-100 dark:bg-slate-950 px-1.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-800 self-end sm:self-auto">
                               {[...Array(5)].map((_, i) => (
                                 <Star 
                                   key={i} 
@@ -994,7 +1127,8 @@ export default function Vendors({ user }: VendorsProps) {
                   );
                 })}
               </div>
-            )
+            );
+          })()
           ) : activeTab === 'orders' ? (
             /* --- TAB: ORDERS --- */
             filteredOrders.length === 0 ? (
@@ -1227,6 +1361,22 @@ export default function Vendors({ user }: VendorsProps) {
                     <option value="suspended">موقوف مؤقتاً بالصلاحية</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-bold">تصنيف جهة الخدمة (نوع العمل) *</label>
+                <select
+                  value={vendorForm.type}
+                  onChange={(e) => setVendorForm({ ...vendorForm, type: e.target.value as any })}
+                  className="w-full p-2.5 bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/25 dark:border-emerald-500/20 text-xs rounded-xl outline-none text-slate-900 dark:text-white font-bold cursor-pointer"
+                >
+                  <option value="supplier">📦 مورّد قطع غيار فقط (مستودعات خارجية)</option>
+                  <option value="external_workshop">🔧 ورشة صيانة خارجية معتمدة (صيانة تعاقدية)</option>
+                  <option value="both">⚙️ مورّد وورشة صيانة مشتركة (خدمات متكاملة)</option>
+                </select>
+                <span className="text-[9px] text-slate-400 dark:text-slate-500 block leading-tight">
+                  💡 عند اختيار "ورشة صيانة" أو "كلاهما"، سيقوم النظام بربط وتصدير الحساب تلقائياً كخيار تشغيل متاح بجدول الصيانة.
+                </span>
               </div>
 
               <div className="space-y-1">

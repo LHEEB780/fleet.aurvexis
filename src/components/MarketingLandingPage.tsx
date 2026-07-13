@@ -43,6 +43,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import { saveDocument } from '../services/firebase';
 import FleetManagersShowcaseModal from './FleetManagersShowcaseModal';
+import CustomerSuccessStories from './CustomerSuccessStories';
 
 interface MarketingLandingPageProps {
   onNavigateToCRM?: () => void;
@@ -114,7 +115,7 @@ const DEFAULT_CLIENTS = [
     yearJoint: '2024', 
     activeVehicles: '1,200', 
     logoSeed: 'LG',
-    colorClass: 'text-indigo-600 bg-indigo-50 border-indigo-100 dark:bg-indigo-950/30'
+    colorClass: 'text-brand-blue-600 bg-brand-blue-50 border-brand-blue-100 dark:bg-brand-blue-950/30'
   },
   { 
     id: 'c-2', 
@@ -271,7 +272,7 @@ const getReviewInitials = (name: string) => {
 
 export default function MarketingLandingPage({
   onNavigateToSaaS,
-  brandPrimaryColor = '#1e53e4',
+  brandPrimaryColor = '#6d28d9',
   brandName = '',
   brandDesc = '',
   isInsideApp = false,
@@ -609,7 +610,7 @@ export default function MarketingLandingPage({
 
       {/* Main Responsive Sticky Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E8EAF1] shadow-xs">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-6 min-h-20 py-3 md:py-0 md:h-20 flex items-center justify-between gap-4">
           
           {/* Logo Brand with Geometric Icon */}
           <div className="flex items-center gap-3.5">
@@ -622,7 +623,7 @@ export default function MarketingLandingPage({
                 <rect width="240" height="240" rx="64" fill="transparent" />
                 <path d="M70 70 L120 120 L70 170" stroke="white" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M170 70 L120 120 L170 170" stroke="white" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-                <circle cx="120" cy="120" r="32" fill="#6D5EF7" stroke="white" strokeWidth="10" />
+                <circle cx="120" cy="120" r="32" fill={brandPrimaryColor} stroke="white" strokeWidth="10" />
               </svg>
             </div>
             
@@ -683,8 +684,8 @@ export default function MarketingLandingPage({
           
           {/* Hero Left Info */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-right">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100/50 rounded-full text-xs font-semibold text-indigo-700 mx-auto lg:mx-0">
-              <Sparkles size={13} className="text-[#6D5EF7]" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue-50 border border-brand-blue-100/50 rounded-full text-xs font-semibold text-brand-blue-700 mx-auto lg:mx-0">
+              <Sparkles size={13} style={{ color: brandPrimaryColor }} />
               <span>
                 {language === 'ar' 
                   ? 'برمجة ذكية ومعاينة فورية بهوية صيانة معتمدة' 
@@ -740,7 +741,7 @@ export default function MarketingLandingPage({
 
           {/* Hero Right Visual Mockup with layered real-world photo & live dashboard */}
           <div className="lg:col-span-5 relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-brand-blue-500 to-indigo-500 rounded-3xl blur-xl opacity-20 transition duration-1000"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-brand-blue-500 to-brand-blue-300 rounded-3xl blur-xl opacity-20 transition duration-1000"></div>
             
             <div className="relative space-y-4">
               {/* Primary High-fidelity Work-field Image */}
@@ -781,7 +782,7 @@ export default function MarketingLandingPage({
                     <span className="text-[9px] text-slate-400 uppercase block">{language === 'ar' ? 'الآلية النشطة حالياً' : 'Active Live Telemetry'}</span>
                     <div className="flex justify-between items-center text-slate-200">
                       <span className="font-bold flex items-center gap-1 text-slate-200">
-                        <Truck size={14} className="text-indigo-400" />
+                        <Truck size={14} className="text-brand-blue-400" />
                         Toyota Hilux 4x4 [Plate #0932]
                       </span>
                       <span className="text-green-400 font-bold animate-pulse text-[11px]">● Connected</span>
@@ -806,7 +807,7 @@ export default function MarketingLandingPage({
                       <span className="text-slate-300">32 PSI / 34 PSI</span>
                     </div>
                     <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-500 rounded-full w-[88%]"></div>
+                      <div className="h-full bg-brand-blue-500 rounded-full w-[88%]"></div>
                     </div>
                   </div>
                 </div>
@@ -822,7 +823,7 @@ export default function MarketingLandingPage({
         <div className="max-w-7xl mx-auto px-6 space-y-12">
           
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-700 bg-brand-blue-50 px-3 py-1 rounded-full">
               {language === 'ar' ? 'القدرات الهندسية للمنصة' : 'Engineered for Performance'}
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
@@ -841,7 +842,7 @@ export default function MarketingLandingPage({
             {featuresList.map((feat) => (
               <div 
                 key={feat.id}
-                className="border border-[#E8EAF1] p-8 rounded-2xl hover:border-[#6D5EF7]/40 hover:shadow-md transition bg-slate-50/50 space-y-4 flex flex-col justify-between"
+                className="border border-[#E8EAF1] p-8 rounded-2xl hover:border-brand-blue-500/40 hover:shadow-md transition bg-slate-50/50 space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   {/* Feature Image */}
@@ -864,7 +865,7 @@ export default function MarketingLandingPage({
                       {renderFeatureIcon(feat.icon)}
                     </div>
                     <div className="space-y-0.5">
-                      <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 text-[9px] font-black rounded uppercase">
+                      <span className="px-1.5 py-0.5 bg-brand-blue-50 text-brand-blue-700 text-[9px] font-black rounded uppercase">
                         {language === 'ar' ? feat.badgeAr : feat.badgeEn}
                       </span>
                       <h3 className="font-extrabold text-base text-slate-900 leading-tight">
@@ -892,7 +893,7 @@ export default function MarketingLandingPage({
                       setSelectedShowcaseTab(mappedTab);
                       setIsShowcaseOpen(true);
                     }}
-                    className="text-xs font-bold text-indigo-700 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-bold text-brand-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <span>{language === 'ar' ? 'اقرأ المزيد' : 'Learn More'}</span>
                     <ChevronRight size={13} className={isRtl ? 'rotate-180' : ''} />
@@ -1014,7 +1015,7 @@ export default function MarketingLandingPage({
                 </div>
                 <div className="bg-slate-900 p-2.5 rounded-xl">
                   <span className="text-[9px] text-slate-500 block uppercase">DB Sync Status</span>
-                  <span className="text-xs font-bold text-[#6D5EF7]">100% Consistent</span>
+                  <span className="text-xs font-bold" style={{ color: brandPrimaryColor }}>100% Consistent</span>
                 </div>
               </div>
             </div>
@@ -1028,7 +1029,7 @@ export default function MarketingLandingPage({
         <div className="max-w-7xl mx-auto px-6 space-y-12">
           
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#5A3FC0] bg-indigo-50 px-3 py-1.5 rounded-full select-none">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-700 bg-brand-blue-50 px-3 py-1.5 rounded-full select-none">
               {language === 'ar' ? 'العملاء والشركاء المعتمدين' : 'Enterprise & Trust Network'}
             </span>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">
@@ -1044,15 +1045,15 @@ export default function MarketingLandingPage({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {clientsList.map((client) => {
               // Determine elegant color matching based on client seed or color class
-              const isIndigo = client.colorClass?.includes('indigo') || client.id === 'c-1';
+              const isIndigo = client.colorClass?.includes('brand-blue') || client.colorClass?.includes('indigo') || client.id === 'c-1';
               const isEmerald = client.colorClass?.includes('emerald') || client.id === 'c-2';
               const isSky = client.colorClass?.includes('sky') || client.id === 'c-3';
               const isAmber = client.colorClass?.includes('amber') || client.id === 'c-4';
               const isPurple = client.colorClass?.includes('purple') || client.id === 'c-5';
 
-              let barBg = 'bg-indigo-500';
-              let badgeBg = 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20';
-              let shadowAccent = 'hover:shadow-indigo-500/5 hover:border-indigo-200';
+              let barBg = 'bg-brand-blue-500';
+              let badgeBg = 'bg-brand-blue-500/10 text-brand-blue-700 border-brand-blue-500/20';
+              let shadowAccent = 'hover:shadow-brand-blue-500/5 hover:border-brand-blue-200';
 
               if (isEmerald) {
                 barBg = 'bg-emerald-500';
@@ -1147,7 +1148,7 @@ export default function MarketingLandingPage({
               <div className="space-y-2 bg-white p-4.5 rounded-xl border border-[#E8EAF1]">
                 <div className="flex justify-between text-xs font-semibold">
                   <span>{language === 'ar' ? 'عدد مركبات الأسطول' : 'Total Vehicles'}</span>
-                  <span className="font-mono text-indigo-700 font-bold">{calcVehicles} {language === 'ar' ? 'مركبة' : 'Assets'}</span>
+                  <span className="font-mono text-brand-blue-700 font-bold">{calcVehicles} {language === 'ar' ? 'مركبة' : 'Assets'}</span>
                 </div>
                 <input 
                   type="range" 
@@ -1162,7 +1163,7 @@ export default function MarketingLandingPage({
               <div className="space-y-2 bg-white p-4.5 rounded-xl border border-[#E8EAF1]">
                 <div className="flex justify-between text-xs font-semibold">
                   <span>{language === 'ar' ? 'متوسط تكلفة الصيانة شهرياً للمركبة' : 'Monthly Maintenance Cost / Asset'}</span>
-                  <span className="font-mono text-indigo-700 font-bold">${calcCostPerVehicle}</span>
+                  <span className="font-mono text-brand-blue-700 font-bold">${calcCostPerVehicle}</span>
                 </div>
                 <input 
                   type="range" 
@@ -1181,7 +1182,7 @@ export default function MarketingLandingPage({
           <div className="lg:col-span-7">
             <div className="bg-gradient-to-br from-slate-900 to-[#1e1b4b] text-white rounded-3xl p-8 shadow-xl border border-slate-800 space-y-6">
               <div className="space-y-1 text-center lg:text-right">
-                <span className="text-[11px] font-mono text-[#6D5EF7] uppercase tracking-widest">{language === 'ar' ? 'الوفورات المالية السنوية التقديرية' : 'Estimated Annual Financial Savings'}</span>
+                <span className="text-[11px] font-mono uppercase tracking-widest" style={{ color: brandPrimaryColor }}>{language === 'ar' ? 'الوفورات المالية السنوية التقديرية' : 'Estimated Annual Financial Savings'}</span>
                 <h3 className="text-4xl md:text-5xl font-black text-white font-mono">
                   ${estimatedSavings.toLocaleString()}
                 </h3>
@@ -1194,12 +1195,12 @@ export default function MarketingLandingPage({
                 </div>
                 <div className="text-center lg:text-right space-y-1">
                   <span className="text-[10px] text-slate-400 block uppercase">{language === 'ar' ? 'معدل الكفاءة التشغيلية' : 'Expected ROI Efficiency Factor'}</span>
-                  <span className="text-xl font-bold font-mono text-indigo-300">28% Growth</span>
+                  <span className="text-xl font-bold font-mono text-brand-blue-300">28% Growth</span>
                 </div>
               </div>
 
               <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-3 text-xs leading-relaxed text-slate-300">
-                <Info size={16} className="text-[#6D5EF7] shrink-0 mt-0.5" />
+                <Info size={16} className="shrink-0 mt-0.5" style={{ color: brandPrimaryColor }} />
                 <p>
                   {language === 'ar'
                     ? 'يتم تقدير هذه الحسابات بناءً على معدلات الفحص الوقائي والباركود ومحرك تشخيص الأعطال لتفادي تلف المحركات المكلف.'
@@ -1299,7 +1300,7 @@ export default function MarketingLandingPage({
                         ) : (
                           <div 
                             id="review-fallback-avatar"
-                            className="w-full h-full bg-gradient-to-tr from-brand-blue-500 to-indigo-600 text-white font-extrabold flex items-center justify-center text-xs select-none"
+                            className="w-full h-full bg-gradient-to-tr from-brand-blue-500 to-brand-blue-700 text-white font-extrabold flex items-center justify-center text-xs select-none"
                           >
                             {getReviewInitials(authorName)}
                           </div>
@@ -1520,6 +1521,9 @@ export default function MarketingLandingPage({
         />
       )}
 
+      {/* Customer Success Stories & Case Studies */}
+      <CustomerSuccessStories />
+
       {/* Comprehensive Standard Footer */}
       <footer className="bg-slate-950 text-slate-400 text-xs py-16 border-t border-slate-900 mt-auto">
         <div className="max-w-7xl mx-auto px-6 space-y-12">
@@ -1537,6 +1541,14 @@ export default function MarketingLandingPage({
                         href="#/" 
                         onClick={(e) => {
                           e.preventDefault();
+                          if (item.id === "item-3-1") {
+                            const elem = document.getElementById('success-stories-section');
+                            if (elem) {
+                              elem.scrollIntoView({ behavior: 'smooth' });
+                              return;
+                            }
+                          }
+
                           // Map footer item IDs to activeTab inside FleetManagersShowcaseModal
                           let mappedTab: string | null = null;
                           if (item.id === "item-1-1") mappedTab = "owners";
@@ -1591,7 +1603,7 @@ export default function MarketingLandingPage({
                   onNavigateToSaaS();
                 }} 
                 style={{ display: effectivePortalMode === 'saas' ? 'inline-block' : 'none' }}
-                className="hover:text-emerald-300 transition-all font-semibold text-emerald-400 border border-emerald-500/40 rounded-full px-3 py-1 bg-emerald-950/40 hover:bg-emerald-900/60"
+                className="hover:text-violet-300 transition-all font-semibold text-violet-400 border border-violet-500/40 rounded-full px-3 py-1 bg-violet-950/40 hover:bg-violet-900/60"
               >
                 {language === 'ar' ? 'لوحة التحكم للمنشأة' : 'Organization Control Panel'}
               </a>

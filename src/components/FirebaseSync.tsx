@@ -13,12 +13,21 @@ import {
   ArrowDownLeft, 
   Check, 
   Info,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle,
+  Laptop,
+  Server,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { 
   testFirestoreConnection, 
   pushLocalDataToCloud, 
-  pullCloudDataToLocal 
+  pullCloudDataToLocal,
+  getSyncConflicts,
+  resolveConflictKeepLocal,
+  resolveConflictKeepCloud,
+  ConflictItem
 } from '../services/firebase';
 import firebaseConfig from '../services/firebaseConfig';
 
@@ -36,6 +45,131 @@ export default function FirebaseSync({ user }: { user?: User }) {
   });
   const [syncFeedbackLog, setSyncFeedbackLog] = useState<string>('');
 
+  // Volume threshold configuration states
+  const [adminThreshold, setAdminThreshold] = useState<number>(() => {
+    return parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5');
+  });
+  const [simulatedWeight, setSimulatedWeight] = useState<number>(() => {
+    return parseFloat(localStorage.getItem('saas_simulated_offline_weight') || '0');
+  });
+
+  const getRealLocalSizeMB = (): number => {
+    let totalChars = 0;
+    const keys = [
+      'fleet_vehicles_v3',
+      'fleet_vehicles_v2',
+      'fleet_maintenance_orders_v2',
+      'fleet_technicians_v2',
+      'fleet_inventory_v2',
+      'fleet_safety_inspections',
+      'saas_brand_name',
+      'saas_brand_desc',
+      'saas_brand_logo',
+      'saas_brand_color'
+    ];
+    for (const key of keys) {
+      const val = localStorage.getItem(key);
+      if (val) {
+        totalChars += val.length;
+      }
+    }
+    return Number((totalChars / (1024 * 1024)).toFixed(3));
+  };
+
+  const [realLocalSize, setRealLocalSize] = useState<number>(() => getRealLocalSizeMB());
+
+  // Keep size updated when syncing finishes or storage changes
+  useEffect(() => {
+    if (!isSyncing) {
+      setRealLocalSize(getRealLocalSizeMB());
+    }
+  }, [isSyncing]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      setAdminThreshold(parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5'));
+      setSimulatedWeight(parseFloat(localStorage.getItem('saas_simulated_offline_weight') || '0'));
+      setRealLocalSize(getRealLocalSizeMB());
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const handleThresholdChange = (val: number) => {
+    setAdminThreshold(val);
+    localStorage.setItem('saas_sync_threshold_mb', val.toString());
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleSimulatedWeightChange = (val: number) => {
+    setSimulatedWeight(val);
+    localStorage.setItem('saas_simulated_offline_weight', val.toString());
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // Conflict detection & resolution states
+  const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
+  const [isCheckingConflicts, setIsCheckingConflicts] = useState(false);
+  const [expandedConflictId, setExpandedConflictId] = useState<string | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+
+  const handleCheckConflicts = async () => {
+    setIsCheckingConflicts(true);
+    try {
+      const detected = await getSyncConflicts();
+      setConflicts(detected);
+      if (detected.length === 0) {
+        setSyncFeedbackLog(language === 'ar' 
+          ? '✓ تم فحص التعارضات: لا توجد أي بيانات متعارضة بين المتصفح والسحابة حالياً.' 
+          : '✓ Conflict scan complete: No data conflicts found between browser and cloud database.'
+        );
+      } else {
+        setSyncFeedbackLog(language === 'ar'
+          ? `⚠️ تم اكتشاف عدد ${detected.length} تعارض في السجلات بين المتصفح والسحابة!`
+          : `⚠️ Detected ${detected.length} data conflict(s) between browser local state and Firestore cloud state!`
+        );
+      }
+    } catch (err) {
+      console.error("Conflict checking failed:", err);
+    } finally {
+      setIsCheckingConflicts(false);
+    }
+  };
+
+  const handleResolveKeepLocal = async (conflict: ConflictItem) => {
+    setResolvingId(conflict.id);
+    try {
+      await resolveConflictKeepLocal(conflict);
+      setSyncFeedbackLog(language === 'ar'
+        ? `✓ تم اعتماد النسخة المحلية للمستند "${conflict.label}" وتحديث السحابة بنجاح.`
+        : `✓ Local version resolved and uploaded for "${conflict.label}".`
+      );
+      setConflicts(prev => prev.filter(c => !(c.id === conflict.id && c.collection === conflict.collection)));
+    } catch (err) {
+      console.error(err);
+      setSyncFeedbackLog(language === 'ar' ? '✕ فشل اعتماد التعديل المحلي.' : '✕ Failed to resolve conflict locally.');
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
+  const handleResolveKeepCloud = async (conflict: ConflictItem) => {
+    setResolvingId(conflict.id);
+    try {
+      resolveConflictKeepCloud(conflict);
+      setSyncFeedbackLog(language === 'ar'
+        ? `✓ تم اعتماد النسخة السحابية للمستند "${conflict.label}" وتحديث الذاكرة المحلية.`
+        : `✓ Cloud version resolved and saved locally for "${conflict.label}".`
+      );
+      setConflicts(prev => prev.filter(c => !(c.id === conflict.id && c.collection === conflict.collection)));
+    } catch (err) {
+      console.error(err);
+      setSyncFeedbackLog(language === 'ar' ? '✕ فشل اعتماد التعديل السحابي.' : '✕ Failed to resolve conflict with cloud.');
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
   // Check connection status on component load
   useEffect(() => {
     async function checkConn() {
@@ -43,10 +177,25 @@ export default function FirebaseSync({ user }: { user?: User }) {
       const isOk = await testFirestoreConnection();
       setIsDbConnected(isOk);
       setIsDbConnecting(false);
-      setSyncFeedbackLog(isOk 
-        ? (language === 'ar' ? '✓ تم تأسيس اتصال سحابي آمن بقاعدة Firestore!' : '✓ Connected to Cloud Firestore successfully!')
-        : (language === 'ar' ? '⚠️ تعذر الاتصال بالسحابة. تم تفعيل الذاكرة الاحتياطية للمتصفح.' : '⚠️ Cloud database offline. Running in local browser emulation.')
-      );
+      
+      if (isOk) {
+        setSyncFeedbackLog(language === 'ar' ? '✓ تم تأسيس اتصال سحابي آمن بقاعدة Firestore!' : '✓ Connected to Cloud Firestore successfully!');
+        try {
+          const detected = await getSyncConflicts();
+          setConflicts(detected);
+          if (detected.length > 0) {
+            setSyncFeedbackLog(language === 'ar'
+              ? `⚠️ تنبيه: تم العثور على ${detected.length} تعارض في السجلات غير المتزامنة.`
+              : `⚠️ Warning: Found ${detected.length} unresolved offline conflicts.`
+            );
+          }
+        } catch (e) {
+          console.warn("Could not check conflicts during initialization:", e);
+        }
+      } else {
+        setSyncFeedbackLog(language === 'ar' ? '⚠️ تعذر الاتصال بالسحابة. تم تفعيل الذاكرة الاحتياطية للمتصفح.' : '⚠️ Cloud database offline. Running in local browser emulation.');
+        setConflicts([]);
+      }
     }
     checkConn();
   }, [language]);
@@ -64,6 +213,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
       setSyncFeedbackLog(language === 'ar' 
         ? `✓ نجح التصدير! تم تأمين عدد ${result.count} سجل بأمان على خادم Google Cloud Firestore.` 
         : `✓ Backup successful! Secured ${result.count} documents on Google Cloud Firestore.`);
+      setConflicts([]);
     } else {
       setSyncFeedbackLog(language === 'ar' ? '✕ فشلت عملية المزامنة. يرجى مراجعة الصلاحيات الأمنية.' : '✕ Sync failed. Please verify Firestore rules configurations.');
     }
@@ -84,6 +234,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
       setSyncFeedbackLog(language === 'ar' 
         ? `✓ نجح الاسترداد والتثبيت! تم تحديث وتنزيل ${result.count} وثيقة وتخزينها محلياً.` 
         : `✓ Database restored! Synced down ${result.count} files into browser workspace.`);
+      setConflicts([]);
     } else {
       setSyncFeedbackLog(language === 'ar' ? '✕ فشلت عملية المزامنة. يرجى مراجعة الصلاحيات الأمنية.' : '✕ Sync failed. Please verify Firestore rules configurations.');
     }
@@ -201,7 +352,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
               href="https://console.firebase.google.com" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="p-1.5 px-3 bg-indigo-650 hover:bg-indigo-600 text-white text-[10px] font-black rounded-xl transition-all flex items-center gap-1 border border-indigo-500/30"
+              className="p-1.5 px-3 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white text-[10px] font-black rounded-xl transition-all flex items-center gap-1 border border-indigo-500/30"
             >
               <Globe size={11} />
               <span>{language === 'ar' ? 'افتح Firebase Console 🌐' : 'Open Firebase Console 🌐'}</span>
@@ -300,6 +451,255 @@ export default function FirebaseSync({ user }: { user?: User }) {
           </div>
 
         </div>
+
+        {/* CONFLICT RESOLUTION WORKFLOW PANEL */}
+        {user?.role === 'admin' && conflicts.length > 0 && (
+          <div className="bg-slate-900 border border-amber-500/30 text-white rounded-3xl p-6 shadow-xl space-y-5 relative z-10 text-right" id="sync-conflict-resolution-panel">
+            <div className="flex items-start gap-4 pb-3 border-b border-slate-800">
+              <div className="p-3 bg-amber-500/10 text-amber-400 rounded-2xl shrink-0 animate-pulse">
+                <AlertTriangle size={24} />
+              </div>
+              <div className="space-y-1 flex-1">
+                <h3 className="text-base font-black text-amber-400">
+                  {language === 'ar' ? '⚠️ تم اكتشاف تعارضات في البيانات غير المتزامنة' : '⚠️ Offline Synchronization Conflicts Detected'}
+                </h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono">
+                  {language === 'ar' ? 'يتعين على المسؤول حل هذه التعارضات لتجنب فقدان البيانات' : 'Admin action required to prevent local and cloud database discrepancies'}
+                </p>
+              </div>
+              <button 
+                onClick={handleCheckConflicts}
+                disabled={isCheckingConflicts}
+                className="p-1.5 px-3 bg-slate-800 hover:bg-slate-750 disabled:opacity-50 text-slate-200 text-[10px] font-bold rounded-xl transition-all flex items-center gap-1 cursor-pointer self-start border border-slate-700/60"
+              >
+                <RefreshCw size={10} className={isCheckingConflicts ? "animate-spin" : ""} />
+                <span>{language === 'ar' ? 'إعادة الفحص والتدقيق' : 'Rescan Conflicts'}</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {language === 'ar'
+                ? 'تم تعديل الوثائق التالية محلياً وسحابياً في نفس الوقت أثناء انقطاع الاتصال. يرجى اختيار النسخة التي ترغب في اعتمادها لحفظ السجل الموحد:'
+                : 'The following documents have been modified both locally on this device and on the Firestore cloud while offline. Choose which version should be preserved:'}
+            </p>
+
+            <div className="space-y-3">
+              {conflicts.map((conflict) => {
+                const isExpanded = expandedConflictId === `${conflict.collection}-${conflict.id}`;
+                const isResolving = resolvingId === conflict.id;
+                
+                return (
+                  <div 
+                    key={`${conflict.collection}-${conflict.id}`}
+                    className="bg-slate-950/60 border border-slate-800/80 rounded-2xl overflow-hidden transition-all duration-200"
+                  >
+                    {/* Header bar */}
+                    <div 
+                      onClick={() => setExpandedConflictId(isExpanded ? null : `${conflict.collection}-${conflict.id}`)}
+                      className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-900/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase rounded-md border border-indigo-500/25">
+                          {conflict.collection}
+                        </span>
+                        <span className="text-xs font-black text-slate-100">
+                          {conflict.label}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          ID: {conflict.id}
+                        </span>
+                        {isExpanded ? <ChevronUp size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
+                      </div>
+                    </div>
+
+                    {/* Expandable diff & buttons */}
+                    {isExpanded && (
+                      <div className="p-4 border-t border-slate-900/80 bg-slate-950/20 space-y-4">
+                        {/* Side-by-side Diff */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-[11px] font-mono p-3 bg-slate-950/90 rounded-xl border border-slate-900 max-h-64 overflow-y-auto">
+                          {/* Local Version Column */}
+                          <div className="space-y-2">
+                            <div className="text-indigo-400 font-black border-b border-indigo-950/80 pb-1 flex items-center gap-1">
+                              <Laptop size={12} />
+                              <span>{language === 'ar' ? 'النسخة المحلية (هذا المتصفح)' : 'Local Version (This browser)'}</span>
+                            </div>
+                            <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
+                              {Object.keys(conflict.localData || {})
+                                .filter(k => k !== 'syncedAt' && k !== 'lastUpdated' && k !== 'updatedAt')
+                                .map(k => {
+                                  const lVal = conflict.localData?.[k];
+                                  const cVal = conflict.cloudData?.[k];
+                                  const isDiff = JSON.stringify(lVal) !== JSON.stringify(cVal);
+                                  return (
+                                    <div key={k} className={`p-1 rounded ${isDiff ? 'bg-amber-500/10 text-amber-300 font-bold' : 'text-slate-400'}`}>
+                                      <span className="opacity-50 text-slate-500">{k}:</span> {typeof lVal === 'object' ? JSON.stringify(lVal) : String(lVal)}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+
+                          {/* Cloud Version Column */}
+                          <div className="space-y-2 border-r border-slate-900 pr-3 text-left">
+                            <div className="text-emerald-400 font-black border-b border-emerald-950/80 pb-1 flex items-center gap-1">
+                              <Server size={12} />
+                              <span>{language === 'ar' ? 'النسخة السحابية (Firestore)' : 'Cloud Version (Firestore)'}</span>
+                            </div>
+                            <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
+                              {Object.keys(conflict.cloudData || {})
+                                .filter(k => k !== 'syncedAt' && k !== 'lastUpdated' && k !== 'updatedAt')
+                                .map(k => {
+                                  const lVal = conflict.localData?.[k];
+                                  const cVal = conflict.cloudData?.[k];
+                                  const isDiff = JSON.stringify(lVal) !== JSON.stringify(cVal);
+                                  return (
+                                    <div key={k} className={`p-1 rounded ${isDiff ? 'bg-amber-500/10 text-amber-300 font-bold' : 'text-slate-400'}`}>
+                                      <span className="opacity-50 text-slate-500">{k}:</span> {typeof cVal === 'object' ? JSON.stringify(cVal) : String(cVal)}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Prompt Choices buttons */}
+                        <div className="flex flex-col sm:flex-row sm:justify-end gap-2.5 pt-2">
+                          <button
+                            type="button"
+                            disabled={isResolving}
+                            onClick={() => handleResolveKeepLocal(conflict)}
+                            className="px-4 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white rounded-xl text-xs font-black shadow-md hover:opacity-90 active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Laptop size={13} />
+                            <span>{language === 'ar' ? 'الاحتفاظ بالنسخة المحلية 💻' : 'Keep Local 💻'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isResolving}
+                            onClick={() => handleResolveKeepCloud(conflict)}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-md hover:opacity-95 active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Server size={13} />
+                            <span>{language === 'ar' ? 'الاحتفاظ بنسخة السحابة ☁️' : 'Keep Cloud ☁️'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ADMINISTRATIVE SYNC THRESHOLD CONFIGURATION */}
+        {user?.role === 'admin' && (
+          <div className="bg-slate-50 dark:bg-slate-900/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-5 relative z-10 text-right">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-850 pb-3 gap-2">
+              <div className="space-y-0.5">
+                <span className="inline-flex items-center px-2 py-0.5 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 rounded-lg text-[9px] font-black uppercase">
+                  {language === 'ar' ? 'صلاحيات الإدارة والتحكم' : 'Administrator Controls'}
+                </span>
+                <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5 justify-end">
+                  <span>⚙️ {language === 'ar' ? 'إعدادات حد المزامنة الإجبارية للبيانات' : 'Mandatory Sync Offline Volume Threshold'}</span>
+                </h3>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Setting 1: Threshold in MB */}
+              <div className="space-y-2.5">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300">
+                  {language === 'ar' ? 'الحد الأقصى لحجم البيانات المعلقة (ميجابايت):' : 'Unsynced Data Volume Threshold (MB):'}
+                </label>
+                
+                <div className="flex items-center gap-2 justify-start">
+                  <input
+                    type="number"
+                    min="0.1"
+                    max="50"
+                    step="0.5"
+                    value={adminThreshold}
+                    onChange={(e) => handleThresholdChange(parseFloat(e.target.value) || 5)}
+                    className="w-24 p-2 text-center text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100"
+                  />
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{language === 'ar' ? 'ميغا بايت (MB)' : 'Megabytes (MB)'}</span>
+                </div>
+
+                {/* Preset Shortcuts */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {[1, 2, 5, 10, 20].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => handleThresholdChange(preset)}
+                      className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                        adminThreshold === preset
+                          ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-sm'
+                          : 'bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
+                      }`}
+                    >
+                      {preset}MB
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 leading-normal">
+                  {language === 'ar'
+                    ? 'عندما يتجاوز حجم التعديلات المخزنة محلياً هذا الحد أثناء وضع عدم الاتصال، سيتم تقييد عمل المستخدم بمطالبة تفرض مزامنة البيانات سحابياً.'
+                    : 'If offline modifications accumulate beyond this volume limit, browser clients will be prompted with a blocking banner to reconnect and sync.'}
+                </p>
+              </div>
+
+              {/* Setting 2: Interactive Tester & simulator slider */}
+              <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">🧪 {language === 'ar' ? 'مختبر المزامنة الإجبارية' : 'Mandatory Sync Tester'}</span>
+                  <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded text-[8.5px] font-bold">{language === 'ar' ? 'اختبار النظام' : 'QA Testing'}</span>
+                </div>
+
+                {/* Slider */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[9px] font-extrabold text-slate-400 font-mono">
+                    <span>0 MB</span>
+                    <span className="text-indigo-500 font-bold">{simulatedWeight} MB</span>
+                    <span>10 MB</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={simulatedWeight}
+                    onChange={(e) => handleSimulatedWeightChange(parseFloat(e.target.value))}
+                    className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-100 dark:bg-slate-900 rounded-lg appearance-none"
+                  />
+                </div>
+
+                {/* Volume overview */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-900 space-y-1 text-[9.5px]">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{language === 'ar' ? 'حجم البيانات الفعلي:' : 'Real local storage size:'}</span>
+                    <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{realLocalSize} MB</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">{language === 'ar' ? 'الوزن الإضافي المحاكى:' : 'Simulated extra size:'}</span>
+                    <span className="font-mono text-amber-500 font-bold">+{simulatedWeight} MB</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-slate-100 dark:border-slate-900 font-bold">
+                    <span className="text-slate-700 dark:text-slate-300">{language === 'ar' ? 'إجمالي الحجم المعلق:' : 'Total pending size:'}</span>
+                    <span className={`font-mono ${realLocalSize + simulatedWeight >= adminThreshold ? 'text-rose-500 animate-pulse font-black' : 'text-emerald-500'}`}>
+                      {Number((realLocalSize + simulatedWeight).toFixed(3))} MB / {adminThreshold} MB
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Instructions about Console Access */}
         <div className="p-3.5 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl text-[10px] text-indigo-300 leading-relaxed flex items-start gap-2 relative z-10 text-right">

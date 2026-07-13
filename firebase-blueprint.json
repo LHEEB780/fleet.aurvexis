@@ -212,6 +212,25 @@
         "planId": { "type": "string" }
       },
       "required": ["id", "companyId"]
+    },
+    "FaultReport": {
+      "title": "FaultReport",
+      "description": "Represents a dynamic fault report submitted by a driver for a fleet vehicle.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique fault report ID" },
+        "date": { "type": "string", "description": "Report submission date" },
+        "category": { "type": "string", "description": "Fault category" },
+        "vehicle": { "type": "string", "description": "Vehicle reference label" },
+        "priority": { "type": "string", "description": "Urgency classification" },
+        "status": { "type": "string", "description": "Resolution status" },
+        "desc": { "type": "string", "description": "Detailed description of the fault" },
+        "photo": { "type": "string", "description": "Optional attached photo URL or base64" },
+        "obdCode": { "type": "string", "description": "Optional OBD-II diagnostic trouble code" },
+        "symptom": { "type": "string", "description": "Optional symptom category" },
+        "orderId": { "type": "string", "description": "Associated maintenance/work order ID" }
+      },
+      "required": ["id", "date", "category", "vehicle", "priority", "status", "desc"]
     }
   },
   "firestore": {
@@ -222,6 +241,10 @@
     "maintenance_orders": {
       "schema": "MaintenanceOrder",
       "description": "Main task log details for repairs, checks and workflows."
+    },
+    "fault_reports": {
+      "schema": "FaultReport",
+      "description": "Dynamic fault report logs submitted by commercial vehicle drivers."
     },
     "technicians": {
       "schema": "Technician",

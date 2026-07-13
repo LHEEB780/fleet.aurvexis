@@ -137,11 +137,11 @@ const adjustColorBrightness = (hex: string, percent: number): string => {
 const THEMES_PRESETS = [
   {
     id: 'classic-blue',
-    hex: '#1e53e4',
-    nameAr: 'أزرق التشغيل والاتزان (Navy Tech)',
-    nameEn: 'Classic Royal Navy',
-    descAr: 'النمط الرسمي المعتمد لإدارة وتتبع الورش لأسطول رسمي ومثالي للأعمال الهندسية.',
-    descEn: 'Official approved platform style for vehicle logging and fleet enterprise controls.',
+    hex: '#6d28d9',
+    nameAr: 'البنفسجي الملكي الإمبراطوري (Imperial Purple)',
+    nameEn: 'Imperial Royal Purple',
+    descAr: 'النمط الرسمي المعتمد لإدارة وتتبع الورش لأسطول رسمي ومثالي للأعمال الهندسية والمستقبلية.',
+    descEn: 'Official approved platform style featuring a futuristic royal purple palette for modern fleet operations.',
     colorClass: 'bg-brand-blue-500'
   },
   {
@@ -404,6 +404,10 @@ export default function AppLayout({
             parsed.push('firebase-sync');
             hasUpdates = true;
           }
+          if (!parsed.includes('external-maintenance')) {
+            parsed.push('external-maintenance');
+            hasUpdates = true;
+          }
           if (hasUpdates) {
             localStorage.setItem('saas_enabled_modules', JSON.stringify(parsed));
           }
@@ -485,14 +489,18 @@ export default function AppLayout({
   const [profileName, setProfileName] = useState(user.name);
   const [profileTitle, setProfileTitle] = useState(user.title || 'مدير قسم الصيانة');
   const [profileAvatar, setProfileAvatar] = useState(user.avatar);
+  const [hasHeaderAvatarError, setHasHeaderAvatarError] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(true);
+  const [readOnlyMode, setReadOnlyMode] = useState(() => {
+    return localStorage.getItem('saas_read_only_mode') === 'true';
+  });
   const [automatedBackups, setAutomatedBackups] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(() => {
     return localStorage.getItem('saas_biometric_enabled') !== 'false';
   });
   const [backupSchedule, setBackupSchedule] = useState('daily');
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
-  const [saasBrandName, setSaasBrandName] = useState(() => localStorage.getItem('saas_brand_name') || '');
+  const [saasBrandName, setSaasBrandName] = useState(() => localStorage.getItem('saas_brand_name') || 'FleetAurvexis');
   const [saasBrandDesc, setSaasBrandDesc] = useState(() => localStorage.getItem('saas_brand_desc') || '');
   const [saasBrandLogo, setSaasBrandLogo] = useState(() => localStorage.getItem('saas_brand_logo') || '');
 
@@ -614,7 +622,7 @@ export default function AppLayout({
   const [adminPin, setAdminPin] = useState(() => localStorage.getItem('saas_admin_pin') || '4321');
   const [saasBrandColor, setSaasBrandColor] = useState(() => localStorage.getItem('saas_brand_color') || 'blue');
   const [brandTheme, setBrandTheme] = useState(() => localStorage.getItem('saas_brand_theme') || 'classic-blue');
-  const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => localStorage.getItem('saas_brand_primary_color') || '#1e53e4');
+  const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => localStorage.getItem('saas_brand_primary_color') || '#6d28d9');
   const [staffList, setStaffList] = useState<Array<{
     id: number;
     name: string;
@@ -756,6 +764,14 @@ export default function AppLayout({
   const [newSubTaskDueDate, setNewSubTaskDueDate] = useState('2026-06-15');
 
   React.useEffect(() => {
+    const currentColor = localStorage.getItem('saas_brand_primary_color');
+    if (!currentColor || currentColor === '#1e53e4') {
+      localStorage.setItem('saas_brand_primary_color', '#6d28d9');
+      setBrandPrimaryColor('#6d28d9');
+    }
+  }, []);
+
+  React.useEffect(() => {
     localStorage.setItem('saas_global_sub_admin_privileges', JSON.stringify(globalSubAdminPrivileges));
   }, [globalSubAdminPrivileges]);
 
@@ -843,6 +859,17 @@ export default function AppLayout({
   const [supportTicketId, setSupportTicketId] = useState<string | null>(null);
 
   // Notifications State
+  const [activeSmartAlert, setActiveSmartAlert] = useState<{
+    id: string;
+    orderId: string;
+    oldStatus: 'pending' | 'in-progress' | 'completed';
+    newStatus: 'pending' | 'in-progress' | 'completed';
+    descriptionAr: string;
+    descriptionEn: string;
+    vehicleName: string;
+    technicianName?: string;
+  } | null>(null);
+
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [notificationsFilter, setNotificationsFilter] = useState<'all' | 'initial' | 'final' | 'quality'>('all');
   const [notifications, setNotifications] = useState<Array<{
@@ -1037,6 +1064,71 @@ export default function AppLayout({
       window.removeEventListener('add-notification' as any, handleAddNotification as any);
     };
   }, []);
+
+  useEffect(() => {
+    const handleStatusChange = (e: CustomEvent) => {
+      const { orderId, oldStatus, newStatus, descriptionAr, descriptionEn, vehicleName, technicianName } = e.detail || {};
+      
+      const statusNamesAr = {
+        'pending': 'قيد الانتظار ⏳',
+        'in-progress': 'جاري العمل ⚙️',
+        'completed': 'مكتمل بنجاح ✓'
+      };
+      
+      const statusNamesEn = {
+        'pending': 'Pending ⏳',
+        'in-progress': 'In Progress ⚙️',
+        'completed': 'Completed ✓'
+      };
+
+      const oldNameAr = statusNamesAr[oldStatus as keyof typeof statusNamesAr] || oldStatus;
+      const newNameAr = statusNamesAr[newStatus as keyof typeof statusNamesAr] || newStatus;
+      const oldNameEn = statusNamesEn[oldStatus as keyof typeof statusNamesEn] || oldStatus;
+      const newNameEn = statusNamesEn[newStatus as keyof typeof statusNamesEn] || newStatus;
+
+      // 1. Dispatch normal add-notification so it registers in the drawer & local storage
+      const titleAr = '🔔 تحديث حالة صيانة ذكي!';
+      const titleEn = '🔔 Smart Maintenance Update!';
+      const msgAr = `المركبة: ${vehicleName || 'مجهولة'} • تغيرت الحالة من [${oldNameAr}] إلى [${newNameAr}] • البيان: ${descriptionAr || ''}`;
+      const msgEn = `Vehicle: ${vehicleName || 'Unknown'} • Status changed from [${oldNameEn}] to [${newNameEn}] • Details: ${descriptionEn || ''}`;
+
+      window.dispatchEvent(new CustomEvent('add-notification', {
+        detail: {
+          type: newStatus === 'completed' ? 'success' : 'info',
+          titleAr,
+          titleEn,
+          msgAr,
+          msgEn
+        }
+      }));
+
+      // 2. Set active smart alert overlay state to show on the screen
+      setActiveSmartAlert({
+        id: `alert-${Date.now()}`,
+        orderId,
+        oldStatus,
+        newStatus,
+        descriptionAr: descriptionAr || '',
+        descriptionEn: descriptionEn || '',
+        vehicleName: vehicleName || 'مجهولة',
+        technicianName: technicianName || ''
+      });
+    };
+
+    window.addEventListener('maintenance-order-status-changed' as any, handleStatusChange as any);
+    return () => {
+      window.removeEventListener('maintenance-order-status-changed' as any, handleStatusChange as any);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeSmartAlert) {
+      const timer = setTimeout(() => {
+        setActiveSmartAlert(null);
+      }, 9000);
+      return () => clearTimeout(timer);
+    }
+  }, [activeSmartAlert]);
 
   useEffect(() => {
     // Check periodic schedules for 48 hours warnings
@@ -1397,6 +1489,7 @@ export default function AppLayout({
     localStorage.setItem('saas_brand_primary_color', brandPrimaryColor);
     localStorage.setItem('saas_staff_list', JSON.stringify(staffList));
     localStorage.setItem('saas_biometric_enabled', biometricEnabled ? 'true' : 'false');
+    localStorage.setItem('saas_read_only_mode', readOnlyMode ? 'true' : 'false');
     window.dispatchEvent(new Event('storage')); // trigger update in App.tsx
 
     setShowSaveFeedback(true);
@@ -1414,7 +1507,7 @@ export default function AppLayout({
 
   return (
     <div 
-      className="flex h-screen bg-[#f4f6fa] dark:bg-[#0b0f19] font-sans text-slate-950 dark:text-slate-100 overflow-hidden transition-all duration-500" 
+      className="flex h-screen bg-[#f4f6fa] dark:bg-[#05070a] font-sans text-slate-950 dark:text-slate-100 overflow-hidden transition-all duration-500" 
       dir={dir}
     >
       <style>{`
@@ -1456,6 +1549,139 @@ export default function AppLayout({
         )}
       </AnimatePresence>
 
+      {/* Smart Maintenance Status Change Alert Toast with dynamic animations */}
+      <AnimatePresence>
+        {activeSmartAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9, x: dir === 'rtl' ? 100 : -100 }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2 } }}
+            className={`fixed bottom-6 ${dir === 'rtl' ? 'left-6' : 'right-6'} z-[110] max-w-sm w-full bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/50 text-white overflow-hidden p-4.5`}
+            dir={dir}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3">
+              <div className="flex items-center gap-2">
+                <motion.div
+                  animate={{ rotate: [0, -15, 15, -15, 15, -10, 10, -5, 5, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 2 }}
+                  className={`p-2 rounded-xl ${
+                    activeSmartAlert.newStatus === 'completed'
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : 'bg-amber-500/20 text-amber-400'
+                  }`}
+                >
+                  <Bell size={18} className="animate-pulse" />
+                </motion.div>
+                <div>
+                  <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase block">
+                    {language === 'ar' ? 'إشعار صيانة ذكي' : 'SMART MAINTENANCE ALERT'}
+                  </span>
+                  <h5 className="text-xs font-black text-slate-100">
+                    {language === 'ar' ? 'تحديث حالة الآلية' : 'Vehicle Status Changed'}
+                  </h5>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveSmartAlert(null)}
+                className="text-slate-400 hover:text-slate-100 p-1.5 hover:bg-slate-800/60 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-3.5 text-right" dir={dir}>
+              {/* Vehicle Title */}
+              <div className="flex items-center justify-between bg-slate-850/60 px-3 py-1.5 rounded-xl border border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold">
+                  {language === 'ar' ? 'المركبة/الآلية:' : 'Vehicle:'}
+                </span>
+                <span className="text-xs font-black text-indigo-300">
+                  {activeSmartAlert.vehicleName}
+                </span>
+              </div>
+
+              {/* Status Transition Badges */}
+              <div className="flex items-center justify-center gap-2 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/50" dir="ltr">
+                {/* Old status */}
+                <span className="px-2.5 py-1 text-[9px] font-bold text-slate-400 bg-slate-800/80 rounded-lg">
+                  {language === 'ar'
+                    ? activeSmartAlert.oldStatus === 'pending'
+                      ? 'قيد الانتظار'
+                      : activeSmartAlert.oldStatus === 'in-progress'
+                      ? 'جاري العمل'
+                      : 'مكتمل'
+                    : activeSmartAlert.oldStatus}
+                </span>
+
+                {/* Arrow */}
+                <span className="text-slate-500 text-xs font-black animate-pulse">──▶</span>
+
+                {/* New Status */}
+                <span
+                  className={`px-2.5 py-1 text-[9px] font-black rounded-lg shadow-sm ${
+                    activeSmartAlert.newStatus === 'completed'
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  }`}
+                >
+                  {language === 'ar'
+                    ? activeSmartAlert.newStatus === 'pending'
+                      ? 'قيد الانتظار'
+                      : activeSmartAlert.newStatus === 'in-progress'
+                      ? 'جاري العمل'
+                      : 'مكتمل'
+                    : activeSmartAlert.newStatus}
+                </span>
+              </div>
+
+              {/* Description */}
+              <p className="text-[11px] text-slate-300 font-medium line-clamp-2 leading-relaxed bg-slate-800/20 p-2 rounded-xl text-center">
+                {language === 'ar' ? activeSmartAlert.descriptionAr : activeSmartAlert.descriptionEn}
+              </p>
+            </div>
+
+            {/* Actions Footer */}
+            <div className="flex items-center gap-2 mt-4.5 pt-3.5 border-t border-slate-800/80">
+              <button
+                onClick={() => {
+                  setActiveTab('maintenance');
+                  setTimeout(() => {
+                    window.dispatchEvent(
+                      new CustomEvent('notification-navigate', {
+                        detail: { tab: 'maintenance', item: activeSmartAlert.orderId }
+                      }
+                    ));
+                  }, 150);
+                  setActiveSmartAlert(null);
+                }}
+                className={`flex-1 text-[10px] font-black py-2 rounded-xl text-center cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                  activeSmartAlert.newStatus === 'completed'
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20'
+                    : 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/20'
+                }`}
+              >
+                <Wrench size={12} />
+                <span>{language === 'ar' ? 'انتقال للتفاصيل والقطع' : 'Inspect Ticket & Parts'}</span>
+              </button>
+            </div>
+
+            {/* Countdown Progress Bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-slate-800/50">
+              <motion.div
+                initial={{ width: '100%' }}
+                animate={{ width: '0%' }}
+                transition={{ duration: 9, ease: 'linear' }}
+                className={`h-full ${
+                  activeSmartAlert.newStatus === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Sidebar - Desktop */}
       <aside 
         className={`hidden md:flex flex-col bg-white dark:bg-[#0f1422] border-slate-200 dark:border-slate-800/80 transition-all duration-300 ease-in-out ${
@@ -1477,7 +1703,7 @@ export default function AppLayout({
                 )}
               </div>
               <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white select-none">
-                {saasBrandName ? saasBrandName : 'Axoventra'}
+                {saasBrandName ? saasBrandName : 'FleetAurvexis'}
               </span>
             </motion.div>
           )}
@@ -1680,7 +1906,9 @@ export default function AppLayout({
                       ? t('common.roleAdmin') 
                       : user.role === 'technician' 
                         ? t('common.roleTechnician') 
-                        : t('common.roleViewer')
+                        : user.role === 'viewer'
+                          ? t('common.roleViewer')
+                          : (language === 'ar' ? 'سائق نقل ثقيل' : 'Heavy Driver')
                   }
                 </span>
                 <ChevronDown size={12} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
@@ -1704,9 +1932,10 @@ export default function AppLayout({
                         {language === 'ar' ? 'تبديل الصلاحيات (تجريبي)' : 'Swap Roles (Walkthrough)'}
                       </p>
                       {[
-                        { id: 'admin', label: t('common.roleAdmin') },
-                        { id: 'technician', label: t('common.roleTechnician') },
-                        { id: 'viewer', label: t('common.roleViewer') },
+                        { id: 'admin', label: t('common.roleAdmin') || (language === 'ar' ? '🔑 مدير الصيانة (كامل)' : '🔑 Maintenance Admin (Full)') },
+                        { id: 'technician', label: t('common.roleTechnician') || (language === 'ar' ? '🔧 فني ميكانيك أول' : '🔧 Lead Technician') },
+                        { id: 'viewer', label: t('common.roleViewer') || (language === 'ar' ? '👁️ مراقب جودة ونظام (معاينة)' : '👁️ Quality Observer (Read-only)') },
+                        { id: 'driver', label: t('login.roleDriver') || (language === 'ar' ? '🚛 سائق نقل ثقيل' : '🚛 Heavy Driver') },
                       ].map((r) => (
                         <button
                           key={r.id}
@@ -2017,15 +2246,28 @@ export default function AppLayout({
             <div className="flex items-center gap-3 pr-4 border-slate-200 dark:border-slate-800 border-r">
               <div className={`hidden sm:block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                 <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none mb-1">{profileName}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{user.title}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0"></span>
+                  <span>{user.title}</span>
+                </p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-brand-blue-100 dark:bg-brand-blue-900/50 border-2 border-white dark:border-slate-800 overflow-hidden shadow-sm">
-                <img 
-                  referrerPolicy="no-referrer"
-                  src={user.avatar} 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover"
-                />
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-brand-blue-100 dark:bg-brand-blue-900/50 border-2 border-white dark:border-slate-800 overflow-hidden shadow-sm flex items-center justify-center">
+                  {!hasHeaderAvatarError && user.avatar ? (
+                    <img 
+                      referrerPolicy="no-referrer"
+                      src={user.avatar} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                      onError={() => setHasHeaderAvatarError(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-tr from-brand-blue-600 via-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center select-none">
+                      <span>{profileName ? (profileName.startsWith('الفني ') ? profileName.substring(6, 7) : profileName.startsWith('المراقب ') ? profileName.substring(8, 9) : profileName.charAt(0)) : 'أ'}</span>
+                    </div>
+                  )}
+                </div>
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
               </div>
             </div>
           </div>
@@ -2100,7 +2342,7 @@ export default function AppLayout({
                     )}
                   </div>
                   <span className="text-md font-black text-slate-900 dark:text-white">
-                    {saasBrandName ? saasBrandName : 'Axoventra'}
+                    {saasBrandName ? saasBrandName : 'FleetAurvexis'}
                   </span>
                 </div>
                 <button onClick={() => setMobileMenuOpen(false)}>
@@ -2185,7 +2427,7 @@ export default function AppLayout({
                       {language === 'ar' ? 'قارئ واستشعار الباركود الذكي' : 'Intelligent Telemetric Barcode Reader'}
                     </h3>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                      {saasBrandName ? `${saasBrandName} - ${language === 'ar' ? 'نظام فحص ومعالجة الأصول الرقمية' : 'Digital Asset Scanner'}` : (language === 'ar' ? 'Axoventra - نظام فحص ومعالجة الأصول الرقمية' : 'Axoventra - Digital Asset Scanner')}
+                      {saasBrandName ? `${saasBrandName} - ${language === 'ar' ? 'نظام فحص ومعالجة الأصول الرقمية' : 'Digital Asset Scanner'}` : (language === 'ar' ? 'FleetAurvexis - نظام فحص ومعالجة الأصول الرقمية' : 'FleetAurvexis - Digital Asset Scanner')}
                     </p>
                   </div>
                 </div>
@@ -2813,8 +3055,14 @@ export default function AppLayout({
                         <div className={`flex items-center gap-4 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
                           {/* Avatar Setup */}
                           <div className="relative group/avatar cursor-pointer shrink-0">
-                            <div className="w-16 h-16 rounded-full border bg-white dark:bg-slate-800 overflow-hidden shadow-inner flex items-center justify-center relative justify-center">
-                              <img src={profileAvatar} alt="Profile Avatar" className="w-full h-full object-cover" />
+                            <div className="w-16 h-16 rounded-full border bg-white dark:bg-slate-800 overflow-hidden shadow-inner flex items-center justify-center relative">
+                              {profileAvatar ? (
+                                <img src={profileAvatar} alt="Profile Avatar" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-tr from-brand-blue-600 via-indigo-600 to-purple-600 text-white font-black text-xl flex items-center justify-center select-none">
+                                  <span>{profileName ? profileName.charAt(0) : 'أ'}</span>
+                                </div>
+                              )}
                             </div>
                             <button 
                               type="button"
@@ -2857,6 +3105,38 @@ export default function AppLayout({
                                 className="w-full p-2 bg-white dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-xs font-black dark:text-white outline-none focus:border-brand-blue-500/60"
                               />
                             </div>
+                          </div>
+                        </div>
+
+                        {/* Read-only Mode Toggle for Observers */}
+                        <div className="pt-3.5 border-t border-slate-150 dark:border-slate-800/60 space-y-3">
+                          <div className={`flex items-center justify-between gap-4 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+                            <div className={`space-y-0.5 flex-1 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                              <span className="text-xs font-black block text-slate-800 dark:text-slate-100 flex items-center gap-1.5 justify-end">
+                                <span className="inline-flex items-center px-1.5 py-0.5 bg-violet-500/10 text-violet-500 dark:text-violet-400 rounded text-[8px] font-bold shrink-0">
+                                  {language === 'ar' ? 'حماية البيانات للمراقبين' : 'Observer Protection'}
+                                </span>
+                                <span>{language === 'ar' ? 'وضع القراءة فقط للمراقبين (Read-only Mode)' : 'Observer Read-only Mode'}</span>
+                              </span>
+                              <span className="text-[9px] text-slate-400 dark:text-slate-500 block leading-normal">
+                                {language === 'ar' 
+                                  ? 'عند تفعيله، يتم إخفاء أزرار الإضافة والتعديل والحذف في كافة صفحات التطبيق لحماية البيانات وضمان سلامتها من العبث.' 
+                                  : 'Hides all adding, editing, and deleting controls globally across all application views to secure live data from unintentional adjustments.'
+                                }
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newVal = !readOnlyMode;
+                                setReadOnlyMode(newVal);
+                                localStorage.setItem('saas_read_only_mode', newVal ? 'true' : 'false');
+                                window.dispatchEvent(new Event('storage'));
+                              }}
+                              className={`w-9 h-5 rounded-full relative transition-colors border-0 shrink-0 ${readOnlyMode ? 'bg-violet-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                            >
+                              <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${readOnlyMode ? (dir === 'rtl' ? 'right-5' : 'left-5') : (dir === 'rtl' ? 'right-1' : 'left-1')}`} />
+                            </button>
                           </div>
                         </div>
 
@@ -4873,7 +5153,7 @@ export default function AppLayout({
                               onClick={() => {
                                 setBrandTheme(item.id);
                                 setSaasBrandColor(item.value);
-                                setBrandPrimaryColor(item.value === 'blue' ? '#1e53e4' : item.value === 'emerald' ? '#10b981' : item.value === 'amber' ? '#f59e0b' : '#f43f5e');
+                                setBrandPrimaryColor(item.value === 'blue' ? '#6d28d9' : item.value === 'emerald' ? '#10b981' : item.value === 'amber' ? '#f59e0b' : '#f43f5e');
                               }}
                               className={`px-3 py-2 border rounded-xl flex items-center gap-2 transition-all cursor-pointer text-xs font-bold ${
                                 brandTheme === item.id 
@@ -4930,7 +5210,7 @@ export default function AppLayout({
                     <button
                       type="button"
                       onClick={() => setWizardStep(prev => prev + 1)}
-                      className="px-5 py-2.5 text-white bg-violet-500 hover:bg-violet-600 font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                      className="px-5 py-2.5 text-white bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
                     >
                       <span>{language === 'ar' ? 'متابعة الخطوة التالية' : 'Continue Next'}</span>
                       <ChevronLeft size={14} className={dir === 'rtl' ? 'rotate-180' : ''} />

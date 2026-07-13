@@ -780,6 +780,7 @@ export default function Inventory({ user }: InventoryProps) {
   // Modals & Panels
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
   const [selectedItemForEdit, setSelectedItemForEdit] = useState<InventoryItem | null>(null);
   const [editItemState, setEditItemState] = useState<Partial<InventoryItem>>({});
 
@@ -1389,6 +1390,430 @@ export default function Inventory({ user }: InventoryProps) {
     }
   };
 
+  // Export current parts and stock status report to Excel (CSV format with BOM)
+  const handleExportExcel = () => {
+    if (filteredItems.length === 0) {
+      alert(language === 'ar' ? 'لا توجد بيانات لتصديرها!' : 'No data to export!');
+      return;
+    }
+
+    let csvContent = "\uFEFF"; // Add UTF-8 BOM for Arabic characters compatibility in Excel
+    
+    if (language === 'ar') {
+      csvContent += "الرمز التعريفي,اسم القطعة,رقم القطعة/الباركود,الفئة,الكمية الحالية,حد الأمان,سعر الوحدة (ريال),القيمة الإجمالية (ريال),الموقع بالرفوف,الحالة,المورد,العلامة التجارية,آخر تاريخ طلب\n";
+    } else {
+      csvContent += "ID,Part Name,Part/Barcode Number,Category,In Stock,Min Stock,Unit Price (SAR),Total Value (SAR),Shelf Location,Stock Status,Supplier,Brand,Last Ordered Date\n";
+    }
+
+    filteredItems.forEach(item => {
+      const escapedName = (item.name || '').replace(/"/g, '""');
+      const escapedPartNo = (item.partNumber || '').replace(/"/g, '""');
+      const escapedCategory = (item.category || '').replace(/"/g, '""');
+      const escapedLoc = (item.shelfLocation || '').replace(/"/g, '""');
+      const escapedSupplier = (item.supplier || '').replace(/"/g, '""');
+      const escapedBrand = (item.brand || '').replace(/"/g, '""');
+      
+      const isLow = item.quantity <= item.minQuantity;
+      const status = isLow 
+        ? (language === 'ar' ? 'منخفض المخزون ⚠️' : 'Low Stock ⚠️') 
+        : (language === 'ar' ? 'سليم' : 'Healthy');
+      
+      const unitPrice = item.price || 0;
+      const totalVal = item.quantity * unitPrice;
+      
+      csvContent += `"${item.id}","${escapedName}","${escapedPartNo}","${escapedCategory}","${item.quantity}","${item.minQuantity}","${unitPrice}","${totalVal}","${escapedLoc}","${status}","${escapedSupplier}","${escapedBrand}","${item.lastOrderedDate || ''}"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Fleet_Inventory_Stock_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export current parts and stock status report to PDF (via clean system print layout)
+  const handleExportPdf = () => {
+    if (filteredItems.length === 0) {
+      alert(language === 'ar' ? 'لا توجد بيانات لتصديرها!' : 'No data to export!');
+      return;
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      alert(language === 'ar' ? 'حدث خطأ أثناء تصدير PDF!' : 'Error exporting PDF!');
+      return;
+    }
+
+    const currentFormattedDate = new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const isAr = language === 'ar';
+    
+    // Compute stats for the exported set
+    const totalCount = filteredItems.length;
+    const totalQty = filteredItems.reduce((sum, item) => sum + item.quantity, 0);
+    const lowStockCount = filteredItems.filter(item => item.quantity <= item.minQuantity).length;
+    const totalValue = filteredItems.reduce((sum, item) => sum + (item.quantity * (item.price || 0)), 0);
+
+    const title = isAr ? 'تقرير جرد وحالة مخزون قطع الغيار والرفوف' : 'Spare Parts Inventory & Stock Status Report';
+    const subTitle = isAr 
+      ? `تم التوليد تلقائيًا بنظام إدارة الأسطول والمستودعات في تاريخ ${currentFormattedDate}` 
+      : `Generated automatically by Fleet & Warehouses Management System on ${currentFormattedDate}`;
+
+    let tableRowsHtml = '';
+    filteredItems.forEach((item, index) => {
+      const isLow = item.quantity <= item.minQuantity;
+      const statusText = isLow 
+        ? (isAr ? '⚠️ منخفض جداً' : '⚠️ Critically Low') 
+        : (isAr ? 'سليم' : 'Healthy');
+      const statusClass = isLow ? 'status-low' : 'status-healthy';
+      const totalItemValue = item.quantity * (item.price || 0);
+
+      tableRowsHtml += `
+        <tr>
+          <td style="text-align: center;">${index + 1}</td>
+          <td>
+            <div style="font-weight: bold; color: #0f172a;">${item.name}</div>
+            <div style="font-size: 10px; color: #64748b; font-family: monospace;">${item.partNumber}</div>
+          </td>
+          <td>${item.category}</td>
+          <td style="text-align: center; font-weight: bold;">${item.quantity}</td>
+          <td style="text-align: center; color: #64748b;">${item.minQuantity}</td>
+          <td style="text-align: right; font-family: monospace;">${(item.price || 0).toLocaleString()} ${isAr ? 'ريال' : 'SAR'}</td>
+          <td style="text-align: right; font-family: monospace; font-weight: bold; color: #4f46e5;">${totalItemValue.toLocaleString()} ${isAr ? 'ريال' : 'SAR'}</td>
+          <td>${item.shelfLocation || '-'}</td>
+          <td style="text-align: center;">
+            <span class="status-badge ${statusClass}">${statusText}</span>
+          </td>
+        </tr>
+      `;
+    });
+
+    const printHtml = `
+      <html dir="${isAr ? 'rtl' : 'ltr'}">
+        <head>
+          <meta charset="utf-8">
+          <title>${title}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;600;700&display=swap');
+            
+            body { 
+              font-family: ${isAr ? '"Cairo", sans-serif' : '"Inter", sans-serif'}; 
+              padding: 40px; 
+              color: #1e293b; 
+              background-color: #ffffff;
+              line-height: 1.5;
+            }
+            
+            .header-container {
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+
+            .logo-section {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+            }
+
+            .logo-icon {
+              width: 44px;
+              height: 44px;
+              border-radius: 12px;
+              background-color: #4f46e5;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 24px;
+              font-weight: 800;
+            }
+
+            .company-name {
+              font-size: 18px;
+              font-weight: 800;
+              color: #1e293b;
+            }
+            
+            .system-title {
+              font-size: 11px;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              margin-top: 2px;
+            }
+
+            .report-title-container {
+              text-align: center;
+              margin-bottom: 35px;
+            }
+
+            h1 { 
+              font-size: 24px; 
+              font-weight: 800; 
+              color: #0f172a; 
+              margin: 0 0 8px 0; 
+            }
+            
+            .subtitle { 
+              color: #64748b; 
+              font-size: 12px; 
+              margin: 0; 
+            }
+            
+            /* Stats Section */
+            .stats-grid { 
+              display: grid; 
+              grid-template-columns: repeat(4, 1fr); 
+              gap: 16px; 
+              margin-bottom: 35px; 
+            }
+            
+            .stat-card { 
+              border: 1px solid #e2e8f0; 
+              border-radius: 12px; 
+              padding: 16px; 
+              text-align: center; 
+              background-color: #f8fafc;
+            }
+            
+            .stat-label { 
+              font-size: 11px; 
+              color: #64748b; 
+              font-weight: 700;
+              margin-bottom: 6px;
+            }
+            
+            .stat-value { 
+              font-size: 20px; 
+              font-weight: 800; 
+              color: #0f172a; 
+            }
+
+            .stat-value.primary { color: #4f46e5; }
+            .stat-value.success { color: #10b981; }
+            .stat-value.danger { color: #ef4444; }
+            
+            /* Table Styling */
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-top: 15px; 
+              box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            }
+            
+            th, td { 
+              border: 1px solid #e2e8f0; 
+              padding: 12px 14px; 
+              text-align: ${isAr ? 'right' : 'left'}; 
+              font-size: 11px; 
+            }
+            
+            th { 
+              background-color: #f1f5f9; 
+              font-weight: 800; 
+              color: #334155;
+              text-transform: uppercase;
+              font-size: 10px;
+              letter-spacing: 0.02em;
+            }
+            
+            tr:nth-child(even) { background-color: #fafafa; }
+            
+            .status-badge {
+              display: inline-block;
+              padding: 4px 8px;
+              border-radius: 9999px;
+              font-size: 9px;
+              font-weight: bold;
+              text-align: center;
+            }
+            
+            .status-low { 
+              background-color: #fef2f2; 
+              color: #991b1b; 
+              border: 1px solid #fca5a5;
+            }
+            
+            .status-healthy { 
+              background-color: #ecfdf5; 
+              color: #065f46; 
+              border: 1px solid #a7f3d0;
+            }
+            
+            /* Signatures Grid */
+            .signature-section {
+              margin-top: 60px;
+              page-break-inside: avoid;
+            }
+
+            .signature-title {
+              font-size: 12px;
+              font-weight: 800;
+              color: #334155;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 8px;
+              margin-bottom: 25px;
+            }
+
+            .signatures-grid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 30px;
+              text-align: center;
+            }
+
+            .sig-box {
+              border: 1px dashed #cbd5e1;
+              border-radius: 12px;
+              padding: 20px 10px;
+              background-color: #fafafa;
+            }
+
+            .sig-label {
+              font-size: 11px;
+              font-weight: 700;
+              color: #475569;
+              margin-bottom: 45px;
+            }
+
+            .sig-line {
+              border-top: 1px solid #94a3b8;
+              width: 80%;
+              margin: 0 auto;
+              margin-bottom: 6px;
+            }
+
+            .sig-subtext {
+              font-size: 9px;
+              color: #94a3b8;
+            }
+
+            /* Printing Optimization */
+            @media print {
+              body { padding: 0; }
+              @page { margin: 1.5cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header-container">
+            <div class="logo-section">
+              <div class="logo-icon">📦</div>
+              <div>
+                <div class="company-name">${isAr ? 'الشركة الوطنية الموحدة للنقل واللوجستيات' : 'Unified Logistics & Transit Co.'}</div>
+                <div class="system-title">${isAr ? 'بوابة إدارة المخزون الفني والمستودعات والقطع' : 'Technical Parts & Inventory Management Portal'}</div>
+              </div>
+            </div>
+            <div style="text-align: ${isAr ? 'left' : 'right'}; font-size: 11px; color: #64748b;">
+              <div>${isAr ? 'رقم المستند: INV-REP-' : 'Doc No: INV-REP-'}${Math.floor(100000 + Math.random() * 900000)}</div>
+              <div style="margin-top: 2px;">${currentFormattedDate}</div>
+            </div>
+          </div>
+
+          <div class="report-title-container">
+            <h1>${title}</h1>
+            <p class="subtitle">${subTitle}</p>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">${isAr ? 'أصناف قطع الغيار مصفاة' : 'Filtered Spare Categories'}</div>
+              <div class="stat-value primary">${totalCount}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">${isAr ? 'إجمالي القطع المتوفرة' : 'Total Items in Stock'}</div>
+              <div class="stat-value success">${totalQty}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">${isAr ? 'قطع منخفضة المخزون' : 'Understock Spares Alert'}</div>
+              <div class="stat-value danger">${lowStockCount}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">${isAr ? 'القيمة التقديرية للأصول المحددة' : 'Selected Assets Valuation'}</div>
+              <div class="stat-value">${totalValue.toLocaleString()} ${isAr ? 'ريال' : 'SAR'}</div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">#</th>
+                <th>${isAr ? 'اسم القطعة ورقمه المرجعي' : 'Part Name & Ref Number'}</th>
+                <th>${isAr ? 'فئة التصنيف' : 'Category'}</th>
+                <th style="width: 80px; text-align: center;">${isAr ? 'المخزون الحالي' : 'Stock Qty'}</th>
+                <th style="width: 80px; text-align: center;">${isAr ? 'حد الأمان' : 'Min stock'}</th>
+                <th style="width: 100px; text-align: right;">${isAr ? 'سعر الوحدة' : 'Unit Cost'}</th>
+                <th style="width: 120px; text-align: right;">${isAr ? 'القيمة الإجمالية' : 'Total Cost'}</th>
+                <th>${isAr ? 'الموقع بالرف' : 'Shelf Slot'}</th>
+                <th style="width: 110px; text-align: center;">${isAr ? 'حالة المخزون' : 'Health Status'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+          </table>
+
+          <div class="signature-section">
+            <div class="signature-title">${isAr ? 'الاعتمادات والتوقيعات الإدارية الرسمية' : 'Official Administrative Clearances'}</div>
+            <div class="signatures-grid">
+              <div class="sig-box">
+                <div class="sig-label">${isAr ? 'أمين المستودعات اللوجستية' : 'Warehouse Keeper Manager'}</div>
+                <div class="sig-line"></div>
+                <div class="sig-subtext">${isAr ? 'التوقيع والختم الرسمي' : 'Signature & Office Seal'}</div>
+              </div>
+              <div class="sig-box">
+                <div class="sig-label">${isAr ? 'مدير عام هندسة الصيانة والأسطول' : 'Head of Maintenance Engineering'}</div>
+                <div class="sig-line"></div>
+                <div class="sig-subtext">${isAr ? 'التوقيع والختم الرسمي' : 'Signature & Office Seal'}</div>
+              </div>
+              <div class="sig-box">
+                <div class="sig-label">${isAr ? 'المدير التنفيذي للعمليات والإمداد' : 'Chief Operations & Supply Officer'}</div>
+                <div class="sig-line"></div>
+                <div class="sig-subtext">${isAr ? 'التوقيع والختم الرسمي' : 'Signature & Office Seal'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 60px; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+            ${isAr 
+              ? 'تعتبر هذه الوثيقة تقريراً رسمياً معتمداً من نظام الجرد الإلكتروني الداخلي للشركة ولا يحق تداولها خارج النطاق الفني المسموح.' 
+              : 'This document is an official system-generated warehouse stock statement. External distribution or un-authorized sharing is strictly confidential.'}
+          </div>
+        </body>
+      </html>
+    `;
+
+    doc.open();
+    doc.write(printHtml);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      document.body.removeChild(iframe);
+    }, 600);
+  };
+
   return (
     <div className="space-y-6 text-right" dir="rtl">
       
@@ -1482,6 +1907,46 @@ export default function Inventory({ user }: InventoryProps) {
               <Camera size={15} className="animate-pulse" />
               <span>مسح الباركود بالكاميرا</span>
             </button>
+
+            {/* Export Reports Dropdown for Administrators */}
+            {user.role === 'admin' && (
+              <div className="relative">
+                <button
+                  id="export-reports-btn"
+                  onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/30 rounded-xl text-xs font-black shadow-soft transition-all active:scale-95 cursor-pointer"
+                >
+                  <FileText size={15} />
+                  <span>{language === 'ar' ? 'تصدير التقارير' : 'Export Reports'}</span>
+                </button>
+                {isExportDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1 z-50">
+                    <button
+                      id="export-excel-btn"
+                      onClick={() => {
+                        handleExportExcel();
+                        setIsExportDropdownOpen(false);
+                      }}
+                      className="w-full text-right px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span>{language === 'ar' ? 'تصدير كملف Excel' : 'Export to Excel'}</span>
+                    </button>
+                    <button
+                      id="export-pdf-btn"
+                      onClick={() => {
+                        handleExportPdf();
+                        setIsExportDropdownOpen(false);
+                      }}
+                      className="w-full text-right px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                      <span>{language === 'ar' ? 'تصدير كملف PDF' : 'Export to PDF'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {user.role !== 'viewer' && (
               <div className="flex flex-wrap items-center gap-2">

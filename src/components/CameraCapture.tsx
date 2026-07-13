@@ -5,9 +5,19 @@ interface CameraCaptureProps {
   photoUrl: string;
   onPhotoCaptured: (base64Photo: string) => void;
   onPhotoCleared: () => void;
+  title?: string;
+  description?: string;
+  language?: string;
 }
 
-export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleared }: CameraCaptureProps) {
+export default function CameraCapture({ 
+  photoUrl, 
+  onPhotoCaptured, 
+  onPhotoCleared,
+  title,
+  description,
+  language = 'ar'
+}: CameraCaptureProps) {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -96,9 +106,13 @@ export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleare
       <div className="space-y-1">
         <label className="text-[10px] font-black text-slate-700 dark:text-slate-300 flex items-center gap-1">
           <Camera size={12} className="text-brand-blue-500" />
-          <span>توثيق وتصوير الأعطال ميكانيكياً:</span>
+          <span>
+            {title || (language === 'ar' ? 'توثيق وتصوير الأعطال ميكانيكياً:' : 'Mechanical Defect Visual Documentation:')}
+          </span>
         </label>
-        <p className="text-[9px] text-slate-400">التقط صورة العطل مباشرة أو ارفعها لتسهيل تشخيص المهندسين بالورشة.</p>
+        <p className="text-[9px] text-slate-400">
+          {description || (language === 'ar' ? 'التقط صورة العطل مباشرة أو ارفعها لتسهيل تشخيص المهندسين بالورشة.' : 'Capture the defect directly or upload a photo to assist workshop diagnostics.')}
+        </p>
       </div>
 
       {/* Main Area */}
@@ -112,7 +126,7 @@ export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleare
                 type="button"
                 onClick={triggerFileSelect}
                 className="p-2 bg-white/90 hover:bg-white text-slate-900 rounded-full shadow-md transition-all scale-95 hover:scale-100 cursor-pointer"
-                title="تحديث الصورة"
+                title={language === 'ar' ? 'تحديث الصورة' : 'Update Photo'}
               >
                 <RefreshCw size={15} />
               </button>
@@ -123,7 +137,7 @@ export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleare
                   if (fileInputRef.current) fileInputRef.current.value = '';
                 }}
                 className="p-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md transition-all scale-95 hover:scale-100 cursor-pointer"
-                title="حذف الصورة"
+                title={language === 'ar' ? 'حذف الصورة' : 'Delete Photo'}
               >
                 <Trash2 size={15} />
               </button>
@@ -131,7 +145,7 @@ export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleare
             
             <div className="absolute bottom-2 right-2 bg-emerald-600/90 text-[9px] text-white px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
               <Check size={8} strokeWidth={4} />
-              <span>جاهز للربط بالطلب</span>
+              <span>{language === 'ar' ? 'جاهز للربط بالطلب' : 'Ready to attach'}</span>
             </div>
           </div>
         ) : isCameraActive ? (
@@ -158,14 +172,14 @@ export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleare
                 className="flex-1 py-1 px-3 bg-brand-blue-600 hover:bg-brand-blue-700 text-white rounded-md text-[10px] font-black flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
               >
                 <Camera size={11} />
-                <span>التقاط الصورة</span>
+                <span>{language === 'ar' ? 'التقاط الصورة' : 'Capture Photo'}</span>
               </button>
               <button
                 type="button"
                 onClick={stopCamera}
                 className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md text-[10px] font-bold cursor-pointer"
               >
-                إغلاق
+                {language === 'ar' ? 'إغلاق' : 'Close'}
               </button>
             </div>
           </div>
@@ -174,8 +188,12 @@ export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleare
           <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
             <Camera size={26} className="text-slate-500 animate-pulse" />
             <div className="space-y-1">
-              <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 block">لم يتم التقاط صورة للعطل</span>
-              <span className="text-[8px] text-slate-500 block">اضغط زر تشغيل الكاميرا أو قم بالرفع اليدوي لتوثيق فوري.</span>
+              <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 block">
+                {language === 'ar' ? 'لم يتم التقاط صورة' : 'No photo captured'}
+              </span>
+              <span className="text-[8px] text-slate-500 block">
+                {language === 'ar' ? 'اضغط زر تشغيل الكاميرا أو قم بالرفع اليدوي لتوثيق فوري.' : 'Click to start camera or upload a photo manually.'}
+              </span>
             </div>
             
             <div className="flex items-center gap-1.5 mt-1.5">
@@ -185,7 +203,7 @@ export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleare
                 className="px-2.5 py-1 bg-brand-blue-50 hover:bg-brand-blue-100 text-brand-blue-600 dark:bg-brand-blue-950/40 dark:text-brand-blue-400 dark:hover:bg-brand-blue-900/40 text-[9px] font-black rounded-lg border border-brand-blue-250/20 cursor-pointer flex items-center gap-1"
               >
                 <Camera size={10} />
-                <span>تشغيل الكاميرا</span>
+                <span>{language === 'ar' ? 'تشغيل الكاميرا' : 'Start Camera'}</span>
               </button>
               <button
                 type="button"
@@ -193,7 +211,7 @@ export default function CameraCapture({ photoUrl, onPhotoCaptured, onPhotoCleare
                 className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 text-[9px] font-bold rounded-lg cursor-pointer flex items-center gap-1"
               >
                 <UploadCloud size={10} />
-                <span>رفع صورة</span>
+                <span>{language === 'ar' ? 'رفع صورة' : 'Upload Image'}</span>
               </button>
             </div>
           </div>

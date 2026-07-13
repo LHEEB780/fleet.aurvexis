@@ -367,10 +367,10 @@ export function FleetMap({ vehicles: propVehicles }: FleetMapProps) {
         </AnimatePresence>
 
         {/* Outer Split layout of the Dubai Map */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 h-[440px]">
+        <div className="grid grid-cols-1 lg:grid-cols-4 h-auto lg:h-[440px]">
 
           {/* Sidebar Area occupies 1 out of 4 columns on the left (or right in RTL) */}
-          <div className="lg:col-span-1 bg-slate-50 flex flex-col overflow-hidden border-r border-slate-200/50">
+          <div className="lg:col-span-1 bg-slate-50 flex flex-col h-[180px] lg:h-full overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200/50 shrink-0">
             
             {/* Sidebar filter controls */}
             <div className="p-4 border-b border-slate-200/60 space-y-3 text-right">
@@ -446,7 +446,7 @@ export function FleetMap({ vehicles: propVehicles }: FleetMapProps) {
           </div>
           
           {/* Map Area occupies 3 out of 4 columns on the right (or left in RTL) */}
-          <div className="lg:col-span-3 relative bg-[#bae6fd]/40 overflow-hidden flex items-center justify-center font-mono">
+          <div className="lg:col-span-3 relative bg-[#bae6fd]/40 overflow-hidden flex items-center justify-center font-mono h-[320px] lg:h-full">
             
             {/* DUBAI, UAE HIGH-FIDELITY CUSTOM VECTOR MAP SVG */}
             <div className="absolute inset-0 w-full h-full pointer-events-none">
@@ -737,10 +737,10 @@ export function FleetMap({ vehicles: propVehicles }: FleetMapProps) {
         </div>
 
         {/* Map view section split screen */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 h-[440px]">
+        <div className="grid grid-cols-1 lg:grid-cols-4 h-auto lg:h-[440px]">
           
           {/* Vehicles List Sidebar identical style to fallback design */}
-          <div className="lg:col-span-1 bg-[#060917] flex flex-col overflow-hidden border-r border-[#1e293b]/50">
+          <div className="lg:col-span-1 bg-[#060917] flex flex-col h-[180px] lg:h-full overflow-hidden border-b lg:border-b-0 lg:border-r border-[#1e293b]/50 shrink-0">
             
             {/* Sidebar filter controls */}
             <div className="p-4 border-b border-[#1e293b]/60 space-y-3 text-right">
@@ -818,7 +818,7 @@ export function FleetMap({ vehicles: propVehicles }: FleetMapProps) {
           </div>
 
           {/* Actual Google Map viewport in dark sci-tech layout */}
-          <div className="lg:col-span-3 relative h-full">
+          <div className="lg:col-span-3 relative h-[320px] lg:h-full">
             <APIProvider apiKey={API_KEY} version="weekly">
               <GoogleMap
                 center={

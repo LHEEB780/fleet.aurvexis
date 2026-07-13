@@ -41,6 +41,7 @@ export const MENU_ITEMS: MenuItem[] = [
   // 3. إدارة الهندسة والصيانة الفنية (Mechanical Engineering & Maintenance)
   { id: 'workshops', label: 'إدارة الورش والضغط الميداني', icon: <Building2 size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'engineering' },
   { id: 'maintenance', label: 'إدارة أوامر الصيانة', icon: <Wrench size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'engineering' },
+  { id: 'external-maintenance', label: 'إدارة الصيانة الخارجية', icon: <Wrench size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'engineering' },
   { id: 'periodic-maintenance', label: 'إدارة الصيانة الدورية', icon: <Calendar size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'engineering' },
   { id: 'technicians', label: 'إدارة الفنيين والعاملين', icon: <Users size={16} />, roles: ['admin'], group: 'engineering' },
 

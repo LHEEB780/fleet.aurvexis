@@ -7,6 +7,7 @@ import Maintenance from './components/Maintenance';
 import PeriodicMaintenance from './components/PeriodicMaintenance';
 import Technicians from './components/Technicians';
 import Workshops from './components/Workshops';
+import ExternalMaintenance from './components/ExternalMaintenance';
 import Inventory from './components/Inventory';
 import Vendors from './components/Vendors';
 import AIManager from './components/AIManager';
@@ -172,6 +173,35 @@ export default function App() {
     return localStorage.getItem('saas_is_logged_in') === 'true' || sessionStorage.getItem('saas_is_logged_in') === 'true';
   });
 
+  const saveCurrentUserToStorage = (updatedUser: User, remember: boolean = localStorage.getItem('saas_is_logged_in') === 'true') => {
+    const userJson = JSON.stringify(updatedUser);
+    try {
+      if (remember) {
+        localStorage.setItem('saas_current_user', userJson);
+        sessionStorage.removeItem('saas_current_user');
+      } else {
+        sessionStorage.setItem('saas_current_user', userJson);
+        localStorage.removeItem('saas_current_user');
+      }
+    } catch (error) {
+      console.warn('Failed to save user to storage, retrying with stripped avatar...', error);
+      try {
+        const strippedAvatar = updatedUser.avatar && updatedUser.avatar.startsWith('data:') ? '' : updatedUser.avatar;
+        const strippedUser = { ...updatedUser, avatar: strippedAvatar };
+        const strippedJson = JSON.stringify(strippedUser);
+        if (remember) {
+          localStorage.setItem('saas_current_user', strippedJson);
+          sessionStorage.removeItem('saas_current_user');
+        } else {
+          sessionStorage.setItem('saas_current_user', strippedJson);
+          localStorage.removeItem('saas_current_user');
+        }
+      } catch (innerError) {
+        console.error('Failed to save stripped user to storage', innerError);
+      }
+    }
+  };
+
   const setActiveTab = (tab: string) => {
     const currentMenuItem = MENU_ITEMS.find(item => item.id === tab);
     const userRole = currentUser?.role || 'admin';
@@ -209,7 +239,7 @@ export default function App() {
   
   // Login State
   const [loginRole, setLoginRole] = useState<UserRole>('admin');
-  const [email, setEmail] = useState('admin@axoventra.com');
+  const [email, setEmail] = useState('admin@fleetaurvexis.com');
   const [passcode, setPasscode] = useState('1234');
   const [showPasscode, setShowPasscode] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -267,7 +297,7 @@ export default function App() {
 
   // --- MULTI-PROJECT SANDBOX CACHE & SW ISOLATION PURGE HOOK ---
   React.useEffect(() => {
-    const CURRENT_SIGNATURE = "axoventra_mechanic_v2";
+    const CURRENT_SIGNATURE = "fleetaurvexis_mechanic_v2";
     const oldSignature = localStorage.getItem("applet_project_signature");
     if (oldSignature && oldSignature !== CURRENT_SIGNATURE) {
       console.log("[Applet Sandbox Detector] Stale cache or service worker from another applet detected! Purging to avoid cross-app conflicts...");
@@ -571,7 +601,17 @@ export default function App() {
     const vehicleIdParam = params.get('vehicleId') || params.get('vehicle');
     const plateParam = params.get('plateNumber') || params.get('plate');
     if (vehicleIdParam || plateParam) {
-      setActiveTab('vehicles');
+      // Auto-transition to SaaS portal and perform auto-login if not logged in
+      setPortalMode('saas');
+      localStorage.setItem('saas_portal_mode', 'saas');
+      setIsLoggedIn(true);
+      localStorage.setItem('saas_is_logged_in', 'true');
+      setCurrentUser(USERS.admin);
+      saveCurrentUserToStorage(USERS.admin, true);
+
+      setActiveTabState('vehicles');
+      localStorage.setItem('saas_active_tab', 'vehicles');
+
       if (plateParam) {
         localStorage.setItem('scanned_plate_from_qr', plateParam);
         window.dispatchEvent(new CustomEvent('barcode-scanned', { detail: { plateNumber: plateParam } }));
@@ -607,7 +647,7 @@ export default function App() {
   const setIsDarkMode = (_val?: any) => {};
 
   const [saasBrandName, setSaasBrandName] = useState(() => {
-    return localStorage.getItem('saas_brand_name') || '';
+    return localStorage.getItem('saas_brand_name') || 'FleetAurvexis';
   });
   const [saasBrandDesc, setSaasBrandDesc] = useState(() => {
     return localStorage.getItem('saas_brand_desc') || '';
@@ -616,19 +656,100 @@ export default function App() {
     return localStorage.getItem('saas_brand_logo') || '';
   });
   const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => {
-    return localStorage.getItem('saas_brand_primary_color') || '#1e53e4';
+    return localStorage.getItem('saas_brand_primary_color') || '#6d28d9';
   });
+
+  const getPendingDataVolumeMB = (): number => {
+    let totalChars = 0;
+    const keys = [
+      'fleet_vehicles_v3',
+      'fleet_vehicles_v2',
+      'fleet_maintenance_orders_v2',
+      'fleet_technicians_v2',
+      'fleet_inventory_v2',
+      'fleet_safety_inspections',
+      'saas_brand_name',
+      'saas_brand_desc',
+      'saas_brand_logo',
+      'saas_brand_color'
+    ];
+    for (const key of keys) {
+      const val = localStorage.getItem(key);
+      if (val) totalChars += val.length;
+    }
+    const realMB = totalChars / (1024 * 1024);
+    const simMB = parseFloat(localStorage.getItem('saas_simulated_offline_weight') || '0');
+    return Number((realMB + simMB).toFixed(3));
+  };
+
+  const [syncThresholdMB, setSyncThresholdMB] = useState(() => {
+    return parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5');
+  });
+
+  const [currentOfflineWeightMB, setCurrentOfflineWeightMB] = useState(() => {
+    return getPendingDataVolumeMB();
+  });
+
+  const [isMandatorySyncing, setIsMandatorySyncing] = useState(false);
+  const [mandatorySyncProgress, setMandatorySyncProgress] = useState(0);
+  const [mandatorySyncSuccess, setMandatorySyncSuccess] = useState(false);
+
+  const handleMandatorySync = async () => {
+    if (isMandatorySyncing) return;
+    setIsMandatorySyncing(true);
+    setMandatorySyncProgress(10);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setMandatorySyncProgress(35);
+      
+      try {
+        const { pushLocalDataToCloud } = await import('./services/firebase');
+        await pushLocalDataToCloud();
+      } catch (e) {
+        console.warn("Firestore sync backup skipped during mandatory sync fallback:", e);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 400));
+      setMandatorySyncProgress(70);
+      
+      localStorage.setItem('last_firestore_sync_time', new Date().toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US'));
+      localStorage.setItem('saas_simulated_offline_weight', '0'); // Reset simulation offset
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setMandatorySyncProgress(100);
+      setMandatorySyncSuccess(true);
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsMandatorySyncing(false);
+      setMandatorySyncSuccess(false);
+      window.dispatchEvent(new Event('storage'));
+    }
+  };
+
+  React.useEffect(() => {
+    const currentColor = localStorage.getItem('saas_brand_primary_color');
+    if (!currentColor || currentColor === '#1e53e4') {
+      localStorage.setItem('saas_brand_primary_color', '#6d28d9');
+      setBrandPrimaryColor('#6d28d9');
+    }
+  }, []);
 
   React.useEffect(() => {
     const handleStorageChange = () => {
       setSaasBrandName(localStorage.getItem('saas_brand_name') || '');
       setSaasBrandDesc(localStorage.getItem('saas_brand_desc') || '');
       setSaasBrandLogo(localStorage.getItem('saas_brand_logo') || '');
-      setBrandPrimaryColor(localStorage.getItem('saas_brand_primary_color') || '#1e53e4');
+      setBrandPrimaryColor(localStorage.getItem('saas_brand_primary_color') || '#6d28d9');
+      setSyncThresholdMB(parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5'));
+      setCurrentOfflineWeightMB(getPendingDataVolumeMB());
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [language]);
 
   // Handle active modules verification & redirect
   React.useEffect(() => {
@@ -651,6 +772,74 @@ export default function App() {
   React.useEffect(() => {
     document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', 'light');
+  }, []);
+
+  // Handle Read-Only Mode enforcement for Observers
+  React.useEffect(() => {
+    let observer: MutationObserver | null = null;
+
+    const applyReadOnlyEnforcement = () => {
+      const isReadOnly = localStorage.getItem('saas_read_only_mode') === 'true';
+      if (isReadOnly) {
+        document.body.setAttribute('data-read-only', 'true');
+        
+        // Query potential edit/add/delete triggers and hide them
+        const selectors = [
+          'button', 'a', 'span.cursor-pointer', 'div.cursor-pointer', 
+          '[id*="add-"]', '[id*="edit-"]', '[id*="delete-"]'
+        ];
+        
+        const elements = document.querySelectorAll(selectors.join(', '));
+        elements.forEach((el: any) => {
+          // Strictly protect navigation, sidebars, settings modals, and authentication elements
+          if (
+            el.closest('aside') || 
+            el.closest('#system-settings-modularity-container') || 
+            el.closest('[id*="settings-modal"]') || 
+            el.closest('.fixed.inset-0.z-\\[80\\]') || 
+            el.closest('.fixed.inset-0.z-50') || // settings modal container
+            el.classList.contains('menu-tab') ||
+            el.textContent?.trim() === 'لوحة التحكم' ||
+            el.textContent?.trim() === 'إعدادات النظام'
+          ) {
+            return;
+          }
+          
+          const text = el.textContent?.trim() || '';
+          const title = el.getAttribute('title')?.trim() || '';
+          
+          const isAddText = text === 'إضافة' || text === 'اضافة' || text.startsWith('إضافة ') || text.startsWith('اضافة ') || text === 'جديد' || text === 'Add' || text === 'New' || text === 'Create';
+          const isEditText = text === 'تعديل' || text === 'تحرير' || text.startsWith('تعديل ') || text === 'Edit' || text === 'Update';
+          const isDeleteText = text === 'حذف' || text === 'مسح' || text.startsWith('حذف ') || text === 'Delete' || text === 'Remove';
+          
+          const isAddTitle = title.includes('إضافة') || title.includes('اضافة') || title.toLowerCase().includes('add') || title.toLowerCase().includes('new') || title.toLowerCase().includes('create');
+          const isEditTitle = title.includes('تعديل') || title.includes('تحرير') || title.toLowerCase().includes('edit') || title.toLowerCase().includes('update');
+          const isDeleteTitle = title.includes('حذف') || title.toLowerCase().includes('delete') || title.toLowerCase().includes('remove');
+          
+          if (isAddText || isEditText || isDeleteText || isAddTitle || isEditTitle || isDeleteTitle) {
+            el.style.setProperty('display', 'none', 'important');
+          }
+        });
+      } else {
+        document.body.removeAttribute('data-read-only');
+      }
+    };
+
+    applyReadOnlyEnforcement();
+    window.addEventListener('storage', applyReadOnlyEnforcement);
+
+    // Dynamic enforcement on any DOM adjustments/renders
+    observer = new MutationObserver(() => {
+      applyReadOnlyEnforcement();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      window.removeEventListener('storage', applyReadOnlyEnforcement);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
   }, []);
 
   // Handle role-based access control for tabs
@@ -715,15 +904,12 @@ export default function App() {
       localStorage.setItem('saas_remember_me', rememberMe ? 'true' : 'false');
       if (rememberMe) {
         localStorage.setItem('saas_is_logged_in', 'true');
-        localStorage.setItem('saas_current_user', JSON.stringify(selectedUser));
         sessionStorage.removeItem('saas_is_logged_in');
-        sessionStorage.removeItem('saas_current_user');
       } else {
         sessionStorage.setItem('saas_is_logged_in', 'true');
-        sessionStorage.setItem('saas_current_user', JSON.stringify(selectedUser));
         localStorage.removeItem('saas_is_logged_in');
-        localStorage.removeItem('saas_current_user');
       }
+      saveCurrentUserToStorage(selectedUser, rememberMe);
     }, 900);
   };
 
@@ -752,15 +938,12 @@ export default function App() {
       localStorage.setItem('saas_remember_me', tempRememberMe ? 'true' : 'false');
       if (tempRememberMe) {
         localStorage.setItem('saas_is_logged_in', 'true');
-        localStorage.setItem('saas_current_user', JSON.stringify(selectedUser));
         sessionStorage.removeItem('saas_is_logged_in');
-        sessionStorage.removeItem('saas_current_user');
       } else {
         sessionStorage.setItem('saas_is_logged_in', 'true');
-        sessionStorage.setItem('saas_current_user', JSON.stringify(selectedUser));
         localStorage.removeItem('saas_is_logged_in');
-        localStorage.removeItem('saas_current_user');
       }
+      saveCurrentUserToStorage(selectedUser, tempRememberMe);
     }, 800);
   };
 
@@ -919,15 +1102,12 @@ export default function App() {
         localStorage.setItem('saas_remember_me', rememberMe ? 'true' : 'false');
         if (rememberMe) {
           localStorage.setItem('saas_is_logged_in', 'true');
-          localStorage.setItem('saas_current_user', JSON.stringify(selectedUser));
           sessionStorage.removeItem('saas_is_logged_in');
-          sessionStorage.removeItem('saas_current_user');
         } else {
           sessionStorage.setItem('saas_is_logged_in', 'true');
-          sessionStorage.setItem('saas_current_user', JSON.stringify(selectedUser));
           localStorage.removeItem('saas_is_logged_in');
-          localStorage.removeItem('saas_current_user');
         }
+        saveCurrentUserToStorage(selectedUser, rememberMe);
         setBiometricStatus('idle');
       }, 900);
     }, 2000);
@@ -961,6 +1141,10 @@ export default function App() {
             onNavigateToTab={(tab) => {
               setActiveTab(tab);
             }}
+            onUserUpdate={(updatedUser) => {
+              setCurrentUser(updatedUser);
+              saveCurrentUserToStorage(updatedUser);
+            }}
           />
         );
       case 'vehicles':
@@ -985,6 +1169,8 @@ export default function App() {
             onAddOpenHandled={() => setOpenAddMaintenanceOnLoad(false)}
           />
         );
+      case 'external-maintenance':
+        return <ExternalMaintenance user={currentUser} />;
       case 'periodic-maintenance':
         return <PeriodicMaintenance user={currentUser} />;
       case 'workshops':
@@ -1005,15 +1191,32 @@ export default function App() {
         return <FirebaseSync user={currentUser} />;
       case 'marketing-portal':
         return (
-          <MarketingLandingPage 
-            onNavigateToSaaS={() => setActiveTab('dashboard')}
-            brandPrimaryColor={brandPrimaryColor}
-            brandName={saasBrandName}
-            brandDesc={saasBrandDesc}
-            isInsideApp={true}
-            onNavigateToTab={setActiveTab}
-            portalMode={portalMode}
-          />
+          <>
+            <style>{`
+              :root, .dark, body, html {
+                --color-brand-blue-50: ${adjustColorBrightness(brandPrimaryColor, 92)} !important;
+                --color-brand-blue-100: ${adjustColorBrightness(brandPrimaryColor, 80)} !important;
+                --color-brand-blue-250: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
+                --color-brand-blue-200: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
+                --color-brand-blue-300: ${adjustColorBrightness(brandPrimaryColor, 40)} !important;
+                --color-brand-blue-400: ${adjustColorBrightness(brandPrimaryColor, 20)} !important;
+                --color-brand-blue-500: ${brandPrimaryColor} !important;
+                --color-brand-blue-600: ${adjustColorBrightness(brandPrimaryColor, -15)} !important;
+                --color-brand-blue-700: ${adjustColorBrightness(brandPrimaryColor, -30)} !important;
+                --color-brand-blue-800: ${adjustColorBrightness(brandPrimaryColor, -45)} !important;
+                --color-brand-blue-900: ${adjustColorBrightness(brandPrimaryColor, -60)} !important;
+              }
+            `}</style>
+            <MarketingLandingPage 
+              onNavigateToSaaS={() => setActiveTab('dashboard')}
+              brandPrimaryColor={brandPrimaryColor}
+              brandName={saasBrandName}
+              brandDesc={saasBrandDesc}
+              isInsideApp={true}
+              onNavigateToTab={setActiveTab}
+              portalMode={portalMode}
+            />
+          </>
         );
       case 'marketing-admin':
         return (
@@ -1042,22 +1245,39 @@ export default function App() {
   // --- MULTI-PORTAL ROUTER GATES ---
   if (portalMode === 'marketing') {
     return (
-      <MarketingLandingPage 
-        onNavigateToSaaS={(autoLogin = true) => {
-          setPortalMode('saas');
-          localStorage.setItem('saas_portal_mode', 'saas');
-          if (autoLogin) {
-            setIsLoggedIn(true);
-            localStorage.setItem('saas_is_logged_in', 'true');
-            setCurrentUser(USERS.admin);
-            localStorage.setItem('saas_current_user', JSON.stringify(USERS.admin));
+      <>
+        <style>{`
+          :root, .dark, body, html {
+            --color-brand-blue-50: ${adjustColorBrightness(brandPrimaryColor, 92)} !important;
+            --color-brand-blue-100: ${adjustColorBrightness(brandPrimaryColor, 80)} !important;
+            --color-brand-blue-250: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
+            --color-brand-blue-200: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
+            --color-brand-blue-300: ${adjustColorBrightness(brandPrimaryColor, 40)} !important;
+            --color-brand-blue-400: ${adjustColorBrightness(brandPrimaryColor, 20)} !important;
+            --color-brand-blue-500: ${brandPrimaryColor} !important;
+            --color-brand-blue-600: ${adjustColorBrightness(brandPrimaryColor, -15)} !important;
+            --color-brand-blue-700: ${adjustColorBrightness(brandPrimaryColor, -30)} !important;
+            --color-brand-blue-800: ${adjustColorBrightness(brandPrimaryColor, -45)} !important;
+            --color-brand-blue-900: ${adjustColorBrightness(brandPrimaryColor, -60)} !important;
           }
-        }}
-        brandPrimaryColor={brandPrimaryColor}
-        brandName={saasBrandName}
-        brandDesc={saasBrandDesc}
-        portalMode={portalMode}
-      />
+        `}</style>
+        <MarketingLandingPage 
+          onNavigateToSaaS={(autoLogin = true) => {
+            setPortalMode('saas');
+            localStorage.setItem('saas_portal_mode', 'saas');
+            if (autoLogin) {
+              setIsLoggedIn(true);
+              localStorage.setItem('saas_is_logged_in', 'true');
+              setCurrentUser(USERS.admin);
+              saveCurrentUserToStorage(USERS.admin, true);
+            }
+          }}
+          brandPrimaryColor={brandPrimaryColor}
+          brandName={saasBrandName}
+          brandDesc={saasBrandDesc}
+          portalMode={portalMode}
+        />
+      </>
     );
   }
 
@@ -1644,8 +1864,8 @@ export default function App() {
                       </div>
                       <div className="text-xs text-slate-700 dark:text-slate-350 font-bold leading-normal">
                         {language === 'ar' 
-                          ? `[منظومة Axoventra - أمان]: رمز التحقق المؤقت الخاص بك لتسجيل دخول الإدارة هو: `
-                          : `[Axoventra - Safety]: Your temporary admin login verification code is: `
+                          ? `[منظومة FleetAurvexis - أمان]: رمز التحقق المؤقت الخاص بك لتسجيل دخول الإدارة هو: `
+                          : `[FleetAurvexis - Safety]: Your temporary admin login verification code is: `
                         }
                         <span className="font-mono text-base font-black tracking-wider text-amber-600 dark:text-amber-400 px-2 py-0.5 bg-amber-500/10 rounded-lg">{generated2faCode}</span>
                       </div>
@@ -1740,10 +1960,10 @@ export default function App() {
                             onClick={() => {
                               setLoginRole(item.id as UserRole);
                               setLoginError('');
-                              if (item.id === 'admin') setEmail('admin@axoventra.com');
-                              else if (item.id === 'technician') setEmail('tech@axoventra.com');
-                              else if (item.id === 'viewer') setEmail('auditor@axoventra.com');
-                              else setEmail('driver@axoventra.com');
+                              if (item.id === 'admin') setEmail('admin@fleetaurvexis.com');
+                              else if (item.id === 'technician') setEmail('tech@fleetaurvexis.com');
+                              else if (item.id === 'viewer') setEmail('auditor@fleetaurvexis.com');
+                              else setEmail('driver@fleetaurvexis.com');
                             }}
                             className={`p-3 rounded-2xl text-[11px] font-black border text-center transition-all cursor-pointer ${
                               loginRole === item.id 
@@ -2245,12 +2465,124 @@ export default function App() {
     );
   };
 
+  const renderMandatorySyncPrompt = () => {
+    const isExceeded = currentOfflineWeightMB >= syncThresholdMB;
+    if (!isLoggedIn || !currentUser || !isExceeded) return null;
+
+    return (
+      <div 
+        className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[210] flex items-center justify-center p-4 overflow-y-auto"
+        dir={dir}
+        id="mandatory-sync-blocker-overlay"
+      >
+        <div className="bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl space-y-6 text-right relative overflow-hidden">
+          {/* Accent decoration */}
+          <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-l from-rose-500 via-amber-500 to-indigo-500" />
+
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-rose-500/10 text-rose-500 rounded-2xl shrink-0 animate-pulse">
+              <AlertTriangle size={28} />
+            </div>
+            <div className="space-y-1.5 flex-1">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                {language === 'ar' ? '⚠️ إجراء إداري: المزامنة الإلزامية مطلوبة' : '⚠️ Administrative Action: Mandatory Sync Required'}
+              </h3>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider font-mono">
+                {language === 'ar' ? 'أمان قواعد البيانات السحابية' : 'Cloud Database Integrity Lock'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-semibold">
+            <p>
+              {language === 'ar'
+                ? `لقد تجاوز حجم البيانات غير المزامنة والنشطة محلياً في هذا الجهاز الحد المسموح به المحدد من قبل إدارة النظام وهو `
+                : `You have accumulated unsynced offline data that exceeds the threshold allowed by your administrator (`}
+              <span className="font-mono font-black text-rose-500 underline decoration-rose-500/30">{syncThresholdMB} MB</span>
+              {language === 'ar' ? `. يرجى الملاحظة أن الحجم المعلق حالياً هو: ` : `). Current pending size: `}
+              <span className="font-mono font-black text-rose-500">{currentOfflineWeightMB} MB</span>.
+            </p>
+            <p className="text-slate-500 dark:text-slate-400 text-[11px]">
+              {language === 'ar'
+                ? 'من أجل الحفاظ على اتساق السجلات السحابية للأسطول ومنع تعارض البيانات، يرجى تفعيل الاتصال وإجراء مزامنة إجبارية فورية لتأمين البيانات وحفظها في قاعدة بيانات Firebase.'
+                : 'To maintain clean cloud synchronizations and protect fleet registers, further local actions are locked until a mandatory cloud backup is successfully synchronized with Firebase.'}
+            </p>
+          </div>
+
+          {/* Progress or status box */}
+          {isMandatorySyncing ? (
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[11px] font-black text-indigo-500 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
+                  {mandatorySyncSuccess 
+                    ? (language === 'ar' ? '✅ اكتمل الترحيل!' : '✅ Upload complete!')
+                    : (language === 'ar' ? '🔄 جاري ترحيل وتأمين البيانات...' : '🔄 Securely uploading data...')
+                  }
+                </span>
+                <span className="font-mono text-xs text-slate-500 font-bold">{mandatorySyncProgress}%</span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden font-mono">
+                <div 
+                  className="bg-indigo-500 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${mandatorySyncProgress}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800/80 text-[11px]">
+              <div className="space-y-0.5 text-right">
+                <span className="text-slate-400">{language === 'ar' ? 'الحد المسموح:' : 'Allowed Limit:'}</span>
+                <p className="font-mono font-black text-slate-800 dark:text-slate-200">{syncThresholdMB} MB</p>
+              </div>
+              <div className="space-y-0.5 border-r border-slate-200/60 dark:border-slate-800/60 pr-3 text-right">
+                <span className="text-slate-400">{language === 'ar' ? 'الحجم الفعلي الحالي:' : 'Current Weight:'}</span>
+                <p className="font-mono font-black text-rose-500 animate-pulse">{currentOfflineWeightMB} MB</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row-reverse gap-2.5 pt-2">
+            <button
+              type="button"
+              disabled={isMandatorySyncing}
+              onClick={handleMandatorySync}
+              className="w-full sm:flex-1 py-3 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white rounded-2xl text-xs font-black shadow-md hover:opacity-90 active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>{language === 'ar' ? '🔄 تشغيل المزامنة وتصفير حد الأمان الآن' : '🔄 Sync & Reset Data Limit Now'}</span>
+            </button>
+
+            {/* Admin Override Settings Shortcut */}
+            {currentUser?.role === 'admin' && activeTab !== 'firebase-sync' && (
+              <button
+                type="button"
+                disabled={isMandatorySyncing}
+                onClick={() => {
+                  setActiveTab('firebase-sync');
+                }}
+                className="w-full sm:w-auto px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-black transition-all cursor-pointer"
+              >
+                {language === 'ar' ? 'ضبط الخصائص كمدير' : 'Adjust Limit (Admin)'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoggedIn && currentUser && currentUser.role === 'driver') {
     return (
       <DriverPortal 
         user={currentUser} 
         onLogout={handleLogout} 
         isDarkMode={isDarkMode} 
+        onRoleChange={(role) => {
+          const u = USERS[role];
+          setCurrentUser(u);
+          saveCurrentUserToStorage(u);
+        }}
       />
     );
   }
@@ -2269,26 +2601,19 @@ export default function App() {
       onRoleChange={(role) => {
         const u = USERS[role];
         setCurrentUser(u);
-        if (localStorage.getItem('saas_is_logged_in') === 'true') {
-          localStorage.setItem('saas_current_user', JSON.stringify(u));
-        } else {
-          sessionStorage.setItem('saas_current_user', JSON.stringify(u));
-        }
+        saveCurrentUserToStorage(u);
       }}
       isDarkMode={isDarkMode}
       toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
       onLogout={handleLogout}
       onUserUpdate={(updatedUser) => {
         setCurrentUser(updatedUser);
-        if (localStorage.getItem('saas_is_logged_in') === 'true') {
-          localStorage.setItem('saas_current_user', JSON.stringify(updatedUser));
-        } else {
-          sessionStorage.setItem('saas_current_user', JSON.stringify(updatedUser));
-        }
+        saveCurrentUserToStorage(updatedUser);
       }}
     >
       {renderContent()}
       {renderOfflineSyncBanner()}
+      {renderMandatorySyncPrompt()}
     </AppLayout>
   );
 }

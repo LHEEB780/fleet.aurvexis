@@ -2129,7 +2129,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shrink-0 cursor-pointer"
+                    className="px-6 py-2.5 text-xs font-black text-white bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 rounded-xl transition-colors shrink-0 cursor-pointer"
                   >
                     {isEditing ? 'حفظ تعديلات الجدول' : 'إضافة الجدول والبدء بالتتبع'}
                   </button>

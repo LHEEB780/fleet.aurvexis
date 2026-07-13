@@ -786,38 +786,52 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
 
                 <div className="space-y-1.5 flex-1 flex flex-col justify-between min-h-0">
                   {/* Top card info: Icon/Avatar + Name + Core badge */}
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-9.5 h-9.5 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 dark:bg-[#151c2e] dark:border-slate-850 shrink-0 shadow-xs flex items-center justify-center">
-                      {vehicle.iconName && VEHICLE_ICONS[vehicle.iconName] ? (
-                        (() => {
-                           const iconConfig = VEHICLE_ICONS[vehicle.iconName];
-                           const IconComp = iconConfig.component;
-                           return (
-                             <div className={`w-full h-full flex items-center justify-center ${iconConfig.bg}`}>
-                               <IconComp size={16} className={iconConfig.text} />
-                             </div>
-                           );
-                        })()
-                      ) : vehicle.image ? (
-                        <img 
-                          src={vehicle.image} 
-                          alt={vehicle.name} 
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <Truck size={14} className="text-slate-400" />
-                      )}
-                    </div>
-                    
-                    <div className="text-right flex-1 min-w-0">
-                      <h3 className="text-[11px] sm:text-[12.5px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors leading-tight">
-                        {vehicle.name}
-                      </h3>
-                      <div className="text-[8.5px] sm:text-[9.5px] text-slate-455 dark:text-slate-500 font-bold flex items-center gap-1 mt-0.5">
-                        <span className="truncate">{vehicle.type}</span>
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="w-9.5 h-9.5 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 dark:bg-[#151c2e] dark:border-slate-850 shrink-0 shadow-xs flex items-center justify-center">
+                        {vehicle.iconName && VEHICLE_ICONS[vehicle.iconName] ? (
+                          (() => {
+                             const iconConfig = VEHICLE_ICONS[vehicle.iconName];
+                             const IconComp = iconConfig.component;
+                             return (
+                               <div className={`w-full h-full flex items-center justify-center ${iconConfig.bg}`}>
+                                 <IconComp size={16} className={iconConfig.text} />
+                               </div>
+                             );
+                          })()
+                        ) : vehicle.image ? (
+                          <img 
+                            src={vehicle.image} 
+                            alt={vehicle.name} 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <Truck size={14} className="text-slate-400" />
+                        )}
+                      </div>
+                      
+                      <div className="text-right flex-1 min-w-0">
+                        <h3 className="text-[11px] sm:text-[12.5px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors leading-tight">
+                          {vehicle.name}
+                        </h3>
+                        <div className="text-[8.5px] sm:text-[9.5px] text-slate-455 dark:text-slate-500 font-bold flex items-center gap-1 mt-0.5">
+                          <span className="truncate">{vehicle.type}</span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Quick QR code button on bento card */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedVehicleForQr(vehicle);
+                      }}
+                      className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-[#151c2e] dark:hover:bg-slate-800 text-slate-400 hover:text-amber-500 border border-slate-100 dark:border-slate-850 transition-all cursor-pointer shadow-3xs shrink-0"
+                      title={language === 'ar' ? 'عرض بطاقة ملصق QR للصيانة' : 'View Operational QR Pass'}
+                    >
+                      <QrCode size={12} />
+                    </button>
                   </div>
 
                   {/* Info row with department & last maintenance date */}

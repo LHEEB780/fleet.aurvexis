@@ -686,7 +686,7 @@ export default function MaintenanceBot({
                 type="button"
                 onClick={() => handleSendMessage()}
                 disabled={isLoading || !inputText.trim()}
-                className="p-3.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400 text-white rounded-2xl transition-all cursor-pointer hover:scale-[1.03] shrink-0 active:scale-[0.97] flex items-center justify-center border border-violet-500/10 shadow-md"
+                className="p-3.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400 text-white rounded-2xl transition-all cursor-pointer hover:scale-[1.03] shrink-0 active:scale-[0.97] flex items-center justify-center border border-violet-500/10 shadow-md"
               >
                 <Send size={16} className="rtl:rotate-180" />
               </button>

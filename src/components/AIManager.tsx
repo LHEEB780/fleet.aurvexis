@@ -389,7 +389,7 @@ export default function AIManager({ isOpen, onClose }: AIManagerProps) {
                   <button 
                     onClick={() => handleSendMessage()}
                     disabled={isLoading || !inputValue.trim()}
-                    className="p-3 bg-violet-600 hover:bg-violet-750 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
+                    className="p-3 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
                   >
                     <Send size={16} className={isRtl ? 'rotate-180' : ''} />
                   </button>

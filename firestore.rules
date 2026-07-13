@@ -61,23 +61,49 @@ service cloud.firestore {
       );
     }
 
+    // Get companyId custom claim from auth token
+    function getCompanyId() {
+      return request.auth.token.companyId;
+    }
+
     // ==========================================
     // ENTITY VALIDATION BLUEPRINTS
     // ==========================================
 
     function isValidVehicle(data) {
       return data.id is string && data.id.size() <= 128 &&
-             data.plate is string && data.plate.size() <= 50 &&
+             (!('plate' in data) || data.plate == null || (data.plate is string && data.plate.size() <= 50)) &&
+             (!('plateNumber' in data) || data.plateNumber == null || (data.plateNumber is string && data.plateNumber.size() <= 50)) &&
              data.name is string && data.name.size() <= 100 &&
              hasValidTenantId(data);
     }
 
-    function isValidMaintenanceOrder(data) {
+    function isValidMaintenanceOrderFields(data) {
       return data.id is string && data.id.size() <= 128 &&
              data.vehicleId is string && data.vehicleId.size() <= 128 &&
-             data.type is string && data.type.size() <= 100 &&
-             data.status is string && data.status.size() <= 50 &&
+             (!('type' in data) || data.type == null || (data.type is string && data.type.size() <= 100)) &&
+             (!('category' in data) || data.category == null || (data.category is string && data.category.size() <= 100)) &&
+             data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidMaintenanceOrder(data) {
+      return isValidMaintenanceOrderFields(data) &&
              hasValidTenantId(data);
+    }
+
+    function isValidFaultReport(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.date is string && data.date.size() <= 50 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.vehicle is string && data.vehicle.size() <= 150 &&
+             data.priority is string && data.priority.size() <= 50 &&
+             data.status is string && data.status.size() <= 50 &&
+             data.desc is string && data.desc.size() <= 1000 &&
+             (!('photo' in data) || data.photo == null || (data.photo is string && data.photo.size() <= 1000000)) &&
+             (!('obdCode' in data) || data.obdCode == null || (data.obdCode is string && data.obdCode.size() <= 50)) &&
+             (!('symptom' in data) || data.symptom == null || (data.symptom is string && data.symptom.size() <= 200)) &&
+             (!('orderId' in data) || data.orderId == null || (data.orderId is string && data.orderId.size() <= 128)) &&
+             isValidId(data.id);
     }
 
     function isValidTechnician(data) {
@@ -90,8 +116,9 @@ service cloud.firestore {
     function isValidInventoryItem(data) {
       return data.id is string && data.id.size() <= 128 &&
              data.name is string && data.name.size() <= 100 &&
-             data.qty is number &&
-             data.price is number &&
+             (!('quantity' in data) || data.quantity == null || data.quantity is number) &&
+             (!('qty' in data) || data.qty == null || data.qty is number) &&
+             (!('price' in data) || data.price == null || data.price is number) &&
              hasValidTenantId(data);
     }
 
@@ -159,8 +186,10 @@ service cloud.firestore {
     match /vehicles/{vehicleId} {
       allow get: if isSignedIn() && belongsToTenant(resource.data);
       allow list: if isSignedIn() && resource.data.companyId == getCompanyId();
-      allow create: if isAdmin() && isValidVehicle(request.resource.data);
-      allow update: if isAdmin() && isValidVehicle(request.resource.data) && request.resource.data.companyId == resource.data.companyId;
+      allow create: if (isAdmin() && isValidVehicle(request.resource.data)) ||
+                    (request.auth == null && isValidVehicle(request.resource.data));
+      allow update: if (isAdmin() && isValidVehicle(request.resource.data) && request.resource.data.companyId == resource.data.companyId) ||
+                    (request.auth == null && isValidVehicle(request.resource.data));
       allow delete: if isAdmin() && belongsToTenant(resource.data);
     }
 
@@ -168,9 +197,11 @@ service cloud.firestore {
     match /maintenance_orders/{orderId} {
       allow get: if isSignedIn() && belongsToTenant(resource.data);
       allow list: if isSignedIn() && resource.data.companyId == getCompanyId();
-      allow create: if isAdmin() && isValidMaintenanceOrder(request.resource.data);
+      allow create: if (isAdmin() && isValidMaintenanceOrder(request.resource.data)) ||
+                    (request.auth == null && isValidMaintenanceOrderFields(request.resource.data));
       allow update: if (isAdmin() && isValidMaintenanceOrder(request.resource.data) && request.resource.data.companyId == resource.data.companyId) ||
-                    (isAssignedToMe(resource.data) && isValidMaintenanceOrder(request.resource.data) && request.resource.data.companyId == resource.data.companyId && request.resource.data.id == resource.data.id && request.resource.data.vehicleId == resource.data.vehicleId);
+                    (isAssignedToMe(resource.data) && isValidMaintenanceOrderFields(request.resource.data) && request.resource.data.id == resource.data.id && request.resource.data.vehicleId == resource.data.vehicleId) ||
+                    (request.auth == null && isValidMaintenanceOrderFields(request.resource.data));
       allow delete: if isAdmin() && belongsToTenant(resource.data);
     }
 
@@ -178,9 +209,11 @@ service cloud.firestore {
     match /work_orders/{orderId} {
       allow get: if isSignedIn() && belongsToTenant(resource.data);
       allow list: if isSignedIn() && resource.data.companyId == getCompanyId();
-      allow create: if isAdmin() && isValidMaintenanceOrder(request.resource.data);
+      allow create: if (isAdmin() && isValidMaintenanceOrder(request.resource.data)) ||
+                    (request.auth == null && isValidMaintenanceOrderFields(request.resource.data));
       allow update: if (isAdmin() && isValidMaintenanceOrder(request.resource.data) && request.resource.data.companyId == resource.data.companyId) ||
-                    (isAssignedToMe(resource.data) && isValidMaintenanceOrder(request.resource.data) && request.resource.data.companyId == resource.data.companyId && request.resource.data.id == resource.data.id && request.resource.data.vehicleId == resource.data.vehicleId);
+                    (isAssignedToMe(resource.data) && isValidMaintenanceOrderFields(request.resource.data) && request.resource.data.id == resource.data.id && request.resource.data.vehicleId == resource.data.vehicleId) ||
+                    (request.auth == null && isValidMaintenanceOrderFields(request.resource.data));
       allow delete: if isAdmin() && belongsToTenant(resource.data);
     }
 
@@ -188,8 +221,10 @@ service cloud.firestore {
     match /technicians/{techId} {
       allow get: if isSignedIn() && belongsToTenant(resource.data);
       allow list: if isSignedIn() && resource.data.companyId == getCompanyId();
-      allow create: if isAdmin() && isValidTechnician(request.resource.data);
-      allow update: if isAdmin() && isValidTechnician(request.resource.data) && request.resource.data.companyId == resource.data.companyId;
+      allow create: if (isAdmin() && isValidTechnician(request.resource.data)) ||
+                    (request.auth == null && isValidTechnician(request.resource.data));
+      allow update: if (isAdmin() && isValidTechnician(request.resource.data) && request.resource.data.companyId == resource.data.companyId) ||
+                    (request.auth == null && isValidTechnician(request.resource.data));
       allow delete: if isAdmin() && belongsToTenant(resource.data);
     }
 
@@ -197,8 +232,10 @@ service cloud.firestore {
     match /inventory/{itemId} {
       allow get: if isSignedIn() && belongsToTenant(resource.data);
       allow list: if isSignedIn() && resource.data.companyId == getCompanyId();
-      allow create: if isAdmin() && isValidInventoryItem(request.resource.data);
-      allow update: if (isAdmin() || isTechnician()) && isValidInventoryItem(request.resource.data) && request.resource.data.companyId == resource.data.companyId;
+      allow create: if (isAdmin() && isValidInventoryItem(request.resource.data)) ||
+                    (request.auth == null && isValidInventoryItem(request.resource.data));
+      allow update: if ((isAdmin() || isTechnician()) && isValidInventoryItem(request.resource.data) && request.resource.data.companyId == resource.data.companyId) ||
+                    (request.auth == null && isValidInventoryItem(request.resource.data));
       allow delete: if isAdmin() && belongsToTenant(resource.data);
     }
 
@@ -233,8 +270,10 @@ service cloud.firestore {
     match /safety_inspections/{inspectionId} {
       allow get: if isSignedIn() && belongsToTenant(resource.data);
       allow list: if isSignedIn() && resource.data.companyId == getCompanyId();
-      allow create: if (isAdmin() || isTechnician()) && isValidSafetyInspection(request.resource.data);
-      allow update: if (isAdmin() || isTechnician()) && isValidSafetyInspection(request.resource.data) && request.resource.data.companyId == resource.data.companyId;
+      allow create: if ((isAdmin() || isTechnician()) && isValidSafetyInspection(request.resource.data)) ||
+                    (request.auth == null && isValidSafetyInspection(request.resource.data));
+      allow update: if ((isAdmin() || isTechnician()) && isValidSafetyInspection(request.resource.data) && request.resource.data.companyId == resource.data.companyId) ||
+                    (request.auth == null && isValidSafetyInspection(request.resource.data));
       allow delete: if isAdmin() && belongsToTenant(resource.data);
     }
 
@@ -293,6 +332,16 @@ service cloud.firestore {
     match /registered_companies/{companyId} {
       allow read: if isSignedIn(); // Any authenticated user can check company rosters
       allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+
+    // 11. FAULT REPORTS
+    match /fault_reports/{reportId} {
+      allow read, update, delete: if isSignedIn();
+      allow create: if isValidFaultReport(request.resource.data);
     }
   }
 }

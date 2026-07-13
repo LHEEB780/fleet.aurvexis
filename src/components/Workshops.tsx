@@ -1145,9 +1145,14 @@ export default function Workshops({ user }: { user?: User }) {
                     </div>
                     
                     <div className="text-right flex-1 min-w-0">
-                      <h3 className="text-[11px] sm:text-[12.5px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors leading-tight" title={ws.name}>
-                        {ws.name}
-                      </h3>
+                      <div className="flex items-center gap-1 min-w-0">
+                        {ws.isExternal && (
+                          <span className="px-1 py-0.5 rounded bg-purple-600 text-white text-[7.5px] font-black shrink-0 animate-pulse">خارجية</span>
+                        )}
+                        <h3 className="text-[11px] sm:text-[12.5px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors leading-tight" title={ws.name}>
+                          {ws.name}
+                        </h3>
+                      </div>
                       <div className="text-[8.5px] sm:text-[9.5px] text-slate-455 dark:text-slate-500 font-bold flex items-center gap-1 mt-0.5">
                         <MapPin size={8} className="text-slate-450 shrink-0" />
                         <span className="truncate">{ws.location ? (ws.location.split('(')[0] || '').trim() : 'غير محدد'}</span>
@@ -1158,8 +1163,8 @@ export default function Workshops({ user }: { user?: User }) {
                   {/* Sub-specialty classification text badge */}
                   <div className="flex items-center justify-between text-[8.5px] sm:text-[9.5px] font-bold text-slate-500 dark:text-slate-405 gap-1 border-t border-slate-50 dark:border-slate-850/40 pt-1.5">
                     <span className="text-[9px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500">التخصص الفني:</span>
-                    <span className="text-[9.5px] font-black tracking-wider uppercase bg-slate-50 dark:bg-slate-900/60 px-1.5 py-0.5 rounded-md min-w-[50px] text-center">
-                      {specText[ws.specialization]}
+                    <span className={`text-[9.5px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-md min-w-[50px] text-center ${ws.isExternal ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400' : 'bg-slate-50 dark:bg-slate-900/60'}`}>
+                      {ws.isExternal ? 'صيانة خارجية متعاقدة' : specText[ws.specialization]}
                     </span>
                   </div>
 

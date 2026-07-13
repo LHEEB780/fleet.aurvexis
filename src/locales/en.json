@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Axoventra",
+    "appName": "FleetAurvexis",
     "search": "Smart search by license plate or code...",
     "darkMode": "Dark Mode",
     "lightMode": "Light Mode",
@@ -42,6 +42,7 @@
     "drivers": "Driver & Authorization Management",
     "driver-handover": "Technical Vehicle Handover",
     "maintenance": "Manage Maintenance Orders",
+    "external-maintenance": "External Maintenance Management",
     "periodic": "Manage Periodic Maintenance",
     "periodic-maintenance": "Manage Periodic Maintenance",
     "workshops": "Manage Workshops & Field Load",

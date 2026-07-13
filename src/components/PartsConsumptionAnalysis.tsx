@@ -12,7 +12,8 @@ import {
   Area,
   PieChart,
   Pie,
-  Legend
+  Legend,
+  LabelList
 } from 'recharts';
 import { 
   Wrench, 
@@ -323,6 +324,84 @@ export function PartsConsumptionAnalysis({ vehicles, orders, inventory, language
       .slice(0, 3);
   }, [aggregatedParts]);
 
+  // Helper to dynamically calculate color brightness and return high-contrast text color
+  const getContrastColor = (fillColor: string) => {
+    // Map gradients to their dominant hex value to check brightness
+    let hex = '#4338ca'; // Default dark indigo for colorCountGrad
+    if (fillColor.includes('colorCostGrad')) {
+      hex = '#10b981'; // Vibrant emerald
+    } else if (fillColor.includes('colorLowStockGrad')) {
+      hex = '#ef4444'; // Red for warning
+    } else if (fillColor.includes('colorCountGrad')) {
+      hex = '#6366f1'; // Indigo
+    } else if (fillColor.startsWith('#')) {
+      hex = fillColor;
+    }
+
+    // Convert hex to R, G, B
+    const cleanHex = hex.replace('#', '');
+    const r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+    const g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+    const b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+
+    // Relative luminance formula (YIQ / W3C standard)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // If brightness is high, return dark slate (#0f172a) for maximum readability, otherwise return pure white (#ffffff)
+    return brightness > 140 ? '#0f172a' : '#ffffff';
+  };
+
+  // Custom bar label component to display value inside/outside the horizontal bar
+  const renderCustomBarLabel = (props: any) => {
+    const { x, y, width, height, value, index } = props;
+    if (value === undefined || value === null) return null;
+
+    const entry = aggregatedParts.slice(0, 7)[index];
+    if (!entry) return null;
+
+    const isLowStock = entry.currentStock <= entry.minStock;
+
+    // Check bar width to decide if label fits inside or should be outside
+    const isWideEnough = width > 60;
+    
+    // Choose dynamic gradient URL or hex fill
+    let fillUrl = "url(#colorCountGrad)";
+    if (isLowStock) {
+      fillUrl = "url(#colorLowStockGrad)";
+    } else if (sortBy === 'estCost') {
+      fillUrl = "url(#colorCostGrad)";
+    }
+
+    // Determine the dynamic high-contrast text color based on background brightness
+    const textColor = getContrastColor(fillUrl);
+
+    // Set label coordinates and alignment
+    const labelX = isWideEnough ? x + width - 8 : x + width + 8;
+    const textAnchor = isWideEnough ? 'end' : 'start';
+    
+    // Outside label uses standard slate color depending on the dark/light mode
+    const labelColor = isWideEnough ? textColor : '#64748b';
+
+    // Format the value based on what we are sorting by
+    const formattedValue = sortBy === 'estCost' 
+      ? `${value.toLocaleString()}` 
+      : value;
+
+    return (
+      <text
+        x={labelX}
+        y={y + height / 2}
+        fill={labelColor}
+        fontSize={9}
+        fontWeight="bold"
+        textAnchor={textAnchor}
+        dominantBaseline="central"
+      >
+        {formattedValue}
+      </text>
+    );
+  };
+
   return (
     <div className="space-y-6">
       
@@ -532,7 +611,7 @@ export function PartsConsumptionAnalysis({ vehicles, orders, inventory, language
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{sortBy === 'count' ? t.timesConsumed : t.estimatedCost}</span>
           </div>
 
-          <div className="h-64">
+          <div className="h-64" dir="ltr">
             {aggregatedParts.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 text-xs">
                 <AlertTriangle size={30} className="mb-2 text-slate-300" />
@@ -540,11 +619,38 @@ export function PartsConsumptionAnalysis({ vehicles, orders, inventory, language
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={aggregatedParts.slice(0, 7)} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                <BarChart data={aggregatedParts.slice(0, 7)} layout="vertical" margin={{ top: 5, right: 15, left: 5, bottom: 5 }}>
+                  <defs>
+                    {/* Gradient for Count (Quantity/Usage) - Vibrant Blue-to-Indigo */}
+                    <linearGradient id="colorCountGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#6366f1" />
+                      <stop offset="100%" stopColor="#4338ca" />
+                    </linearGradient>
+                    
+                    {/* Gradient for Cost - Premium Emerald-to-Teal */}
+                    <linearGradient id="colorCostGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#34d399" />
+                      <stop offset="100%" stopColor="#059669" />
+                    </linearGradient>
+                    
+                    {/* Gradient for Critically Low Stock - Warning Coral-to-Red */}
+                    <linearGradient id="colorLowStockGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#f43f5e" />
+                      <stop offset="100%" stopColor="#be123c" />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:hidden" />
                   <CartesianGrid strokeDasharray="3 3" stroke="#1c2534" className="hidden dark:block" />
                   <XAxis type="number" stroke="#94a3b8" fontSize={9} tickLine={false} />
-                  <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={10} width={120} tickLine={false} />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    stroke="#94a3b8" 
+                    fontSize={10} 
+                    width={140} 
+                    tickLine={false} 
+                    tickFormatter={(value) => value.length > 20 ? value.substring(0, 18) + '...' : value}
+                  />
                   <Tooltip 
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
@@ -554,18 +660,25 @@ export function PartsConsumptionAnalysis({ vehicles, orders, inventory, language
                             <p className="font-extrabold">{data.name}</p>
                             <p className="text-slate-350">{language === 'ar' ? 'عدد السحوبات:' : 'Withdrawals count:'} <span className="font-mono text-white font-black">{data.count}</span></p>
                             <p className="text-slate-400">{language === 'ar' ? 'التكلفة الإجمالية:' : 'Total Cost:'} <span className="font-mono text-emerald-400 font-bold">{data.estCost.toLocaleString()} {t.costCurrency}</span></p>
-                            <p className="text-[10px] text-slate-450">{language === 'ar' ? 'الرصيد بالرفوف:' : 'In stock:'} {data.currentStock}</p>
+                            <p className="text-[10px] text-slate-450">{language === 'ar' ? 'الرصيد بالرفوف:' : 'In stock:'} {data.currentStock} {data.currentStock <= data.minStock ? `(${language === 'ar' ? 'منخفض!' : 'Low!'})` : ''}</p>
                           </div>
                         );
                       }
                       return null;
                     }}
                   />
-                  <Bar dataKey={sortBy === 'count' ? 'count' : 'estCost'} fill="#4f46e5" radius={[0, 4, 4, 0]}>
+                  <Bar dataKey={sortBy === 'count' ? 'count' : 'estCost'} radius={[0, 4, 4, 0]}>
                     {aggregatedParts.slice(0, 7).map((entry, index) => {
                       const isLowStock = entry.currentStock <= entry.minStock;
-                      return <Cell key={`cell-${index}`} fill={isLowStock ? '#ef4444' : '#6366f1'} />;
+                      let fillUrl = "url(#colorCountGrad)";
+                      if (isLowStock) {
+                        fillUrl = "url(#colorLowStockGrad)";
+                      } else if (sortBy === 'estCost') {
+                        fillUrl = "url(#colorCostGrad)";
+                      }
+                      return <Cell key={`cell-${index}`} fill={fillUrl} />;
                     })}
+                    <LabelList dataKey={sortBy === 'count' ? 'count' : 'estCost'} content={renderCustomBarLabel} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

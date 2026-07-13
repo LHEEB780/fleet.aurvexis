@@ -1667,7 +1667,7 @@ export default function Drivers({ user }: DriversProps) {
                     <button
                       type="button"
                       onClick={() => setSelectedDetailDriver(null)}
-                      className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-indigo-650 dark:hover:bg-indigo-600 rounded-xl text-xs font-black transition-all cursor-pointer"
+                      className="px-5 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-xl text-xs font-black transition-all cursor-pointer"
                     >
                       {language === 'ar' ? 'إغلاق نافذة المراقبة' : 'Exit Analytics Window'}
                     </button>

@@ -26,6 +26,7 @@ export const TAB_LABELS: Record<string, { ar: string; en: string; icon: React.Re
   'driver-handover': { ar: 'تسليم واستلام العجلات الفني', en: 'Driver Handover', icon: <ClipboardCheck size={14} /> },
   workshops: { ar: 'إدارة الورش والضغط الميداني', en: 'Workshops & Field Load', icon: <Building2 size={14} /> },
   maintenance: { ar: 'إدارة أوامر الصيانة', en: 'Maintenance Work Orders', icon: <Wrench size={14} /> },
+  'external-maintenance': { ar: 'إدارة الصيانة الخارجية', en: 'External Maintenance Management', icon: <Wrench size={14} /> },
   'periodic-maintenance': { ar: 'إدارة الصيانة الدورية', en: 'Periodic Maintenance', icon: <Calendar size={14} /> },
   technicians: { ar: 'إدارة الفنيين والعاملين', en: 'Technicians & Staff', icon: <Users size={14} /> },
   inventory: { ar: 'إدارة المخزن والقطع', en: 'Inventory & Spare Parts', icon: <Warehouse size={14} /> },

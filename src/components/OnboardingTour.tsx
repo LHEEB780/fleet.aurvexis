@@ -252,7 +252,7 @@ export default function OnboardingTour({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="px-5 py-2.5 text-white bg-violet-600 hover:bg-violet-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md shadow-violet-500/10 hover:shadow-violet-500/20 transition-all transform hover:scale-[102%] active:scale-[98%]"
+                  className="px-5 py-2.5 text-white bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-md shadow-violet-500/10 hover:shadow-violet-500/20 transition-all transform hover:scale-[102%] active:scale-[98%]"
                 >
                   <span>{isRtl ? 'التالي' : 'Next Step'}</span>
                   {isRtl ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}

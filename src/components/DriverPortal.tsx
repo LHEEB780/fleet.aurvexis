@@ -23,7 +23,9 @@ import {
   Sparkles,
   Camera,
   LogOut,
-  Calendar
+  Calendar,
+  Shield,
+  ChevronDown
 } from 'lucide-react';
 import { 
   Radar, 
@@ -34,20 +36,22 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { useLanguage } from '../services/LanguageContext';
-import { User as AppUser, Vehicle, Driver } from '../types';
+import { User as AppUser, UserRole, Vehicle, Driver } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface DriverPortalProps {
   user: AppUser;
   onLogout: () => void;
   isDarkMode: boolean;
+  onRoleChange?: (role: UserRole) => void;
 }
 
-export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPortalProps) {
+export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange }: DriverPortalProps) {
   const { language, t, dir } = useLanguage();
   
   // Tabs: 'home' | 'checklist' | 'report' | 'history'
   const [activeSubTab, setActiveSubTab] = useState<'home' | 'checklist' | 'report' | 'history'>('home');
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   
   // Mock Driver States
   const [safetyScore, setSafetyScore] = useState(94);
@@ -79,6 +83,9 @@ export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPorta
   const [reportVehicle, setReportVehicle] = useState('toyota-hilux');
   const [reportSubmitted, setReportSubmitted] = useState(false);
   const [attachedPhoto, setAttachedPhoto] = useState<string | null>(null);
+  const [obdCode, setObdCode] = useState('');
+  const [selectedSymptom, setSelectedSymptom] = useState('');
+  const [obdError, setObdError] = useState('');
   
   // History of Submitted records (initialized with some mock logs)
   const [submittedHandovers, setSubmittedHandovers] = useState<any[]>([
@@ -100,18 +107,28 @@ export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPorta
     }
   ]);
   
-  const [submittedFaults, setSubmittedFaults] = useState<any[]>([
-    {
-      id: 'FLT-4432',
-      date: '2026-05-25',
-      category: 'electrical',
-      vehicle: 'تويوتا هيلوكس HD - [ب ل ط ٧٧٦]',
-      priority: 'low',
-      status: 'resolved',
-      desc: 'مصباح الضباب الأمامي الأيمن لا يعمل بشكل مستمر.',
-      resolution: 'تم استبدال المصباح التالف بآخر جديد في ورشة الصيانة المركزية.'
+  const [submittedFaults, setSubmittedFaults] = useState<any[]>(() => {
+    const saved = localStorage.getItem('driver_submitted_faults');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { }
     }
-  ]);
+    return [
+      {
+        id: 'FLT-4432',
+        date: '2026-05-25',
+        category: 'electrical',
+        vehicle: 'تويوتا هيلوكس HD - [ب ل ط ٧٧٦]',
+        priority: 'low',
+        status: 'resolved',
+        desc: 'مصباح الضباب الأمامي الأيمن لا يعمل بشكل مستمر.',
+        resolution: 'تم استبدال المصباح التالف بآخر جديد في ورشة الصيانة المركزية.'
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('driver_submitted_faults', JSON.stringify(submittedFaults));
+  }, [submittedFaults]);
 
   // Trip simulator clock interval
   useEffect(() => {
@@ -171,29 +188,98 @@ export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPorta
     }, 2000);
   };
 
-  const handleFaultSubmit = (e: React.FormEvent) => {
+  const handleFaultSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reportDesc.trim()) return;
     
+    if (obdCode.trim() !== '') {
+      const obdPattern = /^[pPcCbBuU][0-9]{4}$/;
+      if (!obdPattern.test(obdCode.trim())) {
+        setObdError(
+          language === 'ar'
+            ? 'كود عطل OBD-II غير صالح. يجب أن يتكون من حرف واحد (P, C, B, U) متبوعاً بـ 4 أرقام (مثال: P0300, P0171).'
+            : 'Invalid OBD-II trouble code. Must start with one letter (P, C, B, U) followed by 4 digits (e.g., P0300, P0171).'
+        );
+        return;
+      }
+    }
+    setObdError('');
+    
+    const faultId = 'FLT-' + Math.floor(1000 + Math.random() * 9000);
+    const orderId = 'WO-' + Date.now();
+
     const newFault = {
-      id: 'FLT-' + Math.floor(1000 + Math.random() * 9000),
+      id: faultId,
       date: new Date().toISOString().split('T')[0],
       category: reportCategory,
       vehicle: reportVehicle === 'toyota-hilux' ? 'تويوتا هيلوكس HD - [ب ل ط ٧٧٦]' : 'مرسيدس أكتروس ثقيل - [م ط ر ٠١٢]',
       priority: reportPriority,
       status: 'pending',
       desc: reportDesc,
-      photo: attachedPhoto
+      photo: attachedPhoto,
+      obdCode: obdCode.trim().toUpperCase(),
+      symptom: selectedSymptom,
+      orderId: orderId
     };
+
+    // Construct MaintenanceOrder
+    const newOrder: any = {
+      id: orderId,
+      vehicleId: reportVehicle,
+      orderNumber: 'WO-2026-' + Math.floor(100 + Math.random() * 900),
+      date: new Date().toISOString().split('T')[0],
+      description: reportDesc,
+      category: (reportCategory === 'tires' || reportCategory === 'brakes' ? reportCategory : 'mechanical') as any,
+      status: 'pending',
+      priority: reportPriority as any,
+      progress: 0,
+      milestones: [],
+      isArchived: false,
+      lastUpdate: new Date().toISOString(),
+      obdCode: obdCode.trim().toUpperCase() || undefined,
+      symptom: selectedSymptom || undefined,
+      photoUrl: attachedPhoto || undefined
+    };
+
+    // Save maintenance order locally in fleet_maintenance_orders_v2
+    const savedOrdersRaw = localStorage.getItem('fleet_maintenance_orders_v2');
+    let currentOrders: any[] = [];
+    if (savedOrdersRaw) {
+      try {
+        currentOrders = JSON.parse(savedOrdersRaw);
+      } catch (err) {
+        console.warn('Failed to parse existing orders:', err);
+      }
+    }
+    const updatedOrders = [newOrder, ...currentOrders];
+    localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(updatedOrders));
+
+    // Save to Firebase (Cloud Firestore) if available
+    try {
+      const { saveDocument, db: firestoreDb } = await import('../services/firebase');
+      if (firestoreDb) {
+        await saveDocument('maintenance_orders', orderId, newOrder);
+        await saveDocument('fault_reports', faultId, newFault);
+        console.log('Successfully saved new maintenance order and fault report to Firebase Firestore');
+      }
+    } catch (err) {
+      console.warn('Firestore direct write failed, relies on auto-sync backup:', err);
+    }
     
     setSubmittedFaults([newFault, ...submittedFaults]);
     setReportSubmitted(true);
+
+    // Dispatch storage event to alert other components
+    window.dispatchEvent(new Event('storage'));
+
     setTimeout(() => {
       setReportSubmitted(false);
       setActiveSubTab('history');
       // Reset form
       setReportDesc('');
       setAttachedPhoto(null);
+      setObdCode('');
+      setSelectedSymptom('');
     }, 2000);
   };
 
@@ -240,6 +326,67 @@ export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPorta
               <span className="block text-[8px] text-slate-400 font-black uppercase tracking-wider">{language === 'ar' ? 'بوابة السائق الفنية' : 'Driver Portal Live'}</span>
               <span className="block text-[10px] text-slate-600 dark:text-slate-400 font-mono font-bold">UTC: 2026-05-30</span>
             </div>
+
+            {/* Quick Access / Mode Changer (Demo Only inside Driver Portal) */}
+            {onRoleChange && (
+              <div className="relative">
+                <button 
+                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                  className="h-10 flex items-center justify-center gap-1.5 px-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-sm cursor-pointer shrink-0"
+                >
+                  <Shield size={14} className="text-brand-blue-600" />
+                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 hidden md:block">
+                    {language === 'ar' ? 'تبديل الصلاحية' : 'Change Role'}
+                  </span>
+                  <ChevronDown size={12} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <AnimatePresence>
+                  {roleDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-20" onClick={() => setRoleDropdownOpen(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className={`absolute top-12 w-52 bg-white dark:bg-slate-800 border border-slate-150 dark:border-slate-700 rounded-2xl shadow-xl z-30 p-2 overflow-hidden ${
+                          dir === 'rtl' ? 'left-0' : 'right-0'
+                        }`}
+                      >
+                        <p className={`px-3 py-2 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-550 ${
+                          dir === 'rtl' ? 'text-right' : 'text-left'
+                        }`}>
+                          {language === 'ar' ? 'تبديل الصلاحيات الفورية' : 'Instant Role Simulation'}
+                        </p>
+                        {[
+                          { id: 'admin', labelAr: '🔑 مدير الصيانة (كامل الصلاحيات)', labelEn: '🔑 Maintenance Admin (Full)' },
+                          { id: 'technician', labelAr: '🔧 فني ميكانيك أول', labelEn: '🔧 Lead Technician' },
+                          { id: 'viewer', labelAr: '👁️ مراقب جودة ونظام (معاينة)', labelEn: '👁️ Quality Observer (Read-only)' },
+                          { id: 'driver', labelAr: '🚛 سائق نقل ثقيل (البوابة الحالية)', labelEn: '🚛 Heavy Truck Driver (Active)' }
+                        ].map((r) => (
+                          <button
+                            key={r.id}
+                            onClick={() => {
+                              onRoleChange(r.id as UserRole);
+                              setRoleDropdownOpen(false);
+                            }}
+                            className={`w-full px-4 py-2 text-[11px] font-black rounded-xl transition-colors ${
+                              dir === 'rtl' ? 'text-right' : 'text-left'
+                            } ${
+                              user.role === r.id 
+                                ? 'bg-brand-blue-50 dark:bg-brand-blue-900/30 text-brand-blue-700 dark:text-brand-blue-400' 
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                            }`}
+                          >
+                            {language === 'ar' ? r.labelAr : r.labelEn}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
             
             <button
               onClick={onLogout}
@@ -255,7 +402,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPorta
 
       {/* Driver Welcome Banner */}
       <div className="max-w-4xl mx-auto px-4 mt-6">
-        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-x-12 -translate-y-12" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/5 rounded-full -translate-x-6 translate-y-6" />
           
@@ -297,7 +444,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPorta
                 className={`px-4 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-md ${
                   isDriving 
                     ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/10' 
-                    : 'bg-white text-emerald-600 hover:bg-emerald-50 shadow-white/10'
+                    : 'bg-white text-indigo-950 hover:bg-indigo-50 shadow-white/10'
                 }`}
               >
                 <Play size={12} className={isDriving ? 'animate-pulse' : ''} />
@@ -766,6 +913,62 @@ export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPorta
                     </div>
                   </div>
 
+                  {/* OBD-II Fault Code & Direct Symptoms Selector */}
+                  <div className="grid grid-cols-2 gap-3 bg-slate-50/50 dark:bg-slate-900/30 p-3 rounded-2xl border border-slate-100 dark:border-slate-850/60">
+                    <div className="space-y-1">
+                      <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5 flex items-center gap-1">
+                        <Sparkles size={11} className="text-indigo-500 animate-pulse" />
+                        <span>{language === 'ar' ? 'كود عطل OBD-II الموحد (٥ خانات)' : 'OBD-II Fault Code (5 chars)'}</span>
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={5}
+                        value={obdCode}
+                        onChange={(e) => {
+                          setObdCode(e.target.value);
+                          if (obdError) setObdError('');
+                        }}
+                        placeholder="e.g. P0300, P0171"
+                        className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border rounded-xl text-[11px] font-black font-mono tracking-wider text-slate-800 dark:text-white uppercase outline-none transition-all ${
+                          obdError 
+                            ? 'border-rose-500 focus:ring-1 focus:ring-rose-500' 
+                            : 'border-slate-200 dark:border-slate-850 focus:border-emerald-500'
+                        }`}
+                      />
+                      {obdError ? (
+                        <span className="block text-[8px] text-rose-500 font-bold leading-normal mt-0.5 animate-pulse">
+                          {obdError}
+                        </span>
+                      ) : (
+                        <span className="block text-[8px] text-slate-450 font-semibold leading-normal mt-0.5">
+                          {language === 'ar' ? 'مثال: P0300 أو P0171 (اختياري)' : 'e.g., P0300 or P0171 (optional)'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
+                        {language === 'ar' ? 'الأعراض المباشرة المشهودة (Direct Observed)' : 'Direct Observed Symptoms'}
+                      </label>
+                      <select
+                        value={selectedSymptom}
+                        onChange={(e) => setSelectedSymptom(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl text-[11px] font-black text-slate-800 dark:text-white"
+                      >
+                        <option value="" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '-- اختر العَرَض الرئيسي --' : '-- Select Symptom --'}</option>
+                        <option value="overheating" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '🔥 حرارة زائدة بالرادياتير' : '🔥 Engine Overheating'}</option>
+                        <option value="noise" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '🔊 أصوات غريبة / طقطقة محرك' : '🔊 Strange Noise / Knocking'}</option>
+                        <option value="vibration" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '📳 اهتزاز شديد أثناء الحركة' : '📳 Heavy Steering Vibration'}</option>
+                        <option value="leak" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '💧 تسريب سوائل/زيت أسفل المركبة' : '💧 Fluid/Oil Leakage'}</option>
+                        <option value="power_loss" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '📉 ضعف عزم وتسارع السيارة' : '📉 Severe Power Loss'}</option>
+                        <option value="battery" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '🔋 صعوبة تشغيل المحرك (ضعف بطارية)' : '🔋 Engine Crank Hesitation'}</option>
+                      </select>
+                      <span className="block text-[8px] text-slate-450 font-semibold leading-normal mt-0.5">
+                        {language === 'ar' ? 'حدد العرض لتسهيل الفحص الأولي' : 'Select to assist preliminary diagnostic'}
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Priority level */}
                   <div className="space-y-1">
                     <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
@@ -937,6 +1140,29 @@ export default function DriverPortal({ user, onLogout, isDarkMode }: DriverPorta
                           </span>
                         </div>
                       </div>
+
+                      {(record.obdCode || record.symptom) && (
+                        <div className="flex flex-wrap gap-1.5 pb-0.5" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                          {record.obdCode && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg text-[9px] font-black font-mono">
+                              📟 OBD-II: {record.obdCode}
+                            </span>
+                          )}
+                          {record.symptom && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg text-[9px] font-black">
+                              ⚠️ {
+                                record.symptom === 'overheating' ? (language === 'ar' ? 'حرارة زائدة بالرادياتير' : 'Engine Overheating') :
+                                record.symptom === 'noise' ? (language === 'ar' ? 'أصوات غريبة / طقطقة محرك' : 'Strange Noise / Knocking') :
+                                record.symptom === 'vibration' ? (language === 'ar' ? 'اهتزاز شديد أثناء الحركة' : 'Heavy Steering Vibration') :
+                                record.symptom === 'leak' ? (language === 'ar' ? 'تسريب سوائل/زيت أسفل المركبة' : 'Fluid/Oil Leakage') :
+                                record.symptom === 'power_loss' ? (language === 'ar' ? 'ضعف عزم وتسارع السيارة' : 'Severe Power Loss') :
+                                record.symptom === 'battery' ? (language === 'ar' ? 'صعوبة تشغيل المحرك (بطارية)' : 'Engine Crank Hesitation') :
+                                record.symptom
+                              }
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       <div className="text-[10px] text-slate-650 dark:text-slate-300 font-semibold bg-white dark:bg-[#0f1422] p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                         <div className="font-extrabold text-slate-500 text-[9px] mb-0.5">{language === 'ar' ? 'وصف العطل المبلغ:' : 'Reported description:'}</div>

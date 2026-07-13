@@ -62,6 +62,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Vehicle, Technician, User } from '../types';
 import VehicleQrModal from './VehicleQrModal';
+import QRCode from 'qrcode';
 import { maintenanceOrders as staticOrders } from '../data';
 import { getRealAvatarByName } from './Drivers';
 
@@ -94,7 +95,7 @@ interface RichMaintenanceOrder {
   orderNumber: string;
   date: string;
   description: string;
-  category: 'mechanical' | 'electrical' | 'cooling' | 'hydraulic' | 'bodywork';
+  category: 'mechanical' | 'electrical' | 'cooling' | 'hydraulic' | 'bodywork' | 'tires' | 'brakes';
   status: 'pending' | 'in-progress' | 'completed';
   technicianId?: string;
   priority: 'low' | 'medium' | 'high';
@@ -135,6 +136,28 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
   const [financeSubTab, setFinanceSubTab ] = useState<'bills' | 'parts'>('bills');
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [localQrUrl, setLocalQrUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (vehicle) {
+      const origin = window.location.origin + window.location.pathname;
+      const qrUrl = `${origin}?vehicleId=${vehicle.id}`;
+      QRCode.toDataURL(qrUrl, {
+        width: 256,
+        margin: 1,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        }
+      })
+        .then((url) => {
+          setLocalQrUrl(url);
+        })
+        .catch((err) => {
+          console.error('[Local QR Generation] Failed:', err);
+        });
+    }
+  }, [vehicle]);
   
   // State for specs interactive dashboard
   const [selectedTire, setSelectedTire] = useState<'FL' | 'FR' | 'ML' | 'MR' | 'RL' | 'RR'>('FL');
@@ -1067,6 +1090,63 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                             <span className="text-[8px] text-slate-400 block pb-0.5">حرارة المحرك</span>
                             <span className="text-[10px] font-mono font-black text-rose-455">88°C</span>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Interactive QR Code & Sticker Badge Card */}
+                      <div className="p-5 bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-150 dark:border-slate-800 flex flex-col gap-3 relative overflow-hidden shadow-xs text-center">
+                        <div className="absolute top-0 right-0 left-0 h-1 bg-amber-500" />
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest font-mono">ملصق QR التعريفي</span>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 font-sans flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            جاهز للمسح
+                          </span>
+                        </div>
+
+                        {/* QR Image Frame */}
+                        <div className="my-2 flex flex-col items-center justify-center">
+                          <div className="bg-white p-2 rounded-2xl border border-slate-150 shadow-xs relative flex items-center justify-center w-36 h-36 select-none group">
+                            {localQrUrl ? (
+                              <img src={localQrUrl} alt="Vehicle QR Code" className="w-full h-full object-contain" />
+                            ) : (
+                              <div className="text-[10px] text-slate-400 font-bold animate-pulse">جاري التوليد...</div>
+                            )}
+                          </div>
+                          
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 mt-2">
+                            امسح الرمز التعريفي للوصول الفوري لسجل الصيانة
+                          </span>
+                        </div>
+
+                        {/* Mini Print/Download buttons inside the sidebar details */}
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => setShowQrModal(true)}
+                            className="h-8.5 flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-all font-bold text-[10.5px] cursor-pointer shadow-xs"
+                          >
+                            <QrCode size={12} />
+                            <span>طباعة الملصق</span>
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!localQrUrl) return;
+                              const link = document.createElement('a');
+                              link.href = localQrUrl;
+                              link.download = `QR_${vehicle.plateNumber.replace(/\s+/g, '_')}.png`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                            className="h-8.5 flex items-center justify-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-850 dark:text-slate-200 rounded-xl transition-all font-bold text-[10.5px] cursor-pointer"
+                          >
+                            <Download size={12} />
+                            <span>تنزيل الرمز</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2014,7 +2094,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                                   </button>
                                   <button
                                     type="submit"
-                                    className="px-4 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-black cursor-pointer"
+                                    className="px-4 py-1 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-lg text-[10px] font-black cursor-pointer"
                                   >
                                     إضافة وحفظ
                                   </button>
@@ -2151,7 +2231,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                                 <button
                                   type="button"
                                   onClick={() => triggerFileUpload('invoice')}
-                                  className="w-full mt-3 py-1 bg-indigo-650 hover:bg-indigo-700 text-white rounded-lg text-[9px] font-black transition-all cursor-pointer flex items-center justify-center gap-1"
+                                  className="w-full mt-3 py-1 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-lg text-[9px] font-black transition-all cursor-pointer flex items-center justify-center gap-1"
                                 >
                                   <Upload size={10} />
                                   <span>رفع إيصال / فاتورة</span>

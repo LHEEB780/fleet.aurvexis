@@ -109,16 +109,27 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
     return [];
   }, []);
 
+  const workshopsList = useMemo<any[]>(() => {
+    const saved = localStorage.getItem('fleet_workshops');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  }, []);
+
   // -------------------------------------------------------------
   // Filter States
   // -------------------------------------------------------------
-  const [timeframe, setTimeframe] = useState<'all' | 'weekly' | 'monthly' | 'yearly'>('all');
+  const [timeframe, setTimeframe] = useState<'all' | 'weekly' | 'monthly' | 'yearly' | 'custom'>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('all');
   const [activeSubTab, setActiveSubTab] = useState<'financial' | 'fleet' | 'techs' | 'inventory' | 'safety' | 'parts_analysis' | 'manager_dashboard'>('manager_dashboard');
   const [selectedInspectionDetails, setSelectedInspectionDetails] = useState<any | null>(null);
   const [isBotOpen, setIsBotOpen] = useState(false);
   const [isBotMaximized, setIsBotMaximized] = useState(false);
+  const [comparisonFilter, setComparisonFilter] = useState<'all' | 'internal' | 'external'>('all');
 
   const safetyInspectionsList = useMemo(() => {
     const saved = localStorage.getItem('fleet_safety_inspections');
@@ -161,9 +172,36 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       }
 
       // Timeframe sorting
-      if (timeframe === 'weekly') {
-        // Assume recent mock check for last 7 days
-        return true; 
+      if (timeframe === 'custom') {
+        if (startDate && o.date && o.date < startDate) return false;
+        if (endDate && o.date && o.date > endDate) return false;
+      } else if (timeframe === 'weekly') {
+        if (o.date) {
+          const oDate = new Date(o.date);
+          const limitDate = new Date('2026-07-06');
+          limitDate.setDate(limitDate.getDate() - 7);
+          if (oDate < limitDate || oDate > new Date('2026-07-06')) return false;
+        } else {
+          return false;
+        }
+      } else if (timeframe === 'monthly') {
+        if (o.date) {
+          const oDate = new Date(o.date);
+          const limitDate = new Date('2026-07-06');
+          limitDate.setDate(limitDate.getDate() - 30);
+          if (oDate < limitDate || oDate > new Date('2026-07-06')) return false;
+        } else {
+          return false;
+        }
+      } else if (timeframe === 'yearly') {
+        if (o.date) {
+          const oDate = new Date(o.date);
+          const limitDate = new Date('2026-07-06');
+          limitDate.setFullYear(limitDate.getFullYear() - 1);
+          if (oDate < limitDate || oDate > new Date('2026-07-06')) return false;
+        } else {
+          return false;
+        }
       }
       return true;
     });
@@ -274,6 +312,66 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
     const totalInventoryValue = inventoryList.reduce((sum, i) => sum + (i.quantity * (i.price || 0)), 0);
     const criticalUnderstock = inventoryList.filter(i => i.quantity <= i.minQuantity).length;
 
+    // Compare internal vs external costs
+    const externalCompleted = completed.filter(o => {
+      const isExternalWorkshop = workshopsList.some(ws => ws.id === o.workshopId && ws.isExternal);
+      const hasExternalInvoice = !!(o.externalInvoiceNo || o.externalInvoiceStatus || o.externalInvoiceImage || o.externalInvoiceImages?.length);
+      return isExternalWorkshop || hasExternalInvoice;
+    });
+    const internalCompleted = completed.filter(o => !externalCompleted.includes(o));
+
+    const totalExternalCost = externalCompleted.reduce((sum, o) => sum + (o.cost || 0), 0);
+    const totalInternalCost = internalCompleted.reduce((sum, o) => sum + (o.cost || 0), 0);
+
+    const externalCount = externalCompleted.length;
+    const internalCount = internalCompleted.length;
+
+    const avgExternalCost = externalCount > 0 ? Math.round(totalExternalCost / externalCount) : 0;
+    const avgInternalCost = internalCount > 0 ? Math.round(totalInternalCost / internalCount) : 0;
+
+    // Monthly comparison structure
+    const monthlyComparison: Record<string, { internal: number; external: number }> = {
+      'يناير': { internal: 0, external: 0 },
+      'فبراير': { internal: 0, external: 0 },
+      'مارس': { internal: 0, external: 0 },
+      'أبريل': { internal: 0, external: 0 },
+      'مايو': { internal: 0, external: 0 },
+      'يونيو': { internal: 0, external: 0 },
+      'يوليو': { internal: 0, external: 0 },
+      'أغسطس': { internal: 0, external: 0 },
+      'سبتمبر': { internal: 0, external: 0 },
+      'أكتوبر': { internal: 0, external: 0 },
+      'نوفمبر': { internal: 0, external: 0 },
+      'ديسمبر': { internal: 0, external: 0 }
+    };
+
+    completed.forEach(o => {
+      if (o.date && o.cost) {
+        const monthIndex = parseInt(o.date.split('-')[1]);
+        const monthsInArabic = [
+          'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+          'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+        ];
+        if (monthIndex >= 1 && monthIndex <= 12) {
+          const monthName = monthsInArabic[monthIndex - 1];
+          const isExternal = workshopsList.some(ws => ws.id === o.workshopId && ws.isExternal) || 
+                             !!(o.externalInvoiceNo || o.externalInvoiceStatus || o.externalInvoiceImage || o.externalInvoiceImages?.length);
+          if (isExternal) {
+            monthlyComparison[monthName].external += o.cost;
+          } else {
+            monthlyComparison[monthName].internal += o.cost;
+          }
+        }
+      }
+    });
+
+    const comparisonChartData = Object.entries(monthlyComparison).map(([name, data]) => ({
+      name,
+      'صيانة داخلية': data.internal,
+      'صيانة خارجية': data.external,
+      'إجمالي': data.internal + data.external
+    }));
+
     return {
       filteredOrders,
       totalOrders: filteredOrders.length,
@@ -290,9 +388,16 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       statusPieData,
       technicianWorkload,
       totalInventoryValue,
-      criticalUnderstock
+      criticalUnderstock,
+      externalCount,
+      internalCount,
+      totalExternalCost,
+      totalInternalCost,
+      avgExternalCost,
+      avgInternalCost,
+      comparisonChartData
     };
-  }, [vehiclesList, ordersList, techniciansList, inventoryList, timeframe, selectedCategoryFilter, selectedVehicleType]);
+  }, [vehiclesList, ordersList, techniciansList, inventoryList, workshopsList, timeframe, selectedCategoryFilter, selectedVehicleType]);
 
   const fleetHealth6MonthData = useMemo(() => {
     // January to June 2026
@@ -388,6 +493,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
   };
 
   const handleExportPDF = () => {
+    const activeBrandName = localStorage.getItem('saas_brand_name') || 'FleetAurvexis';
     const tabLabels: Record<string, string> = {
       financial: 'مركز التحليل المالي والنفقات',
       manager_dashboard: 'لوحة مؤشرات المديرين (الكلفة والجاهزية)',
@@ -399,7 +505,18 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
     };
 
     const activeTabName = tabLabels[activeSubTab] || activeSubTab;
-    const timeframeLabel = timeframe === 'all' ? 'جميع الأوقات' : timeframe === 'weekly' ? 'أسبوعي' : timeframe === 'monthly' ? 'شهري' : 'سنوي';
+    let timeframeLabel = '';
+    if (timeframe === 'all') {
+      timeframeLabel = 'جميع الأوقات';
+    } else if (timeframe === 'weekly') {
+      timeframeLabel = 'آخر 7 أيام (أسبوعي)';
+    } else if (timeframe === 'monthly') {
+      timeframeLabel = 'آخر 30 يوماً (شهري)';
+    } else if (timeframe === 'yearly') {
+      timeframeLabel = 'آخر 365 يوماً (سنوي)';
+    } else if (timeframe === 'custom') {
+      timeframeLabel = `فترة مخصصة من: ${startDate || 'البداية'} إلى: ${endDate || 'اليوم'}`;
+    }
     const categoryLabel = categoryNames[selectedCategoryFilter] || selectedCategoryFilter;
     const vehicleTypeLabel = selectedVehicleType === 'all' ? 'جميع الفئات' : selectedVehicleType;
 
@@ -897,7 +1014,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
         
         <div class="print-header">
           <div class="brand-logo">
-            Axoventra
+            ${activeBrandName}
             <span class="brand-tag">لوحة الصيانة والأسطول الذكي</span>
           </div>
           <div class="document-title">
@@ -976,7 +1093,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
         </div>
 
         <div class="print-footer">
-          سجل صيانة الأسطول الذكي Axoventra © 2026 | أوراق عمل معاصرة معتمدة
+          سجل صيانة الأسطول الذكي ${activeBrandName} © 2026 | أوراق عمل معاصرة معتمدة
         </div>
 
         <script>
@@ -1120,12 +1237,13 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
           {/* Timeframe selector */}
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 block">فترة تدقيق الأوراق:</label>
-            <div className="grid grid-cols-4 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800">
+            <div className="grid grid-cols-5 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800">
               {[
                 { id: 'all', label: 'الكل' },
                 { id: 'weekly', label: 'أسبوعي' },
                 { id: 'monthly', label: 'شهري' },
-                { id: 'yearly', label: 'سنوي' }
+                { id: 'yearly', label: 'سنوي' },
+                { id: 'custom', label: 'مخصص' }
               ].map(t => (
                 <button
                   key={t.id}
@@ -1175,6 +1293,39 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
           </div>
 
         </div>
+
+        {/* Custom Date Range selector with smooth slide-down animation */}
+        <AnimatePresence>
+          {timeframe === 'custom' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-450 dark:text-slate-500 block">تاريخ البدء:</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-750 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-450 dark:text-slate-500 block">تاريخ الانتهاء:</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-750 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Main KPI Statistical cards */}
@@ -1341,12 +1492,12 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                   <p className="text-[10px] text-slate-500 mt-0.5">إجمالي التكاليف مصنفة حسب فئات المشاكل بالورشة.</p>
                 </div>
 
-                <div className="h-64 text-xs font-bold leading-none">
+                <div className="h-64 text-xs font-bold leading-none" dir="ltr">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analysis.categoryCostChartData} layout="vertical">
+                    <BarChart data={analysis.categoryCostChartData} layout="vertical" margin={{ top: 5, right: 15, left: 5, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDarkMode ? '#334155' : '#f1f5f9'} />
                       <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
-                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold', fill: '#64748B' }} width={80} />
+                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold', fill: '#64748B' }} width={90} />
                       <Tooltip 
                         contentStyle={{ 
                           backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', 
@@ -1423,6 +1574,205 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       })}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              {/* Internal vs External Comparative Analysis Block */}
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-705 shadow-soft lg:col-span-3">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-5">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                        <TrendingUp size={18} />
+                      </div>
+                      <h3 className="text-base font-black text-slate-900 dark:text-white">
+                        التحليل المقارن: تكاليف الصيانة الداخلية ضد الصيانة الخارجية
+                      </h3>
+                    </div>
+                    <p className="text-[11px] text-slate-500 max-w-2xl leading-relaxed">
+                      تفصيل مالي دقيق يقارن بين المصاريف المدفوعة داخلياً (الفنيين والقطع) والمصاريف الخارجية المسددة للورش والمراكز الخارجية المعتمدة.
+                    </p>
+                  </div>
+                  
+                  {/* Interactive Toggle Filters */}
+                  <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/60 p-1 rounded-2xl border border-slate-100 dark:border-slate-800/80">
+                    <button
+                      onClick={() => setComparisonFilter('all')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                        comparisonFilter === 'all'
+                          ? 'bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 shadow-soft'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      المقارنة الشاملة
+                    </button>
+                    <button
+                      onClick={() => setComparisonFilter('internal')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                        comparisonFilter === 'internal'
+                          ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-soft'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      صيانة داخلية فقط
+                    </button>
+                    <button
+                      onClick={() => setComparisonFilter('external')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                        comparisonFilter === 'external'
+                          ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-soft'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      صيانة خارجية فقط
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPI Overview Cards for Comparison */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  
+                  {/* Internal Total */}
+                  <div className="p-4 rounded-2xl bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/40 dark:border-indigo-900/30">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider mb-1">
+                      إجمالي تكاليف الصيانة الداخلية
+                    </span>
+                    <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono block">
+                      {analysis.totalInternalCost.toLocaleString()}
+                      <span className="text-[10px] font-bold text-slate-400 mr-1">ر.س</span>
+                    </span>
+                    <span className="text-[9px] text-slate-500 font-bold block mt-1">
+                      عدد الأوامر: {analysis.internalCount} صيانة داخلية
+                    </span>
+                  </div>
+
+                  {/* Internal Average */}
+                  <div className="p-4 rounded-2xl bg-indigo-50/30 dark:bg-indigo-950/10 border border-indigo-100/40 dark:border-indigo-900/30">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider mb-1">
+                      متوسط كلفة الصيانة الداخلية للأمر
+                    </span>
+                    <span className="text-xl font-black text-indigo-700 dark:text-indigo-350 font-mono block">
+                      {analysis.avgInternalCost.toLocaleString()}
+                      <span className="text-[10px] font-bold text-slate-400 mr-1">ر.س / أمر</span>
+                    </span>
+                    <span className="text-[9px] text-slate-500 font-bold block mt-1">
+                      الإنفاق الموزع على الكادر والقطع
+                    </span>
+                  </div>
+
+                  {/* External Total */}
+                  <div className="p-4 rounded-2xl bg-purple-50/30 dark:bg-purple-950/10 border border-purple-100/40 dark:border-purple-900/30">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider mb-1">
+                      إجمالي نفقات الصيانة الخارجية
+                    </span>
+                    <span className="text-xl font-black text-purple-600 dark:text-purple-400 font-mono block">
+                      {analysis.totalExternalCost.toLocaleString()}
+                      <span className="text-[10px] font-bold text-slate-400 mr-1">ر.س</span>
+                    </span>
+                    <span className="text-[9px] text-slate-500 font-bold block mt-1">
+                      عدد الأوامر: {analysis.externalCount} صيانة خارجية
+                    </span>
+                  </div>
+
+                  {/* External Average */}
+                  <div className="p-4 rounded-2xl bg-purple-50/30 dark:bg-purple-950/10 border border-purple-100/40 dark:border-purple-900/30">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider mb-1">
+                      متوسط كلفة الصيانة الخارجية للأمر
+                    </span>
+                    <span className="text-xl font-black text-purple-700 dark:text-purple-350 font-mono block">
+                      {analysis.avgExternalCost.toLocaleString()}
+                      <span className="text-[10px] font-bold text-slate-400 mr-1">ر.س / أمر</span>
+                    </span>
+                    <span className="text-[9px] text-slate-500 font-bold block mt-1">
+                      الفواتير والذمم المستحقة للمراكز
+                    </span>
+                  </div>
+
+                </div>
+
+                {/* Comparative Chart */}
+                <div className="h-[320px] w-full text-xs font-bold leading-none select-none relative mb-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analysis.comparisonChartData} margin={{ top: 10, right: 5, left: 5, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#334155' : '#e2e8f0'} />
+                      <XAxis 
+                        dataKey="name" 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fill: '#64748B', fontWeight: 'bold' }} 
+                      />
+                      <YAxis 
+                        tickLine={false} 
+                        tickFormatter={(val) => `${val.toLocaleString()}`}
+                        tick={{ fontSize: 10, fill: '#64748B', fontWeight: 'bold' }} 
+                        unit=" ر.س"
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', 
+                          borderRadius: '16px', 
+                          border: isDarkMode ? '1px solid #334155' : '1px solid #f1f5f9',
+                          textAlign: 'right',
+                          direction: 'rtl',
+                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' 
+                        }}
+                        itemStyle={{ color: isDarkMode ? '#f1f5f9' : '#1e293b' }}
+                      />
+                      <Legend 
+                        verticalAlign="top" 
+                        height={40} 
+                        content={() => (
+                          <div className="flex justify-center gap-6 text-xs font-bold font-sans pb-4">
+                            {(comparisonFilter === 'all' || comparisonFilter === 'internal') && (
+                              <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                                <span className="w-3 h-3 rounded bg-indigo-500 inline-block" />
+                                صيانة داخلية
+                              </span>
+                            )}
+                            {(comparisonFilter === 'all' || comparisonFilter === 'external') && (
+                              <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+                                <span className="w-3 h-3 rounded bg-purple-500 inline-block" />
+                                صيانة خارجية
+                              </span>
+                            )}
+                            {comparisonFilter === 'all' && (
+                              <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+                                <span className="w-3 h-0.5 bg-slate-400 inline-block" />
+                                إجمالي الكلفة
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      />
+                      {/* Conditional rendering based on comparisonFilter toggle */}
+                      {(comparisonFilter === 'all' || comparisonFilter === 'internal') && (
+                        <Bar dataKey="صيانة داخلية" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={comparisonFilter === 'all' ? 14 : 24} />
+                      )}
+                      {(comparisonFilter === 'all' || comparisonFilter === 'external') && (
+                        <Bar dataKey="صيانة خارجية" fill="#A855F7" radius={[4, 4, 0, 0]} barSize={comparisonFilter === 'all' ? 14 : 24} />
+                      )}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Analytical Insight Box comparing internal and external efficiency */}
+                <div className="p-4 rounded-2xl bg-violet-50/50 dark:bg-violet-950/10 border border-violet-100/40 dark:border-violet-800/20 text-xs flex items-start gap-2.5">
+                  <Sparkles size={16} className="text-violet-500 shrink-0 mt-0.5 animate-pulse" />
+                  <div className="space-y-1">
+                    <span className="font-black text-slate-850 dark:text-slate-200">
+                      رؤية تحليلية ذكية لأداء الصيانة:
+                    </span>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed font-sans">
+                      {analysis.totalExternalCost > analysis.totalInternalCost ? (
+                        <span>
+                          نفقات <strong>الصيانة الخارجية</strong> تشكل الحصة الأكبر من ميزانيتك المالية بنسبة {Math.round((analysis.totalExternalCost / (analysis.totalExpenditures || 1)) * 100)}% من إجمالي الإنفاق. يُوصى بتجهيز الورشة الداخلية بقطع الغيار السريعة ودعم أجور الكادر الفني لترحيل الأعمال البسيطة وتقليل الاعتماد على الورش الخارجية التي ترفع من كلفة الإصلاح بنسبة تقارب {Math.round(analysis.avgExternalCost / (analysis.avgInternalCost || 1))} أضعاف الصيانة الداخلية.
+                        </span>
+                      ) : (
+                        <span>
+                          تُدار ميزانية الصيانة بكفاءة تشغيلية ممتازة حيث تشكل <strong>الصيانة الداخلية</strong> العبء الأوفر من التكاليف بنسبة {Math.round((analysis.totalInternalCost / (analysis.totalExpenditures || 1)) * 100)}%. هذا يعزز الاستخدام الأمثل لمستودع القطع الخاص بك وقدرات الفنيين لديكم لتفادي الأسعار المرتفعة للورش الخارجية.
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
 

@@ -26,6 +26,11 @@ import {
   Database, 
   Search, 
   Check, 
+  Droplets,
+  Shield,
+  Disc,
+  Wind,
+  Battery,
   Building2, 
   Package, 
   FileBarChart2, 
@@ -40,8 +45,14 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
   Play,
-  Pause
+  Pause,
+  Camera,
+  UploadCloud,
+  History,
+  Phone,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -57,6 +68,7 @@ import { TechnicalPerformanceReport } from './TechnicalPerformanceReport';
 import ContextualHelp from './ContextualHelp';
 import LanguageSwitcher from './LanguageSwitcher';
 import { SignaturePad } from './SignaturePad';
+import CameraCapture from './CameraCapture';
 import { 
   BarChart, 
   Bar, 
@@ -72,8 +84,12 @@ import {
   PieChart,
   Pie,
   AreaChart,
-  Area
+  Area,
+  LabelList
 } from 'recharts';
+import SmartDiagnostic from './SmartDiagnostic';
+import VoiceNoteField from './VoiceNoteField';
+import TechnicalInspectionChecklist from './TechnicalInspectionChecklist';
 
 interface StatCardProps {
   label: string;
@@ -632,12 +648,12 @@ export function MonthlyMaintenanceComparison({ orders, language }: MonthlyMainte
   }, [routineTotal, routineCompleted, routineRate, emergencyTotal, emergencyCompleted, emergencyRate, language]);
 
   return (
-    <div className={`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-150/80 dark:border-slate-800 shadow-soft space-y-4 ${language === 'ar' ? 'text-right' : 'text-left'} transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-blue-500/15`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-150/80 dark:border-slate-800 shadow-soft space-y-4 ${language === 'ar' ? 'text-right' : 'text-left'} transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-green-500/15`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
         <div className="space-y-1.5 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-xs font-black text-slate-850 dark:text-slate-100 flex items-center gap-1.5 leading-none">
-              <span className="p-1 px-1 bg-brand-blue-50 dark:bg-brand-blue-950/40 text-brand-blue-500 rounded-lg shrink-0">
+              <span className="p-1 px-1 bg-brand-green-50 dark:bg-brand-green-950/40 text-brand-green-500 rounded-lg shrink-0">
                 <Activity size={14} />
               </span>
               <span>{language === 'ar' ? 'نسب إنجاز الصيانة الدورية مقابل الطارئة' : 'Routine vs. Emergency Completion Index'}</span>
@@ -672,7 +688,7 @@ export function MonthlyMaintenanceComparison({ orders, language }: MonthlyMainte
             {language === 'ar' ? `التحليل التفاعلي لمعدلات ونسب تقدم إغلاق المهام الميدانية لشهر ${currentMonthLabel}` : `Dynamic comparison of active repair closures for ${currentMonthLabel}`}
           </p>
         </div>
-        <span className="text-[9px] font-black bg-brand-blue-500/10 text-brand-blue-500 px-2 py-0.5 rounded-lg shrink-0 w-fit align-middle">
+        <span className="text-[9px] font-black bg-brand-green-500/10 text-brand-green-600 dark:text-brand-green-400 px-2 py-0.5 rounded-lg shrink-0 w-fit align-middle">
           {currentMonthLabel}
         </span>
       </div>
@@ -683,13 +699,13 @@ export function MonthlyMaintenanceComparison({ orders, language }: MonthlyMainte
           {/* Routine Rate Card */}
           <div className="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-805 p-3 rounded-2xl space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-slate-450 font-black">
+              <span className="text-[9px] text-slate-455 font-black">
                 {language === 'ar' ? 'معدل الصيانة الدورية المنجزة' : 'Routine Maint. Success'}
               </span>
-              <span className="w-2 h-2 rounded-full bg-brand-blue-500" />
+              <span className="w-2 h-2 rounded-full bg-brand-green-500" />
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-black font-sans text-brand-blue-500">
+              <span className="text-xl font-black font-sans text-brand-green-600 dark:text-brand-green-400">
                 {routineRate}%
               </span>
               <span className="text-[8.5px] text-slate-400 font-bold font-sans">
@@ -698,7 +714,7 @@ export function MonthlyMaintenanceComparison({ orders, language }: MonthlyMainte
             </div>
             <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <div 
-                className="bg-brand-blue-500 h-full rounded-full transition-all duration-500" 
+                className="bg-brand-green-500 h-full rounded-full transition-all duration-500" 
                 style={{ width: `${Math.max(routineRate, 2)}%` }} 
               />
             </div>
@@ -707,7 +723,7 @@ export function MonthlyMaintenanceComparison({ orders, language }: MonthlyMainte
           {/* Emergency Rate Card */}
           <div className="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-805 p-3 rounded-2xl space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[9px] text-slate-405 font-black">
+              <span className="text-[9px] text-slate-455 font-black">
                 {language === 'ar' ? 'معدل الصيانة الطارئة المستجابة' : 'Emergency Maint. Success'}
               </span>
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
@@ -1194,6 +1210,55 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
     predictionTip2: language === 'ar' ? '💡 يلاحظ تكرار استبدال الفلاتر والزيوت؛ يفضل مراجعة عقود الزيوت لضمان كفاءة التزييت وتقليل معدل الاستهلاك الدفتري لقطع الأسطول.' : '💡 High volume of filter restocks detected. Review fuel/oil lubricants standard to maximize lifetime and reduce fleet consumption.',
   };
 
+  // Helper to dynamically calculate color brightness and return high-contrast text color
+  const getContrastColor = (hex: string) => {
+    if (!hex || !hex.startsWith('#')) return '#ffffff';
+    const cleanHex = hex.replace('#', '');
+    const r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+    const g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+    const b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 140 ? '#0f172a' : '#ffffff';
+  };
+
+  // Custom bar label component to display value inside/outside the horizontal bar
+  const renderCustomBarLabel = (props: any) => {
+    const { x, y, width, height, value, index } = props;
+    if (value === undefined || value === null) return null;
+
+    const entry = consumptionData[index];
+    if (!entry) return null;
+
+    const barColor = entry.color || '#4f46e5';
+
+    // Check bar width to decide if label fits inside or should be outside
+    const isWideEnough = width > 50;
+    
+    // Determine the dynamic high-contrast text color based on background brightness
+    const textColor = getContrastColor(barColor);
+
+    // Set label coordinates and alignment
+    const labelX = isWideEnough ? x + width - 6 : x + width + 6;
+    const textAnchor = isWideEnough ? 'end' : 'start';
+    
+    // Outside label uses standard slate color depending on the dark/light mode
+    const labelColor = isWideEnough ? textColor : '#64748b';
+
+    return (
+      <text
+        x={labelX}
+        y={y + height / 2}
+        fill={labelColor}
+        fontSize={8}
+        fontWeight="bold"
+        textAnchor={textAnchor}
+        dominantBaseline="central"
+      >
+        {value}
+      </text>
+    );
+  };
+
   return (
     <div className={`bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-150/85 dark:border-slate-800 shadow-soft space-y-5 ${language === 'ar' ? 'text-right' : 'text-left'} transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-blue-500/15 animate-fadeIn`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -1289,9 +1354,9 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
         <div className="p-3 bg-slate-50 dark:bg-[#0c101c] border border-slate-100 dark:border-slate-800/80 rounded-2xl flex items-center justify-between">
           <div className="space-y-0.5">
             <span className="text-[9px] text-slate-400 block font-bold">{language === 'ar' ? 'نسبة الجاهزية للتوزيع' : 'Supply Readiness Rate'}</span>
-            <span className="text-xs font-black text-violet-600 dark:text-violet-400 font-sans">87.4%</span>
+            <span className="text-xs font-black text-brand-blue-600 dark:text-brand-blue-400 font-sans">87.4%</span>
           </div>
-          <Zap size={15} className="text-violet-500 animate-pulse" />
+          <Zap size={15} className="text-brand-blue-500 animate-pulse" />
         </div>
       </div>
 
@@ -1311,13 +1376,21 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
               <h4 className="text-[10px] font-black text-slate-700 dark:text-slate-350">
                 {language === 'ar' ? 'القطع الأكثر طلباً ومعدلات التوزيع (خلال شهر)' : 'High-Velocity Consumed Spares (Last 30 days)'}
               </h4>
-              <div className="h-44">
+              <div className="h-44" dir="ltr">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={consumptionData} layout="vertical" margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                  <BarChart data={consumptionData} layout="vertical" margin={{ top: 5, right: 15, left: 5, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:hidden" />
                     <CartesianGrid strokeDasharray="3 3" stroke="#101726" className="hidden dark:block" />
                     <XAxis type="number" stroke="#94a3b8" fontSize={8} tickLine={false} />
-                    <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={8} width={80} tickLine={false} />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      stroke="#94a3b8" 
+                      fontSize={8} 
+                      width={90} 
+                      tickLine={false} 
+                      tickFormatter={(value) => value && value.length > 18 ? value.substring(0, 16) + '...' : value}
+                    />
                     <Tooltip 
                       contentStyle={{ 
                         fontSize: '9px', 
@@ -1333,6 +1406,7 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
                       {consumptionData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
+                      <LabelList dataKey="value" content={renderCustomBarLabel} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -1414,13 +1488,21 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
                   </p>
                 </div>
               ) : (
-                <div className="h-44">
+                <div className="h-44" dir="ltr">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={vehiclePartsData} layout="vertical" margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                    <BarChart data={vehiclePartsData} layout="vertical" margin={{ top: 5, right: 15, left: 5, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:hidden" />
                       <CartesianGrid strokeDasharray="3 3" stroke="#101726" className="hidden dark:block" />
                       <XAxis type="number" stroke="#94a3b8" fontSize={8} tickLine={false} />
-                      <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={8} width={85} tickLine={false} />
+                      <YAxis 
+                        dataKey="name" 
+                        type="category" 
+                        stroke="#94a3b8" 
+                        fontSize={8} 
+                        width={95} 
+                        tickLine={false} 
+                        tickFormatter={(value) => value && value.length > 18 ? value.substring(0, 16) + '...' : value}
+                      />
                       <Tooltip 
                         contentStyle={{ 
                           fontSize: '9px', 
@@ -1449,7 +1531,7 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
             <div className="lg:col-span-2 border border-slate-105 dark:border-slate-800/60 p-4 rounded-2xl flex flex-col justify-between space-y-4 bg-slate-50/40 dark:bg-slate-950/20">
               <div className="space-y-3">
                 <h4 className="text-[10px] font-black text-brand-blue-500 flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800/60 pb-1.5">
-                  <Sparkles size={11} className="text-violet-500 shrink-0" />
+                  <Sparkles size={11} className="text-brand-blue-500 shrink-0" />
                   <span>{tSub.predictiveHeader}</span>
                 </h4>
 
@@ -1475,10 +1557,10 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
                 <div className="space-y-2">
                   <span className="text-[8px] text-slate-400 block font-bold leading-none">{tSub.criticalPrediction}:</span>
                   <div className="space-y-1.5 text-[8.5px] leading-relaxed text-slate-500 dark:text-slate-400 font-semibold pr-0.5">
-                    <p className="p-1 px-1.5 rounded-lg bg-indigo-50/40 dark:bg-indigo-950/10 border-r-2 border-indigo-500">
+                    <p className="p-1 px-1.5 rounded-lg bg-brand-blue-50/40 dark:bg-brand-blue-950/10 border-r-2 border-brand-blue-500">
                       {tSub.predictionTip1}
                     </p>
-                    <p className="p-1 px-1.5 rounded-lg bg-violet-50/40 dark:bg-violet-950/10 border-r-2 border-violet-500">
+                    <p className="p-1 px-1.5 rounded-lg bg-brand-blue-50/40 dark:bg-brand-blue-950/10 border-r-2 border-brand-blue-500">
                       {tSub.predictionTip2}
                     </p>
                   </div>
@@ -1496,15 +1578,189 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
   );
 }
 
+
+const QUICK_GUIDE_OPERATIONS = [
+  {
+    id: 'op-oil',
+    titleAr: 'تغيير زيت المحرك والفلتر',
+    titleEn: 'Engine Oil & Filter Change',
+    durationAr: '30 دقيقة',
+    durationEn: '30 mins',
+    frequencyAr: 'كل 10,000 كم',
+    frequencyEn: 'Every 10,000 km',
+    stepsAr: [
+      'تجهيز الشاحنة على الرافعة في الممر وتأمين العجلات بموانع الحركة.',
+      'تصريف الزيت القديم في الحاوية المخصصة للتأكد من خلوه من الشوائب أو القطع المعدنية.',
+      'فك فلتر الزيت المستعمل وتنظيف قاعدة الفلتر بالكامل قبل تركيب الجديد.',
+      'تركيب فلتر الزيت الجديد وتربيطه بعزم الربط المعتمد من الشركة المصنعة.',
+      'تعبئة الزيت الجديد المطابق للزوجة المحددة وتفقد مستوى الزيت عبر مقياس المعايرة.',
+      'تشغيل المحرك لمدة دقيقتين للتحقق من عدم وجود تسريبات تحت الفلتر وصرة التصريف.'
+    ],
+    stepsEn: [
+      'Secure the vehicle on the lift lane and place wheel chocks under tires.',
+      'Drain the old engine oil into the designated container and inspect for metallic debris.',
+      'Remove the old oil filter and thoroughly clean the mounting base before installing the new one.',
+      'Install the new oil filter and torque it to the manufacturer’s specified setting.',
+      'Fill with new certified oil of the correct viscosity and verify the level via the dipstick.',
+      'Run the engine for 2 minutes to inspect for leaks around the filter and drain plug.'
+    ],
+    approvedByAr: 'المهندس سفيان عبدالحميد (كبير مشرفي الصيانة)',
+    approvedByEn: 'Eng. Sofyan Abdulhameed (Chief Maintenance Supervisor)',
+    docRef: 'M-OIL-02A'
+  },
+  {
+    id: 'op-brake',
+    titleAr: 'استبدال تيل وهوبات الفرامل',
+    titleEn: 'Brake Pad & Rotor Replacement',
+    durationAr: '45 دقيقة',
+    durationEn: '45 mins',
+    frequencyAr: 'كل 40,000 كم',
+    frequencyEn: 'Every 40,000 km',
+    stepsAr: [
+      'رفع المركبة وفك صواميل العجلات باستخدام مفك العزم الهوائي.',
+      'فك فك الفرامل (Caliper) وتعليقه بسلك أمان لتجنب إتلاف خرطوم الزيت الهيدروليكي.',
+      'نزع تيل الفرامل المستهلك وفحص سطح الهوب (Rotor) للتأكد من سلامته وخلوه من التعرجات.',
+      'تنظيف أجزاء الفرامل وبساتم الفك باستخدام بخاخ التنظيف المعتمد وفرشاة سلكية.',
+      'تركيب تيل الفرامل الجديد مع تشحيم نقاط التلامس بشحم فرامل حراري خاص.',
+      'إعادة تركيب فك الفرامل وربط مسامير التثبيت وموازنة ضغط دواسة الفرامل بالداخل.'
+    ],
+    stepsEn: [
+      'Raise the vehicle and remove wheel nuts using the pneumatic impact wrench.',
+      'Remove the brake caliper and suspend it safely with a wire hook to prevent hose tension.',
+      'Extract worn brake pads and measure rotor thickness/inspect for scoring.',
+      'Clean all brake caliper components and slides using certified brake cleaner and a wire brush.',
+      'Fit new premium brake pads and apply high-temperature grease to contact slide points.',
+      'Reassemble the brake caliper, torque slide bolts, and pump brakes to re-establish pedal pressure.'
+    ],
+    approvedByAr: 'مكتب الجودة والأمان التشغيلي لأسطول النقل',
+    approvedByEn: 'Fleet Safety & Quality Compliance Office',
+    docRef: 'B-BRK-44D'
+  },
+  {
+    id: 'op-tire',
+    titleAr: 'تدوير وموازنة الإطارات',
+    titleEn: 'Tire Rotation & Balancing',
+    durationAr: '25 دقيقة',
+    durationEn: '25 mins',
+    frequencyAr: 'كل 15,000 كم',
+    frequencyEn: 'Every 15,000 km',
+    stepsAr: [
+      'قياس عمق النقشة وتفقد الإطارات بحثاً عن تآكل غير متساوي أو تشققات جدارية.',
+      'فك العجلات الأربع ونقلها إلى جهاز موازنة الإطارات الرقمي.',
+      'إضافة أوزان رصاصية مطابقة لنسب الموازنة المكتشفة بالكمبيوتر.',
+      'تدوير موقع الإطارات حسب نمط الدفع المعتمد للمركبة (دفع خلفي/رباعي).',
+      'إعادة تركيب العجلات وتربيط الصواميل بنمط تبادلي (Cross pattern) بعزم 120 نيوتن.متر.',
+      'ضبط ضغط الهواء بجميع الإطارات ومعايرة نظام مراقبة ضغط الإطارات (TPMS).'
+    ],
+    stepsEn: [
+      'Measure tread depth and inspect all tires for uneven wear, bubbles, or sidewall cracks.',
+      'Remove all four wheels and mount them on the computer balancing machine.',
+      'Attach precise counterweights as indicated by the digital balancing diagnostic.',
+      'Rotate tires according to the vehicle’s drive pattern (cross rotation for rear-wheel drive).',
+      'Mount wheels and torque lug nuts in a cross pattern to exactly 120 Nm using torque wrench.',
+      'Adjust air pressure to the factory cold spec and reset the TPMS calibration.'
+    ],
+    approvedByAr: 'إدارة هندسة الإطارات والسلامة الميدانية',
+    approvedByEn: 'Tire Engineering & Field Safety Department',
+    docRef: 'T-ROT-15X'
+  },
+  {
+    id: 'op-filter',
+    titleAr: 'استبدال فلتر الهواء والتكييف',
+    titleEn: 'Engine & Cabin Filter Replacement',
+    durationAr: '15 دقيقة',
+    durationEn: '15 mins',
+    frequencyAr: 'كل 20,000 كم',
+    frequencyEn: 'Every 20,000 km',
+    stepsAr: [
+      'فتح غطاء صندوق فلتر الهواء في حيز المحرك وتحرير مشابك التثبيت الجانبية.',
+      'سحب الفلتر القديم وتنظيف صندوق الفلتر بالهواء المضغوط المفلتر لإزالة الأتربة المتراكمة.',
+      'تركيب فلتر الهواء الجديد مع التأكد من مطابقة اتجاه تدفق الهواء المكتوب بسهم على الإطار.',
+      'إغلاق صندوق فلتر الهواء بإحكام وإعادة ربط مشابك الأمان لضمان عدم تسرب هواء غير مفلتر.',
+      'الولوج للمقصورة وفك صندوق القفازات للوصول إلى غطاء فلتر التكييف الداخلي.',
+      'استبدال فلتر مقصورة الركاب وتنظيف مجرى الهواء لضمان هواء صحي ونقي بالداخل.'
+    ],
+    stepsEn: [
+      'Open the engine air cleaner box cover and release the side securing latches.',
+      'Remove the dusty air filter and use filtered low-pressure air to clean the housing of loose debris.',
+      'Install the new certified air filter, aligning the airflow direction indicator arrow correctly.',
+      'Securely close the filter box cover and fasten all security clips to seal the intake path.',
+      'Access the cabin filter slot behind the passenger glove compartment.',
+      'Replace the cabin air filter and spray specialized HVAC anti-bacterial sanitizer if needed.'
+    ],
+    approvedByAr: 'إدارة الصيانة الوقائية والبيئية للأسطول',
+    approvedByEn: 'Preventive & Eco-Fleet Maintenance Management',
+    docRef: 'F-AIR-20C'
+  },
+  {
+    id: 'op-battery',
+    titleAr: 'فحص البطارية وتنظيف الأقطاب',
+    titleEn: 'Battery Test & Terminal Cleaning',
+    durationAr: '20 دقيقة',
+    durationEn: '20 mins',
+    frequencyAr: 'كل 6 أشهر',
+    frequencyEn: 'Every 6 Months',
+    stepsAr: [
+      'توصيل جهاز اختبار البطارية الرقمي لقياس الجهد (Voltage) وتيار التدوير البارد (CCA).',
+      'تفقد جسم البطارية الخارجي بحثاً عن انتفاخات، شروخ، أو تسريب في حمض الكبريتيك.',
+      'فك القطب السالب أولاً ثم القطب الموجب لتجنب حدوث التماس كهربائي قصير.',
+      'إزالة الصدأ والأملاح المتراكمة على الأطراف باستخدام فرشاة معدنية ومحلول صودا تنظيف.',
+      'تركيب أطراف الكابلات بإحكام وتطبيق طبقة واقية من رذاذ عزل الرطوبة والشحم الحامي.',
+      'إجراء اختبار جهد الشحن للدينامو (Alternator Load Test) للتأكد من انتظام التغذية الكهربائية.'
+    ],
+    stepsEn: [
+      'Connect the digital battery analyzer to measure terminal voltage and Cold Cranking Amps (CCA).',
+      'Inspect the physical battery case for bulging, structural cracks, or electrolyte leaks.',
+      'Disconnect the negative terminal clamp first, then the positive clamp to avoid accidental shorts.',
+      'Scrub off corrosion and white sulfates from terminals using a wire brush and cleaner solution.',
+      'Reconnect terminals tightly and coat them with anti-corrosion protective spray or grease.',
+      'Run the engine and perform an alternator load test to ensure charging system integrity.'
+    ],
+    approvedByAr: 'الشعبة الكهربائية والتشخيص المتقدم بالمركز الرئيسي',
+    approvedByEn: 'Electrical & Advanced Diagnostic Branch (HQ)',
+    docRef: 'E-BAT-06B'
+  }
+];
+
+interface CatalogResult {
+  title: string;
+  catalogRef: string;
+  diagnoseSteps: string[];
+  replaceSteps: string[];
+  requiredTools: string[];
+  safetyNotes: string[];
+}
+
 interface DashboardProps {
   user: User;
   onNavigateToMaintenance?: () => void;
   onNavigateToVehicles?: () => void;
   onNavigateToTab?: (tab: string) => void;
+  onUserUpdate?: (updatedUser: User) => void;
 }
 
-export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToVehicles, onNavigateToTab }: DashboardProps) {
+export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToVehicles, onNavigateToTab, onUserUpdate }: DashboardProps) {
   const { language, t } = useLanguage();
+  const [hasTechAvatarError, setHasTechAvatarError] = useState(false);
+
+  const handleTechAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onUserUpdate) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Data = event.target?.result as string;
+        if (base64Data) {
+          onUserUpdate({
+            ...user,
+            avatar: base64Data
+          });
+          setHasTechAvatarError(false); // Reset error so it shows the new loaded image
+          triggerToast(language === 'ar' ? '✅ تم تحديث صورتك الشخصية بنجاح!' : '✅ Profile photo updated successfully!');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Load state from localStorage to operate with real application databases
   const [orders, setOrders] = useState<MaintenanceOrder[]>(() => {
@@ -1542,6 +1798,112 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
   const [inventory, setInventory] = useState<InventoryItem[]>(() => {
     const saved = localStorage.getItem('fleet_inventory_v2');
     return saved ? JSON.parse(saved) : staticInventory;
+  });
+
+  const [expandedVehicleOrderId, setExpandedVehicleOrderId] = useState<string | null>(null);
+  const [isVehiclePartsCatalogOpen, setIsVehiclePartsCatalogOpen] = useState(false);
+  const [selectedCatalogVehicle, setSelectedCatalogVehicle] = useState<Vehicle | null>(null);
+  const [partsCatalogSearchQuery, setPartsCatalogSearchQuery] = useState('');
+
+  // Work Timer States for Technician Tasks
+  const [runningOrderId, setRunningOrderId] = useState<string | null>(null);
+  const [activeSeconds, setActiveSeconds] = useState<number>(0);
+
+  useEffect(() => {
+    if (!runningOrderId) return;
+    const interval = setInterval(() => {
+      setActiveSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [runningOrderId]);
+
+  // Starts or resumes the timer for an order
+  const handleStartTimer = (orderId: string, initialSeconds: number) => {
+    if (runningOrderId && runningOrderId !== orderId) {
+      handlePauseTimer();
+    }
+    setRunningOrderId(orderId);
+    setActiveSeconds(initialSeconds || 0);
+    
+    // Auto-advance pending order to in-progress when starting the timer
+    const targetOrder = orders.find(o => o.id === orderId);
+    if (targetOrder && targetOrder.status === 'pending') {
+      const updated = orders.map(o => o.id === orderId ? { ...o, status: 'in-progress' as const } : o);
+      saveOrdersToLocalStorage(updated);
+    }
+  };
+
+  // Pauses the running timer and syncs elapsed seconds to local state and localStorage
+  const handlePauseTimer = () => {
+    if (!runningOrderId) return;
+    const currentRunningId = runningOrderId;
+    const currentActiveSeconds = activeSeconds;
+
+    const updated = orders.map(o => {
+      if (o.id === currentRunningId) {
+        return { ...o, actualWorkTime: currentActiveSeconds };
+      }
+      return o;
+    });
+    saveOrdersToLocalStorage(updated);
+    setRunningOrderId(null);
+  };
+
+  // Helper functions for formatting time
+  const formatTime = (totalSeconds: number) => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    
+    if (hrs > 0) {
+      return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+    }
+    return `${pad(mins)}:${pad(secs)}`;
+  };
+
+  const formatTimeArabic = (totalSeconds: number) => {
+    if (!totalSeconds) return language === 'ar' ? 'أقل من دقيقة' : 'Less than a minute';
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    
+    let parts: string[] = [];
+    if (hrs > 0) {
+      if (hrs === 1) parts.push('ساعة');
+      else if (hrs === 2) parts.push('ساعتين');
+      else if (hrs >= 3 && hrs <= 10) parts.push(`${hrs} ساعات`);
+      else parts.push(`${hrs} ساعة`);
+    }
+    if (mins > 0) {
+      if (mins === 1) parts.push('دقيقة واحدة');
+      else if (mins === 2) parts.push('دقيقتين');
+      else if (mins >= 3 && mins <= 10) parts.push(`${mins} دقائق`);
+      else parts.push(`${mins} دقيقة`);
+    }
+    if (secs > 0 || parts.length === 0) {
+      if (secs === 1) parts.push('ثانية واحدة');
+      else if (secs === 2) parts.push('ثانيتين');
+      else if (secs >= 3 && secs <= 10) parts.push(`${secs} ثواني`);
+      else parts.push(`${secs} ثانية`);
+    }
+    return parts.join(language === 'ar' ? ' و ' : ' & ');
+  };
+
+  const [drivers, setDrivers] = useState<any[]>(() => {
+    const saved = localStorage.getItem('fleet_drivers_v2');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      { id: 'd1', name: 'سالم عبد الرحمن الدوسري', assignedVehicleId: '1', phone: '0509874521' },
+      { id: 'd2', name: 'فهد بن مساعد المرشدي', assignedVehicleId: '2', phone: '0551234789' },
+      { id: 'd3', name: 'عبد الله عمر الحربي', assignedVehicleId: '3', phone: '0562234123' },
+      { id: 'd4', name: 'عادل منصور القحطاني', assignedVehicleId: '4', phone: '0543345566' }
+    ];
   });
 
   const upcomingSchedules = useMemo(() => {
@@ -1673,6 +2035,8 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
   // Technician Work Status indicator check
   const [techWorkStatus, setTechWorkStatus] = useState<'available' | 'busy' | 'away'>('available');
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+  const [showOverdueModal, setShowOverdueModal] = useState(false);
+  const [overdueFilterActive, setOverdueFilterActive] = useState(false);
   // Toolbox Verification Check list
   const [toolsAudit, setToolsAudit] = useState([
     { id: '1', name: 'مفك براغي هيدروليكي معاير أوتوماتيكياً', checked: true },
@@ -1681,6 +2045,177 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
     { id: '4', name: 'طقم كشاف تسريب الفريون بالأشعة البنفسجية', checked: true },
   ]);
 
+  // Quick Guide State
+  const [selectedQuickGuideOpId, setSelectedQuickGuideOpId] = useState<string | null>(null);
+  const [quickGuideStepsProgress, setQuickGuideStepsProgress] = useState<Record<string, Record<number, boolean>>>(() => {
+    const saved = localStorage.getItem('saas_quick_guide_steps_progress');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return {};
+      }
+    }
+    return {};
+  });
+
+  const handleQuickGuideStepToggle = (opId: string, stepIdx: number) => {
+    const currentProgress = { ...quickGuideStepsProgress };
+    if (!currentProgress[opId]) {
+      currentProgress[opId] = {};
+    }
+    currentProgress[opId][stepIdx] = !currentProgress[opId][stepIdx];
+    setQuickGuideStepsProgress(currentProgress);
+    localStorage.setItem('saas_quick_guide_steps_progress', JSON.stringify(currentProgress));
+  };
+
+  const handleResetQuickGuideProgress = (opId: string) => {
+    const currentProgress = { ...quickGuideStepsProgress };
+    currentProgress[opId] = {};
+    setQuickGuideStepsProgress(currentProgress);
+    localStorage.setItem('saas_quick_guide_steps_progress', JSON.stringify(currentProgress));
+    triggerToast(language === 'ar' ? 'تمت إعادة تعيين خطوات العمل بنجاح!' : 'Work steps reset successfully!');
+  };
+
+  // AI Catalog & Smart Manual Assistant States
+  const [aiCatalogSource, setAiCatalogSource] = useState<'active_tasks' | 'custom_query'>('active_tasks');
+  const [selectedActiveOrderId, setSelectedActiveOrderId] = useState<string>('');
+  const [aiCatalogCustomQuery, setAiCatalogCustomQuery] = useState<string>('');
+  const [aiCatalogLoading, setAiCatalogLoading] = useState<boolean>(false);
+  const [aiCatalogLoadingStep, setAiCatalogLoadingStep] = useState<string>('');
+  const [aiCatalogResult, setAiCatalogResult] = useState<CatalogResult | null>(() => {
+    const saved = localStorage.getItem('fleet_ai_catalog_result');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [aiCatalogProgress, setAiCatalogProgress] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('fleet_ai_catalog_progress');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [isAiCatalogModalOpen, setIsAiCatalogModalOpen] = useState<boolean>(false);
+
+  // Set default active order for the technician
+  useEffect(() => {
+    const techOrders = orders.filter(o => o.technicianId === '201' && o.status !== 'completed');
+    if (techOrders.length > 0 && !selectedActiveOrderId) {
+      setSelectedActiveOrderId(techOrders[0].id);
+    }
+  }, [orders, selectedActiveOrderId]);
+
+  const handleConsultAiCatalog = async () => {
+    let vehicleName = '';
+    let queryText = '';
+    let category = '';
+
+    if (aiCatalogSource === 'active_tasks') {
+      const activeOrder = orders.find(o => o.id === selectedActiveOrderId);
+      if (!activeOrder) {
+        triggerToast(language === 'ar' ? 'يرجى اختيار أحد الأعطال النشطة أولاً' : 'Please select an active task first');
+        return;
+      }
+      const vehicle = vehicles.find(v => v.id === activeOrder.vehicleId);
+      vehicleName = vehicle ? `${vehicle.name} (${vehicle.plateNumber})` : 'آلية ثقيلة';
+      queryText = activeOrder.description || '';
+      category = activeOrder.category || 'mechanical';
+    } else {
+      if (!aiCatalogCustomQuery.trim()) {
+        triggerToast(language === 'ar' ? 'يرجى كتابة المشكلة أو اسم القطعة المراد فحصها' : 'Please type the issue or part name to inspect');
+        return;
+      }
+      queryText = aiCatalogCustomQuery;
+      vehicleName = 'آلية عامة بالأسطول';
+      category = 'general';
+    }
+
+    setAiCatalogLoading(true);
+    setAiCatalogLoadingStep(language === 'ar' ? 'جاري قراءة تفاصيل الآلية وتعيين نوع العطل...' : 'Reading asset details and assigning fault category...');
+
+    // Simulate stepping through loader to make it feel premium & high-fidelity!
+    const steps = language === 'ar' 
+      ? [
+          'جاري البحث في كتالوجات صيانة الشركة المعتمدة...',
+          'جاري سحب مخططات الفك والتركيب للآلية المطابقة...',
+          'جاري صياغة طريقة الفحص ومراحل استبدال القطع...'
+        ]
+      : [
+          'Searching in corporate maintenance catalogs...',
+          'Extracting disassembly diagrams for the matching model...',
+          'Formulating custom inspection and parts replacement steps...'
+        ];
+
+    const timeouts: any[] = [];
+    steps.forEach((step, idx) => {
+      const t = setTimeout(() => {
+        setAiCatalogLoadingStep(step);
+      }, (idx + 1) * 1200);
+      timeouts.push(t);
+    });
+
+    try {
+      const response = await fetch('/api/ai/catalog-guide', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vehicleName,
+          queryText,
+          category
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Server error');
+      }
+
+      const data = (await response.json()) as CatalogResult;
+      
+      // Clear all timeouts just in case
+      timeouts.forEach(clearTimeout);
+
+      setAiCatalogResult(data);
+      localStorage.setItem('fleet_ai_catalog_result', JSON.stringify(data));
+      
+      // Reset progress check boxes for the new guide
+      setAiCatalogProgress({});
+      localStorage.removeItem('fleet_ai_catalog_progress');
+
+      setIsAiCatalogModalOpen(true);
+      triggerToast(language === 'ar' ? 'تمت مطابقة الكتالوج وتوليد خطوات العمل الذكية! 📚⚡' : 'Catalog matched and smart steps generated! 📚⚡');
+    } catch (err) {
+      timeouts.forEach(clearTimeout);
+      triggerToast(language === 'ar' ? 'حدث خطأ في الاتصال بالخادم الذكي' : 'Smart server connection failed');
+    } finally {
+      setAiCatalogLoading(false);
+      setAiCatalogLoadingStep('');
+    }
+  };
+
+  const handleToggleCatalogProgress = (key: string) => {
+    const updated = { ...aiCatalogProgress, [key]: !aiCatalogProgress[key] };
+    setAiCatalogProgress(updated);
+    localStorage.setItem('fleet_ai_catalog_progress', JSON.stringify(updated));
+  };
+
+  const handleResetCatalogProgress = () => {
+    setAiCatalogProgress({});
+    localStorage.removeItem('fleet_ai_catalog_progress');
+    triggerToast(language === 'ar' ? 'تمت إعادة تعيين خطوات العمل' : 'Work steps reset');
+  };
+
+  const handleMarkAllCatalogCompleted = () => {
+    if (!aiCatalogResult) return;
+    const updated: Record<string, boolean> = {};
+    aiCatalogResult.diagnoseSteps.forEach((_, idx) => {
+      updated[`diagnose-${idx}`] = true;
+    });
+    aiCatalogResult.replaceSteps.forEach((_, idx) => {
+      updated[`replace-${idx}`] = true;
+    });
+    setAiCatalogProgress(updated);
+    localStorage.setItem('fleet_ai_catalog_progress', JSON.stringify(updated));
+    triggerToast(language === 'ar' ? 'تم تأكيد إنجاز كافة خطوات الفحص والتركيب بنجاح! 🎉' : 'All steps marked completed & certified! 🎉');
+  };
+
   // Toast / Status update confirmation state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -1688,10 +2223,33 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
   const [selectedPartId, setSelectedPartId] = useState('');
   const [partOrderQty, setPartOrderQty] = useState(1);
   const [partOrderSuccess, setPartOrderSuccess] = useState(false);
+  const [partSearchQuery, setPartSearchQuery] = useState('');
+  const [isPartDropdownOpen, setIsPartDropdownOpen] = useState(false);
 
   // Active Filter for Report Viewer role
   const [reportCategory, setReportCategory] = useState<string>('all');
   const [reportPriority, setReportPriority] = useState<string>('all');
+
+  // AI Smart Diagnostic inside Technician portal state
+  const [techDiagnosticActive, setTechDiagnosticActive] = useState<boolean>(false);
+  const [workshopsList, setWorkshopsList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('fleet_workshops');
+    if (saved) {
+      try {
+        setWorkshopsList(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error parsing fleet_workshops", e);
+      }
+    } else {
+      setWorkshopsList([
+        { id: 'WS-1', name: 'ورشة الميكانيك المركزي والصيانة الثقيلة (الصالة أ)', bay: 'ممر رقم 8', location: 'الرياض' },
+        { id: 'WS-2', name: 'ورشة الكهرباء والإلكترونيات الذكية', bay: 'ممر رقم 3', location: 'جدة' },
+        { id: 'WS-3', name: 'ورشة الهيدروليك وأنظمة التعليق المتقدمة', bay: 'ممر رقم 5', location: 'الدمام' }
+      ]);
+    }
+  }, []);
 
   // Trigger Toast
   const triggerToast = (msg: string) => {
@@ -1744,18 +2302,45 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
   };
 
   const handleCompleteOrder = (orderId: string) => {
+    const targetOrder = orders.find(o => o.id === orderId);
+    const oldStatus = targetOrder ? targetOrder.status : 'pending';
+
+    // Capture currently running timer value if this order was ticking
+    const finalSeconds = (runningOrderId === orderId) ? activeSeconds : ((targetOrder && targetOrder.actualWorkTime) || 0);
+
+    if (runningOrderId === orderId) {
+      setRunningOrderId(null);
+    }
+
     const updated = orders.map(o => {
       if (o.id === orderId) {
         return { 
           ...o, 
           status: 'completed' as const, 
           progress: 100,
+          actualWorkTime: finalSeconds,
           lastUpdate: new Date().toISOString().split('T')[0]
         };
       }
       return o;
     });
     saveOrdersToLocalStorage(updated);
+
+    if (targetOrder) {
+      const matchedVeh = vehicles.find(v => v.id === targetOrder.vehicleId);
+      const vehName = matchedVeh ? `${matchedVeh.name} (${matchedVeh.plateNumber})` : `مركبة #${targetOrder.vehicleId}`;
+      window.dispatchEvent(new CustomEvent('maintenance-order-status-changed', {
+        detail: {
+          orderId,
+          oldStatus,
+          newStatus: 'completed',
+          descriptionAr: targetOrder.description,
+          descriptionEn: targetOrder.description,
+          vehicleName: vehName
+        }
+      }));
+    }
+
     triggerToast('تم فحص وإنهاء أمر الصيانة، وتم تحويل الآلية للخدمة!');
   };
 
@@ -1776,6 +2361,8 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
     setTimeout(() => {
       setPartOrderSuccess(false);
       setSelectedPartId('');
+      setPartSearchQuery('');
+      setIsPartDropdownOpen(false);
     }, 3000);
   };
 
@@ -1790,9 +2377,116 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
   // VIEW: TECHNICIAN DASHBOARD VIEW
   // ============================================
   if (user.role === 'technician') {
+    // Create work order from AI Smart Diagnostics
+    const handleSmartDiagnosticOrder = (partialOrder: Partial<MaintenanceOrder>) => {
+      const brandNewOrder: MaintenanceOrder = {
+        id: `WO-${Date.now()}`,
+        vehicleId: partialOrder.vehicleId || '',
+        orderNumber: `WO-2026-${Math.floor(100 + Math.random() * 900)}`,
+        date: '2026-06-03',
+        description: partialOrder.description || '',
+        category: partialOrder.category || 'mechanical',
+        status: 'in-progress',
+        technicianId: '201', // Assigned to Ahmed (ID 201)
+        workshopId: partialOrder.workshopId || 'WS-1',
+        priority: partialOrder.priority || 'medium',
+        cost: partialOrder.cost,
+        partsUsed: partialOrder.partsUsed,
+        isArchived: false,
+        progress: partialOrder.progress || 20,
+        milestones: partialOrder.milestones || [
+          { title: 'التشخيص الأولي وفحص الدوائر', checked: false },
+          { title: 'فك الأجزاء المتأثرة والتصوير', checked: false },
+          { title: 'تركيب قطع الغيار المستلمة', checked: false },
+          { title: 'الاختبار الميداني والتحقق الفني', checked: false }
+        ],
+        lastUpdate: '2026-06-03',
+        techNotes: partialOrder.techNotes || '',
+      };
+
+      const updatedOrders = [brandNewOrder, ...orders];
+      saveOrdersToLocalStorage(updatedOrders);
+      setTechDiagnosticActive(false);
+      triggerToast(language === 'ar' ? 'تم إنشاء أمر الصيانة الميداني وإسناده لك بنجاح!' : 'Field work order created and assigned to you successfully!');
+    };
+
+    const handleReopenOrder = (orderId: string) => {
+      const updated = orders.map(o => {
+        if (o.id === orderId) {
+          return { 
+            ...o, 
+            status: 'in-progress' as const, 
+            progress: 50,
+            lastUpdate: new Date().toISOString().split('T')[0]
+          };
+        }
+        return o;
+      });
+      saveOrdersToLocalStorage(updated);
+      triggerToast(language === 'ar' ? 'تم إعادة فتح الصيانة ونقلها لقائمة المهام الجارية!' : 'Maintenance task reopened and moved to active tasks!');
+    };
+
+    const handleUpdateOrderPhotos = (orderId: string, beforeUrl: string | undefined, afterUrl: string | undefined) => {
+      const updated = orders.map(o => {
+        if (o.id === orderId) {
+          const updatedOrder = { ...o };
+          if (beforeUrl !== undefined) updatedOrder.photoBeforeUrl = beforeUrl;
+          if (afterUrl !== undefined) updatedOrder.photoAfterUrl = afterUrl;
+          return updatedOrder;
+        }
+        return o;
+      });
+      saveOrdersToLocalStorage(updated);
+      triggerToast(language === 'ar' ? 'تم تحديث الصور وتوثيقها بنجاح!' : 'Photos updated and documented successfully!');
+    };
+
     // Find orders assigned to this technician
     // Since our user is "احمد" (technician id 201), we can filter orders for technicianId === '201'
     const techOrders = orders.filter(o => o.technicianId === '201' && o.status !== 'completed');
+
+    // Overdue tasks for this technician (pending/in-progress and date is before demo today '2026-06-03')
+    const myOverdueOrders = orders.filter(o => {
+      const isMine = o.technicianId === '201' || o.technicianId === user.id;
+      return o.status !== 'completed' && isMine && o.date < '2026-06-03';
+    });
+
+    // Calculate dynamic stats for the technician
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+
+    // All completed orders for this technician
+    const myCompletedOrders = orders.filter(o => {
+      const isMine = o.technicianId === '201' || o.technicianId === user.id || o.technicianId === 'u2';
+      return o.status === 'completed' && isMine;
+    });
+
+    // Sort chronologically (most recently completed first) and slice to last 10
+    const lastTenCompletedOrders = [...myCompletedOrders]
+      .sort((a, b) => {
+        const dateA = a.lastUpdate || a.date || '';
+        const dateB = b.lastUpdate || b.date || '';
+        return dateB.localeCompare(dateA);
+      })
+      .slice(0, 10);
+
+    // Completed this month (June or July 2026 to ensure initial data appears, and future completions are updated)
+    const myCompletedThisMonth = myCompletedOrders.filter(o => {
+      const dateStr = o.lastUpdate || o.date;
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      // To keep it realistic, we count June (5) or July (6) 2026
+      return d.getFullYear() === 2026 && (d.getMonth() === 5 || d.getMonth() === 6);
+    });
+
+    // Unique vehicles maintained this month
+    const vehiclesMaintainedThisMonth = new Set(myCompletedThisMonth.map(o => o.vehicleId)).size;
+
+    // All pending orders for this technician
+    const myPendingOrders = orders.filter(o => {
+      const isMine = o.technicianId === '201' || o.technicianId === user.id || o.technicianId === 'u2';
+      return o.status === 'pending' && isMine;
+    });
+    const pendingOrdersCount = myPendingOrders.length;
 
     const getEstimatedDuration = (order: MaintenanceOrder) => {
       if (order.estimatedDuration) {
@@ -1866,6 +2560,63 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
       specialization: 'ميكانيك ثقيل وتعامد هيدروليكي',
     };
 
+    if (techDiagnosticActive) {
+      return (
+        <div className={`space-y-6 ${language === 'ar' ? 'text-right' : 'text-left'} animate-fadeIn`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+          {/* Alerts & Notifications */}
+          <AnimatePresence>
+            {toastMessage && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="fixed bottom-5 left-5 bg-slate-900 dark:bg-slate-800 text-white px-4 py-3 rounded-2xl shadow-xl z-50 flex items-center gap-2.5 border border-slate-700/50"
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="text-xs font-black">{toastMessage}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Header */}
+          <div className="bg-gradient-to-l from-slate-50 via-slate-100/40 to-slate-50 dark:from-slate-900 dark:to-slate-900/40 border border-slate-200/60 dark:border-slate-800/80 p-5 rounded-[2rem] text-slate-800 dark:text-white flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2 py-0.5 bg-brand-blue-50 dark:bg-brand-blue-950/40 text-brand-blue-600 dark:text-brand-blue-400 rounded-md text-[9px] font-black uppercase tracking-wider">لوحة الفحص الميداني</span>
+                <span className="text-xs text-slate-300 dark:text-slate-700">•</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">التشخيص الذكي</span>
+              </div>
+              <h1 className="text-base font-black tracking-tight flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                <span>{user.name}</span>
+                <span className="text-slate-300 dark:text-slate-705">|</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{user.title}</span>
+              </h1>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">بوابة التشخيص الذكي بالذكاء الاصطناعي للمركبات والمعدات الفنية.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTechDiagnosticActive(false)}
+              className="px-3.5 py-2.5 text-[10px] font-black rounded-2xl cursor-pointer transition-all flex items-center justify-center gap-1.5 border shrink-0 bg-amber-500 text-white border-transparent shadow-md"
+            >
+              <Sparkles size={12} className="animate-pulse" />
+              <span>{language === 'ar' ? 'العودة للمهام الميدانية' : 'Back to Field Tasks'}</span>
+            </button>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft">
+            <SmartDiagnostic 
+              vehicles={vehicles}
+              technicians={technicians}
+              inventory={inventory}
+              workshops={workshopsList}
+              onAddOrder={handleSmartDiagnosticOrder}
+              onCancel={() => setTechDiagnosticActive(false)}
+            />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={`space-y-6 ${language === 'ar' ? 'text-right' : 'text-left'} animate-fadeIn`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
         {/* Alerts & Notifications */}
@@ -1884,108 +2635,246 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
         </AnimatePresence>
 
         {/* Header with quick professional status */}
-        <div className="bg-gradient-to-l from-slate-50 via-slate-100/40 to-slate-50 dark:from-slate-900 dark:to-slate-900/40 border border-slate-200/60 dark:border-slate-800/80 p-5 rounded-[2rem] text-slate-800 dark:text-white flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xs">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2 py-0.5 bg-brand-blue-50 dark:bg-brand-blue-950/40 text-brand-blue-600 dark:text-brand-blue-400 rounded-md text-[9px] font-black uppercase tracking-wider">لوحة الفحص الميداني</span>
-              <ContextualHelp 
-                id="technician-dash"
-                titleAr="لوحة الفحص الميداني للفنيين"
-                titleEn="Technician Field Diagnostics Board"
-                explanationAr="بوابة برمجية متخصصة للفنيين لتمكينهم من استعراض المهام الجارية المسندة إليهم، وتتبع مستويات جاهزيتهم الفنية، وتحديث مراحل إصلاح المركبات لحظة بلحظة."
-                explanationEn="A specialized workspace for field mechanics to inspect active work tickets, monitor personal task queues, and log progress status."
-                benefitsAr={[
-                  "تحديث ومزامنة خطوات الإصلاح الميدانية (فحص، فك، تركيب، جودة).",
-                  "تغيير الحالة التشغيلية الفورية للفني (متوفر، مشغول، استراحة) لإرشاد المخططين تلقائياً.",
-                  "الوصول السريع لدليل أدوات الصيانة ومطابقتها قبل بدء العمل التشغيلي."
-                ]}
-                benefitsEn={[
-                  "Update field repair milestones instantly (Inspect, Disassemble, Reassemble, Quality control).",
-                  "Toggle real-time availability to keep coordinators informed automatically.",
-                  "Access custom tooling checklist validation step prior to initiating tasks."
-                ]}
-                tipsAr={[
-                  "احرص على تحديث حالتك إلى 'متوفر' عند إنهاء مهامك السابقة لكي تتمكن اللوحة الذكية من تعيين المركبات الطارئة لك فوريّاً."
-                ]}
-                tipsEn={[
-                  "Keep your availability toggled on to receive new repair tickets instantly."
-                ]}
-                language={language}
-              />
-              <span className="text-xs text-slate-300 dark:text-slate-700">•</span>
-              <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">مرحبا بك</span>
-            </div>
-            <h1 className="text-base font-black tracking-tight flex items-center gap-2 text-slate-800 dark:text-slate-100">
-              <span>{user.name}</span>
-              <span className="text-slate-300 dark:text-slate-705">|</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{user.title}</span>
-            </h1>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">تابع العمل الهندسي المعين لك، حدّث نسب الإنجاز، وأغلق المهام المنجزة يدوياً لتزامن مستند الاستلام.</p>
-          </div>
+        <div className="bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden border-none">
+          {/* Decorative background shapes like driver's portal */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-x-12 -translate-y-12" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/5 rounded-full -translate-x-6 translate-y-6" />
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
-            <LanguageSwitcher />
-            <div className="flex items-center gap-3 bg-slate-100/80 dark:bg-slate-950/80 p-2.5 rounded-2xl border border-slate-200/50 dark:border-slate-800 shadow-xs w-full sm:w-auto shrink-0">
-              <div className="text-right">
-                <span className="text-[9px] text-slate-400 dark:text-slate-500 block">حالتك الميدانية الحالية:</span>
-                <span className="text-[11px] font-black">
-                  {techWorkStatus === 'available' && <span className="text-emerald-600 dark:text-emerald-400">🟢 جاهز ونشط للعمل المباشر</span>}
-                  {techWorkStatus === 'busy' && <span className="text-amber-600 dark:text-amber-400">🛠️ مشغول بصيانة مركبة</span>}
-                  {techWorkStatus === 'away' && <span className="text-rose-600 dark:text-rose-400">☕ خارج الورشة (استراحة)</span>}
-                </span>
+          <div className="relative z-10 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-6 w-full">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              {/* Technician Profile Card like Driver's Portal with pulsing green dot */}
+              <div className="relative shrink-0 group">
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('tech-dashboard-avatar-picker')?.click()}
+                  title={language === 'ar' ? 'رفع أو تغيير الصورة الشخصية' : 'Upload or change profile picture'}
+                  className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-violet-600 p-0.5 shadow-md flex items-center justify-center ring-4 ring-white/20 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 relative overflow-hidden focus:outline-hidden"
+                >
+                  {!hasTechAvatarError && user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.name} 
+                      className="w-full h-full rounded-[14px] object-cover bg-white/10 group-hover:opacity-70 transition-opacity"
+                      referrerPolicy="no-referrer"
+                      onError={() => setHasTechAvatarError(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-[14px] bg-gradient-to-tr from-indigo-500 via-purple-500 to-violet-600 text-white font-black text-lg flex items-center justify-center select-none shadow-inner group-hover:opacity-70 transition-opacity">
+                      <span>{user.name ? (user.name.startsWith('الفني ') ? user.name.substring(6, 7) : user.name.charAt(0)) : 'أ'}</span>
+                    </div>
+                  )}
+                  
+                  {/* Micro overlay with Camera icon on hover */}
+                  <div className="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[14px]">
+                    <Camera size={16} className="text-white animate-pulse" />
+                  </div>
+                </button>
+                <input 
+                  type="file" 
+                  id="tech-dashboard-avatar-picker" 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleTechAvatarChange} 
+                />
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-emerald-500 shadow-sm animate-pulse z-10 pointer-events-none" />
               </div>
 
-              <div className="flex gap-1 bg-slate-200/60 dark:bg-slate-950 p-1 rounded-xl border border-slate-300/45 dark:border-slate-800/40">
-                {(['available', 'busy', 'away'] as const).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setTechWorkStatus(st)}
-                    className={`px-2 py-1 text-[9px] font-black rounded-lg transition-all cursor-pointer ${
-                      techWorkStatus === st 
-                        ? 'bg-white dark:bg-slate-800 text-brand-blue-700 dark:text-white border border-slate-200/50 dark:border-slate-700/40 shadow-xs animate-fadeIn' 
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    {st === 'available' ? 'متوفر' : st === 'busy' ? 'مشغول' : 'استراحة'}
-                  </button>
-                ))}
+              <div className="space-y-1 text-right">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2 py-0.5 bg-white/25 text-white rounded-md text-[9px] font-black uppercase tracking-wider">لوحة الفحص الميداني للفنيين</span>
+                  <span className="px-1.5 py-0.5 bg-emerald-400/20 text-emerald-100 rounded text-[9px] font-black flex items-center gap-1 border border-emerald-300/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-350 animate-ping shrink-0" />
+                    <span>{language === 'ar' ? 'فني متصل ونشط' : 'Active On-Duty'}</span>
+                  </span>
+                  <ContextualHelp 
+                    id="technician-dash"
+                    titleAr="لوحة الفحص الميداني للفنيين"
+                    titleEn="Technician Field Diagnostics Board"
+                    explanationAr="بوابة برمجية متخصصة للفنيين لتمكينهم من استعراض المهام الجارية المسندة إليهم، وتتبع مستويات جاهزيتهم الفنية، وتحديث مراحل إصلاح المركبات لحظة بلحظة."
+                    explanationEn="A specialized workspace for field mechanics to inspect active work tickets, monitor personal task queues, and log progress status."
+                    benefitsAr={[
+                      "تحديث ومزامنة خطوات الإصلاح الميدانية (فحص، فك، تركيب، جودة).",
+                      "تغيير الحالة التشغيلية الفورية للفني (متوفر، مشغول، استراحة) لإرشاد المخططين تلقائياً.",
+                      "الوصول السريع لدليل أدوات الصيانة ومطابقتها قبل بدء العمل التشغيلي."
+                    ]}
+                    benefitsEn={[
+                      "Update field repair milestones instantly (Inspect, Disassemble, Reassemble, Quality control).",
+                      "Toggle real-time availability to keep coordinators informed automatically.",
+                      "Access custom tooling checklist validation step prior to initiating tasks."
+                    ]}
+                    tipsAr={[
+                      "احرص على تحديث حالتك إلى 'متوفر' عند إنهاء مهامك السابقة لكي تتمكن اللوحة الذكية من تعيين المركبات الطارئة لك فوريّاً."
+                    ]}
+                    tipsEn={[
+                      "Keep your availability toggled on to receive new repair tickets instantly."
+                    ]}
+                    language={language}
+                  />
+                </div>
+                <h1 className="text-lg font-black tracking-tight text-white">
+                  <span>{user.name}</span>
+                  <span className="text-emerald-200 mx-2">|</span>
+                  <span className="text-xs text-emerald-100 font-bold">{user.title}</span>
+                </h1>
+                <p className="text-[10.5px] text-emerald-50/90 leading-relaxed max-w-xl">تابع العمل الهندسي المعين لك، حدّث نسب الإنجاز، وأغلق المهام المنجزة يدوياً لتزامن مستند الاستلام.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setTechDiagnosticActive(!techDiagnosticActive)}
+                className={`px-4 py-3 text-[10.5px] font-black rounded-2xl cursor-pointer transition-all duration-300 flex items-center justify-center gap-1.5 border shrink-0 shadow-sm ${
+                  techDiagnosticActive
+                    ? 'bg-amber-500 text-white border-transparent shadow-amber-500/10'
+                    : 'bg-white/15 hover:bg-white/25 text-white border-white/20 hover:border-white/40'
+                }`}
+              >
+                <Sparkles size={13} className="animate-pulse" />
+                <span>{techDiagnosticActive ? (language === 'ar' ? 'العودة للمهام' : 'Back to Tasks') : (language === 'ar' ? 'التشخيص الذكي بالذكاء الاصطناعي 🪄' : 'Smart AI Diagnostic 🪄')}</span>
+              </button>
+              
+              <LanguageSwitcher />
+
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-2.5 rounded-2xl border border-white/10 shadow-xs">
+                <div className="text-right">
+                  <span className="text-[9px] text-emerald-100 block leading-none mb-1">حالتك الميدانية:</span>
+                  <span className="text-[10.5px] font-black block">
+                    {techWorkStatus === 'available' && <span className="text-emerald-350 font-black">🟢 جاهز للعمل</span>}
+                    {techWorkStatus === 'busy' && <span className="text-amber-300 font-black">🛠️ مشغول</span>}
+                    {techWorkStatus === 'away' && <span className="text-rose-300 font-black">☕ استراحة</span>}
+                  </span>
+                </div>
+
+                <div className="flex gap-1 bg-black/10 p-1 rounded-xl border border-white/10">
+                  {(['available', 'busy', 'away'] as const).map((st) => (st === 'available' || st === 'busy' || st === 'away') && (
+                    <button
+                      key={st}
+                      onClick={() => setTechWorkStatus(st)}
+                      className={`px-2 py-1 text-[9px] font-black rounded-lg transition-all cursor-pointer ${
+                        techWorkStatus === st 
+                          ? 'bg-white text-teal-800 border border-white/10 shadow-xs animate-fadeIn' 
+                          : 'text-white/70 hover:text-white'
+                      }`}
+                    >
+                      {st === 'available' ? 'متوفر' : st === 'busy' ? 'مشغول' : 'استراحة'}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Quick status card counters for active technician context */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-linear-to-br from-blue-50 to-indigo-50/60 dark:from-blue-950/30 dark:to-indigo-950/15 p-4.5 rounded-2xl border border-blue-100/80 dark:border-blue-900/30 shadow-xs flex items-center justify-between hover:shadow-md hover:border-blue-400/40 transition-all duration-300">
-            <div className="space-y-1">
-              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-black block">المهام الجارية المكلف بها</span>
-              <span className="text-2xl font-black font-sans text-blue-900 dark:text-blue-100">{techOrders.length}</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/80 shadow-soft flex flex-col justify-between hover:shadow-md hover:border-emerald-500/20 transition-all duration-350 hover:-translate-y-0.5 group">
+            <div className="flex items-center justify-between w-full">
+              <div className="space-y-1.5">
+                <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-black block">{language === 'ar' ? 'المهام الجارية المكلف بها' : 'My Active Work Tickets'}</span>
+                <span className="text-3xl font-black font-sans text-slate-850 dark:text-slate-100 block leading-none">{techOrders.length}</span>
+                <span className="text-[9px] text-slate-400 block font-bold">{language === 'ar' ? 'مهام صيانة معينة بانتظار الإنجاز' : 'Tickets assigned to you today'}</span>
+              </div>
+              <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-600 dark:text-emerald-400 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-3xs">
+                <ClipboardList size={22} />
+              </div>
             </div>
-            <div className="p-3 bg-linear-to-tr from-blue-500 to-indigo-500 text-white rounded-xl shadow-xs shadow-blue-500/10">
-              <ClipboardList size={18} />
+
+            {/* Overdue alert widget within the statistics card */}
+            {myOverdueOrders.length > 0 && (
+              <div id="overdue-alerts-widget" className="mt-3.5 p-2.5 bg-rose-500/10 dark:bg-rose-950/30 border border-rose-500/20 dark:border-rose-900/40 rounded-2xl flex items-center justify-between gap-2 animate-pulse">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="flex h-2 w-2 relative shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-450 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                  <div className="text-right min-w-0">
+                    <span className="text-[10px] font-black text-rose-600 dark:text-rose-400 block leading-tight truncate">
+                      {language === 'ar' ? `${myOverdueOrders.length} مهام متأخرة!` : `${myOverdueOrders.length} Overdue Tasks!`}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowOverdueModal(true)}
+                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-[9px] font-black rounded-lg transition-all cursor-pointer shadow-sm select-none shrink-0"
+                >
+                  {language === 'ar' ? 'عرض التفاصيل' : 'View Details'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/80 shadow-soft flex items-center justify-between hover:shadow-md hover:border-amber-500/20 transition-all duration-350 hover:-translate-y-0.5 group">
+            <div className="space-y-1.5">
+              <span className="text-[10.5px] text-amber-600 dark:text-amber-400 font-black block">{language === 'ar' ? 'ممر الصيانة المعين' : 'Assigned Bay Location'}</span>
+              <span className="text-base font-black text-slate-850 dark:text-slate-100 block truncate max-w-[180px] leading-tight font-sans">{assignedWorkshop.bay}</span>
+              <span className="text-[9px] text-slate-400 block font-bold">{assignedWorkshop.name}</span>
+            </div>
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/45 text-amber-600 dark:text-amber-400 rounded-2xl group-hover:bg-amber-500 group-hover:text-white transition-all duration-300 shadow-3xs">
+              <Building2 size={22} />
             </div>
           </div>
 
-          <div className="bg-linear-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/15 p-4.5 rounded-2xl border border-amber-100/80 dark:border-amber-900/30 shadow-xs flex items-center justify-between hover:shadow-md hover:border-amber-400/40 transition-all duration-300">
-            <div className="space-y-1">
-              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-black block">ممر الصيانة المعين</span>
-              <span className="text-xs font-black text-amber-900 dark:text-amber-100">{assignedWorkshop.bay}</span>
-            </div>
-            <div className="p-3 bg-linear-to-tr from-amber-500 to-orange-500 text-white rounded-xl shadow-xs shadow-amber-500/10">
-              <Building2 size={18} />
-            </div>
-          </div>
-
-          <div className="bg-linear-to-br from-emerald-50 to-teal-50/60 dark:from-emerald-950/30 dark:to-teal-950/15 p-4.5 rounded-2xl border border-emerald-100/80 dark:border-emerald-900/30 shadow-xs flex items-center justify-between hover:shadow-md hover:border-emerald-400/40 transition-all duration-300">
-            <div className="space-y-1">
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black block">معدل الإنجاز الشخصي للشهر</span>
-              <span className="text-[11px] font-black text-emerald-800 dark:text-emerald-200 flex items-center gap-1">
-                <Award size={13} className="text-emerald-500 shrink-0" />
-                <span>94.8% كفاءة إصلاح (ممتاز)</span>
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/80 shadow-soft flex items-center justify-between hover:shadow-md hover:border-emerald-500/20 transition-all duration-350 hover:-translate-y-0.5 group">
+            <div className="space-y-1.5">
+              <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-black block">{language === 'ar' ? 'معدل الإنجاز الشخصي للشهر' : 'Monthly Quality Rating'}</span>
+              <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 leading-none font-sans">
+                <Award size={18} className="text-emerald-500 shrink-0" />
+                <span>94.8%</span>
+              </span>
+              <span className="text-[9.5px] text-emerald-600 font-black bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md inline-block border border-emerald-150 dark:border-emerald-900/30">
+                {language === 'ar' ? '🏆 كفاءة إصلاح (ممتاز جداً)' : '🏆 Top Performer'}
               </span>
             </div>
-            <div className="p-3 bg-linear-to-tr from-emerald-500 to-teal-500 text-white rounded-xl shadow-xs shadow-emerald-500/10">
-              <Award size={18} />
+            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/45 text-emerald-600 dark:text-emerald-400 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-3xs">
+              <Award size={22} />
+            </div>
+          </div>
+
+          {/* New Performance & Monthly Metrics Card */}
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/80 shadow-soft flex items-center justify-between hover:shadow-md hover:border-emerald-500/20 transition-all duration-350 hover:-translate-y-0.5 group">
+            <div className="space-y-2.5 w-full">
+              <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-black block">
+                {language === 'ar' ? 'متابعة الأداء التشغيلي للشهر' : 'Monthly Performance Tracking'}
+              </span>
+              
+              <div className="grid grid-cols-2 gap-3 divide-x divide-slate-100 dark:divide-slate-800/60 rtl:divide-x-reverse">
+                {/* Vehicles Maintained Column */}
+                <div className="space-y-1">
+                  <span className="text-[9px] text-slate-400 block font-bold">
+                    {language === 'ar' ? 'المركبات المنجزة' : 'Vehicles Maintained'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-2xl font-black font-sans text-emerald-600 dark:text-emerald-400">
+                      {vehiclesMaintainedThisMonth}
+                    </span>
+                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                  </div>
+                </div>
+
+                {/* Pending Orders Column */}
+                <div className="space-y-1 pl-3 rtl:pr-3 rtl:pl-0">
+                  <span className="text-[9px] text-slate-400 block font-bold">
+                    {language === 'ar' ? 'الطلبات المعلقة' : 'Pending Orders'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-2xl font-black font-sans text-amber-500">
+                      {pendingOrdersCount}
+                    </span>
+                    <Clock size={14} className="text-amber-500 shrink-0 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 dark:border-slate-800/60 pt-2.5 flex items-center justify-between text-[9px] font-medium text-slate-400">
+                <span>{language === 'ar' ? 'مؤشرات الكفاءة والجاهزية' : 'Efficiency & Readiness Index'}</span>
+                <span className="text-emerald-500 font-black">
+                  {vehiclesMaintainedThisMonth + pendingOrdersCount > 0 
+                    ? `+${Math.round((vehiclesMaintainedThisMonth / (vehiclesMaintainedThisMonth + pendingOrdersCount)) * 100)}%` 
+                    : '+100%'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -1994,11 +2883,11 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
           {/* Main Column (2/3): Highlighted Active Repair orders */}
           <div className="lg:col-span-2 space-y-4">
             {/* Quick Daily To-Do List for Technicians */}
-            <div className="bg-gradient-to-br from-indigo-50/40 via-white to-slate-50/50 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 p-5 rounded-3xl border border-indigo-100/50 dark:border-indigo-950/20 shadow-soft space-y-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-500/20">
+            <div className="bg-gradient-to-br from-emerald-50/40 via-white to-slate-50/50 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 p-5 rounded-3xl border border-emerald-100/50 dark:border-emerald-950/20 shadow-soft space-y-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-500/20">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="p-1 bg-indigo-500/10 text-indigo-500 rounded-lg shrink-0">
+                    <span className="p-1 bg-emerald-500/10 text-emerald-500 rounded-lg shrink-0">
                       <ClipboardList size={15} />
                     </span>
                     <h3 className="text-xs font-black text-slate-850 dark:text-slate-100 leading-none">
@@ -2022,24 +2911,24 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
 
                 {/* Today's Stats badge */}
                 {(() => {
-                  const todayTasks = orders.filter(o => o.technicianId === '201' && o.date === '2026-06-03');
+                  const todayTasks = orders.filter(o => o.technicianId === '201' && (o.date === '2026-06-03' || o.status !== 'completed'));
                   const completedToday = todayTasks.filter(o => o.status === 'completed').length;
                   const totalToday = todayTasks.length;
                   const progressPct = totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 100;
                   const isFullyCompleted = progressPct === 100;
 
                   return totalToday > 0 ? (
-                    <div className="flex items-center gap-4 bg-white dark:bg-slate-950 p-3 px-4 rounded-2xl border border-indigo-100/60 dark:border-slate-800 shrink-0 shadow-md">
+                    <div className="flex items-center gap-4 bg-white dark:bg-slate-950 p-3 px-4 rounded-2xl border border-emerald-100/60 dark:border-slate-800 shrink-0 shadow-md">
                       <div className="text-right space-y-0.5">
                         <span className="text-[9.5px] text-slate-400 block font-bold tracking-wide">{tQuickDailyList.completedLabel}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-13px font-black text-slate-800 dark:text-slate-100 font-sans">
+                          <span className="text-13px font-black text-slate-850 dark:text-slate-100 font-sans">
                             {completedToday} / {totalToday}
                           </span>
                           <span className={`text-[10px] font-black font-sans px-2 py-0.5 rounded-full transition-colors duration-300 ${
                             isFullyCompleted 
                               ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10' 
-                              : 'text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10'
+                              : 'text-emerald-650 bg-emerald-50/80 dark:bg-emerald-500/20'
                           }`}>
                             {progressPct}%
                           </span>
@@ -2051,11 +2940,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                         <div className="w-28 md:w-36 h-3 bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden shrink-0 relative shadow-inner border border-slate-200/20 dark:border-slate-800/60">
                           {/* Progress Fill */}
                           <div 
-                            className={`h-full rounded-full transition-all duration-750 ease-out relative ${
-                              isFullyCompleted 
-                                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400' 
-                                : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
-                            }`}
+                            className="h-full rounded-full transition-all duration-750 ease-out relative bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400"
                             style={{ width: `${progressPct}%` }}
                           >
                             {/* Animated light streak for active states */}
@@ -2078,7 +2963,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
 
               {/* Mini Summary Counters at the top of the list */}
               {(() => {
-                const todayTasks = orders.filter(o => o.technicianId === '201' && o.date === '2026-06-03');
+                const todayTasks = orders.filter(o => o.technicianId === '201' && (o.date === '2026-06-03' || o.status !== 'completed'));
                 if (todayTasks.length === 0) return null;
 
                 const totalCount = todayTasks.length;
@@ -2092,7 +2977,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                       <span className="text-[9px] text-slate-400 dark:text-slate-500 block font-bold leading-none">
                         {language === 'ar' ? 'إجمالي مهام اليوم' : 'Total Tasks'}
                       </span>
-                      <span className="text-[14px] font-black text-indigo-600 dark:text-indigo-400 font-sans block leading-none">
+                      <span className="text-[14px] font-black text-emerald-600 dark:text-emerald-400 font-sans block leading-none">
                         {totalCount}
                       </span>
                     </div>
@@ -2112,7 +2997,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                       <span className="text-[9px] text-slate-400 dark:text-slate-500 block font-bold leading-none">
                         {language === 'ar' ? 'المتبقية للعمل' : 'Remaining Tasks'}
                       </span>
-                      <span className={`text-[14px] font-black font-sans block leading-none ${remainingCount > 0 ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-slate-500'}`}>
+                      <span className={`text-[14px] font-black font-sans block leading-none ${remainingCount > 0 ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-slate-50'}`}>
                         {remainingCount}
                       </span>
                     </div>
@@ -2122,16 +3007,16 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
 
               {/* Today's Tasks List */}
               {(() => {
-                const todayTasks = orders.filter(o => o.technicianId === '201' && o.date === '2026-06-03');
+                const todayTasks = orders.filter(o => o.technicianId === '201' && (o.date === '2026-06-03' || o.status !== 'completed'));
 
                 if (todayTasks.length === 0) {
                   return (
                     <div className="text-center py-6 space-y-2.5 bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl border border-dashed border-slate-150 dark:border-slate-850">
-                      <div className="w-10 h-10 rounded-full bg-indigo-500/10 text-indigo-500 flex items-center justify-center mx-auto">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
                         <CheckCircle2 size={18} className="animate-pulse" />
                       </div>
                       <div className="space-y-0.5">
-                        <p className="text-[10.5px] font-black text-slate-705 dark:text-slate-300">
+                        <p className="text-[10.5px] font-black text-slate-750 dark:text-slate-300">
                           {tQuickDailyList.noTasksTitle}
                         </p>
                         <p className="text-[9px] text-slate-400 max-w-[260px] mx-auto leading-normal">
@@ -2151,7 +3036,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                       let priBg = 'bg-slate-100 text-slate-500 dark:bg-slate-800';
                       let priText = 'أولوية منخفضة';
                       if (order.priority === 'high') {
-                        priBg = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/10';
+                        priBg = 'bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-500/10';
                         priText = language === 'ar' ? 'أولوية قصوى 🚨' : 'High Priority 🚨';
                       } else if (order.priority === 'medium') {
                         priBg = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/10';
@@ -2166,19 +3051,19 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                         <div
                           key={order.id}
                           onClick={(e) => {
-                            if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) return;
+                            if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('select') || (e.target as HTMLElement).closest('canvas') || (e.target as HTMLElement).closest('input') || (e.target as HTMLElement).closest('textarea')) return;
                             setExpandedTasks(prev => ({ ...prev, [order.id]: !prev[order.id] }));
                           }}
                           className={`group relative p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between gap-3 text-right cursor-pointer select-none ${
                             isCompleted 
                               ? 'bg-emerald-500/[0.01] hover:bg-emerald-500/[0.03] border-emerald-500/20 dark:border-emerald-500/10 opacity-75' 
                               : isExpanded
-                              ? 'bg-indigo-50/10 dark:bg-[#151d33] border-indigo-200 dark:border-slate-700 shadow-sm'
-                              : 'bg-white hover:bg-indigo-50/10 dark:bg-[#121829] border-slate-150/70 dark:border-slate-850 hover:border-indigo-200 dark:hover:border-slate-700/60 shadow-xs'
+                              ? 'bg-emerald-50/10 dark:bg-[#0f211d] border-emerald-200 dark:border-slate-700 shadow-sm'
+                              : 'bg-white hover:bg-emerald-50/10 dark:bg-[#111c19] border-slate-150/70 dark:border-slate-850 hover:border-emerald-200 dark:hover:border-slate-700/60 shadow-xs'
                           }`}
                         >
                           {/* Inner glowing background indicator */}
-                          <div className={`absolute top-0 right-0 w-1.5 h-full rounded-r-2xl ${isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                          <div className={`absolute top-0 right-0 w-1.5 h-full rounded-r-2xl ${isCompleted ? 'bg-emerald-600' : 'bg-emerald-400'}`} />
 
                           <div className="space-y-2 pr-2">
                             <div className="flex items-center justify-between gap-2">
@@ -2228,9 +3113,108 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                       {language === 'ar' ? 'وصف العطل التفصيلي:' : 'Failure Description:'}
                                     </span>
                                     <p className="text-slate-700 dark:text-slate-300 font-medium bg-white dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                                      {order.description} {order.techNotes ? `- ${order.techNotes}` : ''}
+                                      {order.description}
                                     </p>
                                   </div>
+
+                                  {/* Work Timer inside Expanded Grid */}
+                                  {(() => {
+                                    const isRunning = runningOrderId === order.id;
+                                    const elapsed = isRunning ? activeSeconds : (order.actualWorkTime || 0);
+                                    return (
+                                      <div className={`sm:col-span-2 p-3 rounded-xl border transition-all duration-300 ${
+                                        isRunning 
+                                          ? 'bg-emerald-500/[0.03] border-emerald-500/20 shadow-xs ring-2 ring-emerald-500/5' 
+                                          : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800'
+                                      }`}>
+                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-right" dir="rtl">
+                                          <div className="flex items-center gap-2.5">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                                              isRunning 
+                                                ? 'bg-emerald-500 text-white animate-pulse shadow-xs shadow-emerald-500/20' 
+                                                : 'bg-slate-100 dark:bg-slate-900 text-slate-500'
+                                            }`}>
+                                              <Clock size={15} className={isRunning ? 'animate-spin' : ''} style={{ animationDuration: isRunning ? '6s' : '0s' }} />
+                                            </div>
+                                            <div className="space-y-0.5">
+                                              <span className="text-[10px] text-slate-450 font-black block">
+                                                {language === 'ar' ? 'الوقت المستغرق فعلياً في الصيانة:' : 'Actual Maintenance Work Time:'}
+                                              </span>
+                                              <div className="flex items-center gap-1.5">
+                                                <span className="text-xs font-bold font-mono tracking-wider text-slate-850 dark:text-slate-100">
+                                                  {formatTime(elapsed)}
+                                                </span>
+                                                {isRunning && (
+                                                  <span className="flex items-center gap-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold animate-pulse">
+                                                    {language === 'ar' ? 'جاري الحساب...' : 'Ticking...'}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                                            {!isCompleted ? (
+                                              <>
+                                                {isRunning ? (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handlePauseTimer()}
+                                                    className="py-1 px-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                                  >
+                                                    <Pause size={11} />
+                                                    <span>{language === 'ar' ? 'إيقاف مؤقت' : 'Pause'}</span>
+                                                  </button>
+                                                ) : (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleStartTimer(order.id, order.actualWorkTime || 0)}
+                                                    className="py-1 px-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                                  >
+                                                    <Play size={11} fill="currentColor" />
+                                                    <span>{language === 'ar' ? 'ابدأ العمل' : 'Start/Resume'}</span>
+                                                  </button>
+                                                )}
+                                                
+                                                {(order.actualWorkTime || 0) > 0 && !isRunning && (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      if (confirm(language === 'ar' ? 'هل أنت متأكد من تصفير مؤقت العمل الفعلي لهذه المهمة؟' : 'Are you sure you want to reset the timer for this task?')) {
+                                                        const updated = orders.map(o => o.id === order.id ? { ...o, actualWorkTime: 0 } : o);
+                                                        saveOrdersToLocalStorage(updated);
+                                                      }
+                                                    }}
+                                                    className="py-1 px-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 font-bold text-[9px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                                    title={language === 'ar' ? 'تصفير المؤقت' : 'Reset Timer'}
+                                                  >
+                                                    <RotateCcw size={11} />
+                                                  </button>
+                                                )}
+                                              </>
+                                            ) : (
+                                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
+                                                {language === 'ar' ? `⏱️ تم تثبيت الوقت: ${formatTimeArabic(elapsed)}` : `⏱️ Logged: ${formatTime(elapsed)}`}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Linked to report visual indicator */}
+                                        {elapsed > 0 && (
+                                          <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/40 flex items-center justify-between text-[9px] text-slate-400 font-bold">
+                                            <span className="flex items-center gap-1">
+                                              <FileText size={10} className="text-slate-450 shrink-0" />
+                                              <span>{language === 'ar' ? 'تقرير الصيانة النهائي الصادر:' : 'Final Maintenance Report Issued:'}</span>
+                                            </span>
+                                            <span className="text-emerald-500 font-extrabold">
+                                              {language === 'ar' ? 'تم ربطه وتوثيقه بالتقرير النهائي تلقائياً 🖇️' : 'Linked and added to final report automatically 🖇️'}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
 
                                   {/* Complete plate number */}
                                   {vehicle && (
@@ -2253,142 +3237,228 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                       {order.date}
                                     </span>
                                   </div>
-                                </div>
 
-                                {/* Digital Signature Pad for documentation & responsibility */}
-                                <div className="bg-slate-50/50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                                  <SignaturePad
-                                    savedSignature={order.signature}
-                                    onSave={(signatureDataUrl) => {
-                                      const updated = orders.map(o => {
-                                        if (o.id === order.id) {
-                                          return {
-                                            ...o,
-                                            signature: signatureDataUrl
-                                          };
-                                        }
-                                        return o;
-                                      });
-                                      saveOrdersToLocalStorage(updated);
-                                    }}
-                                    onClear={() => {
-                                      const updated = orders.map(o => {
-                                        if (o.id === order.id) {
-                                          return {
-                                            ...o,
-                                            signature: undefined
-                                          };
-                                        }
-                                        return o;
-                                      });
-                                      saveOrdersToLocalStorage(updated);
-                                    }}
-                                    language={language}
-                                  />
-                                </div>
+                                  {/* POINT 1: Technician Notes */}
+                                  <div className="space-y-1 sm:col-span-2">
+                                    <VoiceNoteField
+                                      value={order.techNotes || ''}
+                                      onChange={(val) => {
+                                        const updated = orders.map(o => o.id === order.id ? { ...o, techNotes: val } : o);
+                                        saveOrdersToLocalStorage(updated);
+                                      }}
+                                      label={language === 'ar' ? 'إضافة ملاحظات الفني التفصيلية (صوتية وكتابية - حفظ تلقائي):' : 'Add Detailed Tech Notes (Voice & Text - Auto-saved):'}
+                                      placeholder={language === 'ar' ? 'اكتب ملاحظات الصيانة أو اضغط على الميكروفون للبدء بالحديث...' : 'Type notes or click microphone to talk...'}
+                                      rows={2}
+                                    />
+                                  </div>
 
-                                {/* Start / Pause Actions Control Panel */}
-                                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                                  {!isCompleted && (
-                                    order.status === 'pending' ? (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const updated = orders.map(o => {
-                                            if (o.id === order.id) {
-                                              return {
-                                                ...o,
-                                                status: 'in-progress' as const,
-                                                progress: 25,
-                                                lastUpdate: new Date().toISOString().split('T')[0]
-                                              };
-                                            }
-                                            return o;
-                                          });
-                                          saveOrdersToLocalStorage(updated);
-                                          triggerToast(language === 'ar' ? 'تم بدء العمل على المهمة بنجاح!' : 'Task work started successfully!');
-                                        }}
-                                        className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl text-[10px] font-black flex items-center gap-1 cursor-pointer transition-all shadow-xs"
-                                      >
-                                        <Play size={12} fill="currentColor" />
-                                        <span>{language === 'ar' ? 'بدء العمل' : 'Start Work'}</span>
-                                      </button>
+                                  {/* POINT 2: Fault and Inspection Photo Upload Area */}
+                                  <div className="space-y-1.5 sm:col-span-2 bg-white dark:bg-[#121829]/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <span className="text-[10px] font-bold text-slate-400 block flex items-center gap-1">
+                                      <Camera size={12} className="text-emerald-500" />
+                                      <span>{language === 'ar' ? 'صور المعاينة والأعطال الميدانية (سحب وإفلات أو نقر):' : 'Inspection & Fault Photos (Drag & Drop or Click):'}</span>
+                                    </span>
+                                    
+                                    <div 
+                                      onDragOver={(e) => e.preventDefault()}
+                                      onDrop={(e) => {
+                                        e.preventDefault();
+                                        const file = e.dataTransfer.files?.[0];
+                                        if (file && file.type.startsWith('image/')) {
+                                          const reader = new FileReader();
+                                          reader.onload = () => {
+                                            const updated = orders.map(o => o.id === order.id ? { ...o, photoUrl: reader.result as string } : o);
+                                            saveOrdersToLocalStorage(updated);
+                                            triggerToast(language === 'ar' ? 'تم رفع صورة المعاينة بنجاح!' : 'Inspection photo uploaded successfully!');
+                                          };
+                                          reader.readAsDataURL(file);
+                                        }
+                                      }}
+                                      className="border border-dashed border-slate-200 dark:border-slate-800 hover:border-emerald-500 rounded-xl p-3 text-center transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-950/20 relative"
+                                      onClick={() => {
+                                        const input = document.createElement('input');
+                                        input.type = 'file';
+                                        input.accept = 'image/*';
+                                        input.onchange = (e) => {
+                                          const file = (e.target as HTMLInputElement).files?.[0];
+                                          if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = () => {
+                                              const updated = orders.map(o => o.id === order.id ? { ...o, photoUrl: reader.result as string } : o);
+                                              saveOrdersToLocalStorage(updated);
+                                              triggerToast(language === 'ar' ? 'تم رفع صورة المعاينة بنجاح!' : 'Inspection photo uploaded successfully!');
+                                            };
+                                            reader.readAsDataURL(file);
+                                          }
+                                        };
+                                        input.click();
+                                      }}
+                                    >
+                                      {order.photoUrl ? (
+                                        <div className="space-y-2">
+                                          <img src={order.photoUrl} alt="Inspection preview" className="max-h-28 mx-auto rounded-lg border border-slate-200 dark:border-slate-850 shadow-xs" referrerPolicy="no-referrer" />
+                                          <div className="flex items-center justify-center gap-2">
+                                            <span className="text-[9px] text-slate-400 font-bold">{language === 'ar' ? 'تم تحميل الصورة بنجاح' : 'Image loaded successfully'}</span>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const updated = orders.map(o => o.id === order.id ? { ...o, photoUrl: undefined } : o);
+                                                saveOrdersToLocalStorage(updated);
+                                                triggerToast(language === 'ar' ? 'تم حذف الصورة.' : 'Photo deleted.');
+                                              }}
+                                              className="text-rose-500 hover:text-rose-600 font-black text-[9px] px-2 py-0.5 bg-rose-50 dark:bg-rose-950/40 rounded-md border border-rose-100 dark:border-rose-900/30"
+                                            >
+                                              {language === 'ar' ? 'حذف الصورة' : 'Delete Photo'}
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="py-2 space-y-1">
+                                          <UploadCloud size={20} className="mx-auto text-slate-400 animate-bounce" />
+                                          <p className="text-[10px] font-black text-slate-600 dark:text-slate-350">{language === 'ar' ? 'اسحب وأفلت صورة المعاينة هنا، أو انقر للتصفح' : 'Drag & drop inspection photo here, or click to browse'}</p>
+                                          <p className="text-[8px] text-slate-400 font-bold">{language === 'ar' ? 'يدعم صيغ الصور (PNG, JPG)' : 'Supports images (PNG, JPG)'}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* POINT 3: Direct Inline Part Request */}
+                                  <div className="space-y-1.5 sm:col-span-2 bg-white dark:bg-[#121829]/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <span className="text-[10px] font-bold text-slate-400 block flex items-center gap-1">
+                                      <Package size={12} className="text-emerald-500" />
+                                      <span>{language === 'ar' ? 'طلب وصرف قطع غيار لهذه المهمة:' : 'Request & Issue Parts for this Task:'}</span>
+                                    </span>
+
+                                    {order.partsUsed && order.partsUsed.length > 0 ? (
+                                      <div className="flex flex-wrap gap-1.5 mb-2">
+                                        {order.partsUsed.map((partName, idx) => (
+                                          <span key={idx} className="inline-flex items-center gap-1 text-[9px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/10">
+                                            <span>{partName}</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const updatedParts = (order.partsUsed || []).filter((_, pIdx) => pIdx !== idx);
+                                                const updated = orders.map(o => o.id === order.id ? { ...o, partsUsed: updatedParts } : o);
+                                                saveOrdersToLocalStorage(updated);
+                                                triggerToast(language === 'ar' ? 'تم إلغاء قطعة الغيار.' : 'Part removed.');
+                                              }}
+                                              className="text-emerald-700 hover:text-rose-500 font-bold ml-1"
+                                            >
+                                              ×
+                                            </button>
+                                          </span>
+                                        ))}
+                                      </div>
                                     ) : (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const updated = orders.map(o => {
-                                            if (o.id === order.id) {
-                                              return {
-                                                ...o,
-                                                status: 'pending' as const,
-                                                progress: 0,
-                                                lastUpdate: new Date().toISOString().split('T')[0]
-                                              };
-                                            }
-                                            return o;
-                                          });
+                                      <p className="text-[9px] text-slate-400 font-bold mb-2">{language === 'ar' ? 'لم يتم طلب أو استخدام أي قطع غيار لهذه المهمة بعد.' : 'No parts have been requested or used for this task yet.'}</p>
+                                    )}
+
+                                    <div className="flex items-center gap-2">
+                                      <select
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          if (val) {
+                                            const item = inventory.find(i => i.id === val);
+                                            if (item) {
+                                              if (item.quantity <= 0) {
+                                                triggerToast(language === 'ar' ? 'عذراً، هذه القطعة غير متوفرة في المستودع حالياً!' : 'Sorry, this part is currently out of stock!');
+                                                return;
+                                              }
+                                              const currentParts = order.partsUsed || [];
+                                              if (currentParts.includes(`${item.name} (${item.partNumber})`)) {
+                                                triggerToast(language === 'ar' ? 'هذه القطعة مضافة بالفعل!' : 'This part is already added!');
+                                                return;
+                                              }
+                                              const updatedParts = [...currentParts, `${item.name} (${item.partNumber})`];
+                                              
+                                              const updatedOrders = orders.map(o => o.id === order.id ? { ...o, partsUsed: updatedParts } : o);
+                                              saveOrdersToLocalStorage(updatedOrders);
+
+                                                                                             const updatedInventory = inventory.map(invItem => {
+                                                 if (invItem.id === item.id) {
+                                                   return { ...invItem, quantity: Math.max(0, invItem.quantity - 1) };
+                                                 }
+                                                 return invItem;
+                                               });
+                                               setInventory(updatedInventory);
+                                               localStorage.setItem('fleet_inventory_v2', JSON.stringify(updatedInventory));
+
+                                               triggerToast(language === 'ar' ? `تم طلب وصرف قطعة ${item.name} بنجاح خصماً من المستودع!` : `Part ${item.name} requested and issued successfully from inventory!`);
+                                               e.target.value = '';
+                                             }
+                                           }
+                                         }}
+                                         className="flex-1 text-[10px] font-bold p-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg outline-none text-slate-700 dark:text-slate-350 cursor-pointer"
+                                       >
+                                         <option value="">{language === 'ar' ? '-- اختر قطعة لصرفها فوراً لهذه المهمة --' : '-- Select a part to issue immediately for this task --'}</option>
+                                         {inventory.map(item => (
+                                           <option key={item.id} value={item.id} disabled={item.quantity <= 0}>
+                                             {item.name} ({item.partNumber}) - {language === 'ar' ? 'متوفر' : 'Stock'}: {item.quantity} {item.quantity <= 0 ? '❌' : ''}
+                                           </option>
+                                         ))}
+                                       </select>
+                                     </div>
+                                  </div>
+
+                                  {/* SignaturePad Section */}
+                                  {!isCompleted && (
+                                    <div className="sm:col-span-2 mt-2">
+                                      <SignaturePad
+                                        savedSignature={order.signature}
+                                        language={language}
+                                        onSave={(sig) => {
+                                          const updated = orders.map(o => o.id === order.id ? { ...o, signature: sig } : o);
                                           saveOrdersToLocalStorage(updated);
-                                          triggerToast(language === 'ar' ? 'تم إيقاف المهمة مؤقتاً بنجاح!' : 'Task paused successfully!');
                                         }}
-                                        className="bg-slate-500 hover:bg-slate-600 text-white px-3 py-1.5 rounded-xl text-[10px] font-black flex items-center gap-1 cursor-pointer transition-all shadow-xs"
-                                      >
-                                        <Pause size={12} fill="currentColor" />
-                                        <span>{language === 'ar' ? 'إيقاف مؤقت' : 'Pause Task'}</span>
-                                      </button>
-                                    )
+                                        onClear={() => {
+                                          const updated = orders.map(o => o.id === order.id ? { ...o, signature: undefined } : o);
+                                          saveOrdersToLocalStorage(updated);
+                                        }}
+                                      />
+                                    </div>
                                   )}
 
-                                  {/* Complete / Reopen Action button in Accordion */}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (isCompleted) {
-                                        // Reopen
-                                        const updated = orders.map(o => {
-                                          if (o.id === order.id) {
-                                            return {
-                                              ...o,
-                                              status: 'in-progress' as const,
-                                              progress: 50,
-                                              lastUpdate: new Date().toISOString().split('T')[0]
-                                            };
+                                  <div className="flex justify-end gap-2 pt-2 sm:col-span-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (isCompleted) {
+                                          const updated = orders.map(o => o.id === order.id ? { ...o, status: 'in-progress', progress: 50 } : o);
+                                          saveOrdersToLocalStorage(updated);
+                                          triggerToast(language === 'ar' ? 'تمت إعادة فتح المهمة وتعيين التقدم إلى 50%!' : 'Task reopened and set to 50% progress!');
+                                        } else {
+                                          // Complete - Require signature
+                                          if (!order.signature) {
+                                            triggerToast(
+                                              language === 'ar'
+                                                ? 'يرجى رسم التوقيع الرقمي في المربع المخصص أدناه أولاً لتوثيق وتحمل مسؤولية الصيانة!'
+                                                : 'Please draw your digital signature in the box below first to document and take responsibility for the maintenance!'
+                                            );
+                                            return;
                                           }
-                                          return o;
-                                        });
-                                        saveOrdersToLocalStorage(updated);
-                                        triggerToast(language === 'ar' ? 'تمت إعادة فتح المهمة وتعيين التقدم إلى 50%!' : 'Task reopened and set to 50% progress!');
-                                      } else {
-                                        // Complete - Require signature
-                                        if (!order.signature) {
-                                          triggerToast(
-                                            language === 'ar'
-                                              ? 'يرجى رسم التوقيع الرقمي في المربع المخصص أدناه أولاً لتوثيق وتحمل مسؤولية الصيانة!'
-                                              : 'Please draw your digital signature in the box below first to document and take responsibility for the maintenance!'
-                                          );
-                                          return;
+                                          handleCompleteOrder(order.id);
                                         }
-                                        handleCompleteOrder(order.id);
-                                      }
-                                    }}
-                                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                                      isCompleted
-                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200'
-                                        : 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-xs shadow-indigo-500/10'
-                                    }`}
-                                  >
-                                    {isCompleted ? (
-                                      <>
-                                        <RotateCcw size={12} />
-                                        <span>{tQuickDailyList.reopenTask}</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <CheckCircle2 size={12} />
-                                        <span>{tQuickDailyList.completeTask}</span>
-                                      </>
-                                    )}
-                                  </button>
+                                      }}
+                                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                        isCompleted
+                                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200'
+                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shadow-emerald-500/10'
+                                      }`}
+                                    >
+                                      {isCompleted ? (
+                                        <>
+                                          <RotateCcw size={12} />
+                                          <span>{tQuickDailyList.reopenTask}</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <CheckCircle2 size={12} />
+                                          <span>{tQuickDailyList.completeTask}</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
                                 </div>
                               </motion.div>
                             )}
@@ -2412,9 +3482,28 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                   <span>{tQuickDailyList.statusPending}</span>
                                 </span>
                               )}
+
+                              {/* Tiny collapsed timer badge */}
+                              {(() => {
+                                const isRunning = runningOrderId === order.id;
+                                const elapsed = isRunning ? activeSeconds : (order.actualWorkTime || 0);
+                                if (elapsed > 0) {
+                                  return (
+                                    <span className={`inline-flex items-center gap-1 text-[8.5px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
+                                      isRunning 
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 animate-pulse border border-emerald-500/20' 
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                    }`}>
+                                      <Clock size={10} className={isRunning ? 'animate-spin' : ''} style={{ animationDuration: isRunning ? '4s' : '0s' }} />
+                                      <span>{formatTime(elapsed)}</span>
+                                    </span>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
 
-                            <div className="flex items-center gap-1 text-[9px] font-black text-slate-400 group-hover:text-indigo-500 transition-colors">
+                            <div className="flex items-center gap-1 text-[9px] font-black text-slate-400 group-hover:text-emerald-500 transition-colors">
                               <span>{isExpanded ? (language === 'ar' ? 'إخفاء التفاصيل' : 'Hide Details') : (language === 'ar' ? 'عرض التفاصيل والتحكم' : 'Details & Control')}</span>
                               {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                             </div>
@@ -2468,73 +3557,355 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
               <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl text-center border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
                 <CheckCircle2 size={36} className="text-emerald-500 mx-auto animate-pulse" />
                 <h3 className="text-xs font-black text-slate-800 dark:text-slate-200">أنت الآن خالٍ من أي مهام صيانة معلقة!</h3>
-                <p className="text-[10px] text-slate-400">ممتاز، لقد أنهيت كافة المهام المكلف بها في الممر رقم 8. يمكنك أخذ قسط من الراحة أو adoption مهام مستوردة جديدة.</p>
+                <p className="text-[10px] text-slate-400">ممتاز، لقد أنهيت كافة المهام المكلف بها في الممر رقم 8.</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {techOrders.map((order) => {
+                {techOrders.map(order => {
                   const vehicle = vehicles.find(v => v.id === order.vehicleId);
-                  const orderMilestones = order.milestones || [
-                    { title: 'التشخيص الأولي وفحص الدوائر الإلكترونية والكهربية', checked: false },
-                    { title: 'فك الأجزاء المتأثرة التآكلية وتوثيقها', checked: false },
-                    { title: 'تركيب وتوصيل قطع الصيانة الجديدة وتثبيتها', checked: false },
-                    { title: 'اختبار المعايرة الميكانيكية والتحميل على المحركات', checked: false },
-                  ];
-
                   return (
                     <div 
                       key={order.id} 
-                      className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-150/80 dark:border-slate-800/90 shadow-soft space-y-4 hover:border-brand-blue-500/30 transition-all"
+                      className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-150/60 dark:border-slate-800/80 shadow-soft space-y-3"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/60">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-[8.5px] font-black ${
-                              order.priority === 'high' 
-                                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/10' 
-                                : order.priority === 'medium'
-                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/10'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-                            }`}>
-                              {order.priority === 'high' ? 'أولوية قصوى عاجلة 🚨' : order.priority === 'medium' ? 'أولوية متوسطة' : 'أولوية اعتيادية'}
-                            </span>
-                            <span className="text-[11px] font-black text-rose-500 font-sans tracking-wide">{order.orderNumber}</span>
-                          </div>
-                          <h3 className="text-xs font-black text-slate-905 dark:text-slate-205 mt-1">{order.description}</h3>
-                        </div>
-
-                        {vehicle && (
-                          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 rounded-xl border border-slate-100 dark:border-slate-850 shrink-0">
-                            <div className="w-8 h-8 rounded-lg bg-brand-blue-500/10 text-brand-blue-500 flex items-center justify-center shrink-0">
-                              <Truck size={14} />
-                            </div>
-                            <div className="text-right">
-                              <span className="text-[9.5px] font-black block text-slate-800 dark:text-slate-200 truncate max-w-[120px]">{vehicle.name}</span>
-                              <span className="text-[8px] font-mono text-slate-400 block">{vehicle.plateNumber}</span>
-                            </div>
-                          </div>
-                        )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-sans font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md text-slate-500">
+                          {order.orderNumber}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[8px] font-black ${
+                          order.priority === 'high' 
+                            ? 'bg-rose-500/10 text-rose-600 dark:text-rose-450' 
+                            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        }`}>
+                          {order.priority === 'high' 
+                            ? (language === 'ar' ? 'أولوية قصوى 🚨' : 'High Priority 🚨')
+                            : (language === 'ar' ? 'أولوية متوسطة ⚠️' : 'Medium Priority ⚠️')
+                          }
+                        </span>
                       </div>
 
-                      {/* Milestone checks */}
-                      <div className="space-y-2">
-                        <span className="text-[9.5px] font-black text-slate-500 block">خطوات الفحص والمعايرة الميدانية للورشة:</span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {orderMilestones.map((milestone, idx) => (
+                      {/* Prominent Vehicle Identification Bar at the top of the form */}
+                      {vehicle && (
+                        <div className="border border-slate-150/80 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-xs">
+                          {/* Main Clickable Header Bar */}
+                          <div 
+                            id={`vehicle-info-bar-${order.id}`}
+                            onClick={() => setExpandedVehicleOrderId(expandedVehicleOrderId === order.id ? null : order.id)}
+                            className="flex items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-950 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/25 transition-all duration-200 cursor-pointer text-right select-none"
+                            dir="rtl"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {/* Vehicle Thumbnail / Icon Badge */}
+                              <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-905/30 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                                {vehicle.image ? (
+                                  <img 
+                                    src={vehicle.image} 
+                                    alt={vehicle.name} 
+                                    className="w-full h-full object-cover"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                ) : (
+                                  <Truck size={18} className="text-emerald-500" />
+                                )}
+                              </div>
+                              
+                              {/* Vehicle Title & Type */}
+                              <div className="space-y-0.5 min-w-0 text-right">
+                                <span className="text-[9px] font-bold text-slate-400 block leading-none">
+                                  {language === 'ar' ? 'المركبة المكلفة:' : 'Assigned Vehicle:'}
+                                </span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[11.5px] font-black text-slate-850 dark:text-slate-100 truncate">
+                                    {vehicle.name}
+                                  </span>
+                                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-slate-200/50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-black shrink-0">
+                                    {vehicle.type || (language === 'ar' ? 'آلية نقل' : 'Transport Vehicle')}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Plate Number & Interactive Chevron */}
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              {/* Plate & Year */}
+                              <div className="text-left flex flex-col items-end gap-1 font-sans">
+                                <div className="flex items-stretch border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-[10px] overflow-hidden leading-none h-6.5 shadow-xs">
+                                  <div className="px-2.5 flex items-center justify-center font-black text-slate-800 dark:text-slate-100 border-l border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 font-mono">
+                                    {vehicle.plateNumber}
+                                  </div>
+                                  <div className="px-1.5 flex flex-col justify-center items-center bg-emerald-600 text-[6.5px] text-white font-black select-none">
+                                    <span>KSA</span>
+                                    <span className="text-[5.5px] tracking-tighter">السعودية</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Clickable Action Chevron */}
+                              <div className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center transition-all duration-300 border shadow-sm ${
+                                expandedVehicleOrderId === order.id 
+                                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/25 scale-105' 
+                                  : 'bg-emerald-50 dark:bg-emerald-950/45 border-emerald-200/60 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 ring-4 ring-emerald-500/5 dark:ring-emerald-500/10'
+                              }`}>
+                                {expandedVehicleOrderId === order.id ? (
+                                  <ChevronUp size={15} className="animate-pulse" />
+                                ) : (
+                                  <ChevronDown size={15} className="font-bold" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Expandable Dropdown Details Container */}
+                          <AnimatePresence initial={false}>
+                            {expandedVehicleOrderId === order.id && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                className="overflow-hidden bg-slate-50/50 dark:bg-slate-950/30 border-t border-slate-100 dark:border-slate-850"
+                              >
+                                <div className="p-3.5 space-y-3 text-right text-xs" dir="rtl">
+                                  {/* Current Assigned Driver block */}
+                                  <div className="space-y-1.5">
+                                    <span className="text-[9.5px] text-slate-400 font-extrabold block">
+                                      {language === 'ar' ? 'سائق المركبة الحالي:' : 'Current Assigned Driver:'}
+                                    </span>
+                                    {(() => {
+                                      const assignedDriver = drivers.find(
+                                        d => d.assignedVehicleId === vehicle.id || d.id === vehicle.assignedDriverId
+                                      );
+                                      if (assignedDriver) {
+                                        return (
+                                          <div className="flex items-center gap-3 p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 rounded-xl">
+                                            {/* Driver Avatar */}
+                                            <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200/50 dark:border-slate-750 shrink-0">
+                                              {assignedDriver.avatar ? (
+                                                <img 
+                                                  src={assignedDriver.avatar} 
+                                                  alt={assignedDriver.name} 
+                                                  className="w-full h-full object-cover"
+                                                  referrerPolicy="no-referrer"
+                                                />
+                                              ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-emerald-50 text-emerald-600 font-bold text-xs">
+                                                  {assignedDriver.name.charAt(0)}
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            {/* Driver Info */}
+                                            <div className="space-y-0.5 min-w-0 flex-1">
+                                              <span className="font-black text-slate-800 dark:text-slate-100 block truncate text-[11px]">
+                                                {assignedDriver.name}
+                                              </span>
+                                              <div className="flex items-center gap-2 text-[9.5px] text-slate-400 font-bold font-mono">
+                                                <Phone size={10} className="text-slate-400 shrink-0" />
+                                                <span>{assignedDriver.phone}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                      return (
+                                        <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 rounded-xl text-slate-400 text-[10.5px] font-bold text-center">
+                                          {language === 'ar' ? '⚠️ لا يوجد سائق معين حالياً لهذه المركبة' : '⚠️ No driver assigned currently'}
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+
+                                  {/* Double column grid for extra technical info */}
+                                  <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+                                    {/* Column 1: Last Maintenance Date */}
+                                    <div className="p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 rounded-xl space-y-1">
+                                      <span className="text-[9px] text-slate-400 font-black flex items-center gap-1">
+                                        <Calendar size={10} className="text-indigo-500" />
+                                        <span>{language === 'ar' ? 'تاريخ آخر صيانة:' : 'Last Maintained:'}</span>
+                                      </span>
+                                      <span className="font-black text-slate-700 dark:text-slate-200 font-mono block">
+                                        {vehicle.lastMaintenance || '2024-05-01'}
+                                      </span>
+                                    </div>
+
+                                    {/* Column 2: Approximate Location */}
+                                    <div className="p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 rounded-xl space-y-1">
+                                      <span className="text-[9px] text-slate-400 font-black flex items-center gap-1">
+                                        <MapPin size={10} className="text-indigo-500" />
+                                        <span>{language === 'ar' ? 'الموقع التقريبي:' : 'Approx Location:'}</span>
+                                      </span>
+                                      <span className="font-black text-slate-705 dark:text-slate-200 truncate block">
+                                        {vehicle.subDepartment || vehicle.department || (language === 'ar' ? 'الورشة المركزية' : 'Central Depot')}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Quick Link to Spare Parts Catalog */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedCatalogVehicle(vehicle);
+                                      setPartsCatalogSearchQuery('');
+                                      setIsVehiclePartsCatalogOpen(true);
+                                    }}
+                                    className="w-full mt-1.5 py-2 px-3 bg-indigo-50 hover:bg-indigo-100/80 dark:bg-indigo-950/35 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-black rounded-xl transition-all duration-200 border border-indigo-100/50 dark:border-indigo-900/30 flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-[0.99] cursor-pointer text-[10.5px] select-none"
+                                  >
+                                    <BookOpen size={13} className="animate-pulse" />
+                                    <span>
+                                      {language === 'ar' ? 'استعراض كتالوج قطع الغيار المعتمد 📖' : 'Browse Certified Spare Parts Catalog 📖'}
+                                    </span>
+                                  </button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+
+                      <div className="space-y-1 text-right">
+                        <h4 className="text-xs font-black text-slate-850 dark:text-slate-100 leading-relaxed">
+                          {order.description}
+                        </h4>
+                      </div>
+
+                      {/* Modern Work Timer (مؤقت العمل الفعلي) */}
+                      {(() => {
+                        const isRunning = runningOrderId === order.id;
+                        const elapsed = isRunning ? activeSeconds : (order.actualWorkTime || 0);
+                        const isCompleted = order.status === 'completed';
+                        return (
+                          <div className={`p-3 rounded-2xl border transition-all duration-300 ${
+                            isRunning 
+                              ? 'bg-emerald-500/[0.03] border-emerald-500/20 shadow-xs ring-2 ring-emerald-500/5' 
+                              : 'bg-slate-50 dark:bg-slate-950 border-slate-150 dark:border-slate-850'
+                          }`}>
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-right" dir="rtl">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                                  isRunning 
+                                    ? 'bg-emerald-500 text-white animate-pulse shadow-xs shadow-emerald-500/20' 
+                                    : 'bg-slate-200/60 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                }`}>
+                                  <Clock size={16} className={isRunning ? 'animate-spin' : ''} style={{ animationDuration: isRunning ? '6s' : '0s' }} />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] text-slate-450 font-extrabold block">
+                                    {language === 'ar' ? 'الوقت المستغرق فعلياً في الصيانة:' : 'Actual Maintenance Work Time:'}
+                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-sm font-bold font-mono tracking-wider text-slate-850 dark:text-slate-100">
+                                      {formatTime(elapsed)}
+                                    </span>
+                                    {isRunning && (
+                                      <span className="flex items-center gap-1 text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold animate-pulse">
+                                        {language === 'ar' ? 'جاري الحساب...' : 'Ticking...'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                                {!isCompleted ? (
+                                  <>
+                                    {isRunning ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => handlePauseTimer()}
+                                        className="py-1 px-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                      >
+                                        <Pause size={11} />
+                                        <span>{language === 'ar' ? 'إيقاف مؤقت' : 'Pause'}</span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartTimer(order.id, order.actualWorkTime || 0)}
+                                        className="py-1 px-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                      >
+                                        <Play size={11} fill="currentColor" />
+                                        <span>{language === 'ar' ? 'ابدأ العمل' : 'Start/Resume'}</span>
+                                      </button>
+                                    )}
+                                    
+                                    {(order.actualWorkTime || 0) > 0 && !isRunning && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (confirm(language === 'ar' ? 'هل أنت متأكد من تصفير مؤقت العمل الفعلي لهذه المهمة؟' : 'Are you sure you want to reset the timer for this task?')) {
+                                            const updated = orders.map(o => o.id === order.id ? { ...o, actualWorkTime: 0 } : o);
+                                            saveOrdersToLocalStorage(updated);
+                                          }
+                                        }}
+                                        className="py-1 px-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 font-bold text-[9px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                        title={language === 'ar' ? 'تصفير المؤقت' : 'Reset Timer'}
+                                      >
+                                        <RotateCcw size={11} />
+                                      </button>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
+                                    {language === 'ar' ? `⏱️ تم تثبيت الوقت: ${formatTimeArabic(elapsed)}` : `⏱️ Logged: ${formatTime(elapsed)}`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Linked to report visual indicator */}
+                            {elapsed > 0 && (
+                              <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/40 flex items-center justify-between text-[9px] text-slate-400 font-bold">
+                                <span className="flex items-center gap-1">
+                                  <FileText size={10} className="text-slate-400 shrink-0" />
+                                  <span>{language === 'ar' ? 'التقرير الفني النهائي الصادر:' : 'Final Tech Report Issued:'}</span>
+                                </span>
+                                <span className="text-indigo-500 font-extrabold">
+                                  {language === 'ar' ? `مربوط ومدرج في مستند الصيانة 🖇️` : `Linked and added to report 🖇️`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      <div className="border-t border-slate-100 dark:border-slate-800/60 my-2" />
+
+                      {/* Milestones list */}
+                      <div className="space-y-1.5">
+                        <span className="text-[8.5px] text-slate-450 block font-bold text-right">
+                          {language === 'ar' ? 'مراحل ومحطات الصيانة الإلزامية:' : 'Required Maintenance Milestones:'}
+                        </span>
+                        <div className="grid grid-cols-2 gap-2" dir="rtl">
+                          {order.milestones?.map((milestone, idx) => (
                             <button
                               key={idx}
                               type="button"
-                              onClick={() => handleMilestoneToggle(order.id, idx)}
-                              className={`flex items-start gap-2 p-2 rounded-xl border text-right transition-all cursor-pointer ${
+                              onClick={() => {
+                                const updatedMilestones = order.milestones.map((m, mIdx) => 
+                                  mIdx === idx ? { ...m, checked: !m.checked } : m
+                                );
+                                const checkedCount = updatedMilestones.filter(m => m.checked).length;
+                                const newProgress = Math.round((checkedCount / updatedMilestones.length) * 100);
+                                
+                                const updated = orders.map(o => o.id === order.id ? { 
+                                  ...o, 
+                                  milestones: updatedMilestones,
+                                  progress: newProgress,
+                                  lastUpdate: new Date().toISOString().split('T')[0]
+                                } : o);
+                                saveOrdersToLocalStorage(updated);
+                              }}
+                              className={`flex items-center gap-2 p-2 rounded-xl border text-right transition-all cursor-pointer ${
                                 milestone.checked 
-                                  ? 'bg-emerald-50/40 dark:bg-emerald-950/10 border-emerald-200/50 dark:border-emerald-900/40 text-emerald-800 dark:text-emerald-400' 
-                                  : 'bg-slate-50/40 dark:bg-slate-950/20 border-slate-100 dark:border-slate-850 text-slate-600 dark:text-slate-400 hover:bg-slate-100/30'
+                                  ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-extrabold' 
+                                  : 'bg-slate-50 dark:bg-slate-950 border-slate-150 dark:border-slate-800/60 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900'
                               }`}
                             >
-                              <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 mt-0.5 ${
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
                                 milestone.checked 
-                                  ? 'bg-emerald-500 text-white border-transparent' 
-                                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'
+                                  ? 'border-emerald-500 bg-emerald-500 text-white' 
+                                  : 'border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-900'
                               }`}>
                                 {milestone.checked && <Check size={10} strokeWidth={3} />}
                               </div>
@@ -2543,7 +3914,6 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                           ))}
                         </div>
                       </div>
-
                       {/* Interactive slide bar with percentage */}
                       <div className="space-y-1.5 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-850">
                         <div className="flex items-center justify-between text-[9.5px] font-black">
@@ -2626,6 +3996,396 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                 })}
               </div>
             )}
+
+            {/* Completed Tasks History / Log (سجل المهام المكتملة) */}
+            <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50/50 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/80 shadow-soft space-y-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-500/10">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-3">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="p-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg shrink-0">
+                    <History size={16} />
+                  </span>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white leading-none">
+                    {language === 'ar' ? 'سجل المهام المكتملة 📜' : 'Completed Tasks Log 📜'}
+                  </h3>
+                  <ContextualHelp 
+                    id="tech-completed-log"
+                    titleAr="سجل المهام المكتملة"
+                    titleEn="Completed Tasks Log"
+                    explanationAr="سجل تاريخي يعرض آخر 10 مهام صيانة أنجزها الفني وتم اعتمادها وتوثيقها بالتوقيع الرقمي، لتسهيل مراجعتها أو تعديلها أو إعادة فتحها عند الحاجة."
+                    explanationEn="A historical archive showing your last 10 completed and digitally signed maintenance tasks, making it easy to review, inspect details, or reopen if needed."
+                    benefitsAr={[
+                      "أرشيف منظم زمنياً بالكامل للمهام الفنية لسهولة المراجعة والبحث.",
+                      "عرض فوري للملاحظات المسجلة والتواقيع الإلكترونية المعتمدة.",
+                      "إمكانية إعادة فتح المهمة ونقلها للممر النشط لإعادة فحصها."
+                    ]}
+                    benefitsEn={[
+                      "Fully chronological archive of maintenance tasks for quick lookup and inspection.",
+                      "Displays logged technical notes and digital signatures.",
+                      "Allows reopening completed tickets to move them back into active queues."
+                    ]}
+                    language={language}
+                  />
+                </div>
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 px-2 py-1 rounded-lg font-bold font-sans">
+                  {language === 'ar' ? `${myCompletedOrders.length} مهمة منجزة` : `${myCompletedOrders.length} Completed`}
+                </span>
+              </div>
+
+              {lastTenCompletedOrders.length === 0 ? (
+                <div className="bg-slate-50/50 dark:bg-slate-950/40 p-6 rounded-2xl text-center border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                  <Info size={24} className="text-slate-400 mx-auto" />
+                  <h4 className="text-[11px] font-black text-slate-750 dark:text-slate-200">
+                    {language === 'ar' ? 'السجل فارغ حالياً' : 'Archive is currently empty'}
+                  </h4>
+                  <p className="text-[9.5px] text-slate-400">
+                    {language === 'ar' ? 'لم تقم بإتمام أي مهام صيانة بعد لتسجيلها في هذا الأرشيف.' : 'You have not completed any maintenance tasks yet.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="max-h-[500px] overflow-y-auto pr-1.5 space-y-3 custom-scrollbar">
+                  {lastTenCompletedOrders.map(order => {
+                    const vehicle = vehicles.find(v => v.id === order.vehicleId);
+                    const isExpanded = !!expandedTasks[order.id];
+                    const elapsed = order.actualWorkTime || 0;
+
+                    return (
+                      <div 
+                        key={order.id} 
+                        onClick={(e) => {
+                          if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) return;
+                          setExpandedTasks(prev => ({ ...prev, [order.id]: !prev[order.id] }));
+                        }}
+                        className={`p-3.5 rounded-2xl border transition-all duration-300 relative text-right cursor-pointer select-none ${
+                          isExpanded 
+                            ? 'bg-slate-50/55 dark:bg-slate-950 border-emerald-500/35 dark:border-emerald-500/25 shadow-xs' 
+                            : 'bg-white hover:bg-slate-50/30 dark:bg-slate-900 border-slate-150/70 dark:border-slate-850 hover:border-emerald-500/15'
+                        }`}
+                        dir="rtl"
+                      >
+                        {/* Status bar marker on the side */}
+                        <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500 rounded-r-2xl" />
+
+                        {/* Top row */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-sans font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500">
+                              {order.orderNumber}
+                            </span>
+                            <span className="text-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-black">
+                              {language === 'ar' ? '✓ مكتملة وموثقة' : '✓ Completed & Logged'}
+                            </span>
+                          </div>
+                          <span className="text-[9px] text-slate-400 font-bold font-sans">
+                            {order.lastUpdate || order.date}
+                          </span>
+                        </div>
+
+                        {/* Middle row */}
+                        <div className="mt-2 text-right">
+                          <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 line-clamp-1">
+                            {order.description}
+                          </h4>
+                          <div className="mt-1 flex items-center justify-between text-[9px] text-slate-400 font-bold">
+                            <span className="flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                              <span>{language === 'ar' ? 'الآلية:' : 'Vehicle:'}</span>
+                              <span className="text-slate-650 dark:text-slate-350">
+                                {vehicle ? `${vehicle.name} (${vehicle.plateNumber})` : `مركبة #${order.vehicleId}`}
+                              </span>
+                            </span>
+                            {elapsed > 0 && (
+                              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-450 bg-emerald-500/[0.04] px-1.5 py-0.5 rounded font-sans">
+                                <Clock size={9} />
+                                <span>{language === 'ar' ? `المدة المستغرقة: ${formatTime(elapsed)}` : `Duration: ${formatTime(elapsed)}`}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Expandable details */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div 
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-850 space-y-3 overflow-hidden"
+                            >
+                              {/* Workshop or category */}
+                              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                <div className="p-2 bg-slate-50/70 dark:bg-slate-950/40 rounded-xl border border-slate-100/50 dark:border-slate-800/40 space-y-0.5">
+                                  <span className="text-[8.5px] text-slate-400 block font-bold">{language === 'ar' ? 'فئة الصيانة:' : 'Maintenance Category:'}</span>
+                                  <span className="font-extrabold text-slate-750 dark:text-slate-200 capitalize">
+                                    {language === 'ar' 
+                                      ? (order.category === 'mechanical' ? 'ميكانيكية' : order.category === 'electrical' ? 'كهربائية' : order.category)
+                                      : order.category}
+                                  </span>
+                                </div>
+                                <div className="p-2 bg-slate-50/70 dark:bg-slate-950/40 rounded-xl border border-slate-100/50 dark:border-slate-800/40 space-y-0.5">
+                                  <span className="text-[8.5px] text-slate-400 block font-bold">{language === 'ar' ? 'الورشة والممر:' : 'Workshop & Bay:'}</span>
+                                  <span className="font-extrabold text-slate-750 dark:text-slate-200">
+                                    {assignedWorkshop.bay}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Tech Notes block */}
+                              {order.techNotes && (
+                                <div className="p-2.5 bg-indigo-500/[0.01] rounded-xl border border-indigo-100/30 dark:border-indigo-950/20 text-[10px]">
+                                  <span className="text-[8.5px] text-slate-400 block font-bold mb-1">{language === 'ar' ? 'ملاحظات الفني المسجلة:' : 'Registered Tech Notes:'}</span>
+                                  <p className="text-slate-700 dark:text-slate-300 italic">
+                                    "{order.techNotes}"
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Milestones status list */}
+                              {order.milestones && order.milestones.length > 0 && (
+                                <div className="space-y-1">
+                                  <span className="text-[8.5px] text-slate-400 block font-bold">{language === 'ar' ? 'المراحل المنجزة والمؤكدة:' : 'Completed Milestones:'}</span>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    {order.milestones.map((milestone, mIdx) => (
+                                      <div 
+                                        key={mIdx}
+                                        className="flex items-center gap-1.5 p-1.5 px-2.5 bg-slate-50/50 dark:bg-slate-950/30 rounded-lg border border-slate-100/40 dark:border-slate-850/30 text-[9px]"
+                                      >
+                                        <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                                          <Check size={9} strokeWidth={3} />
+                                        </div>
+                                        <span className="text-slate-650 dark:text-slate-350 truncate font-semibold">{milestone.title}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Visual Documentation (Before and After Maintenance) */}
+                              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-850">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 block">
+                                    {language === 'ar' ? '📷 التوثيق المرئي للمركبة (قبل وبعد الصيانة):' : '📷 Vehicle Visual Documentation (Before & After):'}
+                                  </span>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  {/* Before Maintenance */}
+                                  <div className="space-y-1">
+                                    <CameraCapture
+                                      photoUrl={order.photoBeforeUrl || ''}
+                                      onPhotoCaptured={(base64) => handleUpdateOrderPhotos(order.id, base64, undefined)}
+                                      onPhotoCleared={() => handleUpdateOrderPhotos(order.id, '', undefined)}
+                                      title={language === 'ar' ? 'صورة المركبة قبل الصيانة ⏪' : 'Vehicle Before Maintenance ⏪'}
+                                      description={language === 'ar' ? 'صورة توضح حالة العطل أو شكل الآلية قبل بدء أعمال الصيانة.' : 'Photo showing the defect or vehicle condition before starting maintenance.'}
+                                      language={language}
+                                    />
+                                  </div>
+
+                                  {/* After Maintenance */}
+                                  <div className="space-y-1">
+                                    <CameraCapture
+                                      photoUrl={order.photoAfterUrl || ''}
+                                      onPhotoCaptured={(base64) => handleUpdateOrderPhotos(order.id, undefined, base64)}
+                                      onPhotoCleared={() => handleUpdateOrderPhotos(order.id, undefined, '')}
+                                      title={language === 'ar' ? 'صورة المركبة بعد الصيانة ⏩' : 'Vehicle After Maintenance ⏩'}
+                                      description={language === 'ar' ? 'صورة توضح نجاح الإصلاح ونظافة مظهر الآلية بعد إتمام العمل.' : 'Photo showing successful repair and clean status of the vehicle after completion.'}
+                                      language={language}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Display Signature if exists */}
+                              {order.signature && (
+                                <div className="p-2 bg-slate-50/40 dark:bg-slate-950/40 rounded-xl border border-slate-100/50 dark:border-slate-850/50 flex flex-col items-center gap-1">
+                                  <span className="text-[8.5px] text-slate-400 block font-bold self-start">{language === 'ar' ? 'التوقيع الرقمي المسجل للفني:' : 'Technician Registered Digital Signature:'}</span>
+                                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-800 max-w-[200px] w-full flex items-center justify-center">
+                                    <img 
+                                      src={order.signature} 
+                                      alt="Technician Signature" 
+                                      className="max-h-12 object-contain" 
+                                      referrerPolicy="no-referrer"
+                                    />
+                                  </div>
+                                  <span className="text-[8px] text-emerald-500 font-extrabold flex items-center gap-1">
+                                    <span>{language === 'ar' ? 'تم التوثيق والاعتماد الرقمي بالنظام' : 'Securely authorized and logged'}</span>
+                                    <span>🔒</span>
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Reopen Action button */}
+                              <div className="flex justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleReopenOrder(order.id)}
+                                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200/50 dark:border-slate-700 select-none"
+                                >
+                                  <RotateCcw size={11} className="text-indigo-500" />
+                                  <span>{language === 'ar' ? 'إعادة فتح الصيانة' : 'Reopen Maintenance'}</span>
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Collapsed view indicator footer (only if not expanded) */}
+                        {!isExpanded && (
+                          <div className="mt-2 pt-1 border-t border-slate-100/40 dark:border-slate-800/40 flex items-center justify-between text-[8px] text-slate-400 font-bold">
+                            <span>{language === 'ar' ? 'انقر لعرض تفاصيل التقرير والتوقيع 🔍' : 'Click to show details & signature 🔍'}</span>
+                            {order.signature && (
+                              <span className="text-emerald-500 flex items-center gap-0.5">
+                                <span>✍️</span>
+                                <span>{language === 'ar' ? 'موقّع وموثّق' : 'Signed'}</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5">
+              {/* AI Catalog & Smart Manual Assistant Card (مستشار الكتالوجات الذكي) */}
+            <div id="tech-ai-catalog-card" className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-150/60 dark:border-slate-800/80 shadow-soft space-y-3.5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-blue-500/15">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-3.5 rounded-full bg-brand-blue-500 block animate-pulse"></span>
+                  <span className="text-[11px] font-black text-slate-850 dark:text-slate-300 flex items-center gap-1">
+                    <Cpu size={12} className="text-brand-blue-500" />
+                    <span>{language === 'ar' ? 'مستشار كتالوجات الصيانة الذكي 🤖' : 'AI Catalog & Manual Advisor 🤖'}</span>
+                  </span>
+                </div>
+                <span className="text-[8.5px] bg-brand-blue-50 dark:bg-brand-blue-950 px-1.5 py-0.5 rounded border border-brand-blue-200/20 text-brand-blue-500 font-bold">
+                  {language === 'ar' ? 'مدمج بكتالوجات الشركة' : 'Company Catalog Integrated'}
+                </span>
+              </div>
+
+              <p className="text-[9px] text-slate-400 leading-normal">
+                {language === 'ar' 
+                  ? 'يقوم الذكاء الاصطناعي بتحليل تفاصيل عطل المركبة ومطابقتها بكتالوج الصيانة المعتمد لتقديم أدلة التشخيص وخطوات الفك والتركيب المعتمدة.'
+                  : 'AI analyzes vehicle details & matches them with certified corporate catalogs to formulate custom diagnostics & parts replacement instructions.'}
+              </p>
+
+              <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850">
+                {/* Source tabs */}
+                <div className="grid grid-cols-2 gap-1 bg-slate-200/60 dark:bg-slate-900 p-1 rounded-xl text-[9px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setAiCatalogSource('active_tasks')}
+                    className={`py-1.5 rounded-lg text-center cursor-pointer transition-all ${
+                      aiCatalogSource === 'active_tasks'
+                        ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    {language === 'ar' ? 'عطل نشط بالمركبة' : 'Active Task Fault'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiCatalogSource('custom_query')}
+                    className={`py-1.5 rounded-lg text-center cursor-pointer transition-all ${
+                      aiCatalogSource === 'custom_query'
+                        ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    {language === 'ar' ? 'بحث حر مخصص' : 'Custom Search'}
+                  </button>
+                </div>
+
+                {aiCatalogSource === 'active_tasks' ? (
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] font-bold text-slate-400 block">
+                      {language === 'ar' ? 'اختر العطل المعين لك للفحص:' : 'Select assigned vehicle fault:'}
+                    </label>
+                    {orders.filter(o => o.technicianId === '201' && o.status !== 'completed').length === 0 ? (
+                      <p className="text-[9.5px] text-amber-500 font-bold py-1 text-center">
+                        {language === 'ar' ? '⚠️ لا توجد أعطال نشطة معينة لك حالياً' : '⚠️ No active tasks assigned to you'}
+                      </p>
+                    ) : (
+                      <select
+                        value={selectedActiveOrderId}
+                        onChange={(e) => setSelectedActiveOrderId(e.target.value)}
+                        className="w-full text-[10px] p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none font-bold text-slate-700 dark:text-slate-200"
+                      >
+                        {orders
+                          .filter(o => o.technicianId === '201' && o.status !== 'completed')
+                          .map(o => {
+                            const v = vehicles.find(veh => veh.id === o.vehicleId);
+                            const label = v ? `${v.name} (${v.plateNumber}) - ${o.description}` : o.description;
+                            return (
+                              <option key={o.id} value={o.id}>
+                                {label}
+                              </option>
+                            );
+                          })}
+                      </select>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] font-bold text-slate-400 block">
+                      {language === 'ar' ? 'ما العطل أو الآلية أو القطعة التي تود مراجعة كتالوجها؟' : 'What issue, asset, or part to check?'}
+                    </label>
+                    <input
+                      type="text"
+                      value={aiCatalogCustomQuery}
+                      onChange={(e) => setAiCatalogCustomQuery(e.target.value)}
+                      placeholder={language === 'ar' ? 'مثال: تبديل تيل فرامل أكتروس...' : 'e.g. Mercedes Actros brake replacement...'}
+                      className="w-full text-[10px] p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none font-bold text-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+                )}
+
+                {/* Consultation trigger */}
+                <button
+                  type="button"
+                  disabled={aiCatalogLoading}
+                  onClick={handleConsultAiCatalog}
+                  className="w-full text-[10.5px] py-2 bg-brand-blue-600 hover:bg-brand-blue-700 disabled:bg-brand-blue-600/60 text-white font-black rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-md shadow-brand-blue-500/10"
+                >
+                  {aiCatalogLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span className="animate-pulse">{language === 'ar' ? 'جاري استدعاء المعايير...' : 'Calling corporate specifications...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Cpu size={13} className="animate-pulse" />
+                      <span>{language === 'ar' ? 'استشير كتالوج الشركة الفوري (AI)' : 'Consult Fleet Catalog (AI)'}</span>
+                    </>
+                  )}
+                </button>
+
+                {aiCatalogLoading && (
+                  <div className="p-2 bg-brand-blue-500/5 rounded-xl border border-brand-blue-500/10 animate-pulse">
+                    <p className="text-[8.5px] text-brand-blue-600 dark:text-brand-blue-400 font-extrabold text-center leading-normal">
+                      {aiCatalogLoadingStep}
+                    </p>
+                  </div>
+                )}
+
+                {aiCatalogResult && !aiCatalogLoading && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAiCatalogModalOpen(true)}
+                    className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-300 rounded-lg text-[9px] font-bold text-center flex items-center justify-center gap-1 border border-slate-200/50 dark:border-slate-800"
+                  >
+                    <BookOpen size={10} />
+                    <span>
+                      {language === 'ar' 
+                        ? `عرض الدليل الحالي: ${aiCatalogResult.title.length > 25 ? aiCatalogResult.title.substring(0, 25) + "..." : aiCatalogResult.title}` 
+                        : `Show Current Guide: ${aiCatalogResult.title.length > 25 ? aiCatalogResult.title.substring(0, 25) + "..." : aiCatalogResult.title}`
+                      }
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+            </div>
           </div>
 
           {/* Right Column (1/3): Specialities, Tool cupboard audit, Request items */}
@@ -2702,63 +4462,608 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                 ))}
               </div>
             </div>
-
-            {/* Quick materials order list for the bay */}
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-150/60 dark:border-slate-800/80 shadow-soft space-y-3.5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-500/15">
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-3.5 rounded-full bg-emerald-500 block"></span>
-                <span className="text-[11px] font-black text-slate-855 dark:text-slate-300 flex items-center gap-1">
-                  <Package size={13} className="text-emerald-500" />
-                  <span>طلب تجهيز وتعدين قطع للممر</span>
-                </span>
-              </div>
-
-              <p className="text-[9.5px] text-slate-400 leading-normal">
-                اطلب تسليم مباشر للممر من أمناء السجل لإصدارها في الأرشيف فورياً دون الذهاب للمستودعات.
-              </p>
-
-              <form onSubmit={handleRequestPartSubmit} className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-[8.5px] font-bold text-slate-400 block">المادة أو قطعة الغيار المطلوبة:</label>
-                  <select
-                    value={selectedPartId}
-                    onChange={(e) => setSelectedPartId(e.target.value)}
-                    className="w-full text-xs p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg outline-none font-bold text-slate-700 dark:text-slate-300"
-                    required
-                  >
-                    <option value="">-- حدد قطعة الغيار المطلوبة --</option>
-                    {inventory.map(item => (
-                      <option key={item.id} value={item.id}>
-                        {item.name} ({item.partNumber}) - متوفر ({item.quantity})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[8.5px] font-bold text-slate-400 block">الكمية المطلوبة:</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={partOrderQty}
-                    onChange={(e) => setPartOrderQty(parseInt(e.target.value) || 1)}
-                    className="w-full text-xs p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg outline-none font-bold"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full text-[10px] py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-lg transition-all cursor-pointer text-center flex items-center justify-center gap-1"
-                >
-                  <Package size={12} />
-                  <span>إرسال طلب تجهيز قطعة الغيار</span>
-                </button>
-              </form>
-            </div>
           </div>
         </div>
+
+        {/* Quick Guide Interactive Execution Steps Modal */}
+        <AnimatePresence>
+          {selectedQuickGuideOpId && (() => {
+            const op = QUICK_GUIDE_OPERATIONS.find(o => o.id === selectedQuickGuideOpId);
+            if (!op) return null;
+
+            const opProgress = quickGuideStepsProgress[op.id] || {};
+            const totalSteps = op.stepsAr.length;
+            const completedStepsCount = Object.values(opProgress).filter(Boolean).length;
+            const progressPct = Math.round((completedStepsCount / totalSteps) * 100);
+            const isOpFullyDone = completedStepsCount === totalSteps;
+
+            let OpIcon = Wrench;
+            if (op.id === 'op-oil') OpIcon = Droplets;
+            else if (op.id === 'op-brake') OpIcon = Shield;
+            else if (op.id === 'op-tire') OpIcon = Disc;
+            else if (op.id === 'op-filter') OpIcon = Wind;
+            else if (op.id === 'op-battery') OpIcon = Battery;
+
+            return (
+              <div 
+                id="quick-guide-modal-overlay"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/85 backdrop-blur-xs select-none"
+                onClick={() => setSelectedQuickGuideOpId(null)}
+              >
+                {/* Modal box */}
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                  className="bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5 text-right relative overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Color Accent line */}
+                  <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-l from-indigo-500 via-indigo-600 to-indigo-700" />
+
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-850 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                        <OpIcon size={20} />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">
+                          {language === 'ar' ? `رمز الدليل: ${op.docRef}` : `DOC REF: ${op.docRef}`}
+                        </span>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight">
+                          {language === 'ar' ? op.titleAr : op.titleEn}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedQuickGuideOpId(null)}
+                      className="p-1.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer border border-slate-200/10"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+
+                  {/* Operational parameters */}
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-850 text-[10.5px]">
+                    <div className="space-y-0.5">
+                      <span className="text-slate-400 font-bold block">{language === 'ar' ? 'الوقت القياسي المعياري:' : 'Standard Estimated Time:'}</span>
+                      <p className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                        <Clock size={11} className="text-indigo-500" />
+                        <span>{language === 'ar' ? op.durationAr : op.durationEn}</span>
+                      </p>
+                    </div>
+                    <div className="space-y-0.5 border-r border-slate-200/60 dark:border-slate-800/60 pr-3">
+                      <span className="text-slate-400 font-bold block">{language === 'ar' ? 'معدل التكرار الدوري:' : 'Recommended Frequency:'}</span>
+                      <p className="font-extrabold text-slate-800 dark:text-slate-200">
+                        {language === 'ar' ? op.frequencyAr : op.frequencyEn}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Checklist Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-slate-500 block">
+                        {language === 'ar' ? 'خطوات التنفيذ المعتمدة والمطابقة للجودة:' : 'Approved Execution Checklist:'}
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-indigo-500">{progressPct}%</span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-slate-100 dark:bg-slate-900 h-2 rounded-full overflow-hidden relative border border-slate-200/20 dark:border-slate-800">
+                      <div 
+                        className="bg-indigo-500 h-full rounded-full transition-all duration-300"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+
+                    {/* Step checkboxes */}
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-0.5">
+                      {(language === 'ar' ? op.stepsAr : op.stepsEn).map((stepText, idx) => {
+                        const isStepDone = !!opProgress[idx];
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleQuickGuideStepToggle(op.id, idx)}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl border text-right transition-all cursor-pointer ${
+                              isStepDone
+                                ? 'bg-emerald-500/[0.01] hover:bg-emerald-500/[0.03] border-emerald-500/20 text-slate-500'
+                                : 'bg-slate-50 hover:bg-indigo-500/[0.02] dark:bg-slate-950/60 border-slate-100 dark:border-slate-850 hover:border-indigo-500/20 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                              isStepDone
+                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900'
+                            }`}>
+                              {isStepDone && <Check size={10} strokeWidth={3} />}
+                            </div>
+                            <div className="flex-1 space-y-0.5 border-none">
+                              <span className="text-[8.5px] font-mono font-black text-slate-400 block">
+                                {language === 'ar' ? `خطوة تشغيلية ${idx + 1}` : `Execution Step ${idx + 1}`}
+                              </span>
+                              <p className={`text-[10px] font-semibold leading-relaxed ${isStepDone ? 'line-through opacity-70' : ''}`}>
+                                {stepText}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Quality Seal info */}
+                  <div className="p-3 bg-indigo-500/[0.02] rounded-2xl border border-indigo-500/5 flex items-start gap-2.5 text-[9.5px] leading-relaxed">
+                    <div className="p-1 bg-indigo-500/10 text-indigo-500 rounded-lg shrink-0 mt-0.5">
+                      <Info size={12} />
+                    </div>
+                    <div className="space-y-0.5 flex-1 text-right">
+                      <span className="text-slate-400 font-bold block">{language === 'ar' ? 'توقيع واعتماد إجراءات الجودة والتشغيل:' : 'Quality & Compliance Endorsement:'}</span>
+                      <p className="text-slate-600 dark:text-slate-350 font-black">
+                        {language === 'ar' ? op.approvedByAr : op.approvedByEn}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Footer buttons */}
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleResetQuickGuideProgress(op.id)}
+                      className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-all cursor-pointer text-center"
+                    >
+                      {language === 'ar' ? 'إعادة تعيين التقدم' : 'Reset Progress'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Mark all as complete
+                        const currentProgress = { ...quickGuideStepsProgress };
+                        currentProgress[op.id] = {};
+                        for (let i = 0; i < op.stepsAr.length; i++) {
+                          currentProgress[op.id][i] = true;
+                        }
+                        setQuickGuideStepsProgress(currentProgress);
+                        localStorage.setItem('saas_quick_guide_steps_progress', JSON.stringify(currentProgress));
+                        triggerToast(language === 'ar' ? 'تم إنهاء كافة خطوات الدليل ومطابقتها للمعايير! 🎉' : 'All manual steps marked completed & certified! 🎉');
+                      }}
+                      className="flex-1 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-xs font-black shadow-md shadow-indigo-500/10 transition-all cursor-pointer text-center"
+                    >
+                      {language === 'ar' ? 'تأكيد إنجاز كافة الخطوات' : 'Mark All Completed'}
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            );
+          })()}
+        </AnimatePresence>
+
+        {/* Custom Spare Parts Catalog Modal tailored to the selected vehicle type */}
+        <AnimatePresence>
+          {isVehiclePartsCatalogOpen && selectedCatalogVehicle && (
+            <div 
+              id="parts-catalog-modal-overlay"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/85 backdrop-blur-xs select-none"
+              onClick={() => {
+                setIsVehiclePartsCatalogOpen(false);
+                setSelectedCatalogVehicle(null);
+              }}
+            >
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 max-w-xl w-full shadow-2xl space-y-4 text-right relative overflow-hidden flex flex-col max-h-[85vh]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Visual Header Banner */}
+                <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-l from-indigo-500 via-indigo-600 to-indigo-700" />
+
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-850 pb-3 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                      <BookOpen size={20} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">
+                        {language === 'ar' ? `كتالوج معتمد للموديل: ${selectedCatalogVehicle.plateNumber}` : `Certified Catalog: ${selectedCatalogVehicle.plateNumber}`}
+                      </span>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight">
+                        {language === 'ar' ? `كتالوج قطع غيار ${selectedCatalogVehicle.name}` : `${selectedCatalogVehicle.name} Spares Catalog`}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsVehiclePartsCatalogOpen(false);
+                      setSelectedCatalogVehicle(null);
+                    }}
+                    className="p-1.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer border border-slate-200/10"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                {/* Search input for filtering */}
+                <div className="relative shrink-0">
+                  <Search size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={partsCatalogSearchQuery}
+                    onChange={(e) => setPartsCatalogSearchQuery(e.target.value)}
+                    placeholder={language === 'ar' ? 'البحث عن القطعة بالاسم، الرقم الفني، أو التصنيف...' : 'Search parts by name, technical ID, or category...'}
+                    className="w-full text-xs p-2.5 pr-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl outline-none font-bold text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:border-indigo-500 transition-all text-right"
+                    dir="rtl"
+                  />
+                  {partsCatalogSearchQuery && (
+                    <button 
+                      type="button"
+                      onClick={() => setPartsCatalogSearchQuery('')}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Subtitle / Tip block */}
+                <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-3 text-[10.5px] leading-relaxed text-slate-600 dark:text-slate-400 shrink-0">
+                  {language === 'ar' 
+                    ? '💡 نصيحة: القطع المعلمة بـ "مخزن الممر" متوفرة فوراً في ورشتك الحالية ويمكن سحبها بضغطة زر. القطع الأخرى سيتم طلبها تلقائياً وتشحن من المستودع المركزي.' 
+                    : '💡 Tip: Parts tagged as "On-site" are available in your bay. Other components will be dispatched from the central logistics depot.'
+                  }
+                </div>
+
+                {/* Parts List Scrollable Area */}
+                <div className="overflow-y-auto flex-1 divide-y divide-slate-100 dark:divide-slate-850/50 pr-1 space-y-2">
+                  {(() => {
+                    // Helper to get compatible parts based on vehicle brand
+                    const getCompatibleParts = (vehicle: any) => {
+                      const vName = vehicle.name.toLowerCase();
+                      const brand = vName.includes('هايلوكس') || vName.includes('toyota') || vName.includes('تويوتا') ? 'toyota' :
+                                    vName.includes('أكتروس') || vName.includes('mercedes') || vName.includes('مرسيدس') ? 'mercedes' :
+                                    vName.includes('هيونداي') || vName.includes('hyundai') || vName.includes('حافلة') ? 'hyundai' :
+                                    vName.includes('كاتربيلر') || vName.includes('caterpillar') || vName.includes('رافعة') ? 'caterpillar' : 'other';
+
+                      // Filter actual onsite inventory
+                      const onsiteMapped = inventory.filter(item => {
+                        const itemName = item.name.toLowerCase();
+                        if (brand === 'toyota') return itemName.includes('هايلوكس') || itemName.includes('تويوتا') || item.partNumber.startsWith('TOY');
+                        if (brand === 'mercedes') return itemName.includes('أكتروس') || itemName.includes('مرسيدس') || item.partNumber.startsWith('MB');
+                        if (brand === 'hyundai') return itemName.includes('هيونداي') || itemName.includes('حافلة') || item.partNumber.startsWith('HYU');
+                        if (brand === 'caterpillar') return itemName.includes('رافعة') || itemName.includes('كاتربيلر') || item.partNumber.startsWith('CAT');
+                        return true;
+                      }).map(item => ({
+                        ...item,
+                        isOnsite: true,
+                        compatibility: language === 'ar' ? 'متوافقة بالكامل (مخزن الممر)' : 'Fully Compatible (On-site Spare)',
+                        location: language === 'ar' ? 'مخزن الورشة الفوري' : 'Active Workshop Bin'
+                      }));
+
+                      // Central warehouse catalogs
+                      const extraCatalog: any[] = [];
+                      if (brand === 'toyota') {
+                        extraCatalog.push(
+                          { id: 'cat-toy-1', name: language === 'ar' ? 'شمعات احتراق هايلوكس الأصلية' : 'Original Hilux Spark Plugs', partNumber: 'TOY-7731-S', category: 'كهرباء', quantity: 18, compatibility: 'Toyota Hilux 2020-2024', location: 'الرف A-14' },
+                          { id: 'cat-toy-2', name: language === 'ar' ? 'قماشات فرامل هايلوكس خلفية' : 'Rear Hilux Brake Pads', partNumber: 'TOY-0099-B', category: 'فرامل', quantity: 12, compatibility: 'Toyota Hilux 2018-2024', location: 'الرف B-03' },
+                          { id: 'cat-toy-3', name: language === 'ar' ? 'مساعدات ممتص صدمات أمامية هايلوكس' : 'Front Hilux Shock Absorbers', partNumber: 'TOY-4455-S', category: 'ميكانيك', quantity: 8, compatibility: 'Toyota Hilux 2021-2024', location: 'المنطقة C-الثقيلة' },
+                          { id: 'cat-toy-4', name: language === 'ar' ? 'سير محرك خارجي هايلوكس' : 'External Hilux Fan Belt', partNumber: 'TOY-2211-V', category: 'ميكانيك', quantity: 25, compatibility: 'Toyota Hilux 2.7L', location: 'الرف A-08' }
+                        );
+                      } else if (brand === 'mercedes') {
+                        extraCatalog.push(
+                          { id: 'cat-mb-1', name: language === 'ar' ? 'فلتر ديزل مرسيدس أكتروس ثنائي' : 'Mercedes Actros Dual Diesel Filter', partNumber: 'MB-9900-D', category: 'فلاتر', quantity: 14, compatibility: 'Mercedes Actros MP4', location: 'الرف F-12' },
+                          { id: 'cat-mb-2', name: language === 'ar' ? 'سير محرك رئيسي أكتروس شاحنات' : 'Main Actros Truck Engine Belt', partNumber: 'MB-2211-V', category: 'ميكانيك', quantity: 9, compatibility: 'Mercedes Actros OM501', location: 'الرف F-02' },
+                          { id: 'cat-mb-3', name: language === 'ar' ? 'حساس ضغط هواء الفرامل الإلكتروني' : 'Electronic Brake Air Pressure Sensor', partNumber: 'MB-8899-P', category: 'كهرباء', quantity: 4, compatibility: 'Mercedes Actros Heavy Duty', location: 'الرف H-22' },
+                          { id: 'cat-mb-4', name: language === 'ar' ? 'زيت هيدروليك ناقل الحركة الأوتوماتيكي 10L' : 'Automatic Transmission Hydraulic Oil 10L', partNumber: 'MB-7788-H', category: 'هيدروليك', quantity: 30, compatibility: 'Mercedes Actros G281', location: 'مستودع السوائل B' }
+                        );
+                      } else if (brand === 'hyundai') {
+                        extraCatalog.push(
+                          { id: 'cat-hyu-1', name: language === 'ar' ? 'حزام محرك باص هيونداي الرئيسي' : 'Hyundai City Bus Main Fan Belt', partNumber: 'HYU-4411-B', category: 'ميكانيك', quantity: 15, compatibility: 'Hyundai City Bus Super', location: 'الرف D-04' },
+                          { id: 'cat-hyu-2', name: language === 'ar' ? 'مصباح أمامي LED هيونداي سيتي جهة اليمين' : 'Hyundai City Bus Right LED Headlight', partNumber: 'HYU-3322-H', category: 'كهرباء', quantity: 6, compatibility: 'Hyundai City Bus 2022', location: 'منطقة الهيكل F' },
+                          { id: 'cat-hyu-3', name: language === 'ar' ? 'قماشات فرامل باص أمامية وخلفية' : 'Bus Front & Rear Brake Pads', partNumber: 'HYU-5566-F', category: 'فرامل', quantity: 11, compatibility: 'Hyundai Aero Town', location: 'الرف D-15' },
+                          { id: 'cat-hyu-4', name: language === 'ar' ? 'فلتر تكييف حافلات مقوى للغبار' : 'Heavy-Duty Cabin AC Filter', partNumber: 'HYU-8811-AC', category: 'تبريد', quantity: 40, compatibility: 'Hyundai Universe / City Bus', location: 'الرف A-02' }
+                        );
+                      } else if (brand === 'caterpillar') {
+                        extraCatalog.push(
+                          { id: 'cat-cat-1', name: language === 'ar' ? 'فلتر هيدروليك رئيسي رافعة شوكية' : 'Main Forklift Hydraulic Filter', partNumber: 'CAT-9900-H', category: 'هيدروليك', quantity: 8, compatibility: 'Caterpillar DP30-DP50', location: 'الرف C-11' },
+                          { id: 'cat-cat-2', name: language === 'ar' ? 'أسنان فولاذية جرافة / رافعة شوكية' : 'Steel Teeth for Forklift Bucket', partNumber: 'CAT-1122-T', category: 'ميكانيك', quantity: 20, compatibility: 'Caterpillar Heavy Bucket', location: 'الساحة الخلفية G' },
+                          { id: 'cat-cat-3', name: language === 'ar' ? 'أحزمة رفع هيدروليكية ذات قدرة 5 طن' : 'Heavy Duty Hydraulic Lifting Belts 5T', partNumber: 'CAT-4455-B', category: 'ميكانيك', quantity: 5, compatibility: 'Caterpillar Lifter Pro', location: 'الرف C-05' },
+                          { id: 'cat-cat-4', name: language === 'ar' ? 'مضخة هيدروليك ضغط عالي رافعة' : 'High-Pressure Hydraulic Pump', partNumber: 'CAT-5500-P', category: 'هيدروليك', quantity: 2, compatibility: 'Caterpillar Forklift Engine Type 4', location: 'المنطقة المؤمنة S' }
+                        );
+                      } else {
+                        extraCatalog.push(
+                          { id: 'cat-gen-1', name: language === 'ar' ? 'مجموعة مصاهر كهربائية عامة 10A-30A' : 'Universal Fuse Set 10A-30A', partNumber: 'GEN-FUSE-S', category: 'كهرباء', quantity: 150, compatibility: 'Universal 12V/24V', location: 'الرف E-01' },
+                          { id: 'cat-gen-2', name: language === 'ar' ? 'سائل تبريد رادياتير أخضر مجهز 5L' : 'Green Radiator Coolant 5L Ready Use', partNumber: 'GEN-COOL-5', category: 'تبريد', quantity: 60, compatibility: 'Universal Cooling', location: 'مستودع السوائل A' }
+                        );
+                      }
+
+                      const catalogMapped = extraCatalog.map(item => ({
+                        ...item,
+                        isOnsite: false,
+                        compatibility: language === 'ar' ? `خاص بفئة: ${item.compatibility}` : `Fits model: ${item.compatibility}`,
+                        location: language === 'ar' ? `المستودع المركزي - ${item.location}` : `Central Depot - ${item.location}`
+                      }));
+
+                      const allParts = [...onsiteMapped, ...catalogMapped];
+
+                      // Filter by partsCatalogSearchQuery if provided
+                      if (partsCatalogSearchQuery.trim()) {
+                        const query = partsCatalogSearchQuery.toLowerCase();
+                        return allParts.filter(p => 
+                          p.name.toLowerCase().includes(query) || 
+                          p.partNumber.toLowerCase().includes(query) || 
+                          p.category.toLowerCase().includes(query)
+                        );
+                      }
+
+                      return allParts;
+                    };
+
+                    const list = getCompatibleParts(selectedCatalogVehicle);
+
+                    if (list.length === 0) {
+                      return (
+                        <div className="p-8 text-center text-[11px] text-slate-400 font-bold space-y-1">
+                          <div>لا توجد قطع غيار مطابقة لبحثك 🔍</div>
+                          <div className="text-[9.5px] font-normal text-slate-400">جرب البحث بكلمات أخرى أو تصفح الأقسام بالكامل</div>
+                        </div>
+                      );
+                    }
+
+                    return list.map((item, idx) => {
+                      const isOutOfStock = item.quantity === 0;
+                      const isLowStock = item.quantity <= 5;
+
+                      return (
+                        <div 
+                          key={item.id || idx}
+                          className="py-3 flex items-center justify-between gap-3 text-right"
+                        >
+                          <div className="space-y-1 min-w-0 flex-1">
+                            {/* Part title & Number */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-extrabold text-slate-800 dark:text-slate-150 text-[11.5px] leading-tight">
+                                {item.name}
+                              </span>
+                              <span className="text-[8.5px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-900 font-mono font-medium text-slate-500">
+                                {item.partNumber}
+                              </span>
+                              <span className={`text-[7.5px] font-black px-1.5 py-0.25 rounded-md ${
+                                item.isOnsite 
+                                  ? 'bg-emerald-500/10 text-emerald-650 dark:text-emerald-450 border border-emerald-500/10' 
+                                  : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10'
+                              }`}>
+                                {item.isOnsite ? (language === 'ar' ? 'مخزن فوري' : 'On-site') : (language === 'ar' ? 'مستودع مركزي' : 'Warehouse')}
+                              </span>
+                            </div>
+
+                            {/* Technical Details */}
+                            <div className="flex items-center gap-3 text-[9px] text-slate-450 dark:text-slate-500 font-bold">
+                              <span>{language === 'ar' ? `التصنيف: ${item.category}` : `Category: ${item.category}`}</span>
+                              <span>•</span>
+                              <span className="truncate">{item.compatibility}</span>
+                              <span>•</span>
+                              <span>{item.location}</span>
+                            </div>
+                          </div>
+
+                          {/* Action Controls & stock status */}
+                          <div className="flex items-center gap-3 shrink-0">
+                            {/* Stock count */}
+                            <div className="text-left font-sans">
+                              <span className={`text-[10px] font-black block ${
+                                isOutOfStock ? 'text-rose-500' : isLowStock ? 'text-amber-500' : 'text-slate-600 dark:text-slate-400'
+                              }`}>
+                                {language === 'ar' ? `متوفر: ${item.quantity}` : `Stock: ${item.quantity}`}
+                              </span>
+                              <span className="text-[7.5px] text-slate-400 block font-sans font-bold">
+                                {isOutOfStock ? (language === 'ar' ? 'غير متوفر' : 'Out of stock') : isLowStock ? (language === 'ar' ? 'مخزون حرج' : 'Low stock') : (language === 'ar' ? 'آمن' : 'Safe stock')}
+                              </span>
+                            </div>
+
+                             {/* Direct Request Action */}
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 if (item.isOnsite) {
+                                   setIsVehiclePartsCatalogOpen(false);
+                                   triggerToast(language === 'ar' 
+                                     ? `⚡ تم صرف (${item.name}) فوراً من مخزن الممر ومطابقتها بأمر العمل المفتوح!` 
+                                     : `⚡ Issued (${item.name}) directly from the bay and matched with the open work order!`
+                                   );
+                                 } else {
+                                   // Central warehouse request flow
+                                   setIsVehiclePartsCatalogOpen(false);
+                                   triggerToast(language === 'ar' 
+                                     ? `📦 تم تقديم طلب تأمين وشحن عاجل لـ (${item.name}) من المستودع المركزي! رقم التتبع: MB-GEN-${Math.floor(Math.random() * 9000) + 1000}`
+                                     : `📦 Direct shipment requested for (${item.name}) from central depot! Tracking ID: MB-GEN-${Math.floor(Math.random() * 9000) + 1000}`
+                                   );
+                                 }
+                               }}
+                               className={`py-1.5 px-3 rounded-xl font-bold text-[9px] transition-all duration-200 cursor-pointer text-center ${
+                                 isOutOfStock 
+                                   ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed' 
+                                   : item.isOnsite 
+                                     ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-xs' 
+                                     : 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-xs'
+                               }`}
+                               disabled={isOutOfStock}
+                             >
+                               {item.isOnsite ? (language === 'ar' ? 'صرف فوري ⚡' : 'Pull Spare ⚡') : (language === 'ar' ? 'طلب شحن 📦' : 'Dispatch 📦')}
+                             </button>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+
+                {/* Footer action */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-850 flex items-center justify-between text-[10px] text-slate-400 font-bold shrink-0">
+                  <span>{language === 'ar' ? 'سجل كتالوج الصيانة - إصدار v2.4' : 'Maintenance Catalog Ledger - v2.4'}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsVehiclePartsCatalogOpen(false);
+                      setSelectedCatalogVehicle(null);
+                    }}
+                    className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl transition-all font-black"
+                  >
+                    {language === 'ar' ? 'إغلاق الكتالوج' : 'Close Catalog'}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Overdue Tasks Alert Modal */}
+        <AnimatePresence>
+          {showOverdueModal && (
+            <div 
+              id="tech-overdue-tasks-modal-overlay"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/85 backdrop-blur-xs select-none"
+              onClick={() => setShowOverdueModal(false)}
+            >
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="bg-white dark:bg-[#0f1422] border border-slate-200 dark:border-slate-800/80 rounded-3xl p-5 max-w-xl w-full shadow-2xl space-y-4 text-right relative overflow-hidden flex flex-col max-h-[85vh]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Visual red caution alert top line */}
+                <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-l from-rose-500 via-red-600 to-rose-650" />
+
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-850 pb-3 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 animate-pulse">
+                      <AlertTriangle size={20} />
+                    </div>
+                    <div className="space-y-0.5 text-right">
+                      <span className="text-[9px] text-rose-500 font-black uppercase tracking-wider">
+                        {language === 'ar' ? 'إجراء عاجل مطلوب ⚠️' : 'Urgent Action Required ⚠️'}
+                      </span>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight">
+                        {language === 'ar' ? 'قائمة مهام الصيانة المتأخرة' : 'Overdue Maintenance Tasks List'}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowOverdueModal(false)}
+                    className="p-1.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer border border-slate-200/10"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-normal shrink-0">
+                  {language === 'ar' 
+                    ? 'الأعطال والطلبات التالية تجاوزت الوقت المقدر لبدء العمل ولم يتم إنجازها بعد. يرجى توجيه الأولوية لإنهاء الصيانة وتوثيقها بالصور لتفادي تعطيل الأسطول التشغيلي.' 
+                    : 'The following tickets have exceeded their scheduled start window and remain incomplete. Please prioritize these and complete work with appropriate before/after visual documentation.'}
+                </p>
+
+                {/* List Container */}
+                <div className="overflow-y-auto flex-1 pr-1 space-y-2.5 max-h-[50vh]">
+                  {myOverdueOrders.length === 0 ? (
+                    <div className="text-center py-8 space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+                        <Check size={18} strokeWidth={3} />
+                      </div>
+                      <p className="text-[11px] font-black text-slate-850 dark:text-slate-300">
+                        {language === 'ar' ? 'عمل ممتاز! لا توجد مهام متأخرة حالياً.' : 'Amazing! No overdue tasks at the moment.'}
+                      </p>
+                    </div>
+                  ) : (
+                    myOverdueOrders.map((order) => {
+                      const vehicle = vehicles.find(v => v.id === order.vehicleId);
+                      
+                      let priColor = 'text-slate-500 bg-slate-150/50';
+                      if (order.priority === 'high') priColor = 'text-rose-600 bg-rose-50 dark:bg-rose-950/30 dark:text-rose-400';
+                      else if (order.priority === 'medium') priColor = 'text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400';
+
+                      return (
+                        <div 
+                          key={order.id}
+                          className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850 hover:border-rose-400/40 dark:hover:border-rose-900/40 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+                        >
+                          <div className="space-y-1 text-right flex-1 min-w-0">
+                            {/* Title line */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-extrabold text-slate-850 dark:text-slate-155 text-[11.5px] leading-tight">
+                                {order.description}
+                              </span>
+                              <span className="text-[8px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-900 font-mono font-medium text-slate-500 shrink-0">
+                                {order.orderNumber}
+                              </span>
+                              <span className={`text-[8px] font-black px-1.5 py-0.25 rounded-md uppercase shrink-0 ${priColor}`}>
+                                {language === 'ar' ? (order.priority === 'high' ? 'عالية الأهمية' : order.priority === 'medium' ? 'متوسطة' : 'عادية') : order.priority}
+                              </span>
+                            </div>
+
+                            {/* Sub details */}
+                            <div className="flex items-center gap-2 text-[9.5px] text-slate-400 dark:text-slate-500 font-bold flex-wrap">
+                              <span>
+                                {language === 'ar' ? `🚚 المركبة: ${vehicle?.name || ''} (${vehicle?.plateNumber || ''})` : `🚚 Vehicle: ${vehicle?.name || ''}`}
+                              </span>
+                              <span>•</span>
+                              <span className="text-rose-500 flex items-center gap-1 font-extrabold">
+                                <Clock size={9} />
+                                <span>{language === 'ar' ? `تاريخ الطلب: ${order.date}` : `Date: ${order.date}`}</span>
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Direct Select action button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedActiveOrderId(order.id);
+                              setShowOverdueModal(false);
+                              triggerToast(
+                                language === 'ar' 
+                                  ? `🔧 تم اختيار المهمة (${order.orderNumber})، يرجى ملء التقرير وتوثيق العمل!` 
+                                  : `🔧 Task (${order.orderNumber}) selected, please file your report!`
+                              );
+                            }}
+                            className="w-full sm:w-auto py-1.5 px-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black rounded-xl text-[9px] transition-all duration-250 cursor-pointer shadow-xs text-center shrink-0"
+                          >
+                            {language === 'ar' ? 'بدء الإصلاح الفوري ⚡' : 'Start Repair Now ⚡'}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Footer action */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-850 flex items-center justify-between text-[10px] text-slate-450 font-bold shrink-0">
+                  <span>{language === 'ar' ? 'تنبيه جودة العمل والصيانة الوقائية' : 'Quality Auditing Alert Engine'}</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowOverdueModal(false)}
+                    className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl transition-all font-black cursor-pointer"
+                  >
+                    {language === 'ar' ? 'إغلاق' : 'Close'}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -2806,19 +5111,27 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
 
     return (
       <div className={`space-y-6 ${language === 'ar' ? 'text-right' : 'text-left'} animate-fadeIn font-sans`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        {/* Header section with distinct read-only metadata badge */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-violet-600 text-white rounded-full text-[8.5px] font-black flex items-center gap-1">
+        {/* Beautiful Dark Purple Gradient Banner */}
+        <div className="bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-36 h-36 bg-black/5 rounded-full -translate-x-12 translate-y-12 pointer-events-none" />
+          
+          <div className="relative z-10 space-y-1.5 flex-1 text-right">
+            <div className="flex flex-wrap items-center justify-start gap-2">
+              <span className="px-2.5 py-0.5 bg-white/20 text-white rounded-full text-[8.5px] font-black flex items-center gap-1 uppercase tracking-wider backdrop-blur-xs">
                 <FolderLock size={10} />
-                <span>وضع العرض والتدقيق (قراءة فقط)</span>
+                <span>{language === 'ar' ? 'وضع العرض والتدقيق (قراءة فقط)' : 'Audit & Review Mode (Read-Only)'}</span>
               </span>
-              <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs text-slate-400 font-bold">{new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span className="text-xs text-white/60 font-medium">•</span>
+              <span className="text-[10px] text-white/80 font-black">
+                {language === 'ar' 
+                  ? new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                  : new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
             </div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white mt-1.5 flex items-center gap-2 flex-wrap">
-              <span>بوابة المراقبة الفنية وتقارير جودة وصحة الأسطول</span>
+
+            <h1 className="text-lg sm:text-xl font-black text-white flex items-center justify-start gap-2 flex-wrap">
+              <span>{language === 'ar' ? 'بوابة المراقبة الفنية وتقارير جودة وصحة الأسطول' : 'Technical Monitoring & Fleet Health Portal'}</span>
               <ContextualHelp 
                 id="viewer-dash"
                 titleAr="بوابة المراقبة والتدقيق الفني"
@@ -2844,18 +5157,21 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                 language={language}
               />
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-450 mt-1">
-              أهلاً بك، {user.name} ({user.title}). يمنحك هذا الموديل وصولاً مستنداً فائقاً لمتابعة المؤشرات والتقارير الفنية للورش والآليات وقراءات MTBF.
+
+            <p className="text-xs text-white/90 font-medium leading-relaxed max-w-3xl">
+              {language === 'ar'
+                ? `أهلاً بك، ${user.name} (${user.title}). يمنحك هذا الموديل وصولاً مستنداً فائقاً لمتابعة المؤشرات والتقارير الفنية للورش والآليات وقراءات MTBF.`
+                : `Welcome, ${user.name} (${user.title}). This portal grants you advanced read-only access to investigate real-time telemetry, shop floor activities, and MTBF indices.`}
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+          <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
             <LanguageSwitcher />
-            <div className="flex items-center gap-3 bg-white dark:bg-slate-900 px-4 py-2.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/80 shadow-soft shrink-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 block animate-pulse"></span>
-              <div className="text-right">
-                <span className="text-[10px] text-slate-400 block font-bold">حالة خادم التزامن السحابي:</span>
-                <span className="text-xs font-black text-slate-800 dark:text-slate-100 font-sans">تحديث حي ومزامنة فورية ✔️</span>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 shrink-0 text-right">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 block animate-pulse"></span>
+              <div>
+                <span className="text-[9px] text-white/70 block font-bold">{language === 'ar' ? 'حالة خادم التزامن السحابي:' : 'Cloud Server Sync:'}</span>
+                <span className="text-[11px] font-black text-white font-sans">{language === 'ar' ? 'تحديث حي ومزامنة فورية ✔️' : 'Live Sync & Stream Active ✔️'}</span>
               </div>
             </div>
           </div>
@@ -2897,18 +5213,18 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#0f1422] p-4.5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-500/20">
+          <div className="bg-white dark:bg-[#0f1422] p-4.5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-green-500/20">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] text-slate-400 font-black">متوسط الوقت بين الأعطال (MTBF)</span>
-              <span className="text-[9px] bg-indigo-500/10 text-indigo-500 font-black px-1.5 py-0.5 rounded-lg font-sans">46 يوماً</span>
+              <span className="text-[9px] bg-brand-green-500/10 text-brand-green-600 dark:text-brand-green-400 font-black px-1.5 py-0.5 rounded-lg font-sans">46 يوماً</span>
             </div>
             <div className="space-y-1">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black font-sans text-indigo-500">46 يوم</span>
+                <span className="text-2xl font-black font-sans text-brand-green-600 dark:text-brand-green-400">46 يوم</span>
                 <span className="text-[10px] text-slate-455 font-sans">+3 أيام تحسن وقائي</span>
               </div>
               <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className="bg-indigo-500 h-full rounded-full" style={{ width: '80%' }}></div>
+                <div className="bg-brand-green-500 h-full rounded-full" style={{ width: '80%' }}></div>
               </div>
             </div>
           </div>
@@ -2949,10 +5265,10 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
         {/* Charts Section using Recharts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Chart A: Fleet readiness and capacity analysis */}
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft space-y-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-blue-500/15">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft space-y-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-green-500/15">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-xs font-black text-slate-800 dark:text-slate-205 flex items-center gap-1.5">
-                <FileBarChart2 size={14} className="text-brand-blue-500" />
+                <FileBarChart2 size={14} className="text-brand-green-500" />
                 <span>تحليل جاهزية وحالة الآليات حسب قسم التشغيل</span>
               </h3>
               <span className="text-[8.5px] font-bold text-slate-400">إحصائيات الأقسام الثلاثة</span>
@@ -2977,7 +5293,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                     }} 
                   />
                   <Legend wrapperStyle={{ fontSize: '9px', paddingBottom: '5px' }} />
-                  <Bar dataKey="معدل التشغيل" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="معدل التشغيل" fill="#00b95c" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="قيد الإصلاح" fill="#ea580c" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="متوقفة" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -3027,10 +5343,10 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
         </div>
 
         {/* Fleet health audit checklist report section (Read-only reports) */}
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft space-y-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-500/15">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft space-y-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-green-500/15">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-indigo-50 dark:bg-indigo-950/25 text-indigo-500 rounded-xl">
+              <div className="p-1.5 bg-brand-green-50 dark:bg-brand-green-950/25 text-brand-green-600 dark:text-brand-green-400 rounded-xl">
                 <FileBarChart2 size={16} />
               </div>
               <div>
@@ -3095,7 +5411,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
 
                     return (
                       <tr key={ord.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/60 transition-colors">
-                        <td className="py-3 px-4 font-mono font-extrabold text-[#2563eb] dark:text-[#60a5fa]">{ord.orderNumber}</td>
+                        <td className="py-3 px-4 font-mono font-extrabold text-[#00b95c] dark:text-[#00e072]">{ord.orderNumber}</td>
                         <td className="py-3 px-4">
                           <div className="space-y-0.5">
                             <span className="font-extrabold text-slate-830 dark:text-slate-200 block">{ord.description}</span>
@@ -3143,8 +5459,8 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                               colorClass = "from-emerald-500 to-teal-400"; // Completed
                               textClass = "text-emerald-500 dark:text-emerald-400";
                             } else if (progressVal >= 35) {
-                              colorClass = "from-amber-400 via-brand-blue-500 to-indigo-500"; // Good
-                              textClass = "text-brand-blue-600 dark:text-brand-blue-400";
+                              colorClass = "from-amber-400 via-brand-green-500 to-brand-green-600"; // Good
+                              textClass = "text-brand-green-600 dark:text-brand-green-400";
                             }
                             return (
                               <div className="flex items-center justify-end gap-2">
@@ -3170,7 +5486,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
 
         {/* Informative Report Footnote */}
         <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-150 dark:border-slate-850 flex items-center gap-2 text-slate-455 leading-normal">
-          <Info size={14} className="text-[#2563eb] shrink-0" />
+          <Info size={14} className="text-[#00b95c] shrink-0" />
           <p className="text-[9.5px]">
             <strong>تنويه تدقيق:</strong> هذا الجدول والمؤشرات الإجرائية أعلاه هي ملفات قراءة فقط للمراقبين والمفتشين الأمنيين. لحقن أو تعديل أوامر الصيانة، يرجى التبديل لنمط (مدير نظام) أو (فني ورشة) من بوابة التبويب والتسجيل.
           </p>
@@ -3203,45 +5519,51 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
   return (
     <div className={`space-y-8 ${language === 'ar' ? 'text-right' : 'text-left'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fadeIn">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">
-              {language === 'ar' ? 'لوحة المعلومات والتحكم العام' : 'Dashboard Panel'}
+      <div className="bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-6 animate-fadeIn">
+        {/* Decorative background shapes */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full translate-x-16 -translate-y-16 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-36 h-36 bg-black/5 rounded-full -translate-x-12 translate-y-12 pointer-events-none" />
+
+        <div className="relative z-10 space-y-1.5 flex-1">
+          <div className="flex items-center gap-2 flex-wrap justify-start">
+            <h1 className="text-lg sm:text-xl font-black text-white flex items-center justify-start gap-2 flex-wrap">
+              <span>{language === 'ar' ? 'لوحة المعلومات والتحكم العام' : 'Dashboard Panel'}</span>
+              <ContextualHelp 
+                id="dashboard"
+                titleAr="لوحة تحكم الأسطول المركزية"
+                titleEn="Central Fleet Dashboard"
+                explanationAr="لوحة تحليلات شاملة تتيح مراقبة وتتبع حالة كافة مركبات ومعدات الأسطول، وحساب الجاهزية التشغيلية اليومية، وتوفر الورش الفنية في الوقت الحقيقي."
+                explanationEn="A complete analytical cockpit to inspect and control the status of all fleet vehicles, instantly calculated operational availability, and workshop load in real-time."
+                benefitsAr={[
+                  "رؤية 360 درجة لجميع تفاصيل الصيانة والتكلفة الإجمالية في شاشة واحدة.",
+                  "معالجة سريعة لطلبات الخدمة المعلقة وتتبع ذكي لمؤشرات استهلاك الوقود والانبعاثات.",
+                  "مراقبة الإنتاجية الإجمالية للمشغلين والفنيين والورش بشكل فوري."
+                ]}
+                benefitsEn={[
+                  "Full 360-degree control over active work tickets and spare inventory values under a single view.",
+                  "Fast-track processing for waiting tasks with native real-time status telemetry.",
+                  "Monitor technician allocation levels and average repair cycles."
+                ]}
+                tipsAr={[
+                  "انقر على بطاقات الأرقام الكبيرة في الأعلى لتصفية الأسطول حسب الحالة والتركيز السريع على التنبيهات النشطة."
+                ]}
+                tipsEn={[
+                  "Click on any top metric card to instantly filter elements and isolate high-priority fleet warnings."
+                ]}
+                language={language}
+              />
             </h1>
-            <ContextualHelp 
-              id="dashboard"
-              titleAr="لوحة تحكم الأسطول المركزية"
-              titleEn="Central Fleet Dashboard"
-              explanationAr="لوحة تحليلات شاملة تتيح مراقبة وتتبع حالة كافة مركبات ومعدات الأسطول، وحساب الجاهزية التشغيلية اليومية، وتوفر الورش الفنية في الوقت الحقيقي."
-              explanationEn="A complete analytical cockpit to inspect and control the status of all fleet vehicles, instantly calculated operational availability, and workshop load in real-time."
-              benefitsAr={[
-                "رؤية 360 درجة لجميع تفاصيل الصيانة والتكلفة الإجمالية في شاشة واحدة.",
-                "معالجة سريعة لطلبات الخدمة المعلقة وتتبع ذكي لمؤشرات استهلاك الوقود والانبعاثات.",
-                "مراقبة الإنتاجية الإجمالية للمشغلين والفنيين والورش بشكل فوري."
-              ]}
-              benefitsEn={[
-                "Full 360-degree control over active work tickets and spare inventory values under a single view.",
-                "Fast-track processing for waiting tasks with native real-time status telemetry.",
-                "Monitor technician allocation levels and average repair cycles."
-              ]}
-              tipsAr={[
-                "انقر على بطاقات الأرقام الكبيرة في الأعلى لتصفية الأسطول حسب الحالة والتركيز السريع على التنبيهات النشطة."
-              ]}
-              tipsEn={[
-                "Click on any top metric card to instantly filter elements and isolate high-priority fleet warnings."
-              ]}
-              language={language}
-            />
           </div>
-          <p className="text-xs text-slate-505 dark:text-slate-400">
+          <p className="text-xs text-white/95 font-medium leading-relaxed max-w-3xl">
             {language === 'ar' 
               ? `مرحباً ${user.name}، إليك حالة وطاقة حركة الأسطول اليوم.` 
               : `Hello ${user.name}, here is the current fleet activity status.`}
           </p>
         </div>
 
-        <LanguageSwitcher />
+        <div className="relative z-10 flex items-center gap-3 shrink-0">
+          <LanguageSwitcher />
+        </div>
       </div>
 
       {/* Quick Actions (إجراءات سريعة) */}

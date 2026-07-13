@@ -49,7 +49,7 @@ export interface MaintenanceOrder {
   orderNumber: string;
   date: string;
   description: string;
-  category: 'mechanical' | 'electrical' | 'cooling' | 'hydraulic' | 'bodywork';
+  category: 'mechanical' | 'electrical' | 'cooling' | 'hydraulic' | 'bodywork' | 'tires' | 'brakes';
   status: 'pending' | 'in-progress' | 'completed';
   technicianId?: string;
   priority: 'low' | 'medium' | 'high';
@@ -64,6 +64,14 @@ export interface MaintenanceOrder {
   photoUrl?: string;
   estimatedDuration?: string;
   signature?: string;
+  obdCode?: string;
+  symptom?: string;
+  externalInvoiceNo?: string;
+  externalInvoiceStatus?: 'pending_invoice' | 'received_unpaid' | 'paid';
+  externalInvoiceImage?: string;
+  externalInvoiceImages?: string[];
+  photoBeforeUrl?: string;
+  photoAfterUrl?: string;
 }
 
 export interface InventoryItem {
@@ -97,6 +105,7 @@ export interface Vendor {
   reliability: number; // 1 - 5 stars
   categories: string[];
   status: 'active' | 'suspended';
+  type?: 'supplier' | 'external_workshop' | 'both';
 }
 
 export interface SupplyOrder {
@@ -168,6 +177,11 @@ export interface SafetyInspection {
 
 export function hasGranularPermission(permissionId: string, userRole: string): boolean {
   try {
+    // If Read-only mode is active, prevent all administrative and modifying actions
+    if (localStorage.getItem('saas_read_only_mode') === 'true') {
+      return false;
+    }
+
     const saved = localStorage.getItem('saas_granular_permissions');
     if (saved) {
       const parsed = JSON.parse(saved);
