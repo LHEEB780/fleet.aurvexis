@@ -708,19 +708,19 @@ export default function Vendors({ user }: VendorsProps) {
       )}
 
       {/* Header section with brand accent */}
-      <div className="relative p-6 md:p-8 bg-gradient-to-br from-slate-900 via-slate-850 to-slate-905 rounded-3xl text-white shadow-2xl border border-slate-750/35 overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-brand-blue-500/10 rounded-full blur-[100px] -mr-20 -mt-20"></div>
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-[100px] -ml-20 -mb-20"></div>
+      <div className="relative p-6 md:p-8 bg-gradient-to-br from-brand-blue-900 via-brand-blue-800 to-slate-950 rounded-3xl text-white shadow-2xl border border-brand-blue-700/30 overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-brand-blue-500/15 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-brand-blue-600/10 rounded-full blur-[100px] -ml-20 -mb-20"></div>
         
         <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 bg-brand-blue-500/15 border border-brand-blue-500/20 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-[#38bdf8] uppercase">
+            <div className="inline-flex items-center gap-2 bg-brand-blue-500/15 border border-brand-blue-500/20 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-brand-blue-300 uppercase">
               <Sparkles size={11} className="animate-spin text-brand-blue-400" />
               <span>إدارة سلسلة التوريد الذكية</span>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-                <Handshake size={32} className="text-brand-blue-400 animate-pulse" />
+                <Handshake size={32} className="text-brand-blue-300 animate-pulse" />
                 <span>{language === 'ar' ? 'نظام إدارة الموردين والتوريد' : 'Supply Chain & Vendors Console'}</span>
               </h1>
               <ContextualHelp 
@@ -753,25 +753,71 @@ export default function Vendors({ user }: VendorsProps) {
             </p>
           </div>
           
-          <button
-            onClick={
-              activeTab === 'vendors'
-                ? () => handleOpenVendorModal()
-                : activeTab === 'external_workshops'
-                ? () => handleOpenVendorModal(null, 'external_workshop')
-                : handleOpenOrderModal
-            }
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-brand-blue-500 to-sky-600 hover:from-brand-blue-600 hover:to-sky-700 text-white text-xs font-black rounded-2xl shadow-xl transition-all hover:scale-[1.02] cursor-pointer shrink-0"
-          >
-            <Plus size={16} />
-            <span>
-              {activeTab === 'vendors'
-                ? 'إضافة مورد معتمد'
-                : activeTab === 'external_workshops'
-                ? 'إضافة ورشة صيانة خارجية'
-                : 'تسجيل طلب توريد جديد'}
-            </span>
-          </button>
+          <div className="flex flex-row items-center gap-2.5 w-full md:w-auto overflow-x-auto md:overflow-visible no-scrollbar shrink-0 py-1">
+            {activeTab === 'vendors' && (
+              <>
+                <button
+                  onClick={() => handleOpenVendorModal(null, 'supplier')}
+                  className="flex items-center gap-2 px-3.5 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs md:text-[13px] font-black rounded-xl shadow-md transition-all hover:scale-[1.01] cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Plus size={14} />
+                  <span>{language === 'ar' ? 'إضافة مورد معتمد' : 'Add Approved Vendor'}</span>
+                </button>
+                <button
+                  onClick={() => handleOpenVendorModal(null, 'external_workshop')}
+                  className="flex items-center gap-2 px-3.5 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs md:text-[13px] font-black rounded-xl shadow-md transition-all hover:scale-[1.01] cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Plus size={14} />
+                  <span>{language === 'ar' ? 'إضافة ورشة خارجية' : 'Add External Workshop'}</span>
+                </button>
+              </>
+            )}
+
+            {activeTab === 'external_workshops' && (
+              <>
+                <button
+                  onClick={() => handleOpenVendorModal(null, 'external_workshop')}
+                  className="flex items-center gap-2 px-3.5 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs md:text-[13px] font-black rounded-xl shadow-md transition-all hover:scale-[1.01] cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Plus size={14} />
+                  <span>{language === 'ar' ? 'إضافة ورشة صيانة خارجية' : 'Add External Workshop'}</span>
+                </button>
+                <button
+                  onClick={() => handleOpenVendorModal(null, 'supplier')}
+                  className="flex items-center gap-2 px-3.5 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs md:text-[13px] font-black rounded-xl shadow-md transition-all hover:scale-[1.01] cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Plus size={14} />
+                  <span>{language === 'ar' ? 'إضافة مورد معتمد' : 'Add Approved Vendor'}</span>
+                </button>
+              </>
+            )}
+
+            {activeTab !== 'vendors' && activeTab !== 'external_workshops' && (
+              <>
+                <button
+                  onClick={handleOpenOrderModal}
+                  className="flex items-center gap-2 px-3.5 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs md:text-[13px] font-black rounded-xl shadow-md transition-all hover:scale-[1.01] cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Plus size={14} />
+                  <span>{language === 'ar' ? 'تسجيل طلب توريد جديد' : 'Record Supply Order'}</span>
+                </button>
+                <button
+                  onClick={() => handleOpenVendorModal(null, 'supplier')}
+                  className="flex items-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 bg-gradient-to-r from-indigo-600 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white text-xs md:text-[13px] font-bold rounded-xl shadow-md transition-all hover:scale-[1.01] cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Plus size={13} />
+                  <span>{language === 'ar' ? 'إضافة مورد' : 'Add Vendor'}</span>
+                </button>
+                <button
+                  onClick={() => handleOpenVendorModal(null, 'external_workshop')}
+                  className="flex items-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-xs md:text-[13px] font-bold rounded-xl shadow-md transition-all hover:scale-[1.01] cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Plus size={13} />
+                  <span>{language === 'ar' ? 'إضافة ورشة' : 'Add Workshop'}</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

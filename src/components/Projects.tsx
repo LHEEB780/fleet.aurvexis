@@ -4,7 +4,7 @@ import {
   DollarSign, CheckSquare, Clock, AlertTriangle, Users, Truck,
   PlusCircle, Check, X, LayoutGrid, List, TrendingUp, BarChart3,
   ChevronRight, ArrowLeftRight, Percent, CheckCircle2, Play, Pause,
-  AlertCircle
+  AlertCircle, Sparkles
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
@@ -360,7 +360,6 @@ export default function Projects({ user }: ProjectsProps) {
         return JSON.parse(saved);
       } catch (e) {}
     }
-    // Simple fallback
     return [
       { id: 'd1', name: 'سالم عبد الرحمن الدوسري', status: 'active', licenseType: 'خفيف' },
       { id: 'd2', name: 'فهد بن مساعد المرشدي', status: 'active', licenseType: 'ثقيل' },
@@ -473,6 +472,8 @@ export default function Projects({ user }: ProjectsProps) {
     setIsFormOpen(true);
   };
 
+
+
   const handleSaveProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nameAr.trim() || !nameEn.trim()) return;
@@ -508,12 +509,12 @@ export default function Projects({ user }: ProjectsProps) {
           type: 'info',
           titleAr: 'تحديث مشروع تشغيلي',
           titleEn: 'Operational Project Updated',
-          msgAr: `تم تحديث بيانات مشروع [${nameAr}] بنجاح وتأمين خطوط الدعم المالي.`,
-          msgEn: `Project [${nameEn}] details updated successfully.`
+          msgAr: `تم تحديث بيانات مشروع [${nameAr}] بنجاح وتأمين خطوط الدعم الميدانية.`,
+          msgEn: `Operational parameters for project ${nameAr} updated successfully.`
         }
       }));
     } else {
-      // Create mode
+      // Add mode
       const newProj: OperationalProject = {
         id: `proj-${Date.now()}`,
         name: nameAr,
@@ -531,55 +532,19 @@ export default function Projects({ user }: ProjectsProps) {
         allocatedDriverIds: selectedDriverIds,
         tasks: []
       };
-      setProjects([newProj, ...projects]);
+      setProjects([...projects, newProj]);
 
-      // Dispatch notification
       window.dispatchEvent(new CustomEvent('add-notification', {
         detail: {
-          type: 'success',
-          titleAr: '🎉 إطلاق مشروع تشغيلي جديد!',
-          titleEn: '🎉 New Project Launched!',
-          msgAr: `تم بنجاح إدراج مشروع [${nameAr}] لربط وتعيين مركبات وسائقي الأسطول ومراقبة النواتج.`,
-          msgEn: `New operational project [${nameEn}] has been established successfully.`
+          type: 'info',
+          titleAr: 'مشروع تشغيلي جديد',
+          titleEn: 'New Operational Project',
+          msgAr: `تم إطلاق مشروع تشغيلي جديد [${nameAr}] بنجاح وتنسيق الميدان.`,
+          msgEn: `Successfully initiated operational project [${nameEn}].`
         }
       }));
     }
-
     setIsFormOpen(false);
-  };
-
-  const handleDeleteProject = (id: string) => {
-    if (confirm(t.deleteConfirm)) {
-      const pToDelete = projects.find(p => p.id === id);
-      setProjects(projects.filter(p => p.id !== id));
-      if (selectedProject?.id === id) {
-        setSelectedProject(null);
-      }
-      
-      if (pToDelete) {
-        window.dispatchEvent(new CustomEvent('add-notification', {
-          detail: {
-            type: 'warning',
-            titleAr: '⚠️ حذف مشروع تشغيلي',
-            titleEn: '⚠️ Project Removed',
-            msgAr: `تم إقصاء مشروع [${pToDelete.name}] وإلغاء حجز سائقي ومعدات الأسطول التابعين له.`,
-            msgEn: `Operational project [${pToDelete.nameEn}] has been deleted.`
-          }
-        }));
-      }
-    }
-  };
-
-  const handleToggleStatusDirectly = (project: OperationalProject) => {
-    const nextStatusMap: Record<string, 'pending' | 'active' | 'completed' | 'paused'> = {
-      'pending': 'active',
-      'active': 'paused',
-      'paused': 'active',
-      'completed': 'active'
-    };
-    const next = nextStatusMap[project.status] || 'active';
-    const updated = projects.map(p => p.id === project.id ? { ...p, status: next } : p);
-    setProjects(updated);
   };
 
   // Task Handlers
@@ -666,6 +631,46 @@ export default function Projects({ user }: ProjectsProps) {
     setProjects(updated);
   };
 
+  const handleDeleteProject = (projId: string) => {
+    if (!window.confirm(isRtl ? 'هل أنت متأكد من حذف هذا المشروع التشغيلي؟' : 'Are you sure you want to delete this operational project?')) return;
+    const updated = projects.filter(p => p.id !== projId);
+    setProjects(updated);
+    if (selectedProject?.id === projId) {
+      setSelectedProject(null);
+    }
+    
+    window.dispatchEvent(new CustomEvent('add-notification', {
+      detail: {
+        type: 'warning',
+        titleAr: 'حذف مشروع تشغيلي',
+        titleEn: 'Operational Project Deleted',
+        msgAr: 'تم حذف المشروع التشغيلي بنجاح وإلغاء ارتباط كافة السائقين والآليات من الميدان.',
+        msgEn: 'Successfully deleted the operational project and unallocated all driver and vehicle assets.'
+      }
+    }));
+  };
+
+  const handleToggleStatusDirectly = (proj: OperationalProject) => {
+    const nextStatus: 'active' | 'pending' | 'completed' | 'paused' = proj.status === 'active' ? 'paused' : 'active';
+    const updated = projects.map(p => {
+      if (p.id === proj.id) {
+        return { ...p, status: nextStatus };
+      }
+      return p;
+    });
+    setProjects(updated);
+    
+    window.dispatchEvent(new CustomEvent('add-notification', {
+      detail: {
+        type: 'info',
+        titleAr: nextStatus === 'active' ? 'تنشيط المشروع التشغيلي' : 'إيقاف المشروع التشغيلي مؤقتاً',
+        titleEn: nextStatus === 'active' ? 'Operational Project Activated' : 'Operational Project Paused',
+        msgAr: nextStatus === 'active' ? `تم إعادة تنشيط المشروع [${proj.name}] في الميدان.` : `تم إيقاف المشروع [${proj.name}] مؤقتاً وتجميد المهام الميدانية.`,
+        msgEn: nextStatus === 'active' ? `Project [${proj.nameEn}] has been re-activated.` : `Project [${proj.nameEn}] has been temporarily paused.`
+      }
+    }));
+  };
+
   // Calculations for KPI Cards
   const totalBudget = projects.reduce((acc, p) => acc + p.budget, 0);
   const totalExpenses = projects.reduce((acc, p) => acc + p.expenses, 0);
@@ -729,27 +734,36 @@ export default function Projects({ user }: ProjectsProps) {
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 font-sans text-slate-900 dark:text-slate-100 pb-16">
       
-      {/* HEADER SECTION WITH TOP CRAFTSMANSHIP */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-brand-blue-500/10 text-brand-blue-600 dark:text-emerald-400 rounded-xl flex items-center justify-center">
-              <Briefcase size={22} />
+      {/* HEADER SECTION WITH TOP CRAFTSMANSHIP & PURPLE GRADIENT */}
+      <div className="relative p-6 md:p-8 bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-950 rounded-3xl text-white shadow-2xl border border-purple-800/35 overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] -ml-20 -mb-20"></div>
+        
+        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-2 flex-1">
+            <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/20 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-purple-300 uppercase">
+              <Sparkles size={11} className="animate-spin text-purple-400" />
+              <span>إدارة وتخطيط الأسطول الذكي</span>
             </div>
-            <h1 className="text-2xl font-black tracking-tight">{t.title}</h1>
+            
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <Briefcase size={32} className="text-purple-300 animate-pulse" />
+              <span>{t.title}</span>
+            </h1>
+            
+            <p className="text-xs text-purple-100/70 max-w-2xl leading-relaxed">
+              {t.subtitle}
+            </p>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-            {t.subtitle}
-          </p>
-        </div>
 
-        <button
-          onClick={() => handleOpenForm(null)}
-          className="flex items-center gap-1.5 px-4.5 py-2.5 bg-brand-blue-500 hover:bg-brand-blue-600 text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95"
-        >
-          <Plus size={16} />
-          <span>{t.newProject}</span>
-        </button>
+          <button
+            onClick={() => handleOpenForm(null)}
+            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-lg transition-all hover:scale-[1.02] active:scale-95 cursor-pointer shrink-0"
+          >
+            <Plus size={16} />
+            <span>{t.newProject}</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI STATISTICS METRICS GRID */}

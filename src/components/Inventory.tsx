@@ -1817,17 +1817,24 @@ export default function Inventory({ user }: InventoryProps) {
   return (
     <div className="space-y-6 text-right" dir="rtl">
       
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-500 flex items-center justify-center">
-              <Warehouse size={22} className="animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h1 className="text-xl font-black text-slate-900 dark:text-white">
-                  {language === 'ar' ? 'إدارة منشآت المخازن والقطع' : 'Spare Parts & Inventory Warehouse'}
+      {/* Page Header with Elegant Purple Gradient */}
+      <div className="relative p-6 md:p-8 bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-950 rounded-3xl text-white shadow-2xl border border-purple-800/35 overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] -ml-20 -mb-20"></div>
+        
+        <div className="relative space-y-6">
+          {/* Title and Description block */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-5">
+            <div className="space-y-2 flex-1">
+              <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/20 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-purple-300 uppercase">
+                <Sparkles size={11} className="animate-spin text-purple-400" />
+                <span>إدارة مخازن وقطع الغيار الذكية</span>
+              </div>
+              
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+                  <Warehouse size={32} className="text-purple-300 animate-pulse" />
+                  <span>{language === 'ar' ? 'إدارة منشآت المخازن والقطع' : 'Spare Parts & Inventory Warehouse'}</span>
                 </h1>
                 <ContextualHelp 
                   id="inventory"
@@ -1854,107 +1861,105 @@ export default function Inventory({ user }: InventoryProps) {
                   language={language}
                 />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-purple-100/70 max-w-2xl">
                 تتبع كلي لقطع الغيار، الإطارات والزيوت وسوائل الآلات مع حدود التنبيه التلقائي وسجل توريد وجرد متكامل.
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Option Selection and additions */}
-        <div className="flex items-center gap-3">
-          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/50 dark:border-slate-705 flex items-center gap-1">
-            <button
-              onClick={() => setActiveTab('list')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'list' 
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-855'
-              }`}
-            >
-              <Box size={13} />
-              <span>أصناف قطع الغيار</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('logs')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'logs' 
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-855'
-              }`}
-            >
-              <History size={13} />
-              <span>حركة التوريد والصرف</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('audit')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'audit' 
-                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-855'
-              }`}
-            >
-              <ClipboardCheck size={13} />
-              <span>تدقيق جرد المخزون</span>
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => setIsScannerOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-55 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/30 rounded-xl text-xs font-black shadow-soft transition-all active:scale-95 cursor-pointer"
-            >
-              <Camera size={15} className="animate-pulse" />
-              <span>مسح الباركود بالكاميرا</span>
-            </button>
-
-            {/* Export Reports Dropdown for Administrators */}
-            {user.role === 'admin' && (
-              <div className="relative">
-                <button
-                  id="export-reports-btn"
-                  onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/30 rounded-xl text-xs font-black shadow-soft transition-all active:scale-95 cursor-pointer"
-                >
-                  <FileText size={15} />
-                  <span>{language === 'ar' ? 'تصدير التقارير' : 'Export Reports'}</span>
-                </button>
-                {isExportDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1 z-50">
+            {/* Low Stock Alert Banner (Top-Left of page / header, above the buttons/controls row) */}
+            {understockItems.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-2xl flex items-start gap-3 max-w-md w-full md:w-96 shrink-0 shadow-lg"
+              >
+                <div className="bg-red-500/20 p-2 rounded-xl text-red-400 mt-0.5 animate-bounce">
+                  <AlertTriangle size={18} />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <div className="font-extrabold text-white flex items-center justify-between">
+                    <span className="text-xs">{language === 'ar' ? 'تنبيه: مخزون متدنٍ للغاية!' : 'Warning: Critical Stock Alert!'}</span>
+                    <span className="px-2 py-0.5 bg-red-600 text-white font-mono text-[10px] font-black rounded-full animate-pulse">
+                      {understockItems.length} {language === 'ar' ? 'قطع' : 'items'}
+                    </span>
+                  </div>
+                  <p className="text-red-100/80 leading-relaxed text-[10px]">
+                    {language === 'ar' 
+                      ? `الأصناف التالية انخفضت عن حد الأمان المطلوب: ${understockItems.slice(0, 3).map(item => item.name).join('، ')}${understockItems.length > 3 ? '...' : ''}`
+                      : `The following items have dropped below safety thresholds: ${understockItems.slice(0, 3).map(item => item.name).join(', ')}${understockItems.length > 3 ? '...' : ''}`}
+                  </p>
+                  <div className="flex items-center gap-3 pt-1">
                     <button
-                      id="export-excel-btn"
                       onClick={() => {
-                        handleExportExcel();
-                        setIsExportDropdownOpen(false);
+                        setStockStatusFilter('low');
+                        setActiveTab('list');
                       }}
-                      className="w-full text-right px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
+                      className="text-white hover:text-red-200 text-[10px] font-black underline flex items-center gap-1 cursor-pointer text-right"
                     >
-                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      <span>{language === 'ar' ? 'تصدير كملف Excel' : 'Export to Excel'}</span>
-                    </button>
-                    <button
-                      id="export-pdf-btn"
-                      onClick={() => {
-                        handleExportPdf();
-                        setIsExportDropdownOpen(false);
-                      }}
-                      className="w-full text-right px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer"
-                    >
-                      <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                      <span>{language === 'ar' ? 'تصدير كملف PDF' : 'Export to PDF'}</span>
+                      <span>{language === 'ar' ? 'فحص النقص وعرض التفاصيل' : 'Review Understock Items'}</span>
+                      <span>&rarr;</span>
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              </motion.div>
             )}
+          </div>
 
-            {user.role !== 'viewer' && (
-              <div className="flex flex-wrap items-center gap-2">
+          {/* Controls, Tabs & Actions arranged side-by-side */}
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            {/* Navigation Tabs */}
+            <div className="bg-white/5 p-1 rounded-2xl border border-white/10 flex flex-wrap items-center gap-1 w-full xl:w-auto">
+              <button
+                onClick={() => setActiveTab('list')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap flex-1 sm:flex-initial justify-center ${
+                  activeTab === 'list' 
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
+                    : 'text-purple-200 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Box size={13} />
+                <span>أصناف قطع الغيار</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('logs')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap flex-1 sm:flex-initial justify-center ${
+                  activeTab === 'logs' 
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
+                    : 'text-purple-200 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <History size={13} />
+                <span>حركة التوريد والصرف</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('audit')}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap flex-1 sm:flex-initial justify-center ${
+                  activeTab === 'audit' 
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
+                    : 'text-purple-200 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <ClipboardCheck size={13} />
+                <span>تدقيق جرد المخزون</span>
+              </button>
+            </div>
+
+            {/* Action Buttons row (Side-by-side) */}
+            <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+              <button
+                onClick={() => setIsScannerOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-purple-100 hover:text-white rounded-xl text-xs font-bold transition-all hover:scale-[1.01] active:scale-95 cursor-pointer flex-1 sm:flex-initial justify-center whitespace-nowrap"
+              >
+                <Camera size={14} className="animate-pulse text-purple-300" />
+                <span>مسح الباركود بالكاميرا</span>
+              </button>
+
+              {user.role !== 'viewer' && (
                 <button
                   onClick={() => setIsBulkPrintModalOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-black shadow-soft hover:bg-slate-50 dark:hover:bg-slate-755 transition-all active:scale-95 cursor-pointer relative"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-purple-100 hover:text-white rounded-xl text-xs font-bold transition-all hover:scale-[1.01] active:scale-95 cursor-pointer flex-1 sm:flex-initial justify-center whitespace-nowrap"
                 >
-                  <Printer size={15} className="text-indigo-600 dark:text-indigo-400" />
+                  <Printer size={14} className="text-purple-300" />
                   <span>محطة ملصقات الباركود</span>
                   {printQueue.length > 0 && (
                     <span className="mr-1 px-1.5 py-0.5 bg-rose-500 text-white font-mono text-[9px] font-black rounded-full animate-pulse">
@@ -1962,16 +1967,58 @@ export default function Inventory({ user }: InventoryProps) {
                     </span>
                   )}
                 </button>
+              )}
 
+              {/* Export Reports Dropdown */}
+              {user.role === 'admin' && (
+                <div className="relative flex-1 sm:flex-initial">
+                  <button
+                    id="export-reports-btn"
+                    onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
+                    className="w-full sm:w-auto flex items-center gap-1.5 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-purple-100 hover:text-white rounded-xl text-xs font-bold transition-all hover:scale-[1.01] active:scale-95 cursor-pointer justify-center whitespace-nowrap"
+                  >
+                    <FileText size={14} className="text-purple-300" />
+                    <span>{language === 'ar' ? 'تصدير التقارير' : 'Export Reports'}</span>
+                  </button>
+                  {isExportDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-xl shadow-lg py-1 z-50">
+                      <button
+                        id="export-excel-btn"
+                        onClick={() => {
+                          handleExportExcel();
+                          setIsExportDropdownOpen(false);
+                        }}
+                        className="w-full text-right px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>{language === 'ar' ? 'تصدير كملف Excel' : 'Export to Excel'}</span>
+                      </button>
+                      <button
+                        id="export-pdf-btn"
+                        onClick={() => {
+                          handleExportPdf();
+                          setIsExportDropdownOpen(false);
+                        }}
+                        className="w-full text-right px-4 py-2 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span>{language === 'ar' ? 'تصدير كملف PDF' : 'Export to PDF'}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {user.role !== 'viewer' && (
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-md hover:bg-indigo-700 transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-md transition-all hover:scale-[1.02] active:scale-95 cursor-pointer flex-1 sm:flex-initial justify-center whitespace-nowrap"
                 >
-                  <Plus size={15} />
+                  <Plus size={14} />
                   <span>إدخال صنف جديد</span>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
