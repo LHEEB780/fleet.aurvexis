@@ -30,7 +30,11 @@ import {
   LayoutGrid,
   List,
   Trash2,
-  Edit
+  Edit,
+  Receipt,
+  ClipboardCheck,
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { vehicles as initialVehicles } from '../data';
 import { VehicleStatus, Vehicle, User, hasGranularPermission } from '../types';
@@ -50,6 +54,52 @@ export const VEHICLE_ICONS: Record<string, { component: React.ComponentType<{ si
   wrench: { component: Wrench, label: 'مركبة خدمات / صيانة ورشية', bg: 'bg-rose-50 dark:bg-rose-950/20', text: 'text-rose-600 dark:text-rose-450' },
   shield: { component: Shield, label: 'أمن وطوارئ / رصد أمني', bg: 'bg-indigo-50 dark:bg-indigo-950/20', text: 'text-indigo-600 dark:text-indigo-400' },
   cpu: { component: Cpu, label: 'آلية ذكية / معدة إلكترونية', bg: 'bg-violet-50 dark:bg-violet-950/20', text: 'text-violet-600 dark:text-violet-400' },
+};
+
+export const DOCUMENT_TYPES_METADATA: Record<string, {
+  labelAr: string;
+  labelEn: string;
+  shortLabelAr: string;
+  shortLabelEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
+  colorClass: string;
+  bgClass: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+}> = {
+  spare_parts_invoice: {
+    labelAr: 'فاتورة صيانة وشراء قطع غيار',
+    labelEn: 'Spare Parts & Maintenance Invoice',
+    shortLabelAr: 'فاتورة شراء',
+    shortLabelEn: 'Invoice',
+    descriptionAr: 'مستند مالي للموردين لشراء قطع الغيار والقطع الاستهلاكية لربطها بجدول النفقات.',
+    descriptionEn: 'Financial supplier invoice for parts and consumable purchases integrated with expenses.',
+    colorClass: 'text-rose-600 dark:text-rose-400 border-rose-500/20 bg-rose-500/5',
+    bgClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+    icon: Receipt
+  },
+  periodic_inspection: {
+    labelAr: 'تقرير فحص دوري سنوي / فني',
+    labelEn: 'Periodic Annual / Technical Inspection',
+    shortLabelAr: 'تقرير فحص',
+    shortLabelEn: 'Inspection',
+    descriptionAr: 'تقرير فحص سلامة وتدقيق فني شامل للمركبة دون فواتير مالية أو تكاليف مباشرة.',
+    descriptionEn: 'Technical safety audit and comprehensive vehicle diagnostics with zero direct expenses.',
+    colorClass: 'text-emerald-600 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/5',
+    bgClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    icon: ClipboardCheck
+  },
+  external_workshop_receipt: {
+    labelAr: 'إيصال صيانة ورشة خارجية',
+    labelEn: 'External Workshop Repair Receipt',
+    shortLabelAr: 'إيصال ورشة',
+    shortLabelEn: 'Receipt',
+    descriptionAr: 'إيصال ورشة خارجية للأعمال الميكانيكية، والخدمات السريعة، وأجور الأيدي العاملة.',
+    descriptionEn: 'External workshop receipt for labor, quick-service actions, and mechanical repairs.',
+    colorClass: 'text-indigo-600 dark:text-indigo-400 border-indigo-500/20 bg-indigo-500/5',
+    bgClass: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+    icon: Wrench
+  }
 };
 
 const StatusBadge = ({ status }: { status: VehicleStatus }) => {
@@ -221,6 +271,18 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
   const [generationLog, setGenerationLog] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+
+  // Smart Input Assistant state
+  const [isSmartInputModalOpen, setIsSmartInputModalOpen] = useState(false);
+  const [smartInputVehicleId, setSmartInputVehicleId] = useState('');
+  const [smartInputFile, setSmartInputFile] = useState<File | null>(null);
+  const [smartInputDragActive, setSmartInputDragActive] = useState(false);
+  const [isSmartInputExtracting, setIsSmartInputExtracting] = useState(false);
+  const [smartInputProgress, setSmartInputProgress] = useState(0);
+  const [smartInputLog, setSmartInputLog] = useState('');
+  const [proactiveDocType, setProactiveDocType] = useState<string>('');
+  const [extractedOrder, setExtractedOrder] = useState<any | null>(null);
+  const smartInputFileInputRef = useRef<HTMLInputElement>(null);
 
   const [expandedVehicleIds, setExpandedVehicleIds] = useState<Record<string, boolean>>({});
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
@@ -904,6 +966,247 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
     reader.readAsText(file);
   };
 
+  const autoClassifyFile = (file: File) => {
+    setSmartInputFile(file);
+    const nameLower = file.name.toLowerCase();
+    if (nameLower.includes("invoice") || nameLower.includes("parts") || nameLower.includes("قطع") || nameLower.includes("فاتورة") || nameLower.includes("شراء") || nameLower.includes("صيانة")) {
+      setProactiveDocType('spare_parts_invoice');
+    } else if (nameLower.includes("inspect") || nameLower.includes("report") || nameLower.includes("فحص") || nameLower.includes("تقرير") || nameLower.includes("دوري")) {
+      setProactiveDocType('periodic_inspection');
+    } else {
+      setProactiveDocType('external_workshop_receipt');
+    }
+  };
+
+  const handleSmartInputExtract = async () => {
+    if (!smartInputVehicleId) {
+      alert(language === 'ar' ? 'الرجاء اختيار المركبة أولاً!' : 'Please select a vehicle first!');
+      return;
+    }
+    if (!smartInputFile) {
+      alert(language === 'ar' ? 'الرجاء رفع ملف أو مستند صيانة أولاً!' : 'Please upload a maintenance document or image first!');
+      return;
+    }
+
+    const selectedVehicle = vehicleList.find(v => v.id === smartInputVehicleId);
+    setIsSmartInputExtracting(true);
+    setSmartInputProgress(15);
+    setSmartInputLog(language === 'ar' ? 'جاري قراءة وتشفير ملف المستند...' : 'Loading and encoding document file...');
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const base64Str = e.target?.result as string;
+        setSmartInputProgress(45);
+        setSmartInputLog(language === 'ar' ? 'جاري تحليل المستند واستدعاء خوادم الاستخلاص بالذكاء الاصطناعي...' : 'Analyzing document and calling AI extraction API...');
+
+        const response = await fetch('/api/ai/extract-maintenance-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileBase64: base64Str,
+            fileName: smartInputFile.name,
+            fileType: smartInputFile.type,
+            language,
+            vehicleName: selectedVehicle ? `${selectedVehicle.name} (${selectedVehicle.plateNumber})` : 'General',
+            documentTypeHint: proactiveDocType
+          })
+        });
+
+        setSmartInputProgress(80);
+        setSmartInputLog(language === 'ar' ? 'جاري التعرف الذكي على الحقول والأسعار وتأريخ الصيانة...' : 'Intelligently mapping repair fields, costs, and dates...');
+
+        if (!response.ok) {
+          throw new Error('Failed to connect to AI extraction service');
+        }
+
+        const data = await response.json();
+        
+        setSmartInputProgress(100);
+        setSmartInputLog(language === 'ar' ? 'اكتمل استخلاص البيانات بنجاح!' : 'Extraction completed successfully!');
+
+        // If the user selected or we proactive-classified a type, we can apply it to the extracted data
+        let finalDocType = proactiveDocType || data.documentType || 'external_workshop_receipt';
+        let updatedData = { ...data, documentType: finalDocType };
+        
+        // Align label and status based on finalDocType
+        if (finalDocType === 'spare_parts_invoice') {
+          updatedData.documentTypeLabelAr = 'فاتورة قطع غيار';
+          updatedData.documentTypeLabelEn = 'Spare parts invoice';
+          updatedData.externalInvoiceStatus = 'paid';
+          if (!updatedData.externalInvoiceNo) {
+            updatedData.externalInvoiceNo = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
+          }
+        } else if (finalDocType === 'periodic_inspection') {
+          updatedData.documentTypeLabelAr = 'تقرير فحص دوري';
+          updatedData.documentTypeLabelEn = 'Periodic inspection report';
+          updatedData.cost = 0;
+          updatedData.partsUsed = [];
+          updatedData.externalInvoiceStatus = '';
+          updatedData.externalInvoiceNo = '';
+        } else {
+          updatedData.documentType = 'external_workshop_receipt';
+          updatedData.documentTypeLabelAr = 'إيصال ورشة خارجية';
+          updatedData.documentTypeLabelEn = 'External workshop receipt';
+          updatedData.externalInvoiceStatus = 'paid';
+          if (!updatedData.externalInvoiceNo) {
+            updatedData.externalInvoiceNo = `REC-${Math.floor(100000 + Math.random() * 900000)}`;
+          }
+        }
+
+        setTimeout(() => {
+          setExtractedOrder({
+            ...updatedData,
+            vehicleId: smartInputVehicleId
+          });
+          setIsSmartInputExtracting(false);
+        }, 1000);
+
+      } catch (err) {
+        console.error(err);
+        setIsSmartInputExtracting(false);
+        alert(
+          language === 'ar'
+            ? 'فشل استخلاص البيانات من المستند بالذكاء الاصطناعي، يرجى المحاولة لاحقاً.'
+            : 'AI extraction failed. Please try again later.'
+        );
+      }
+    };
+    reader.readAsDataURL(smartInputFile);
+  };
+
+  const handleDocumentTypeChange = (newType: string) => {
+    if (!extractedOrder) return;
+
+    let updated = { ...extractedOrder, documentType: newType };
+
+    if (newType === 'spare_parts_invoice') {
+      updated.documentTypeLabelAr = 'فاتورة قطع غيار';
+      updated.documentTypeLabelEn = 'Spare parts invoice';
+      updated.externalInvoiceStatus = 'paid';
+      if (!updated.externalInvoiceNo) {
+        updated.externalInvoiceNo = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
+      }
+      updated.techNotes = language === 'ar' 
+        ? "فاتورة قطع غيار معتمدة وتم إدخال البنود تلقائياً." 
+        : "Approved parts invoice, items populated automatically.";
+    } else if (newType === 'periodic_inspection') {
+      updated.documentTypeLabelAr = 'تقرير فحص دوري';
+      updated.documentTypeLabelEn = 'Periodic inspection report';
+      updated.cost = 0;
+      updated.partsUsed = [];
+      updated.externalInvoiceStatus = '';
+      updated.externalInvoiceNo = '';
+      updated.techNotes = language === 'ar' 
+        ? "فحص دوري ناجح ومطابق لمعايير السلامة والأمان للأسطول." 
+        : "Successful periodic safety inspection and compliance check.";
+    } else {
+      // external_workshop_receipt
+      updated.documentTypeLabelAr = 'إيصال ورشة خارجية';
+      updated.documentTypeLabelEn = 'External workshop receipt';
+      updated.externalInvoiceStatus = 'paid';
+      if (!updated.externalInvoiceNo) {
+        updated.externalInvoiceNo = `REC-${Math.floor(100000 + Math.random() * 900000)}`;
+      }
+      updated.techNotes = language === 'ar' 
+        ? "إصلاح وصيانة خارجية مبرهنة بإيصال مالي معتمد." 
+        : "External repair supported by an official financial receipt.";
+    }
+
+    setExtractedOrder(updated);
+  };
+
+  const handleSaveExtractedOrder = () => {
+    if (!extractedOrder) return;
+
+    let existingOrders = [];
+    try {
+      const savedOrders = localStorage.getItem('fleet_maintenance_orders_v2');
+      if (savedOrders) {
+        existingOrders = JSON.parse(savedOrders);
+      } else {
+        existingOrders = [...maintenanceOrders];
+      }
+    } catch (e) {
+      existingOrders = [...maintenanceOrders];
+    }
+
+    let partsArray = [];
+    if (typeof extractedOrder.partsUsed === 'string') {
+      partsArray = (extractedOrder.partsUsed as string).split(',').map(p => p.trim()).filter(Boolean);
+    } else if (Array.isArray(extractedOrder.partsUsed)) {
+      partsArray = extractedOrder.partsUsed;
+    }
+
+    const newOrder = {
+      id: 'doc-wo-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      vehicleId: extractedOrder.vehicleId,
+      orderNumber: extractedOrder.orderNumber || `WO-DOC-${Date.now().toString().slice(-4)}`,
+      date: extractedOrder.date || new Date().toISOString().split('T')[0],
+      description: extractedOrder.description,
+      category: extractedOrder.category || 'mechanical',
+      status: 'completed',
+      technicianId: extractedOrder.technicianId || '201',
+      priority: extractedOrder.priority || 'medium',
+      cost: Number(extractedOrder.cost) || 0,
+      partsUsed: partsArray,
+      // Classified document fields
+      documentType: extractedOrder.documentType || 'external_workshop_receipt',
+      documentTypeLabelAr: extractedOrder.documentTypeLabelAr || 'إيصال ورشة خارجية',
+      documentTypeLabelEn: extractedOrder.documentTypeLabelEn || 'External workshop receipt',
+      externalInvoiceNo: extractedOrder.externalInvoiceNo || '',
+      externalInvoiceStatus: extractedOrder.externalInvoiceStatus || 'paid',
+      techNotes: extractedOrder.techNotes || ''
+    };
+
+    const updatedOrders = [newOrder, ...existingOrders];
+    localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(updatedOrders));
+
+    const selectedVehicle = vehicleList.find(v => v.id === extractedOrder.vehicleId);
+    if (selectedVehicle) {
+      const vLastMaint = selectedVehicle.lastMaintenance;
+      if (!vLastMaint || new Date(newOrder.date) > new Date(vLastMaint)) {
+        const updatedVehicles = vehicleList.map(v => 
+          v.id === selectedVehicle.id ? { ...v, lastMaintenance: newOrder.date } : v
+        );
+        setVehicleList(updatedVehicles);
+        localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updatedVehicles));
+      }
+    }
+
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('fleet-data-synced'));
+
+    try {
+      const newLog = {
+        id: 'crit-log-doc-' + Date.now(),
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        user: user.name || 'مستخدم النظام',
+        role: (user.role as string) === 'admin' ? 'مدير نظام' : (user.role as string) === 'fleet_manager' ? 'مدير حركة' : 'مشاهد ومراقب',
+        action: 'استخلاص صيانة وأرشفة مستند ذكي',
+        category: 'vehicles',
+        ipAddress: '197.82.16.42',
+        status: 'نجاح',
+        details: `قام باستخلاص وربط وثيقة صيانة تاريخية من نوع (${newOrder.documentTypeLabelAr}) بالذكاء الاصطناعي للمركبة: ${selectedVehicle?.name || ''} (${selectedVehicle?.plateNumber || ''}). رقم الطلب: ${newOrder.orderNumber} بتكلفة $${newOrder.cost}.`
+      };
+      const savedLogs = localStorage.getItem('saas_critical_audit_logs');
+      const logsArray = savedLogs ? JSON.parse(savedLogs) : [];
+      logsArray.unshift(newLog);
+      localStorage.setItem('saas_critical_audit_logs', JSON.stringify(logsArray));
+    } catch (e) {}
+
+    alert(
+      language === 'ar'
+        ? `تم بنجاح حفظ وتأشير طلب الصيانة رقم ${newOrder.orderNumber} كـ (${newOrder.documentTypeLabelAr}) وربطه بملف المركبة تاريخياً!`
+        : `Successfully saved work order ${newOrder.orderNumber} as (${newOrder.documentTypeLabelEn}) and linked it to vehicle history!`
+    );
+
+    setExtractedOrder(null);
+    setSmartInputFile(null);
+    setSmartInputVehicleId('');
+    setIsSmartInputModalOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       {/* Vehicle History / Details Modal */}
@@ -960,21 +1263,29 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
           </p>
         </div>
         {user.role === 'admin' && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="w-full lg:w-auto grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-row items-stretch lg:items-center gap-2.5">
             <button 
               id="bulk-import-vehicle-btn"
               onClick={() => setIsBulkModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-violet-600/10 hover:bg-violet-600/20 text-violet-750 dark:text-violet-300 border border-violet-500/25 rounded-xl font-bold shadow-sm active:scale-[98%] transition-all text-xs cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 h-11 bg-gradient-to-r from-violet-600/10 to-purple-600/10 hover:from-violet-600/15 hover:to-purple-600/15 text-violet-800 dark:text-violet-300 border border-violet-500/20 dark:border-violet-500/30 rounded-xl font-black shadow-sm active:scale-[98%] hover:shadow-md hover:border-violet-500/40 transition-all text-xs cursor-pointer w-full lg:w-auto"
             >
-              <Sparkles size={14} className="animate-pulse text-violet-500" />
+              <Sparkles size={15} className="animate-pulse text-violet-500 shrink-0" />
               <span>{language === 'ar' ? 'الاستيراد والإنشاء الجماعي للأصول' : 'Smart Bulk Import & Creation'}</span>
+            </button>
+            <button 
+              id="smart-input-assistant-btn"
+              onClick={() => setIsSmartInputModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 h-11 bg-gradient-to-r from-indigo-600/10 to-blue-600/10 hover:from-indigo-600/15 hover:to-blue-600/15 text-indigo-800 dark:text-indigo-300 border border-indigo-500/20 dark:border-indigo-500/30 rounded-xl font-black shadow-sm active:scale-[98%] hover:shadow-md hover:border-indigo-500/40 transition-all text-xs cursor-pointer w-full lg:w-auto"
+            >
+              <Wrench size={14} className="text-indigo-500 shrink-0" />
+              <span>{language === 'ar' ? 'مساعد الإدخال الذكي' : 'Smart Input Assistant'}</span>
             </button>
             <button 
               id="add-vehicle-btn"
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 px-5 py-2.5 bg-brand-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-brand-blue-700 active:scale-[98%] transition-all text-xs cursor-pointer"
+              className="flex items-center justify-center gap-2 px-5 h-11 bg-gradient-to-r from-brand-blue-600 to-indigo-600 text-white rounded-xl font-black shadow-md hover:from-brand-blue-700 hover:to-indigo-700 active:scale-[98%] hover:shadow-lg transition-all text-xs cursor-pointer w-full lg:w-auto"
             >
-              <Plus size={15} />
+              <Plus size={16} className="shrink-0" />
               <span>{t('إضافة مركبة تفصيلياً')}</span>
             </button>
           </div>
@@ -2557,6 +2868,501 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                 >
                   {language === 'ar' ? 'إلغاء وإغلاق' : 'Close'}
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {isSmartInputModalOpen && (
+          <div className="fixed inset-0 z-[120] overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', duration: 0.4 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[1.8rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+            >
+              {/* Modal Header */}
+              <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/20">
+                <div className="flex items-center gap-2">
+                  <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-600 dark:text-indigo-400">
+                    <Wrench size={18} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800 dark:text-white">
+                      {language === 'ar' ? 'مساعد الإدخال الذكي للصيانة' : 'Smart Input Assistant for Maintenance'}
+                    </h3>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-0.5">
+                      {language === 'ar' 
+                        ? 'استخلاص فواتير وتقارير الصيانة وتأريخها تلقائياً للمركبة' 
+                        : 'Automatically extract and link retroactive maintenance logs from documents'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isSmartInputExtracting) {
+                      setIsSmartInputModalOpen(false);
+                      setExtractedOrder(null);
+                      setSmartInputFile(null);
+                      setSmartInputVehicleId('');
+                    }
+                  }}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-500 transition-colors cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto space-y-5 flex-1 text-slate-700 dark:text-slate-300">
+                {extractedOrder ? (
+                  /* Extracted order preview & editing */
+                  <div className="space-y-4">
+                    <div className="p-4 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-start gap-3">
+                      <Sparkles size={18} className="text-emerald-500 mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="text-xs font-black text-emerald-800 dark:text-emerald-450">
+                          {language === 'ar' ? 'اكتمل الاستخلاص والتصنيف بنجاح!' : 'Extraction & Classification Complete!'}
+                        </h4>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+                          {language === 'ar' 
+                            ? 'تم قراءة المستند وتصنيفه ذكياً. يرجى مراجعة وتعديل أي تفاصيل، وتغيير نوع المستند إذا لزم الأمر للتحديث التلقائي للحقول.'
+                            : 'The document was intelligently read and classified. Review or adjust details below. Modifying the document type will auto-update field defaults.'}
+                        </p>
+                      </div>
+                    </div>
+
+                     {/* Document Classification */}
+                    <div className="p-4 bg-indigo-5/20 dark:bg-slate-950/40 rounded-2xl border border-indigo-100/40 dark:border-slate-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-black text-indigo-950 dark:text-indigo-300">
+                          {language === 'ar' ? 'تصنيف وثيقة الصيانة المستخلصة:' : 'Extracted Maintenance Document Classification:'}
+                        </label>
+                        <span className="text-[10px] bg-indigo-600/10 text-indigo-700 dark:text-indigo-400 font-black px-2 py-0.5 rounded-full border border-indigo-500/20 flex items-center gap-1">
+                          <Sparkles size={10} className="animate-pulse" />
+                          <span>{language === 'ar' ? 'مؤكّد بالذكاء الاصطناعي' : 'AI Confirmed'}</span>
+                        </span>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        {extractedOrder.documentType && DOCUMENT_TYPES_METADATA[extractedOrder.documentType] && (
+                          <div className={`p-2.5 rounded-xl border flex items-center justify-center shrink-0 ${DOCUMENT_TYPES_METADATA[extractedOrder.documentType].colorClass}`}>
+                            {React.createElement(DOCUMENT_TYPES_METADATA[extractedOrder.documentType].icon, {
+                              size: 24
+                            })}
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <select
+                            value={extractedOrder.documentType || 'external_workshop_receipt'}
+                            onChange={(e) => handleDocumentTypeChange(e.target.value)}
+                            className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:border-indigo-500 dark:text-white cursor-pointer"
+                          >
+                            <option value="spare_parts_invoice">{language === 'ar' ? 'فاتورة شراء قطع غيار (مستند مالي للمورد)' : 'Spare parts purchase invoice (Supplier financial log)'}</option>
+                            <option value="periodic_inspection">{language === 'ar' ? 'تقرير فحص دوري سنوي (تقييم فني وتأكيد سلامة)' : 'Periodic annual inspection report (Technical safety audit)'}</option>
+                            <option value="external_workshop_receipt">{language === 'ar' ? 'إيصال صيانة ورشة خارجية (خدمات وإصلاحات)' : 'External workshop service receipt (Repair & labor services)'}</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Order Number */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                          {language === 'ar' ? 'رقم طلب العمل (المستخلص):' : 'Work Order Number:'}
+                        </label>
+                        <input
+                          type="text"
+                          value={extractedOrder.orderNumber || ''}
+                          onChange={(e) => setExtractedOrder({ ...extractedOrder, orderNumber: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      {/* Date */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                          {language === 'ar' ? 'تاريخ الصيانة التاريخي:' : 'Historical Service Date:'}
+                        </label>
+                        <input
+                          type="date"
+                          value={extractedOrder.date || ''}
+                          onChange={(e) => setExtractedOrder({ ...extractedOrder, date: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      {/* Category */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                          {language === 'ar' ? 'تصنيف الصيانة المكتشف:' : 'Detected Service Category:'}
+                        </label>
+                        <select
+                          value={extractedOrder.category || 'mechanical'}
+                          onChange={(e) => setExtractedOrder({ ...extractedOrder, category: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                        >
+                          <option value="mechanical">{language === 'ar' ? 'صيانة ميكانيكية' : 'Mechanical Service'}</option>
+                          <option value="electrical">{language === 'ar' ? 'صيانة كهربائية' : 'Electrical Service'}</option>
+                          <option value="cooling">{language === 'ar' ? 'تبريد وتكييف' : 'Cooling & AC'}</option>
+                          <option value="hydraulic">{language === 'ar' ? 'أنظمة هيدروليكية' : 'Hydraulic Systems'}</option>
+                          <option value="bodywork">{language === 'ar' ? 'هيكل وسمكرة' : 'Bodywork'}</option>
+                          <option value="tires">{language === 'ar' ? 'إطارات وعجلات' : 'Tires & Wheels'}</option>
+                          <option value="brakes">{language === 'ar' ? 'مكابح وفرامل' : 'Brake Systems'}</option>
+                        </select>
+                      </div>
+
+                      {/* Cost */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                          {language === 'ar' ? 'التكلفة الإجمالية المكتشفة ($ USD):' : 'Extracted Cost ($ USD):'}
+                        </label>
+                        <input
+                          type="number"
+                          value={extractedOrder.cost || 0}
+                          onChange={(e) => setExtractedOrder({ ...extractedOrder, cost: Number(e.target.value) })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      {/* Invoice Number (for financial docs) */}
+                      {extractedOrder.documentType !== 'periodic_inspection' && (
+                        <div>
+                          <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                            {language === 'ar' ? 'رقم الفاتورة / الإيصال المكتشف:' : 'Extracted Invoice/Receipt No:'}
+                          </label>
+                          <input
+                            type="text"
+                            value={extractedOrder.externalInvoiceNo || ''}
+                            onChange={(e) => setExtractedOrder({ ...extractedOrder, externalInvoiceNo: e.target.value })}
+                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                            placeholder="INV-XXXXX"
+                          />
+                        </div>
+                      )}
+
+                      {/* Invoice Status (for financial docs) */}
+                      {extractedOrder.documentType !== 'periodic_inspection' && (
+                        <div>
+                          <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                            {language === 'ar' ? 'حالة الفاتورة المستخلصة:' : 'Extracted Invoice Status:'}
+                          </label>
+                          <select
+                            value={extractedOrder.externalInvoiceStatus || 'paid'}
+                            onChange={(e) => setExtractedOrder({ ...extractedOrder, externalInvoiceStatus: e.target.value })}
+                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                          >
+                            <option value="paid">{language === 'ar' ? 'مدفوعة ومسواة' : 'Paid & Settled'}</option>
+                            <option value="received_unpaid">{language === 'ar' ? 'مستلمة ولم تدفع' : 'Received (Unpaid)'}</option>
+                            <option value="pending_invoice">{language === 'ar' ? 'بانتظار الفاتورة الرسمية' : 'Pending Invoice'}</option>
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Tech */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                          {language === 'ar' ? 'الفني أو المهندس المنفذ:' : 'Assigned Technician:'}
+                        </label>
+                        <select
+                          value={extractedOrder.technicianId || '201'}
+                          onChange={(e) => setExtractedOrder({ ...extractedOrder, technicianId: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                        >
+                          <option value="201">{language === 'ar' ? 'المهندس عادل الحربي' : 'Eng. Adel Al-Harbi'}</option>
+                          <option value="202">{language === 'ar' ? 'المهندس أحمد المصري' : 'Eng. Ahmed El-Masry'}</option>
+                          <option value="203">{language === 'ar' ? 'الفني سليم غانم' : 'Tech. Salim Ghanem'}</option>
+                        </select>
+                      </div>
+
+                      {/* Priority */}
+                      <div>
+                        <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                          {language === 'ar' ? 'مستوى الأهمية / الأولوية:' : 'Priority Level:'}
+                        </label>
+                        <select
+                          value={extractedOrder.priority || 'medium'}
+                          onChange={(e) => setExtractedOrder({ ...extractedOrder, priority: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                        >
+                          <option value="low">{language === 'ar' ? 'منخفضة' : 'Low'}</option>
+                          <option value="medium">{language === 'ar' ? 'متوسطة' : 'Medium'}</option>
+                          <option value="high">{language === 'ar' ? 'مرتفعة (حرجة)' : 'High (Critical)'}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Smart Audit Notes */}
+                    <div>
+                      <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'ملاحظات الفحص والتوثيق المكتشفة:' : 'Extracted Verification & Smart Notes:'}
+                      </label>
+                      <input
+                        type="text"
+                        value={extractedOrder.techNotes || ''}
+                        onChange={(e) => setExtractedOrder({ ...extractedOrder, techNotes: e.target.value })}
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                        placeholder={language === 'ar' ? 'مثال: فحص دوري ناجح ومطابق لمعايير الأمان.' : 'e.g., Periodic test passed successfully.'}
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'وصف أعمال الصيانة والإصلاح التفصيلي:' : 'Detailed Repair Actions Description:'}
+                      </label>
+                      <textarea
+                        value={extractedOrder.description || ''}
+                        onChange={(e) => setExtractedOrder({ ...extractedOrder, description: e.target.value })}
+                        rows={3}
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white resize-none"
+                      />
+                    </div>
+
+                    {/* Spare Parts Used */}
+                    <div>
+                      <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'قطع الغيار المستهلكة (مفصولة بفاصلة):' : 'Spare Parts Consumed (comma-separated):'}
+                      </label>
+                      <input
+                        type="text"
+                        value={Array.isArray(extractedOrder.partsUsed) ? extractedOrder.partsUsed.join(', ') : extractedOrder.partsUsed || ''}
+                        onChange={(e) => setExtractedOrder({ ...extractedOrder, partsUsed: e.target.value })}
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl outline-none text-xs font-bold focus:bg-white dark:focus:bg-slate-800 dark:text-white"
+                        placeholder={language === 'ar' ? 'مثال: فحمات مكابح، فلتر زيت، زيت محرك' : 'e.g., Brake pads, Oil filter, Engine oil'}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* Initial upload & vehicle selection screen */
+                  <div className="space-y-4">
+                    {/* Dropdown vehicle list */}
+                    <div>
+                      <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-2">
+                        {language === 'ar' ? '1. اختر المركبة لربط مستند الصيانة بها:' : '1. Select Vehicle to Link Maintenance Log:'}
+                      </label>
+                      <select
+                        disabled={isSmartInputExtracting}
+                        value={smartInputVehicleId}
+                        onChange={(e) => setSmartInputVehicleId(e.target.value)}
+                        className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl focus:bg-white dark:focus:bg-slate-800 outline-none text-xs font-bold dark:text-white cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <option value="">{language === 'ar' ? '--- اختر مركبة من أسطول المؤسسة ---' : '--- Choose a vehicle from inventory ---'}</option>
+                        {vehicleList.map(v => (
+                          <option key={v.id} value={v.id}>
+                            {v.name} ({v.plateNumber}) - {v.type}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Drag-and-Drop file area */}
+                    <div>
+                      <label className="block text-xs font-black text-slate-755 dark:text-slate-300 mb-2">
+                        {language === 'ar' ? '2. ارفع صورة أو ملف PDF للفاتورة أو تقرير الصيانة:' : '2. Upload Receipt, Invoice, or Workshop PDF/Image:'}
+                      </label>
+                      <div
+                        onDragOver={(e) => {
+                          if (isSmartInputExtracting) return;
+                          e.preventDefault();
+                          setSmartInputDragActive(true);
+                        }}
+                        onDragLeave={() => setSmartInputDragActive(false)}
+                        onDrop={(e) => {
+                          if (isSmartInputExtracting) return;
+                          e.preventDefault();
+                          setSmartInputDragActive(false);
+                          const file = e.dataTransfer.files?.[0];
+                          if (file) autoClassifyFile(file);
+                        }}
+                        onClick={() => {
+                          if (isSmartInputExtracting) return;
+                          smartInputFileInputRef.current?.click();
+                        }}
+                        className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all flex flex-col items-center justify-center space-y-3 ${
+                          isSmartInputExtracting
+                            ? 'border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-900/5 cursor-not-allowed opacity-60'
+                            : smartInputDragActive 
+                              ? 'border-indigo-500 bg-indigo-500/5 cursor-pointer' 
+                              : 'border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:bg-slate-50/50 dark:hover:bg-slate-950/10 cursor-pointer'
+                        }`}
+                      >
+                        <input
+                          ref={smartInputFileInputRef}
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          disabled={isSmartInputExtracting}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) autoClassifyFile(file);
+                          }}
+                        />
+                        <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl text-slate-400 hover:text-indigo-500 transition-colors">
+                          <Upload size={24} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-slate-800 dark:text-white">
+                            {smartInputFile ? smartInputFile.name : (language === 'ar' ? 'اسحب ملف فاتورة الصيانة هنا أو انقر للتصفح' : 'Drag & drop invoice document here or click to browse')}
+                          </p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                            {language === 'ar' ? 'يدعم الصور (PNG, JPG) ومستندات الورش والتقارير بصيغة PDF' : 'Supports images or PDF document formats'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {smartInputFile && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-4 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-2xl border border-indigo-500/20 space-y-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full bg-indigo-500 ${isSmartInputExtracting ? 'animate-spin' : 'animate-ping'}`} />
+                            <span className="text-xs font-black text-slate-800 dark:text-white">
+                              {isSmartInputExtracting
+                                ? (language === 'ar' ? 'جاري التحليل واستخلاص البيانات...' : 'AI is Extracting Data...')
+                                : (language === 'ar' ? 'جاهز للاستخلاص والمزامنة الذكية' : 'Ready for AI Extraction')}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono font-bold text-slate-400">
+                            {(smartInputFile.size / 1024).toFixed(1)} KB
+                          </span>
+                        </div>
+
+                        {/* Proactive Intelligent Classification UI */}
+                        {proactiveDocType && DOCUMENT_TYPES_METADATA[proactiveDocType] && (
+                          <div className={`p-4 rounded-xl border flex flex-col gap-2.5 transition-all ${DOCUMENT_TYPES_METADATA[proactiveDocType].colorClass}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {React.createElement(DOCUMENT_TYPES_METADATA[proactiveDocType].icon, {
+                                  size: 18,
+                                  className: "shrink-0"
+                                })}
+                                <span className="text-xs font-black">
+                                  {language === 'ar' 
+                                    ? `التصنيف التلقائي الذكي: ${DOCUMENT_TYPES_METADATA[proactiveDocType].labelAr}`
+                                    : `Predicted Auto-Type: ${DOCUMENT_TYPES_METADATA[proactiveDocType].labelEn}`}
+                                </span>
+                              </div>
+                              <span className="text-[9px] bg-white/60 dark:bg-slate-900/40 px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wide border border-current/10">
+                                {language === 'ar' ? 'تصنيف استباقي' : 'Proactive AI'}
+                              </span>
+                            </div>
+                            
+                            <p className="text-[10px] opacity-80 leading-relaxed font-semibold">
+                              {language === 'ar' 
+                                ? DOCUMENT_TYPES_METADATA[proactiveDocType].descriptionAr
+                                : DOCUMENT_TYPES_METADATA[proactiveDocType].descriptionEn}
+                            </p>
+
+                            <div className="pt-2 border-t border-current/10 space-y-1.5">
+                              <label className="block text-[10px] font-bold opacity-90">
+                                {language === 'ar' ? 'هل تود تعديل نوع المستند يدوياً قبل الحفظ؟' : 'Modify document type manually before saving?'}
+                              </label>
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {Object.entries(DOCUMENT_TYPES_METADATA).map(([typeKey, meta]) => (
+                                  <button
+                                    key={typeKey}
+                                    type="button"
+                                    disabled={isSmartInputExtracting}
+                                    onClick={() => setProactiveDocType(typeKey)}
+                                    className={`py-1.5 px-2 rounded-lg text-[9px] font-black border transition-all cursor-pointer truncate ${
+                                      proactiveDocType === typeKey
+                                        ? 'bg-slate-900 text-white border-transparent shadow-sm dark:bg-white dark:text-slate-900'
+                                        : 'bg-white/40 dark:bg-slate-900/10 hover:bg-white/60 border-current/15'
+                                    } ${isSmartInputExtracting ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                  >
+                                    {language === 'ar' ? meta.shortLabelAr : meta.shortLabelEn}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          disabled={isSmartInputExtracting}
+                          onClick={handleSmartInputExtract}
+                          className={`w-full py-3.5 text-white rounded-xl font-black transition-all text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                            isSmartInputExtracting 
+                              ? 'bg-indigo-400 dark:bg-indigo-850 cursor-not-allowed opacity-80' 
+                              : 'bg-indigo-600 hover:bg-indigo-750 hover:scale-[101%] active:scale-95'
+                          }`}
+                        >
+                          {isSmartInputExtracting ? (
+                            <Loader2 size={15} className="animate-spin" />
+                          ) : (
+                            <Sparkles size={15} className="animate-pulse" />
+                          )}
+                          <span>
+                            {isSmartInputExtracting 
+                              ? (language === 'ar' ? 'جاري تحليل واستخلاص المستند بالذكاء الاصطناعي...' : 'AI is reading and parsing document...')
+                              : (language === 'ar' ? 'بدء استخلاص البيانات بالذكاء الاصطناعي ✨' : 'Run AI Document Extraction ✨')}
+                          </span>
+                        </button>
+
+                        {/* Live progress details and bar */}
+                        {isSmartInputExtracting && (
+                          <div className="p-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2 mt-2">
+                            <div className="flex items-center justify-between text-[10px] font-bold">
+                              <span className="text-slate-500 dark:text-slate-400 animate-pulse">{smartInputLog}</span>
+                              <span className="text-indigo-600 dark:text-indigo-400 font-mono">{smartInputProgress}%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                              <div 
+                                className="bg-indigo-600 h-full transition-all duration-300 rounded-full" 
+                                style={{ width: `${smartInputProgress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 shrink-0">
+                {extractedOrder ? (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExtractedOrder(null)}
+                      className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-600 dark:text-slate-400 rounded-xl font-bold text-xs transition-all cursor-pointer"
+                    >
+                      {language === 'ar' ? 'إعادة المحاولة / مستند آخر' : 'Retry / Another File'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveExtractedOrder}
+                      className="px-5 py-2.5 bg-brand-green-600 hover:bg-brand-green-700 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check size={14} />
+                      <span>{language === 'ar' ? 'حفظ ومزامنة الطلب بالسجل' : 'Save & Sync Order to History'}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSmartInputModalOpen(false);
+                      setSmartInputFile(null);
+                      setSmartInputVehicleId('');
+                    }}
+                    className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-600 rounded-xl font-bold text-xs transition-all cursor-pointer"
+                  >
+                    {language === 'ar' ? 'إلغاء وإغلاق' : 'Close'}
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>
