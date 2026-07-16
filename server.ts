@@ -906,6 +906,238 @@ app.post("/api/ai/catalog-guide", async (req, res) => {
   }
 });
 
+// Fallback functional generators for AI Bulk Import
+function getBulkImportAiFallback(rawText: string, language: string): any {
+  const isAr = language === 'ar' || /[\u0600-\u06FF]/.test(rawText);
+  const lines = (rawText || "").split(/\r?\n/).filter(line => line.trim().length > 0);
+  
+  const arabicNames = [
+    'شاحنة مرسيدس أكتروس ثقيلة', 'تويوتا هيلوكس بيك أب', 'حافلة هيونداي سيتي', 'سيارة فورد رينجر ميدانية',
+    'رافعة شوكية كاتربيلر ثقيلة', 'سيارة نيسان باترول أمنية', 'سيارة شيفروليه سيلفرادو نقل',
+    'صهريج مياه مرسيدس', 'ضاغطة نفايات هينو', 'معدة صيانة هيدروليكية كوماتسو'
+  ];
+  const englishNames = [
+    'Mercedes Actros Heavy Truck', 'Toyota Hilux Pickup', 'Hyundai City Bus', 'Ford Ranger Patrol',
+    'Caterpillar Forklift Heavy Duty', 'Nissan Patrol Security', 'Chevrolet Silverado Utility',
+    'Mercedes Water Tanker', 'Hino Garbage Compactor', 'Komatsu Hydraulic Lifter'
+  ];
+  
+  const vehicles: any[] = [];
+  const maintenanceOrders: any[] = [];
+  const today = new Date('2026-05-22');
+  
+  const startIndex = (lines.length > 1 && (lines[0].includes('name') || lines[0].includes('اسم') || lines[0].includes('اللوحة') || lines[0].includes('plate'))) ? 1 : 0;
+  
+  for (let i = startIndex; i < lines.length; i++) {
+    const line = lines[i];
+    const columns = line.split(/[,\t;|]/).map(col => col.trim().replace(/^["']|["']$/g, ''));
+    if (columns.length === 0 || !columns[0]) continue;
+    
+    const id = 'bulk-ai-' + (1000 + i) + '-' + Date.now().toString().slice(-4);
+    
+    let name = columns[0] || "";
+    let plateNumber = columns[1] || "";
+    let type = columns[2] || (isAr ? "معدة ثقيلة" : "Heavy Equipment");
+    let modelYear = columns[3] || "2023";
+    
+    if (!name || name.length < 2) {
+      const nameIndex = i % arabicNames.length;
+      name = isAr ? `${arabicNames[nameIndex]} #${i}` : `${englishNames[nameIndex]} #${i}`;
+    }
+    if (!plateNumber) {
+      const letters = 'أبجدوزحطيكلمنصعفصقرشت';
+      plateNumber = `${letters[i % letters.length]} ${letters[(i + 1) % letters.length]} ${letters[(i + 2) % letters.length]} ${1000 + (i * 7) % 9000}`;
+    }
+    
+    const tireCount = type.includes('ثقيلة') || type.includes('Heavy') || type.includes('شاحنة') || type.includes('Truck') ? 10 : 4;
+    
+    const vehicle = {
+      id,
+      name,
+      type,
+      plateNumber,
+      department: isAr ? 'قسم الآليات' : 'Fleet Department',
+      subDepartment: isAr ? 'شعبة الحركة' : 'Movement Division',
+      status: 'active',
+      lastMaintenance: new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+      iconName: tireCount > 6 ? 'truck' : 'car',
+      chassisNumber: 'MHR' + Math.random().toString(36).substring(2, 12).toUpperCase(),
+      engineNumber: 'ENG-' + Math.floor(100000 + Math.random() * 900000),
+      modelYear,
+      fuelType: tireCount > 6 ? 'diesel' : 'gasoline',
+      loadingCapacity: tireCount > 6 ? '15 طن' : '1.5 طن',
+      insuranceExpiry: new Date(today.getTime() + (180 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+      tireCount,
+      tireSize: tireCount > 6 ? '315/80R22.5' : '265/65R17',
+      tirePressure: tireCount > 6 ? '115 PSI' : '35 PSI',
+      tireStatus: 'ممتاز',
+      tireBrand: 'Bridgestone',
+      lat: 24.7136 + (Math.sin(i) * 0.1),
+      lng: 46.6753 + (Math.cos(i) * 0.1)
+    };
+    
+    vehicles.push(vehicle);
+    
+    const arDescriptions = [
+      'تغيير إطارات المحور الخلفي وضبط زوايا الاتزان',
+      'صيانة وقائية دورية للمحرك وتبديل الفلاتر الأساسية والزيوت',
+      'فحص شامل للفرامل الأمامية وتبطين المكابح'
+    ];
+    const enDescriptions = [
+      'Rear axle tire replacement and wheel alignment',
+      'Preventive engine maintenance including filters & oil change',
+      'Complete front brakes inspection and brake pad relining'
+    ];
+    
+    for (let j = 0; j < 2; j++) {
+      const orderId = 'bulk-ai-wo-' + i + '-' + j + '-' + Date.now().toString().slice(-3);
+      const orderNum = `WO-B2025-${1000 + i + j}`;
+      const orderDate = new Date(today.getTime() - ((j * 120 + 30) * 24 * 60 * 60 * 1000));
+      const descIndex = (i + j) % arDescriptions.length;
+      
+      maintenanceOrders.push({
+        id: orderId,
+        vehicleId: id,
+        orderNumber: orderNum,
+        date: orderDate.toISOString().split('T')[0],
+        description: isAr ? arDescriptions[descIndex] : enDescriptions[descIndex],
+        category: descIndex === 0 ? 'mechanical' : descIndex === 1 ? 'mechanical' : 'mechanical',
+        status: 'completed',
+        technicianId: String(201 + (i % 3)),
+        priority: 'medium',
+        cost: 250 + ((i + j) * 110) % 1500,
+        partsUsed: descIndex === 0 ? ['إطارات 22.5'] : ['زيت محرك 15W-40', 'فلتر زيت أصلي']
+      });
+    }
+  }
+  
+  return { vehicles, maintenanceOrders };
+}
+
+// Intelligent CSV mapping and 3-year history generator
+app.post("/api/ai/bulk-import-ai", async (req, res) => {
+  try {
+    const { rawText, language } = req.body;
+
+    if (!rawText) {
+      return res.status(400).json({ err: "Raw text content is required" });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      console.log("[Gemini Fallback] API key is absent. Running local smart parsing fallback.");
+      return res.json(getBulkImportAiFallback(rawText, language));
+    }
+
+    const ai = getGeminiClient();
+
+    const systemInstruction = `You are a highly advanced AI Data Engineer specializing in Fleet Asset Management and Telemetry mapping.
+Your primary task is to read, parse, and intelligently map a raw, messy, or unstructured CSV/Excel-like text dump of fleet vehicles into our structured JSON schema.
+
+Here is the strict mapping guidelines:
+1. Detect headers and map values: Identify names, model years, plate numbers, and chassis numbers from any language (Arabic, English, French, etc.) even if misspelled or out of order.
+2. Standardize fields:
+   - status: 'active', 'maintenance', or 'stopped'.
+   - fuelType: 'diesel', 'gasoline', or 'electric'.
+   - type: Must map to one of: 'معدة ثقيلة' (Heavy Equipment), 'مركبة خفيفة' (Light Vehicle), 'نقل جماعي' (Public Transit), 'معدة هندسية' (Engineering Eqp), 'معدات قاطرة مقطورة' (Trailer / Towing).
+3. Synthesize realistic values: If a column like Chassis number, Engine number, Tire size, Tire Brand is missing or incomplete, fill it in with professional and realistic manufacturer values (e.g. Michelin, Bridgestone; size like 315/80R22.5 or 265/65R17) based on the vehicle type.
+4. Auto-Generate 3-Year Historical operational archives:
+   - For EACH vehicle, create 2 to 3 completed maintenance work orders (maintenanceOrders) representing historical service over the past 3 years.
+   - Align the descriptions, parts used, costs, and dates logically. If the language is 'ar', write description and partsUsed in highly professional Arabic. If 'en', write in English.
+   - For example, if a vehicle is a 'Mercedes Actros' heavy truck, generate repairs like: 'تبديل فحمات الفرامل الأمامية وخرط الهوبات', 'صيانة دورية وتغيير الفلاتر والزيوت عيار 15W40', 'معالجة تهريب زيت هيدروليك في مكابس الحركة'.
+   - Assign reasonable completed dates (e.g., in 2024, 2025, or early 2026) and randomized costs between $150 and $4500 depending on repair complexity.
+
+Ensure all response items are returned strictly in the requested JSON structure.`;
+
+    const prompt = `Here is the raw uploaded fleet text file content:
+=========================================
+${rawText}
+=========================================
+Language preference: ${language || 'ar'}
+
+Please parse this data and generate the JSON response containing the "vehicles" array and "maintenanceOrders" array.`;
+
+    const response = await generateContentWithModelFallback(ai, {
+      contents: prompt,
+      config: {
+        systemInstruction: systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            vehicles: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING, description: "Generate a unique ID starting with 'ai-v-'" },
+                  name: { type: Type.STRING, description: "Intelligently extracted or formatted vehicle name" },
+                  type: { type: Type.STRING, description: "Mapped type (must be one of: 'معدة ثقيلة', 'مركبة خفيفة', 'نقل جماعي', 'معدة هندسية', 'معدات قاطرة مقطورة')" },
+                  plateNumber: { type: Type.STRING, description: "Intelligently extracted or formatted plate number" },
+                  department: { type: Type.STRING, description: "Department name (e.g. 'قسم الآليات' or 'قسم الصيانة')" },
+                  subDepartment: { type: Type.STRING, description: "Sub-department name" },
+                  status: { type: Type.STRING, description: "Status: 'active', 'maintenance', or 'stopped'" },
+                  lastMaintenance: { type: Type.STRING, description: "Date of last maintenance (YYYY-MM-DD)" },
+                  iconName: { type: Type.STRING, description: "Icon name: 'truck', 'car', 'bus', 'wrench'" },
+                  chassisNumber: { type: Type.STRING, description: "17-character chassis number" },
+                  engineNumber: { type: Type.STRING, description: "Engine code" },
+                  modelYear: { type: Type.STRING, description: "Year of manufacture" },
+                  fuelType: { type: Type.STRING, description: "diesel, gasoline, or electric" },
+                  loadingCapacity: { type: Type.STRING, description: "E.g. '15 طن' or '2 طن'" },
+                  insuranceExpiry: { type: Type.STRING, description: "Future date in YYYY-MM-DD format" },
+                  tireCount: { type: Type.NUMBER, description: "Number of tires (e.g. 4, 6, 10, 18)" },
+                  tireSize: { type: Type.STRING, description: "Standard size like '315/80R22.5'" },
+                  tirePressure: { type: Type.STRING, description: "PSI rating like '115 PSI' or '35 PSI'" },
+                  tireStatus: { type: Type.STRING, description: "'ممتاز', 'متوسط', or 'يحتاج استبدال'" },
+                  tireBrand: { type: Type.STRING, description: "Michelin, Bridgestone, Continental, etc." },
+                  lat: { type: Type.NUMBER, description: "Latitude near Riyadh e.g., 24.7 + offset" },
+                  lng: { type: Type.NUMBER, description: "Longitude near Riyadh e.g., 46.6 + offset" }
+                },
+                required: ["id", "name", "type", "plateNumber", "status"]
+              }
+            },
+            maintenanceOrders: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING, description: "Unique work order ID starting with 'ai-wo-'" },
+                  vehicleId: { type: Type.STRING, description: "Must match the mapped vehicle's generated ID" },
+                  orderNumber: { type: Type.STRING, description: "Format: 'WO-AI-YYYY-XXXX'" },
+                  date: { type: Type.STRING, description: "Date in YYYY-MM-DD format within the last 3 years" },
+                  description: { type: Type.STRING, description: "Realistic description of the maintenance performed" },
+                  category: { type: Type.STRING, description: "mechanical, electrical, cooling, hydraulic, bodywork" },
+                  status: { type: Type.STRING, description: "completed" },
+                  technicianId: { type: Type.STRING, description: "Technician ID (e.g. '201', '202')" },
+                  priority: { type: Type.STRING, description: "low, medium, high" },
+                  cost: { type: Type.NUMBER, description: "Cost of the work in USD" },
+                  partsUsed: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: "List of spare parts used"
+                  }
+                },
+                required: ["id", "vehicleId", "orderNumber", "date", "description", "category", "status", "cost"]
+              }
+            }
+          },
+          required: ["vehicles", "maintenanceOrders"]
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || '{"vehicles": [], "maintenanceOrders": []}');
+    res.json(parsed);
+  } catch (error: any) {
+    safeLog("Express Gemini bulk import AI fail", error);
+    try {
+      const { rawText, language } = req.body;
+      return res.json(getBulkImportAiFallback(rawText, language));
+    } catch (fallbackErr) {
+      res.status(500).json({ err: error.message || "Failed to parse and map assets" });
+    }
+  }
+});
+
 // Initialize Stripe safely on the server
 let stripeClient: any = null;
 function getStripeClient() {

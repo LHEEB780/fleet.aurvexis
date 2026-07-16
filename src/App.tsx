@@ -19,10 +19,11 @@ import DriverHandover from './components/DriverHandover';
 import DriverPortal from './components/DriverPortal';
 import MaintenanceBot from './components/MaintenanceBot';
 import AiHub from './components/AiHub';
+import Projects from './components/Projects';
 import { User, UserRole } from './types';
 import { MENU_ITEMS } from './constants';
 import { useLanguage } from './services/LanguageContext';
-import { Shield, Key, Eye, EyeOff, Wrench, Languages, Fingerprint, Layers, WifiOff, Globe, Check, AlertTriangle, RotateCcw, Loader2, Building2, CreditCard, Printer, Sparkles, ShieldAlert, UserCheck, ShieldCheck } from 'lucide-react';
+import { Shield, Key, Eye, EyeOff, Wrench, Languages, Fingerprint, Layers, WifiOff, Globe, Check, AlertTriangle, RotateCcw, Loader2, Building2, CreditCard, Printer, Sparkles, ShieldAlert, UserCheck, ShieldCheck, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import MarketingLandingPage from './components/MarketingLandingPage';
 import { MarketingAdmin } from './components/MarketingAdmin';
@@ -331,8 +332,44 @@ export default function App() {
     }
   }, []);
 
+  // --- DYNAMIC BRAND PRIMARY COLOR LOADER HOOK ---
+  React.useEffect(() => {
+    const applyBrandColor = () => {
+      const savedColor = localStorage.getItem('saas_primary_color') || '#673de6';
+      
+      const shades = {
+        50: adjustColorBrightness(savedColor, 95),
+        100: adjustColorBrightness(savedColor, 85),
+        200: adjustColorBrightness(savedColor, 70),
+        300: adjustColorBrightness(savedColor, 50),
+        400: adjustColorBrightness(savedColor, 25),
+        500: savedColor,
+        600: adjustColorBrightness(savedColor, -15),
+        700: adjustColorBrightness(savedColor, -30),
+        800: adjustColorBrightness(savedColor, -45),
+        900: adjustColorBrightness(savedColor, -60),
+      };
+      
+      Object.entries(shades).forEach(([shade, hex]) => {
+        document.documentElement.style.setProperty(`--brand-${shade}`, hex);
+      });
+    };
+
+    applyBrandColor();
+    
+    window.addEventListener('storage', applyBrandColor);
+    // Custom event listener for instant single-window updates
+    window.addEventListener('brand-color-changed', applyBrandColor);
+    
+    return () => {
+      window.removeEventListener('storage', applyBrandColor);
+      window.removeEventListener('brand-color-changed', applyBrandColor);
+    };
+  }, []);
+
   // --- OFFLINE SYNC STATE & PROCESSORS ---
   const [isOnlineState, setIsOnlineState] = useState(navigator.onLine);
+  const [isOfflineDismissed, setIsOfflineDismissed] = useState(false);
   const [syncStatus, setSyncStatus] = useState<{
     queueCount: number;
     isSyncing: boolean;
@@ -447,12 +484,14 @@ export default function App() {
   React.useEffect(() => {
     const handleOnline = () => {
       setIsOnlineState(true);
+      setIsOfflineDismissed(false);
       console.log('[Connection Status] Device returned ONLINE. Booting background sync flow...');
       triggerOfflineSync();
     };
 
     const handleOffline = () => {
       setIsOnlineState(false);
+      setIsOfflineDismissed(false);
       console.log('[Connection Status] Device entered OFFLINE mode.');
     };
 
@@ -1157,6 +1196,8 @@ export default function App() {
         );
       case 'drivers':
         return <Drivers user={currentUser} />;
+      case 'projects':
+        return <Projects user={currentUser} />;
       case 'driver-handover':
         return <DriverHandover user={currentUser} />;
       case 'maintenance-bot':
@@ -2324,17 +2365,19 @@ export default function App() {
     return (
       <AnimatePresence>
         {/* Offline Notice Banner inside the active screens */}
-        {isOffline && (
+        {isOffline && !isOfflineDismissed && (
           <motion.div
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
             transition={{ type: 'spring', damping: 20 }}
-            className="fixed bottom-6 left-6 right-6 md:left-auto md:right-12 z-[150] max-w-md bg-amber-500/15 backdrop-blur-md border border-amber-500/30 rounded-2xl p-4 shadow-xl text-amber-900 dark:text-amber-300 text-xs font-black flex items-start gap-3.5"
+            className={`fixed bottom-6 left-6 right-6 md:left-auto md:right-12 z-[150] max-w-md bg-brand-blue-500/15 backdrop-blur-md border border-brand-blue-500/30 rounded-2xl p-4 shadow-xl text-brand-blue-950 dark:text-brand-blue-300 text-xs font-black flex items-start gap-3.5 relative ${
+              language === 'ar' ? 'pl-10 text-right' : 'pr-10 text-left'
+            }`}
             dir={dir}
             id="maintenance-offline-indicator"
           >
-            <div className="p-2 bg-amber-500/25 rounded-xl shrink-0 text-amber-600 dark:text-amber-400">
+            <div className="p-2 bg-brand-blue-500/25 rounded-xl shrink-0 text-brand-blue-600 dark:text-brand-blue-400">
               <WifiOff size={18} className="animate-pulse" />
             </div>
             <div className="flex-1 space-y-1">
@@ -2347,8 +2390,8 @@ export default function App() {
                   : 'You are working offline. New maintenance reports will be queued locally and synchronized with the cloud once network connectivity is recovered.'}
               </p>
               {queueCount > 0 && (
-                <div className="mt-2 bg-amber-500/15 rounded-lg px-2.5 py-1.5 inline-flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                <div className="mt-2 bg-brand-blue-500/15 rounded-lg px-2.5 py-1.5 inline-flex items-center gap-1.5 text-brand-blue-700 dark:text-brand-blue-300">
+                  <span className="w-2 h-2 rounded-full bg-brand-blue-500 animate-ping" />
                   <span>
                     {language === 'ar' 
                       ? `لديك ${queueCount} بلاغ بانتظار المزامنة`
@@ -2357,6 +2400,14 @@ export default function App() {
                 </div>
               )}
             </div>
+            <button
+              type="button"
+              onClick={() => setIsOfflineDismissed(true)}
+              className={`absolute top-3.5 ${language === 'ar' ? 'left-3.5' : 'right-3.5'} hover:bg-brand-blue-500/20 text-brand-blue-600 dark:text-brand-blue-400 hover:text-brand-blue-800 dark:hover:text-brand-blue-200 p-1.5 rounded-xl transition-all duration-200 cursor-pointer`}
+              title={language === 'ar' ? 'إغلاق' : 'Close'}
+            >
+              <X size={14} className="stroke-[2.5]" />
+            </button>
           </motion.div>
         )}
 

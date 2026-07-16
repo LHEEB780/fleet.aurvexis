@@ -1,22 +1,35 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+:root {
+  --brand-50: #f5f2ff;
+  --brand-100: #eae4ff;
+  --brand-200: #d6cbff;
+  --brand-300: #bca8ff;
+  --brand-400: #9778ff;
+  --brand-500: #673de6;
+  --brand-600: #5429cf;
+  --brand-700: #431bb5;
+  --brand-800: #321191;
+  --brand-900: #21086e;
+}
+
 @theme {
   --font-sans: "Cairo", ui-sans-serif, system-ui, sans-serif;
   --font-inter: "Inter", "Plus Jakarta Sans", sans-serif;
   --font-jakarta: "Plus Jakarta Sans", "Inter", sans-serif;
   
   /* Vibrant, Professional Enterprise Tech-Purple (Luxury Royal Purple inspired) */
-  --color-brand-blue-50: #f5f2ff;
-  --color-brand-blue-100: #eae4ff;
-  --color-brand-blue-200: #d6cbff;
-  --color-brand-blue-300: #bca8ff;
-  --color-brand-blue-400: #9778ff;
-  --color-brand-blue-500: #673de6;   /* Rich, premium Hostinger violet-purple */
-  --color-brand-blue-600: #5429cf;   /* Saturated active deep purple */
-  --color-brand-blue-700: #431bb5;   /* Luxurious royal dark purple */
-  --color-brand-blue-800: #321191;
-  --color-brand-blue-900: #21086e;
+  --color-brand-blue-50: var(--brand-50);
+  --color-brand-blue-100: var(--brand-100);
+  --color-brand-blue-200: var(--brand-200);
+  --color-brand-blue-300: var(--brand-300);
+  --color-brand-blue-400: var(--brand-400);
+  --color-brand-blue-500: var(--brand-500);   /* Rich, premium Hostinger violet-purple */
+  --color-brand-blue-600: var(--brand-600);   /* Saturated active deep purple */
+  --color-brand-blue-700: var(--brand-700);   /* Luxurious royal dark purple */
+  --color-brand-blue-800: var(--brand-800);
+  --color-brand-blue-900: var(--brand-900);
 
   --color-brand-red-50: #fff5f5;
   --color-brand-red-100: #ffe3e3;

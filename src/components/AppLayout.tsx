@@ -392,6 +392,10 @@ export default function AppLayout({
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           let hasUpdates = false;
+          if (!parsed.includes('projects')) {
+            parsed.push('projects');
+            hasUpdates = true;
+          }
           if (!parsed.includes('driver-handover')) {
             parsed.push('driver-handover');
             hasUpdates = true;

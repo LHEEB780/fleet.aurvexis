@@ -15,7 +15,8 @@ import {
   Globe2,
   ClipboardCheck,
   Bot,
-  Cloud
+  Cloud,
+  Briefcase
 } from 'lucide-react';
 import { UserRole } from './types';
 
@@ -34,6 +35,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: 'reports', label: 'التقارير والإحصائيات', icon: <BarChart3 size={16} />, roles: ['admin', 'viewer'], group: 'command' },
 
   // 2. إدارة الحركة والعمليات (Fleet Operations)
+  { id: 'projects', label: 'إدارة المشاريع والعمليات', icon: <Briefcase size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'operations' },
   { id: 'vehicles', label: 'إدارة المعدات والمركبات', icon: <Truck size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'operations' },
   { id: 'drivers', label: 'إدارة السائقين والتفويضات', icon: <IdCard size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'operations' },
   { id: 'driver-handover', label: 'تسليم واستلام العجلات الفني', icon: <ClipboardCheck size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'operations' },

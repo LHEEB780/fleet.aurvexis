@@ -9,9 +9,17 @@ import {
   getDocs, 
   deleteDoc, 
   collection, 
-  getDocFromServer 
+  getDocFromServer,
+  setLogLevel
 } from 'firebase/firestore';
 import firebaseConfig from './firebaseConfig';
+
+// Silence Firestore internal network warnings (e.g., connection failures in offline/emulation mode)
+try {
+  setLogLevel('silent');
+} catch (e) {
+  console.warn("Could not set Firestore log level:", e);
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

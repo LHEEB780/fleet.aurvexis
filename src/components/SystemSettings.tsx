@@ -6,7 +6,8 @@ import {
   SlidersHorizontal, CheckSquare, Square,
   Building2, Calendar, ClipboardList, IdCard, 
   ShieldAlert, Box, Users, BarChart3, Truck, 
-  Warehouse, Handshake, AlertCircle
+  Warehouse, Handshake, AlertCircle, Briefcase,
+  Palette
 } from 'lucide-react';
 import { MENU_ITEMS, MenuItem } from '../constants';
 import { useLanguage } from '../services/LanguageContext';
@@ -23,6 +24,13 @@ const MODULE_INFOS: Record<string, { arDesc: string; enDesc: string; icon: React
     icon: <BarChart3 size={16} />,
     arDesc: 'تحليل معمق للأعطال ومعدلات إكمال أوامر الصيانة وأداء الفنيين عبر مخططات بيانية دقيقة.',
     enDesc: 'Deep analytics of completed repair jobs, cost breakdowns, and active staff efficiency curves.'
+  },
+  'projects': {
+    arCategory: 'العمليات والأسطول',
+    enCategory: 'Fleet Operations',
+    icon: <Briefcase size={16} />,
+    arDesc: 'تنظيم المشاريع والمهام التشغيلية، حجز مركبات وسائقي الأسطول ومراقبة النواتج والموازنات.',
+    enDesc: 'Organize operational projects, dispatch fleet vehicles/drivers, track outcomes and financial budgets.'
   },
   'vehicles': {
     arCategory: 'العمليات والأسطول',
@@ -109,6 +117,49 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  // --- DYNAMIC BRAND PRIMARY COLOR STATE & PRESETS ---
+  const [primaryColor, setPrimaryColor] = useState(() => {
+    return localStorage.getItem('saas_primary_color') || '#673de6';
+  });
+
+  const COLOR_PRESETS = [
+    { id: 'violet', hex: '#673de6', labelAr: 'بنفسجي تكنولوجي', labelEn: 'Tech Violet' },
+    { id: 'indigo', hex: '#4f46e5', labelAr: 'أزرق إنديغو', labelEn: 'Modern Indigo' },
+    { id: 'blue', hex: '#1d4ed8', labelAr: 'أزرق ملكي', labelEn: 'Steel Blue' },
+    { id: 'emerald', hex: '#059669', labelAr: 'أخضر زمردي', labelEn: 'Emerald Green' },
+    { id: 'amber', hex: '#d97706', labelAr: 'أصفر كهرماني', labelEn: 'Amber Gold' },
+    { id: 'crimson', hex: '#dc2626', labelAr: 'أحمر قرمزي', labelEn: 'Crimson Red' },
+    { id: 'pink', hex: '#be185d', labelAr: 'وردي داكن', labelEn: 'Rose Red' },
+    { id: 'carbon', hex: '#334155', labelAr: 'كربوني حديث', labelEn: 'Modern Carbon' },
+  ];
+
+  const handleColorChange = (hex: string) => {
+    setAutosaveStatus('saving');
+    setPrimaryColor(hex);
+    localStorage.setItem('saas_primary_color', hex);
+    
+    // Dispatch standard storage event and custom brand color event
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('brand-color-changed'));
+    
+    setTimeout(() => {
+      setAutosaveStatus('saved');
+    }, 400);
+  };
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedColor = localStorage.getItem('saas_primary_color') || '#673de6';
+      setPrimaryColor(savedColor);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('brand-color-changed', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('brand-color-changed', handleStorageChange);
+    };
+  }, []);
 
   // Load modules list from standard constants, removing dashboard and billing (which are static core)
   const configurableItems = MENU_ITEMS.filter(
@@ -232,6 +283,79 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
 
   return (
     <div className="space-y-6" id="system-settings-modularity-container">
+      
+      {/* Dynamic Brand Color Customization Section */}
+      <div className={`p-5 bg-white dark:bg-[#0c101d] rounded-3xl border border-slate-150 dark:border-slate-800/80 shadow-3xs space-y-4 ${isRtl ? 'text-right' : 'text-left'}`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isRtl ? 'sm:flex-row-reverse' : ''}`}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-brand-blue-500/10 text-brand-blue-500 flex items-center justify-center shrink-0">
+              <Palette size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-850 dark:text-white">
+                {isRtl ? 'تخصيص لون الهوية البصرية (العلامة التجارية)' : 'Visual Brand Identity Customization'}
+              </h3>
+              <p className="text-[10px] text-slate-400">
+                {isRtl ? 'اختر لون الهوية الأساسي للمنصة ليتم تطبيقه على كافة الأزرار، القوائم، والمؤشرات البصرية فوراً.' : 'Select the primary brand color to instantly customize the interface buttons, menus, and visual highlights.'}
+              </p>
+            </div>
+          </div>
+          
+          {/* Custom picker badge */}
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <span className="text-[10px] text-slate-400 font-bold">
+              {isRtl ? 'لون مخصص:' : 'Custom color:'}
+            </span>
+            <div className="relative flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
+              <input
+                type="color"
+                value={primaryColor}
+                onChange={(e) => handleColorChange(e.target.value)}
+                className="w-6 h-6 rounded-lg border-0 cursor-pointer overflow-hidden p-0 bg-transparent"
+              />
+              <span className="font-mono text-[9px] font-black uppercase text-slate-500 pr-1.5 pl-0.5">
+                {primaryColor}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Color Presets Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
+          {COLOR_PRESETS.map((preset) => {
+            const isActive = primaryColor.toLowerCase() === preset.hex.toLowerCase();
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => handleColorChange(preset.hex)}
+                className={`p-2.5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-2 relative ${
+                  isActive
+                    ? 'border-slate-400 dark:border-slate-500 bg-slate-50/50 dark:bg-slate-900/30 ring-2 ring-slate-400/10'
+                    : 'border-slate-100 dark:border-slate-850 bg-white dark:bg-[#111827] hover:bg-slate-50'
+                }`}
+              >
+                {/* Visual Swatch */}
+                <span 
+                  className="w-5 h-5 rounded-full shadow-inner block relative shrink-0" 
+                  style={{ backgroundColor: preset.hex }}
+                >
+                  {isActive && (
+                    <span className="absolute inset-0 flex items-center justify-center text-white">
+                      <Check size={10} className="stroke-[3]" />
+                    </span>
+                  )}
+                </span>
+                
+                {/* Label */}
+                <span className="text-[9.5px] font-black text-slate-600 dark:text-slate-350 text-center truncate w-full">
+                  {isRtl ? preset.labelAr : preset.labelEn}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       
       {/* Dynamic Summary Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
