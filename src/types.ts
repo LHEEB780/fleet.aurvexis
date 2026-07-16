@@ -4,6 +4,7 @@ export interface Vehicle {
   id: string;
   name: string;
   type: string;
+  classification?: string; // e.g. 'truck' | 'heavy_equipment' | 'service_car' | 'light_vehicle' | 'public_transport'
   plateNumber: string;
   department: string;
   subDepartment: string;

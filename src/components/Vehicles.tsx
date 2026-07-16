@@ -102,6 +102,73 @@ export const DOCUMENT_TYPES_METADATA: Record<string, {
   }
 };
 
+export const VEHICLE_CLASSIFICATIONS: Record<string, {
+  key: string;
+  labelAr: string;
+  labelEn: string;
+  colorClass: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+}> = {
+  truck: {
+    key: 'truck',
+    labelAr: 'شاحنات',
+    labelEn: 'Trucks',
+    colorClass: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/40',
+    icon: Truck
+  },
+  heavy_equipment: {
+    key: 'heavy_equipment',
+    labelAr: 'معدات ثقيلة',
+    labelEn: 'Heavy Equipment',
+    colorClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/40',
+    icon: Wrench
+  },
+  service_car: {
+    key: 'service_car',
+    labelAr: 'سيارات خدمة',
+    labelEn: 'Service Cars',
+    colorClass: 'bg-teal-50 dark:bg-teal-950/40 text-teal-750 dark:text-teal-400 border-teal-200 dark:border-teal-800/40',
+    icon: Cpu
+  },
+  light_vehicle: {
+    key: 'light_vehicle',
+    labelAr: 'مركبات خفيفة',
+    labelEn: 'Light Vehicles',
+    colorClass: 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/40',
+    icon: Car
+  },
+  public_transport: {
+    key: 'public_transport',
+    labelAr: 'نقل جماعي',
+    labelEn: 'Public Transport',
+    colorClass: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800/40',
+    icon: Bus
+  }
+};
+
+export const getVehicleClassification = (vehicle: Vehicle): string => {
+  if (vehicle.classification && VEHICLE_CLASSIFICATIONS[vehicle.classification]) {
+    return vehicle.classification;
+  }
+  
+  const typeLower = (vehicle.type || '').toLowerCase();
+  const nameLower = (vehicle.name || '').toLowerCase();
+  
+  if (typeLower.includes('ثقيلة') || typeLower.includes('هندسية') || nameLower.includes('رافعة') || nameLower.includes('معدة')) {
+    return 'heavy_equipment';
+  }
+  if (typeLower.includes('شاحنة') || nameLower.includes('شاحنة') || nameLower.includes('صهريج')) {
+    return 'truck';
+  }
+  if (typeLower.includes('حافلة') || typeLower.includes('نقل جماعي') || nameLower.includes('حافلة') || nameLower.includes('باص')) {
+    return 'public_transport';
+  }
+  if (typeLower.includes('خدمة') || nameLower.includes('خدمة') || nameLower.includes('ميدانية') || nameLower.includes('دورية')) {
+    return 'service_car';
+  }
+  return 'light_vehicle';
+};
+
 const StatusBadge = ({ status }: { status: VehicleStatus }) => {
   const configs = {
     active: { label: 'فعالة', classes: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500 animate-pulse' },
@@ -255,6 +322,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [classificationFilter, setClassificationFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [trendMetric, setTrendMetric] = useState<'fuel' | 'tire'>('fuel');
   const [selectedVehicleForHistory, setSelectedVehicleForHistory] = useState<Vehicle | null>(null);
@@ -490,6 +558,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
   const [formData, setFormData] = useState({
     name: '',
     type: 'مركبة خفيفة',
+    classification: 'light_vehicle',
     plateNumber: '',
     department: 'قسم الآليات',
     subDepartment: 'شعبة الحركة',
@@ -517,11 +586,31 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
 
   // Search & Filter implementation
   const filteredVehicles = vehicleList.filter(v => {
-    const matchesSearch = v.name.includes(searchTerm) || v.plateNumber.includes(searchTerm);
+    const classificationKey = getVehicleClassification(v);
+    const classificationMeta = VEHICLE_CLASSIFICATIONS[classificationKey];
+    const searchLower = searchTerm.trim().toLowerCase();
+    
+    const matchesSearch = !searchLower || 
+      v.name.toLowerCase().includes(searchLower) || 
+      v.plateNumber.toLowerCase().includes(searchLower) ||
+      (v.type && v.type.toLowerCase().includes(searchLower)) ||
+      (classificationMeta && (
+        classificationMeta.labelAr.toLowerCase().includes(searchLower) ||
+        classificationMeta.labelEn.toLowerCase().includes(searchLower)
+      ));
+      
     if (!matchesSearch) return false;
-    if (statusFilter === 'all') return true;
-    if (statusFilter === 'active') return v.status === 'active';
-    if (statusFilter === 'maintenance') return v.status === 'maintenance';
+    
+    // Status Filter
+    if (statusFilter !== 'all') {
+      if (v.status !== statusFilter) return false;
+    }
+    
+    // Classification Filter
+    if (classificationFilter !== 'all') {
+      if (classificationKey !== classificationFilter) return false;
+    }
+    
     return true;
   });
 
@@ -624,6 +713,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
       id: String(Date.now()),
       name: formData.name,
       type: formData.type,
+      classification: formData.classification,
       plateNumber: formData.plateNumber,
       department: formData.department,
       subDepartment: formData.subDepartment,
@@ -652,6 +742,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
     setFormData({
       name: '',
       type: 'مركبة خفيفة',
+      classification: 'light_vehicle',
       plateNumber: '',
       department: 'قسم الآليات',
       subDepartment: 'شعبة الحركة',
@@ -1293,8 +1384,8 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-soft">
-        <div className="relative flex-1 min-w-[150px]">
+      <div className="flex flex-col gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-soft">
+        <div className="relative w-full">
           <span className="absolute inset-y-0 right-3 flex items-center text-slate-400">
             <Search size={14} />
           </span>
@@ -1303,7 +1394,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
             placeholder="البحث بواسطة اسم المركبة أو رقم اللوحة..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pr-9 pl-16 py-1.5 bg-slate-50 dark:bg-slate-900 border border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-blue-500 focus:ring-2 focus:ring-brand-blue-50/50 rounded-lg transition-all outline-none text-[13px] dark:text-white font-medium"
+            className="w-full pr-9 pl-16 py-2 bg-slate-50 dark:bg-slate-900 border border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-blue-500 focus:ring-2 focus:ring-brand-blue-50/50 rounded-xl transition-all outline-none text-[13px] dark:text-white font-medium"
           />
           <div className="absolute inset-y-0 left-2 flex items-center gap-1">
             {searchTerm && (
@@ -1326,54 +1417,89 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
             </button>
           </div>
         </div>
-        <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden md:block" />
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-400 dark:text-slate-500 font-bold">الحالة:</span>
-          <div className="flex bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-205 dark:border-slate-800">
-            <button 
-              onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1 text-xs font-black rounded-lg transition-all cursor-pointer ${statusFilter === 'all' ? 'bg-white dark:bg-slate-800 text-brand-blue-600 dark:text-brand-blue-400 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}
-            >
-              الكل
-            </button>
-            <button 
-              onClick={() => setStatusFilter('active')}
-              className={`px-3 py-1 text-xs font-black rounded-lg transition-all cursor-pointer ${statusFilter === 'active' ? 'bg-white dark:bg-slate-800 text-brand-green-500 dark:text-brand-green-400 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}
-            >
-              فعالة
-            </button>
-            <button 
-              onClick={() => setStatusFilter('maintenance')}
-              className={`px-3 py-1 text-xs font-black rounded-lg transition-all cursor-pointer ${statusFilter === 'maintenance' ? 'bg-white dark:bg-slate-800 text-brand-yellow-600 dark:text-brand-yellow-400 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}
-            >
-              تحت الصيانة
-            </button>
+
+        {/* Filters Grid */}
+        <div className="space-y-3.5">
+          {/* Status filter row */}
+          <div className="flex flex-col md:flex-row md:items-center gap-2">
+            <span className="text-xs font-black text-slate-500 dark:text-slate-400 md:w-24 shrink-0">{language === 'ar' ? 'الحالة:' : 'Status:'}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/80 gap-1 flex-1">
+              <button 
+                onClick={() => setStatusFilter('all')}
+                className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer text-center ${statusFilter === 'all' ? 'bg-white dark:bg-slate-800 text-brand-blue-600 dark:text-brand-blue-400 shadow-xs' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}
+              >
+                الكل
+              </button>
+              <button 
+                onClick={() => setStatusFilter('active')}
+                className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer text-center ${statusFilter === 'active' ? 'bg-white dark:bg-slate-800 text-brand-green-500 dark:text-brand-green-400 shadow-xs' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}
+              >
+                فعالة
+              </button>
+              <button 
+                onClick={() => setStatusFilter('maintenance')}
+                className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer text-center ${statusFilter === 'maintenance' ? 'bg-white dark:bg-slate-800 text-brand-yellow-600 dark:text-brand-yellow-400 shadow-xs' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}
+              >
+                تحت الصيانة
+              </button>
+              <button 
+                onClick={() => setStatusFilter('stopped')}
+                className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer text-center ${statusFilter === 'stopped' ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-xs' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}
+              >
+                {language === 'ar' ? 'متوقفة' : 'Stopped'}
+              </button>
+            </div>
+          </div>
+
+          {/* Classification filter row */}
+          <div className="flex flex-col md:flex-row md:items-center gap-2">
+            <span className="text-xs font-black text-slate-500 dark:text-slate-400 md:w-24 shrink-0">{language === 'ar' ? 'التصنيف المجموعي:' : 'Classification:'}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/80 gap-1 flex-1">
+              <button 
+                onClick={() => setClassificationFilter('all')}
+                className={`px-2.5 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer text-center ${classificationFilter === 'all' ? 'bg-white dark:bg-slate-800 text-brand-blue-600 dark:text-brand-blue-400 shadow-xs' : 'text-slate-450 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}
+              >
+                {language === 'ar' ? 'الكل' : 'All'}
+              </button>
+              {Object.entries(VEHICLE_CLASSIFICATIONS).map(([key, meta]) => {
+                const IconComponent = meta.icon;
+                return (
+                  <button 
+                    key={key}
+                    onClick={() => setClassificationFilter(key)}
+                    className={`px-2 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${classificationFilter === key ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-450 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'}`}
+                  >
+                    <IconComponent size={11} className="shrink-0" />
+                    <span>{language === 'ar' ? meta.labelAr : meta.labelEn}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* View Mode filter row */}
+          <div className="flex flex-col md:flex-row md:items-center gap-2">
+            <span className="text-xs font-black text-slate-500 dark:text-slate-400 md:w-24 shrink-0">{language === 'ar' ? 'طريقة العرض:' : 'View Mode:'}</span>
+            <div className="grid grid-cols-2 bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/80 gap-1 flex-1 max-w-md">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-400 shadow-xs' : 'text-slate-400 dark:text-slate-550 hover:text-slate-600 dark:hover:text-slate-400'}`}
+                title="عرض الشبكة الكاملة"
+              >
+                <LayoutGrid size={12} />
+                <span>{language === 'ar' ? 'الشبكة' : 'Grid'}</span>
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-405 shadow-xs' : 'text-slate-400 dark:text-slate-550 hover:text-slate-600 dark:hover:text-slate-400'}`}
+                title="عرض القائمة التفصيلية"
+              >
+                <List size={12} />
+                <span>{language === 'ar' ? 'القائمة' : 'List'}</span>
+              </button>
+            </div>
           </div>
         </div>
-
-        <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-400 dark:text-slate-500 font-bold">طريقة العرض:</span>
-          <div className="flex bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-205 dark:border-slate-800">
-            <button 
-              onClick={() => setViewMode('grid')}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-400 shadow-sm' : 'text-slate-400 dark:text-slate-550'}`}
-              title="عرض الشبكة الكاملة"
-            >
-              <LayoutGrid size={12} />
-              <span className="mr-1">الشبكة</span>
-            </button>
-            <button 
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-405 shadow-sm' : 'text-slate-400 dark:text-slate-550'}`}
-              title="عرض القائمة التفصيلية"
-            >
-              <List size={12} />
-              <span className="mr-1">{language === 'ar' ? 'القائمة' : 'List'}</span>
-            </button>
-          </div>
-        </div>
-
       </div>
 
       {/* Vehicles Grid and List Dual-View Control */}
@@ -1436,8 +1562,20 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                         <h3 className="text-[11px] sm:text-[12.5px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors leading-tight">
                           {vehicle.name}
                         </h3>
-                        <div className="text-[8.5px] sm:text-[9.5px] text-slate-455 dark:text-slate-500 font-bold flex items-center gap-1 mt-0.5">
+                        <div className="text-[8.5px] sm:text-[9.5px] text-slate-455 dark:text-slate-500 font-bold flex flex-wrap items-center gap-1 mt-0.5">
                           <span className="truncate">{vehicle.type}</span>
+                          {(() => {
+                            const cKey = getVehicleClassification(vehicle);
+                            const cMeta = VEHICLE_CLASSIFICATIONS[cKey];
+                            if (!cMeta) return null;
+                            const ClassificationIcon = cMeta.icon;
+                            return (
+                              <span className={`inline-flex items-center gap-0.5 px-1 py-0.25 rounded text-[7.5px] font-black border uppercase shrink-0 ${cMeta.colorClass}`}>
+                                <ClassificationIcon size={8} />
+                                <span>{language === 'ar' ? cMeta.labelAr : cMeta.labelEn}</span>
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1742,8 +1880,20 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                               <div className="text-xs font-black text-slate-900 dark:text-white group-hover:text-brand-blue-600 dark:group-hover:text-brand-blue-400 transition-colors leading-normal">
                                 {vehicle.name}
                               </div>
-                              <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-0.5">
-                                {vehicle.type} • صنع {vehicle.modelYear || '2022'} • {vehicle.tireCount || 4} عجلات ({vehicle.tireStatus || 'ممتاز'})
+                              <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5">
+                                {(() => {
+                                  const cKey = getVehicleClassification(vehicle);
+                                  const cMeta = VEHICLE_CLASSIFICATIONS[cKey];
+                                  if (!cMeta) return null;
+                                  const ClassificationIcon = cMeta.icon;
+                                  return (
+                                    <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.25 rounded text-[8px] font-black border uppercase shrink-0 ${cMeta.colorClass}`}>
+                                      <ClassificationIcon size={8} />
+                                      <span>{language === 'ar' ? cMeta.labelAr : cMeta.labelEn}</span>
+                                    </span>
+                                  );
+                                })()}
+                                <span>{vehicle.type} • صنع {vehicle.modelYear || '2022'} • {vehicle.tireCount || 4} عجلات ({vehicle.tireStatus || 'ممتاز'})</span>
                               </div>
                             </div>
                           </div>
@@ -2204,6 +2354,21 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                           <option value="نقل جماعي">نقل جماعي</option>
                           <option value="معدة هندسية">معدة هندسية</option>
                           <option value="سيارة إسعاف وطوارئ">سيارة إسعاف وطوارئ</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1.5">{language === 'ar' ? 'التصنيف المجموعي للمركبة' : 'Vehicle Group Classification'}</label>
+                        <select 
+                          value={formData.classification}
+                          onChange={(e) => setFormData({ ...formData, classification: e.target.value })}
+                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-105 dark:border-slate-800 rounded-xl focus:bg-white dark:focus:bg-slate-800 outline-none text-xs font-bold dark:text-white"
+                        >
+                          {Object.entries(VEHICLE_CLASSIFICATIONS).map(([key, meta]) => (
+                            <option key={key} value={key}>
+                              {language === 'ar' ? meta.labelAr : meta.labelEn}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
