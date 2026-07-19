@@ -732,7 +732,7 @@ export default function Projects({ user }: ProjectsProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 font-sans text-slate-900 dark:text-slate-100 pb-16">
+    <div className="space-y-6 font-sans text-slate-900 dark:text-slate-100 pb-16">
       
       {/* HEADER SECTION WITH TOP CRAFTSMANSHIP & PURPLE GRADIENT */}
       <div className="relative p-6 md:p-8 bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-950 rounded-3xl text-white shadow-2xl border border-purple-800/35 overflow-hidden">
@@ -1134,7 +1134,11 @@ export default function Projects({ user }: ProjectsProps) {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleToggleStatusDirectly(selectedProject)}
-                  className="flex-1 py-1.5 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 text-slate-700 dark:text-slate-300"
+                  className={`flex-1 py-1.5 px-3 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 text-white ${
+                    selectedProject.status === 'active'
+                      ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 shadow-xs'
+                      : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-xs'
+                  }`}
                 >
                   {selectedProject.status === 'active' ? (
                     <>

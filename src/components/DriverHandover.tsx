@@ -745,15 +745,20 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
   return (
     <div className="space-y-6" id="driver-handover-canvas">
       {/* Header section styled elegantly like dashboard */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-3xs" dir="rtl">
-        <div>
-          <span className="text-[10px] font-black tracking-widest uppercase text-brand-blue-600 bg-brand-blue-50 dark:bg-brand-blue-950/40 px-2.5 py-1 rounded-full border border-brand-blue-200/40">
-            الحوكمة والأمان الرقمي للآليات
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 text-white p-6 rounded-[2rem] border border-purple-900/40 shadow-xl relative overflow-hidden" dir="rtl">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/20 rounded-full text-purple-300 text-[10px] font-black mb-1.5">
+            <Sparkles size={11} className="animate-pulse text-purple-400" />
+            <span>الحوكمة والأمان الرقمي للآليات</span>
           </span>
-          <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mt-2">
+          <h1 className="text-xl md:text-2xl font-black text-white mt-1">
             محاضر تسليم واستلام العجلات الفنية
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-normal max-w-xl">
+          <p className="text-xs text-purple-200/80 mt-1.5 leading-normal max-w-xl">
             نظام ومحاضر فحص ونقل عهدة الآليات في المرفق قبل وبعد الصيانة بالتوقيع والتوثيق الإلكتروني لضمان جودة الاستلام وإثبات الأضرار.
           </p>
         </div>
@@ -763,7 +768,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
             setActiveSubTab(activeSubTab === 'list' ? 'create' : 'list');
             setSelectedRecord(null);
           }}
-          className="px-4 py-2.5 bg-brand-blue-500 hover:bg-brand-blue-600 text-white font-black text-xs rounded-2xl transition-all shadow-md hover:scale-[1.02] flex items-center justify-center gap-2 self-start md:self-auto cursor-pointer"
+          className="px-4 py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:from-purple-500 hover:via-fuchsia-500 hover:to-indigo-500 text-white font-black text-xs rounded-2xl transition-all shadow-md hover:scale-[1.02] flex items-center justify-center gap-2 self-start md:self-auto cursor-pointer shadow-lg shadow-purple-500/20 border border-purple-400/20 relative z-10 shrink-0"
         >
           {activeSubTab === 'list' ? (
             <>
@@ -796,14 +801,14 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-3xs hover:shadow-2xs transition-all relative overflow-hidden">
-            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-l from-brand-blue-500 to-cyan-500" />
+            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-l from-purple-500 to-fuchsia-500" />
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-blue-50/50 dark:bg-brand-blue-950/40 text-brand-blue-600 dark:text-brand-blue-405 rounded-2xl flex items-center justify-center shadow-inner">
+              <div className="w-10 h-10 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center shadow-inner">
                 <Truck size={18} />
               </div>
               <div>
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold block">عجلات بذمة السائقين (صادرة)</span>
-                <span className="text-sm font-black text-brand-blue-600 dark:text-brand-blue-400 font-mono">{totalOutgoing} مرخصة</span>
+                <span className="text-sm font-black text-purple-600 dark:text-purple-400 font-mono">{totalOutgoing} مرخصة</span>
               </div>
             </div>
           </div>
@@ -857,7 +862,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="ابحث برقم المحضر، اسم السائق، أو اللوحة والمعدّة..."
-                  className="w-full pr-10 pl-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 focus:border-brand-blue-450 rounded-2xl text-xs font-bold outline-none dark:text-white"
+                  className="w-full pr-10 pl-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 focus:border-purple-500 rounded-2xl text-xs font-bold outline-none dark:text-white"
                 />
               </div>
 
@@ -899,7 +904,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                 </p>
                 <button
                   onClick={() => setActiveSubTab('create')}
-                  className="mt-4 px-4 py-2 bg-brand-blue-500 hover:bg-brand-blue-600 text-white font-black text-xs rounded-xl shadow-xs cursor-pointer"
+                  className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs rounded-xl shadow-xs cursor-pointer shadow-purple-500/10"
                 >
                   تحرير أول محضر إلكتروني الآن
                 </button>
@@ -913,17 +918,17 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                     <div 
                       key={record.id}
                       onClick={() => setSelectedRecord(record)}
-                      className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-brand-blue-200 dark:hover:border-slate-700 shadow-3xs transition-all cursor-pointer group flex flex-col justify-between space-y-3.5 relative"
+                      className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-900 shadow-3xs transition-all cursor-pointer group flex flex-col justify-between space-y-3.5 relative"
                     >
                       {/* Sub-badge indicating type with background glow */}
                       <span className={`absolute top-0 right-6 left-6 h-0.5 rounded-full ${
-                        record.type === 'outgoing' ? 'bg-brand-blue-500' : 'bg-emerald-500'
+                        record.type === 'outgoing' ? 'bg-purple-500' : 'bg-emerald-500'
                       }`} />
 
                       <div className="flex items-start justify-between gap-1">
                         <div>
-                          <span className="text-[10px] font-black font-mono text-brand-blue-600 dark:text-brand-blue-400 block">{record.orderNumber}</span>
-                          <h4 className="text-[13px] font-black text-slate-900 dark:text-white mt-1 group-hover:text-brand-blue-500 transition-colors">{record.vehicleName}</h4>
+                          <span className="text-[10px] font-black font-mono text-purple-600 dark:text-purple-400 block">{record.orderNumber}</span>
+                          <h4 className="text-[13px] font-black text-slate-900 dark:text-white mt-1 group-hover:text-purple-500 transition-colors">{record.vehicleName}</h4>
                           <span className="text-[9.5px] font-mono text-slate-450 block mt-0.5">{record.vehiclePlate}</span>
                         </div>
 
@@ -931,7 +936,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                         <div className="flex flex-col items-end gap-1.5">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-black ${
                             record.type === 'outgoing' 
-                              ? 'bg-brand-blue-50 dark:bg-brand-blue-950/30 text-brand-blue-600' 
+                              ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-600' 
                               : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600'
                           }`}>
                             {typeLabels[record.type]}
@@ -974,7 +979,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handlePrintDocument(record)}
-                            className="p-1 text-slate-400 hover:text-brand-blue-500 hover:bg-slate-50 dark:hover:bg-slate-950 rounded-lg transition-colors"
+                            className="p-1 text-slate-400 hover:text-purple-500 hover:bg-slate-50 dark:hover:bg-slate-950 rounded-lg transition-colors"
                             title="طباعة محضر التسليم والدليل الفني"
                           >
                             <Printer size={13} />
@@ -1024,7 +1029,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                       onClick={() => setNewRecord(prev => ({ ...prev, type: 'outgoing' }))}
                       className={`p-2.5 rounded-2xl text-[11px] font-black border text-center transition-all cursor-pointer ${
                         newRecord.type === 'outgoing'
-                          ? 'bg-brand-blue-500 text-white border-brand-blue-500 shadow-sm'
+                          ? 'bg-purple-600 text-white border-purple-600 shadow-sm shadow-purple-500/10'
                           : 'bg-slate-50 dark:bg-slate-950 text-slate-650 dark:text-slate-400 border-slate-100 dark:border-slate-850 hover:border-slate-200'
                       }`}
                     >
@@ -1108,7 +1113,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                 <div className="space-y-1.5 text-right font-bold">
                   <label className="text-[11px] font-black text-slate-500 dark:text-slate-420 block flex items-center justify-between">
                     <span>قراءة عداد المسافة الحالية</span>
-                    <span className="text-[9.5px] text-brand-blue-500 font-mono">كم</span>
+                    <span className="text-[9.5px] text-purple-500 font-mono">كم</span>
                   </label>
                   <div className="relative">
                     <span className="absolute inset-y-0 right-3 flex items-center text-slate-400">
@@ -1128,10 +1133,10 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                 <div className="space-y-1.5 text-right font-bold">
                   <label className="text-[11px] font-black text-slate-500 dark:text-slate-420 block flex items-center justify-between">
                     <span>مستوى خزان الوقود الحالي</span>
-                    <span className="text-[9.5px] text-brand-blue-500 font-mono">{newRecord.fuelLevel}%</span>
+                    <span className="text-[9.5px] text-purple-500 font-mono">{newRecord.fuelLevel}%</span>
                   </label>
                   <div className="flex items-center gap-3 py-1 bg-slate-50 dark:bg-slate-950 px-3.5 rounded-2xl border border-slate-100 dark:border-slate-850 h-[38px]">
-                    <Droplet size={13} className="text-brand-blue-500 shrink-0" />
+                    <Droplet size={13} className="text-purple-500 shrink-0" />
                     <input
                       type="range"
                       min="0"
@@ -1139,7 +1144,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                       step="5"
                       value={newRecord.fuelLevel}
                       onChange={(e) => setNewRecord(prev => ({ ...prev, fuelLevel: Number(e.target.value) }))}
-                      className="w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-blue-500"
+                      className="w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
                     />
                   </div>
                 </div>
@@ -1148,7 +1153,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
               {/* SECTION: DIAGNOSTIC INSPECTION CHECKLIST (Modern elegant matrix) */}
               <div className="space-y-3 pt-3">
                 <div className="flex items-center gap-2 border-b border-slate-50 dark:border-slate-850/60 pb-1.5">
-                  <ClipboardCheck size={15} className="text-brand-blue-600 dark:text-brand-blue-400" />
+                  <ClipboardCheck size={15} className="text-purple-600 dark:text-purple-400" />
                   <h3 className="text-xs sm:text-[13px] font-black text-slate-900 dark:text-white">جدول التحقق الفني الفحصي لسلامة الأنظمة</h3>
                 </div>
 
@@ -1216,7 +1221,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                     value={newRecord.damageNotes}
                     onChange={(e) => setNewRecord(prev => ({ ...prev, damageNotes: e.target.value }))}
                     placeholder="فصّل هنا أي عجز، كسر بالهيكل، خدوش في الدهانات، نقص بالأدوات الفنية، أو ملاحظات الإصلاح والقطع..."
-                    className="w-full px-3.5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 focus:border-brand-blue-450 rounded-2xl text-xs font-bold' outline-none dark:text-white"
+                    className="w-full px-3.5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 focus:border-purple-500 rounded-2xl text-xs font-bold' outline-none dark:text-white"
                   />
                 </div>
 
@@ -1231,7 +1236,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-brand-blue-450 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-950/40 p-4 rounded-2.5xl flex flex-col items-center justify-center text-center cursor-pointer min-h-[110px] transition-colors relative"
+                    className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-purple-400 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-955/40 p-4 rounded-2.5xl flex flex-col items-center justify-center text-center cursor-pointer min-h-[110px] transition-colors relative"
                   >
                     <input
                       type="file"
@@ -1285,7 +1290,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
               <div className="bg-slate-50/40 dark:bg-slate-950/20 rounded-2.5xl border border-slate-100 dark:border-slate-850/60 p-4 pt-3.5 space-y-3.5" dir="rtl">
                 <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-850/40 pb-1.5 select-none">
                   <div className="flex items-center gap-2">
-                    <PenTool size={14} className="text-brand-blue-600 dark:text-brand-blue-400" />
+                    <PenTool size={14} className="text-purple-600 dark:text-purple-400" />
                     <h3 className="text-xs sm:text-[13px] font-black text-slate-900 dark:text-white">توقيع السائق والضابط المسؤول إلكترونياً</h3>
                   </div>
                   <button
@@ -1299,7 +1304,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
 
                 <div className="flex flex-col md:flex-row items-stretch gap-4 justify-between">
                   <div className="flex-1 space-y-2 text-right">
-                    <div className="bg-brand-blue-500/5 p-3 rounded-2xl border border-brand-blue-500/10 text-[10.5px] leading-relaxed font-bold text-slate-700 dark:text-slate-350">
+                    <div className="bg-purple-500/5 p-3 rounded-2xl border border-purple-500/10 text-[10.5px] leading-relaxed font-bold text-slate-700 dark:text-slate-350">
                       📝 <span className="text-slate-900 dark:text-white font-extrabold font-sans">تعهد ومصادقة قانونية:</span> 
                       يرجى رسم التوقيع باليد أو الفأرة في المساحة المحاطة بجانب اليسار. بالتوقيع الإلكتروني يُقر السائق بفحصه الكامل للآلية والتعهد التام بحفظ جودتها وتحمل المسؤولية الجنائية والمدنية الناتجة عن أي تفريط أو استخدام مغلوط.
                     </div>
@@ -1341,7 +1346,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-brand-blue-500 hover:bg-brand-blue-600 text-white text-xs font-black rounded-xl shadow-md cursor-pointer flex items-center gap-1"
+                  className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-md cursor-pointer flex items-center gap-1 shadow-purple-500/10"
                 >
                   <CheckCircle2 size={13} />
                   <span>اعتماد وختم المحضر المؤرشف</span>
@@ -1374,7 +1379,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
             {/* Header popup info */}
             <div className="bg-slate-50 dark:bg-slate-950 p-5 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
               <div className="text-right">
-                <span className="text-[9px] font-mono tracking-wider text-brand-blue-600 font-extrabold">{selectedRecord.orderNumber}</span>
+                <span className="text-[9px] font-mono tracking-wider text-purple-600 font-extrabold">{selectedRecord.orderNumber}</span>
                 <h3 className="text-sm font-black text-slate-900 dark:text-white mt-1">محضر تسليم واستلام رسمي موثق</h3>
                 <span className="text-[9.5px] text-slate-450 block">{selectedRecord.date}</span>
               </div>
@@ -1382,7 +1387,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePrintDocument(selectedRecord)}
-                  className="p-1 px-2.5 bg-brand-blue-50 hover:bg-brand-blue-100 text-brand-blue-600 text-[10.5px] font-black rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  className="p-1 px-2.5 bg-purple-50 hover:bg-purple-100 text-purple-600 text-[10.5px] font-black rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                   title="تحميل وطباعة وثيقة PDF"
                 >
                   <Printer size={13} />
@@ -1400,7 +1405,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
             {/* Body */}
             <div className="p-6 max-h-[70vh] overflow-y-auto space-y-5 text-right no-scrollbar">
               {/* Top Banner Alert */}
-              <div className="bg-brand-blue-500/5 dark:bg-brand-blue-500/10 p-3 rounded-2xl border border-brand-blue-500/10 text-xs text-brand-blue-650 dark:text-brand-blue-400 font-black flex items-center gap-2 shadow-xs">
+              <div className="bg-purple-500/5 dark:bg-purple-500/10 p-3 rounded-2xl border border-purple-500/10 text-xs text-purple-650 dark:text-purple-400 font-black flex items-center gap-2 shadow-xs">
                 <Sparkles size={14} />
                 <span>
                   {selectedRecord.type === 'outgoing' 
@@ -1499,7 +1504,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
                 <div className="space-y-1">
                   <span className="text-[10px] text-slate-400 block font-bold">الضابط الفحصي المسؤول:</span>
                   <span className="text-xs font-black text-slate-900 dark:text-white">{selectedRecord.employeeName}</span>
-                  <span className="block text-[9.5px] text-brand-blue-500 font-extrabold flex items-center gap-1 mt-0.5">
+                  <span className="block text-[9.5px] text-purple-500 font-extrabold flex items-center gap-1 mt-0.5">
                     <CheckCircle2 size={10} />
                     <span>توقيع ومصادقة إلكترونية مدمجة</span>
                   </span>

@@ -1484,17 +1484,24 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
   return (
     <div className="space-y-6 text-right" dir="rtl" id="technicians-table">
       
-      {/* 1. Header with Visual Mode Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-brand-blue-600/10 text-brand-blue-600 flex items-center justify-center">
-              <Wrench size={22} className="animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black text-slate-900 dark:text-white">
-                  {language === 'ar' ? 'إدارة أوامر الصيانة' : 'Maintenance Tickets Desk'}
+      {/* Page Header with Elegant Purple Gradient */}
+      <div className="relative p-6 md:p-8 bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-950 rounded-3xl text-white shadow-2xl border border-purple-800/35 overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] -ml-20 -mb-20"></div>
+        
+        <div className="relative space-y-6">
+          {/* Title and Description block */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-2 flex-1">
+              <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/20 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-purple-300 uppercase">
+                <Sparkles size={11} className="animate-spin text-purple-400" />
+                <span>إدارة دورة صيانة الأسطول المتكاملة</span>
+              </div>
+              
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+                  <Wrench size={32} className="text-purple-300 animate-pulse" />
+                  <span>{language === 'ar' ? 'إدارة أوامر الصيانة والبلاغات' : 'Maintenance Tickets Desk'}</span>
                 </h1>
                 <ContextualHelp 
                   id="maintenance-orders"
@@ -1503,7 +1510,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                   explanationAr="نظام متكامل لإصدار وتعديل وأرشفة بطاقات الصيانة الفورية والوقائية للسيارات والمعدات لضمان بقائها عاملة بكامل طاقتها."
                   explanationEn="A complete scheduling dashboard for issuing, updating, and archiving instant and scheduled mechanical work orders for active vehicles."
                   benefitsAr={[
-                    "استقبال بلاغات السائقين المباشرة (صوتية وكودية).",
+                    "استقبل بلاغات السائقين المباشرة (صوتية وكودية).",
                     "ربط بلاغات الأعطال بالميكانيكي المسؤول وتحديد قطع الغيار فورا.",
                     "عرض بطاقات العمل في نظام كانبان التفاعلي لمتابعة جاهزية ورش الإصلاح."
                   ]}
@@ -1521,51 +1528,51 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                   language={language}
                 />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-purple-100/70 max-w-2xl">
                 {language === 'ar' 
                   ? 'مخطط محترف بنظام مدير المشروعات المترابط تماماً ببيانات الآليات، طاقات الورش، تتبع الفنيين، والتحكم بمخارات الدعم.' 
                   : 'Professional scheduler synced with fleet registries, workshops, active mechanics, and safety gates.'}
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Action Controls & Display Tabs Toggle */}
-        <div className="flex items-center gap-3">
-          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/50 dark:border-slate-705 flex items-center gap-1">
-            <button
-              onClick={() => setManagerMode('kanban')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                managerMode === 'kanban' 
-                  ? 'bg-white dark:bg-slate-700 text-brand-blue-600 dark:text-brand-blue-400 shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <Kanban size={13} />
-              <span>لوحة المشاريع (Kanban)</span>
-            </button>
-            <button
-              onClick={() => setManagerMode('list')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                managerMode === 'list' 
-                  ? 'bg-white dark:bg-slate-700 text-brand-blue-600 dark:text-brand-blue-400 shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              <ClipboardList size={13} />
-              <span>قائمة المشاريع المجدولة</span>
-            </button>
-          </div>
+            {/* Action Controls & Display Tabs Toggle */}
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch lg:items-center gap-3 shrink-0">
+              <div className="bg-white/5 p-1 rounded-2xl border border-white/10 flex items-center w-full sm:w-auto gap-1">
+                <button
+                  onClick={() => setManagerMode('kanban')}
+                  className={`flex-1 sm:flex-none px-3 py-2.5 sm:px-4 sm:py-1.5 rounded-xl text-[10.5px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                    managerMode === 'kanban' 
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
+                      : 'text-purple-200 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Kanban size={13} />
+                  <span>{language === 'ar' ? 'لوحة المشاريع (Kanban)' : 'Kanban Board'}</span>
+                </button>
+                <button
+                  onClick={() => setManagerMode('list')}
+                  className={`flex-1 sm:flex-none px-3 py-2.5 sm:px-4 sm:py-1.5 rounded-xl text-[10.5px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                    managerMode === 'list' 
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
+                      : 'text-purple-200 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <ClipboardList size={13} />
+                  <span>{language === 'ar' ? 'قائمة المشاريع' : 'Projects List'}</span>
+                </button>
+              </div>
 
-          {user.role !== 'viewer' && (
-            <button 
-              onClick={() => openNewOrderModal()}
-              className="flex items-center gap-1.5 px-4 py-2 bg-brand-blue-600 text-white rounded-xl text-xs font-black shadow-md hover:bg-brand-blue-700 transition-all active:scale-95 cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>تخطيط وتدشين صيانة</span>
-            </button>
-          )}
+              {user.role !== 'viewer' && (
+                <button 
+                  onClick={() => openNewOrderModal()}
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-0 sm:h-11 bg-purple-500 hover:bg-purple-600 text-white rounded-2xl sm:rounded-xl text-xs font-black shadow-md hover:shadow-lg active:scale-[98%] transition-all cursor-pointer border border-purple-400/20 whitespace-nowrap"
+                >
+                  <Plus size={15} />
+                  <span>{language === 'ar' ? 'تخطيط وتدشين صيانة' : 'Plan Maintenance'}</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

@@ -24,7 +24,8 @@ import {
   SlidersHorizontal,
   ArrowUpDown,
   Package,
-  ShieldAlert
+  ShieldAlert,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Vehicle, InventoryItem, User } from '../types';
@@ -715,7 +716,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
               <button
                 type="button"
                 onClick={() => setCurrentCalendarMonth(new Date(2026, 4, 1))}
-                className="text-[10px] font-black text-brand-blue-600 dark:text-brand-blue-400 hover:underline px-2 cursor-pointer"
+                className="text-[10px] font-black text-purple-600 dark:text-purple-400 hover:underline px-2 cursor-pointer"
               >
                 {language === 'ar' ? '💡 الرجوع للشهر الحالي للتشغيل (مايو 2026)' : '💡 Back to Current Month (May 2026)'}
               </button>
@@ -780,7 +781,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                 key={`day-${cellIdx}`}
                 className={`min-h-[95px] md:min-h-[125px] p-2 bg-white dark:bg-[#111625] hover:bg-slate-50/50 dark:hover:bg-slate-905/70 rounded-2xl border transition-all duration-200 flex flex-col justify-between group overflow-hidden relative cursor-pointer ${
                   isToday 
-                    ? 'border-brand-blue-500 dark:border-brand-blue-400 shadow-md ring-1 ring-brand-blue-500/20 bg-brand-blue-500/5' 
+                    ? 'border-purple-500 dark:border-purple-400 shadow-md ring-1 ring-purple-500/20 bg-purple-500/5' 
                     : 'border-slate-100 dark:border-slate-850 hover:border-slate-300 dark:hover:border-slate-800 hover:shadow-2xs'
                 }`}
                 onClick={(e) => {
@@ -814,20 +815,20 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                 <div className="flex items-center justify-between mb-1.5 z-10">
                   <span className={`text-[10px] md:text-[11px] font-black w-5.5 h-5.5 rounded-full flex items-center justify-center ${
                     isToday 
-                      ? 'bg-brand-blue-500 text-white' 
+                      ? 'bg-purple-600 text-white' 
                       : 'text-slate-700 dark:text-slate-300'
                   }`}>
                     {dayDate.getDate()}
                   </span>
                   
                   {isToday && (
-                    <span className="text-[8px] font-black bg-brand-blue-500 text-white px-1 py-0.5 rounded leading-none shrink-0 uppercase tracking-widest animate-pulse">
+                    <span className="text-[8px] font-black bg-purple-600 text-white px-1 py-0.5 rounded leading-none shrink-0 uppercase tracking-widest animate-pulse">
                       {language === 'ar' ? 'اليوم' : 'Today'}
                     </span>
                   )}
                   
                   {daySchedules.length > 0 && !isToday && (
-                    <span className="w-1.5 h-1.5 bg-brand-blue-505 dark:bg-indigo-400 rounded-full" />
+                    <span className="w-1.5 h-1.5 bg-purple-500 dark:bg-indigo-400 rounded-full" />
                   )}
                 </div>
 
@@ -879,7 +880,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                   
                   {daySchedules.length === 0 && user?.role !== 'viewer' && (
                     <div className="w-full h-full opacity-0 group-hover:opacity-100 flex items-center justify-center pt-2 transition-opacity pointer-events-none">
-                      <span className="text-[10px] font-black text-brand-blue-500 flex items-center gap-1 bg-brand-blue-50 dark:bg-brand-blue-950/25 px-1.5 py-0.5 rounded-md">
+                      <span className="text-[10px] font-black text-purple-600 flex items-center gap-1 bg-purple-50 dark:bg-purple-950/25 px-1.5 py-0.5 rounded-md">
                         <Plus size={10} />
                         <span>{language === 'ar' ? 'إضافة' : 'Add'}</span>
                       </span>
@@ -945,7 +946,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                         )}
                         <div>
                           <span className="block font-black text-xs text-slate-700 dark:text-white leading-tight mb-1">{matchedVehicle.name}</span>
-                          <span className="inline-block font-mono text-[9.5px] font-bold px-2 py-0.5 bg-indigo-50/65 dark:bg-indigo-950/40 text-brand-blue-600 dark:text-brand-blue-400 rounded-md border border-indigo-120/30">
+                          <span className="inline-block font-mono text-[9.5px] font-bold px-2 py-0.5 bg-indigo-50/65 dark:bg-indigo-950/40 text-purple-600 dark:text-purple-400 rounded-md border border-indigo-120/30">
                             {matchedVehicle.plateNumber}
                           </span>
                         </div>
@@ -1016,7 +1017,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                           handleMarkCompletedIntent(sched);
                           setSelectedCalendarSchedule(null);
                         }}
-                        className="px-5 py-2 bg-brand-blue-500 hover:bg-brand-blue-600 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-brand-blue-500/15"
+                        className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-purple-500/15"
                       >
                         <Check size={13} />
                         <span>إنجاز الصيانة</span>
@@ -1039,14 +1040,19 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
   return (
     <div id="periodic-maintenance-section" className="space-y-6 text-right" dir="rtl">
       
-      {/* Header and Add Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+      {/* Header section styled elegantly like dashboard */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 text-white p-6 rounded-[2rem] border border-purple-900/40 shadow-xl relative overflow-hidden" dir="rtl">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/20 rounded-full text-purple-300 text-[10px] font-black mb-1.5">
+            <Sparkles size={11} className="animate-pulse text-purple-400" />
+            <span>جدولة وهندسة الصيانة الوقائية للأسطول</span>
+          </span>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="p-2.5 bg-brand-blue-500/10 text-brand-blue-600 dark:text-[#34d399] rounded-2xl flex items-center justify-center shrink-0">
-                <Calendar size={22} />
-              </span>
+            <h1 className="text-xl md:text-2xl font-black text-white mt-1 flex items-center gap-2">
               <span>
                 {language === 'ar' ? 'لوحة وجدولة الصيانة الدورية الوقائية' : 'Preventive Maintenance Scheduler'}
               </span>
@@ -1076,7 +1082,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
               language={language}
             />
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed max-w-xl">
+          <p className="text-xs text-purple-200/80 mt-1.5 leading-relaxed max-w-xl">
             {language === 'ar' 
               ? 'تقويم ذكي ومكننة للمسافات المقطوعة والتوريدات الميدانية. يتيح لك تتبع مواعيد استبدال الزيوت، معايرة الإطارات، والفحص الدوري للفرامل لضمان الجاهزية القصوى للأسطول.' 
               : 'Smart calendar mapping service times, engine running hours, and fleet-wide spare supplies.'}
@@ -1103,7 +1109,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
               });
               setShowAddModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-3 h-fit text-xs font-black text-white bg-linear-to-r from-brand-blue-600 to-indigo-650 hover:opacity-95 active:scale-[98%] rounded-[1.65rem] transition-all shadow-lg hover:shadow-xl shadow-brand-blue-500/20 hover:shadow-brand-blue-500/25 shrink-0 self-start sm:self-center bg-brand-blue-500 cursor-pointer"
+            className="px-4 py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-650 hover:from-purple-500 hover:via-fuchsia-500 hover:to-indigo-505 text-white font-black text-xs rounded-2xl transition-all shadow-md hover:scale-[1.02] flex items-center justify-center gap-2 self-start md:self-auto cursor-pointer shadow-purple-500/10 relative z-10 shrink-0"
           >
             <Plus size={16} />
             <span>إنشاء تذكير / صيانة مجدولة</span>
@@ -1207,7 +1213,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                 ? 'bg-emerald-500/90 dark:bg-emerald-950/90 text-white border-emerald-400 dark:border-emerald-800'
                 : notificationToast.type === 'warning'
                 ? 'bg-rose-500/90 dark:bg-rose-950/90 text-white border-rose-400 dark:border-rose-800'
-                : 'bg-brand-blue-500/90 dark:bg-brand-blue-950/90 text-white border-brand-blue-400 dark:border-brand-blue-800'
+                : 'bg-purple-600/90 dark:bg-purple-950/90 text-white border-purple-400 dark:border-purple-800'
             }`}
           >
             <div className="p-1.5 bg-white/20 rounded-lg">
@@ -1233,7 +1239,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
         {/* Toggle panel controller */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3.5 border-b border-slate-150/50 dark:border-slate-800/60">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-blue-500/10 text-brand-blue-500 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
               <Bell size={18} className={notificationsEnabled ? 'animate-bounce' : ''} />
             </div>
             <div>
@@ -1339,7 +1345,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                               }));
                               setShowCompleteModal(true);
                             }}
-                            className="px-2.5 py-1 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-[10px] font-black text-brand-blue-600 dark:text-brand-blue-400 rounded-lg cursor-pointer transition-all"
+                            className="px-2.5 py-1 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-[10px] font-black text-purple-600 dark:text-purple-400 rounded-lg cursor-pointer transition-all"
                           >
                             إنجاز
                           </button>
@@ -1443,19 +1449,19 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
         {/* Toggle between List View and Calendar View */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-4">
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-6 bg-brand-blue-500 rounded-full"></span>
+            <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
             <h3 className="text-sm font-black text-slate-850 dark:text-white">
               {language === 'ar' ? 'نمط استعراض وجدولة المهام الوقائية' : 'Maintenance Visualization & Scheduling Mode'}
             </h3>
           </div>
           
-          <div className="flex items-center bg-slate-50 dark:bg-slate-150 border border-slate-200/60 dark:border-slate-850 p-1 rounded-2xl w-full sm:w-auto">
+          <div className="flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 p-1 rounded-2xl w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white shadow-xs border border-slate-100 dark:border-slate-800'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/10'
                   : 'text-slate-500 hover:text-slate-705 dark:text-slate-400 dark:hover:text-slate-250'
               }`}
             >
@@ -1465,9 +1471,9 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
             <button
               type="button"
               onClick={() => setViewMode('calendar')}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 viewMode === 'calendar'
-                  ? 'bg-brand-blue-500 text-white shadow-xs'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/10'
                   : 'text-slate-500 hover:text-slate-705 dark:text-slate-400 dark:hover:text-slate-250'
               }`}
             >
@@ -1488,7 +1494,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="البحث برقم لوحة المركبة، الاسم، أو مسمى الصيانة الدورية..."
-              className="w-full pr-10 pl-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl outline-none focus:border-brand-blue-500 font-bold dark:text-white transition-all shadow-inner"
+              className="w-full pr-10 pl-4 py-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl outline-none focus:border-purple-500 font-bold dark:text-white transition-all shadow-inner"
             />
           </div>
 
@@ -1539,7 +1545,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
               onClick={() => setIsAdvancedOpen(prev => !prev)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-black rounded-xl transition-all border cursor-pointer ${
                 isAdvancedOpen 
-                  ? 'bg-brand-blue-500 text-white border-brand-blue-500 shadow-sm' 
+                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm' 
                   : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-305 border-slate-200/80 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900'
               }`}
             >
@@ -1621,7 +1627,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                       onClick={() => setSortOrder('asc')}
                       className={`flex-1 h-full py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         sortOrder === 'asc'
-                          ? 'bg-brand-blue-500 text-white border border-brand-blue-500 shadow-xs'
+                          ? 'bg-purple-600 text-white border border-purple-600 shadow-xs'
                           : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-350 border border-slate-200/60 dark:border-slate-800/80 hover:bg-slate-50'
                       }`}
                     >
@@ -1632,7 +1638,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                       onClick={() => setSortOrder('desc')}
                       className={`flex-1 h-full py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         sortOrder === 'desc'
-                          ? 'bg-brand-blue-500 text-white border border-brand-blue-500 shadow-xs'
+                          ? 'bg-purple-600 text-white border border-purple-600 shadow-xs'
                           : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-350 border border-slate-200/60 dark:border-slate-800/80 hover:bg-slate-50'
                       }`}
                     >
@@ -1649,7 +1655,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[10px] text-slate-450 dark:text-slate-500 font-extrabold ml-1">شروط الفرز والتصفية المطبقة حالياً:</span>
                     {vehicleFilter !== 'all' && (
-                      <span className="px-2.5 py-1 bg-brand-blue-50 dark:bg-brand-blue-950/30 text-brand-blue-600 dark:text-brand-blue-400 rounded-lg text-[9.5px] font-black flex items-center gap-1">
+                      <span className="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 rounded-lg text-[9.5px] font-black flex items-center gap-1">
                         <span>المركبة: {vehicles.find(v => v.id === vehicleFilter)?.name}</span>
                         <button type="button" onClick={() => setVehicleFilter('all')} className="hover:text-rose-500 p-0.5">×</button>
                       </span>
@@ -1739,7 +1745,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                             {getCatLabel(sched.category)}
                           </span>
                           <div>
-                            <span className="block font-black text-xs text-slate-800 dark:text-white leading-snug group-hover:text-brand-blue-600 dark:group-hover:text-[#34d399] transition-colors">{sched.title}</span>
+                            <span className="block font-black text-xs text-slate-800 dark:text-white leading-snug group-hover:text-purple-600 dark:group-hover:text-[#34d399] transition-colors">{sched.title}</span>
                             {sched.notes && <p className="text-[9.5px] text-slate-450 dark:text-slate-450 line-clamp-1 mt-0.5 max-w-[250px]" title={sched.notes}>{sched.notes}</p>}
                           </div>
                         </div>
@@ -2110,7 +2116,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                     value={formData.notes}
                     onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
                     placeholder="بيانات المواد المستخدمة، اللزوجة، الضمانات المصنعية..."
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none focus:border-brand-blue-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none focus:border-purple-500"
                   />
                 </div>
 
@@ -2255,7 +2261,7 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                     value={completionData.notes}
                     onChange={(e) => setCompletionData(p => ({ ...p, notes: e.target.value }))}
                     placeholder="اكتب مواد مستهلكة أو عيوباً تم تجاوزها أثناء فحص السلامة..."
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none focus:border-brand-blue-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none focus:border-purple-500"
                   />
                 </div>
 

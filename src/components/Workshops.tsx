@@ -600,103 +600,110 @@ export default function Workshops({ user }: { user?: User }) {
   return (
     <div className="space-y-6">
       
-      {/* Title Header with Professional KPI Stats */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#0f1422] p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-brand-blue-50 dark:bg-brand-blue-900/40 text-brand-blue-600 dark:text-brand-blue-400 rounded-xl flex items-center justify-center border border-brand-blue-100/30">
-              <Building2 size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  {t('إدارة الورش والمربعات التشغيلية')}
-                  <span className="text-[10px] font-black tracking-widest text-[#34d399] uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10 shrink-0">
-                    {t('مدير المشروع')}
-                  </span>
-                </h1>
-                <ContextualHelp 
-                  id="workshops"
-                  titleAr="منظومة إدارة الورش"
-                  titleEn="Workshops Management Console"
-                  explanationAr="لوحة تحكم فنية ترصد الطاقات الاستيعابية لمربعات العمل (ميكانيك، كهرباء، هيدروليك)، ومستوى الأجهزة والمعدات التشغيلية ومؤشرات نجاح الإصلاح من المرة الأولى."
-                  explanationEn="A workspace control panel measuring mechanic capacity, live electrical and hydraulic bay pressures, work tool reserves, and First-Time-Right (FTR) quality ratios."
-                  benefitsAr={[
-                    "تسكين وتخريج الآليات بمرونة لتقليل الاختناقات الميدانية وزمن الانتظار.",
-                    "توجيه المهام تلقائياً للورش المتخصصة بالأعطال الإنشائية أو الكهربائية.",
-                    "رصد مؤشرات الكفاءة ومعايير جودة عمل طاقم الصيانة."
-                  ]}
-                  benefitsEn={[
-                    "Allows fast allocation and checkout procedures to prevent bay choke points.",
-                    "Guides incoming mechanical versus electrical defects to their targeted specialty lines automatically.",
-                    "Tracks turnaround velocity and overall bay utilization percentages."
-                  ]}
-                  tipsAr={[
-                    "استخدم ميزة 'تسكين مركبة بالورشة' للبدء في حجز مربع صيانة شاغر وإسناده إلى فني مختص فوريّاً."
-                  ]}
-                  tipsEn={[
-                    "Check the live heatmap below for low workload bays to efficiently route emergency vehicle repairs."
-                  ]}
-                  language={language}
-                />
+      {/* Title Header with Elegant Purple Gradient */}
+      <div className="relative p-6 md:p-8 bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-950 rounded-3xl text-white shadow-2xl border border-purple-800/35 overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] -ml-20 -mb-20"></div>
+
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-2.5">
+              <div className="w-12 h-12 bg-purple-500/15 border border-purple-500/20 text-purple-300 rounded-xl flex items-center justify-center shrink-0 shadow-inner">
+                <Building2 size={24} className="animate-pulse text-purple-300 shrink-0" />
               </div>
-              <p className="text-xs text-slate-550 dark:text-slate-400 mt-1 text-right">{t('تتبع توزيع الأصول، الطاقات الاستيعابية، كفاءة الرافعات والعدد الفنية المتخصصة داخل المجمّع العام لميكانيك 360.')}</p>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
+                    {t('إدارة الورش والمربعات التشغيلية')}
+                    <span className="text-[10px] font-black tracking-widest text-purple-300 uppercase bg-purple-500/25 px-2 py-0.5 rounded-full border border-purple-500/20 shrink-0">
+                      {t('مدير المشروع')}
+                    </span>
+                  </h1>
+                  <ContextualHelp 
+                    id="workshops"
+                    titleAr="منظومة إدارة الورش"
+                    titleEn="Workshops Management Console"
+                    explanationAr="لوحة تحكم فنية ترصد الطاقات الاستيعابية لمربعات العمل (ميكانيك، كهرباء، هيدروليك)، ومستوى الأجهزة والمعدات التشغيلية ومؤشرات نجاح الإصلاح من المرة الأولى."
+                    explanationEn="A workspace control panel measuring mechanic capacity, live electrical and hydraulic bay pressures, work tool reserves, and First-Time-Right (FTR) quality ratios."
+                    benefitsAr={[
+                      "تسكين وتخريج الآليات بمرونة لتقليل الاختناقات الميدانية وزمن الانتظار.",
+                      "توجيه المهام تلقائياً للورش المتخصصة بالأعطال الإنشائية أو الكهربائية.",
+                      "رصد مؤشرات الكفاءة ومعايير جودة عمل طاقم الصيانة."
+                    ]}
+                    benefitsEn={[
+                      "Allows fast allocation and checkout procedures to prevent bay choke points.",
+                      "Guides incoming mechanical versus electrical defects to their targeted specialty lines automatically.",
+                      "Tracks turnaround velocity and overall bay utilization percentages."
+                    ]}
+                    tipsAr={[
+                      "استخدم ميزة 'تسكين مركبة بالورشة' للبدء في حجز مربع صيانة شاغر وإسناده إلى فني مختص فوريّاً."
+                    ]}
+                    tipsEn={[
+                      "Check the live heatmap below for low workload bays to efficiently route emergency vehicle repairs."
+                    ]}
+                    language={language}
+                  />
+                </div>
+                <p className="text-xs text-purple-200/70 mt-1 text-right">{t('تتبع توزيع الأصول، الطاقات الاستيعابية، كفاءة الرافعات والعدد الفنية المتخصصة داخل المجمّع العام لميكانيك 360.')}</p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* PM Quick Actions */}
-        <div className="flex items-center gap-2.5 self-end md:self-center">
-          <button
-            onClick={() => {
-              setShowDiagnostics(prev => !prev);
-              if (!showDiagnostics) {
-                runIntegrityDiagnostic();
-              }
-            }}
-            className={`px-4 py-2.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border ${
-              showDiagnostics 
-                ? 'bg-indigo-500/10 border-indigo-500 text-indigo-600 dark:text-indigo-400' 
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-transparent text-slate-700 dark:text-slate-200'
-            }`}
-            title="فحص وتصحيح بيانات إشغال الورش تلقائياً"
-          >
-            <ShieldCheck size={14} className={showDiagnostics ? "text-indigo-500 animate-pulse" : "text-slate-500"} />
-            <span>{t('تشخيص سلامة المسارات')}</span>
-          </button>
-
-          <button
-            onClick={() => setSortByLoad(prev => !prev)}
-            className={`px-4 py-2.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border ${
-              sortByLoad 
-                ? 'bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400' 
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-transparent text-slate-700 dark:text-slate-200'
-            }`}
-            title="فرز تنازلي حسب نسبة إشغال الورش"
-          >
-            <RefreshCw size={14} className={sortByLoad ? "animate-spin text-amber-500" : "text-slate-500"} />
-            <span>{t('الترتيب التلقائي حسب نسبة الإشغال')}</span>
-          </button>
-
-          {user?.role !== 'viewer' && (
-            <button
-              onClick={() => setIsAllocateModalOpen(true)}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <Activity size={14} className="text-brand-blue-500" />
-              <span>{t('تسكين مركبة بالورشة')}</span>
-            </button>
-          )}
           
-          {user?.role === 'admin' && (
+          {/* PM Quick Actions */}
+          <div className="w-full lg:w-auto grid grid-cols-2 sm:flex sm:flex-wrap items-stretch lg:items-center gap-2 sm:gap-2.5 shrink-0 justify-items-stretch lg:justify-end">
             <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="px-4 py-2.5 bg-brand-blue-600 hover:bg-brand-blue-700 text-white text-xs font-black rounded-xl shadow-lg shadow-brand-blue-500/15 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+              onClick={() => {
+                setShowDiagnostics(prev => !prev);
+                if (!showDiagnostics) {
+                  runIntegrityDiagnostic();
+                }
+              }}
+              className={`w-full sm:w-auto px-3 sm:px-4 py-2.5 text-[10.5px] sm:text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                showDiagnostics 
+                  ? 'bg-purple-500/20 border-purple-400 text-purple-200 shadow-lg shadow-purple-500/10' 
+                  : 'bg-white/10 hover:bg-white/15 text-white border-white/10 hover:border-white/20'
+              }`}
+              title="فحص وتصحيح بيانات إشغال الورش تلقائياً"
             >
-              <Plus size={14} />
-              <span>{t('تأسيس ورشة جديدة')}</span>
+              <ShieldCheck size={14} className={showDiagnostics ? "text-purple-300 animate-pulse shrink-0" : "text-white/80 shrink-0"} />
+              <span className="whitespace-nowrap">{t('تشخيص سلامة المسارات')}</span>
             </button>
-          )}
+
+            <button
+              onClick={() => setSortByLoad(prev => !prev)}
+              className={`w-full sm:w-auto px-3 sm:px-4 py-2.5 text-[10.5px] sm:text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                sortByLoad 
+                  ? 'bg-amber-500/20 border-amber-400 text-amber-200 shadow-lg shadow-amber-500/10' 
+                  : 'bg-white/10 hover:bg-white/15 text-white border-white/10 hover:border-white/20'
+              }`}
+              title="فرز تنازلي حسب نسبة إشغال الورش"
+            >
+              <RefreshCw size={14} className={sortByLoad ? "animate-spin text-amber-400 shrink-0" : "text-white/80 shrink-0"} />
+              <span className="whitespace-nowrap">{t('الترتيب التلقائي')}</span>
+            </button>
+
+            {user?.role !== 'viewer' && (
+              <button
+                onClick={() => setIsAllocateModalOpen(true)}
+                className={`w-full sm:w-auto px-3 sm:px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/10 hover:border-white/20 text-[10.5px] sm:text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  user?.role !== 'admin' ? 'col-span-2' : ''
+                }`}
+              >
+                <Activity size={14} className="text-purple-300 shrink-0" />
+                <span className="whitespace-nowrap">{t('تسكين مركبة بالورشة')}</span>
+              </button>
+            )}
+            
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="w-full sm:w-auto px-3 sm:px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white border border-purple-400/20 text-[10.5px] sm:text-xs font-black rounded-xl shadow-lg shadow-purple-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Plus size={14} className="shrink-0" />
+                <span className="whitespace-nowrap">{t('تأسيس ورشة جديدة')}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

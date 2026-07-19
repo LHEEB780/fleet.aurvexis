@@ -84,3 +84,30 @@ class SafeStorage implements Storage {
 
 export const safeLocalStorage = new SafeStorage('localStorage');
 export const safeSessionStorage = new SafeStorage('sessionStorage');
+
+/**
+ * Safely parses JSON from safeLocalStorage, falling back to a default value on error or absence.
+ */
+export function getStorageJson<T>(key: string, fallback: T): T {
+  try {
+    const val = safeLocalStorage.getItem(key);
+    if (val) {
+      return JSON.parse(val) as T;
+    }
+  } catch (e) {
+    console.warn(`[SafeStorage] Error parsing key "${key}":`, e);
+  }
+  return fallback;
+}
+
+/**
+ * Safely stringifies and saves JSON value into safeLocalStorage.
+ */
+export function setStorageJson<T>(key: string, value: T): void {
+  try {
+    safeLocalStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.warn(`[SafeStorage] Error saving key "${key}":`, e);
+  }
+}
+

@@ -285,17 +285,17 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
     <div className="space-y-6" id="system-settings-modularity-container">
       
       {/* Dynamic Brand Color Customization Section */}
-      <div className={`p-5 bg-white dark:bg-[#0c101d] rounded-3xl border border-slate-150 dark:border-slate-800/80 shadow-3xs space-y-4 ${isRtl ? 'text-right' : 'text-left'}`}>
+      <div className={`p-5 bg-gradient-to-br from-violet-500/5 via-indigo-500/5 to-purple-500/5 dark:from-[#171330] dark:via-[#131124] dark:to-[#171330] rounded-3xl border border-violet-500/20 dark:border-violet-500/40 shadow-3xs space-y-4 ${isRtl ? 'text-right' : 'text-left'}`}>
         <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isRtl ? 'sm:flex-row-reverse' : ''}`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-brand-blue-500/10 text-brand-blue-500 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
               <Palette size={20} />
             </div>
             <div>
               <h3 className="text-sm font-black text-slate-850 dark:text-white">
                 {isRtl ? 'تخصيص لون الهوية البصرية (العلامة التجارية)' : 'Visual Brand Identity Customization'}
               </h3>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-slate-450 dark:text-slate-400">
                 {isRtl ? 'اختر لون الهوية الأساسي للمنصة ليتم تطبيقه على كافة الأزرار، القوائم، والمؤشرات البصرية فوراً.' : 'Select the primary brand color to instantly customize the interface buttons, menus, and visual highlights.'}
               </p>
             </div>
@@ -361,13 +361,13 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* Footprint / Active counter card */}
-        <div className={`p-4 bg-white dark:bg-[#0c101d] rounded-2xl border border-slate-100 dark:border-slate-800/80 flex items-center justify-between ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
+        <div className={`p-4 bg-white dark:bg-[#0c101d] rounded-2xl border border-slate-150 dark:border-slate-800/80 flex items-center justify-between ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
           <div className="space-y-1">
             <span className="text-[10px] text-slate-400 block font-black uppercase tracking-widest">
               {isRtl ? 'الموديولات النشطة حالياً' : 'Active System Modules'}
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-black text-violet-600 dark:text-violet-400">
+              <span className="text-2xl font-black bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-transparent">
                 {activeConfigurableCount}
               </span>
               <span className="text-xs text-slate-400 font-bold">
@@ -378,8 +378,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
               {isRtl ? 'تم تخصيص الواجهة وتقليص قائمة التنقل' : 'Control sidebar links length in real-time'}
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0">
-            <Cpu size={22} className="animate-pulse" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/10 text-violet-500 flex items-center justify-center shrink-0 shadow-xs">
+            <Cpu size={22} className="animate-pulse text-violet-500" />
           </div>
         </div>
 
@@ -561,7 +561,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
                 onClick={() => setSelectedGroup(group.id)}
                 className={`px-3 py-2 text-[9.5px] font-black rounded-xl cursor-pointer border transition-all shrink-0 ${
                   selectedGroup === group.id
-                    ? 'bg-violet-600 text-white border-violet-600 shadow-3xs'
+                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-600 shadow-md shadow-violet-500/20'
                     : 'bg-white dark:bg-slate-900 border-slate-150 dark:border-slate-800 text-slate-550 dark:text-slate-450 hover:bg-slate-50'
                 }`}
               >
@@ -604,7 +604,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
                       {/* Interactive Visual Icon box */}
                       <div className={`p-3 rounded-2xl shrink-0 transition-all ${
                         isEnabled 
-                          ? 'bg-violet-500/10 text-violet-500' 
+                          ? 'bg-gradient-to-br from-violet-500/20 to-purple-500/5 text-violet-600 dark:text-violet-400' 
                           : 'bg-slate-100 dark:bg-slate-800/80 text-slate-400'
                       }`}>
                         {info?.icon || item.icon}
@@ -622,7 +622,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
                           {info && (
                             <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 ${
                               isEnabled 
-                                ? 'bg-violet-500/10 text-violet-600' 
+                                ? 'bg-gradient-to-br from-violet-500/15 to-purple-500/5 text-violet-700 dark:text-violet-300' 
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-450'
                             }`}>
                               {isRtl ? info.arCategory : info.enCategory}
@@ -650,7 +650,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
 
                     {/* Standard IOS-Style Toggle Switch on the trailing side */}
                     <div className={`w-9 h-5 rounded-full relative transition-colors border-0 shrink-0 mt-1 cursor-pointer ${
-                      isEnabled ? 'bg-violet-500' : 'bg-slate-200 dark:bg-slate-850'
+                      isEnabled ? 'bg-gradient-to-r from-violet-500 to-indigo-600' : 'bg-slate-200 dark:bg-slate-850'
                     }`}>
                       <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${
                         isEnabled 

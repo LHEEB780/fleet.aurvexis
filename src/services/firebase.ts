@@ -13,6 +13,7 @@ import {
   setLogLevel
 } from 'firebase/firestore';
 import firebaseConfig from './firebaseConfig';
+import { safeLocalStorage, getStorageJson, setStorageJson } from './safeStorage';
 
 // Silence Firestore internal network warnings (e.g., connection failures in offline/emulation mode)
 try {
@@ -148,6 +149,41 @@ export async function deleteDocument(colName: string, docId: string): Promise<vo
   }
 }
 
+// Centralized configurations for data synchronization to avoid duplicated block handlers
+interface SyncConfig {
+  collectionName: string;
+  storageKeys: string[];
+  getLabel: (item: any) => string;
+}
+
+const SYNC_CONFIGS: SyncConfig[] = [
+  {
+    collectionName: 'vehicles',
+    storageKeys: ['fleet_vehicles_v3', 'fleet_vehicles_v2'],
+    getLabel: (item: any) => item.plateNumber || item.name || item.model || item.id
+  },
+  {
+    collectionName: 'maintenance_orders',
+    storageKeys: ['fleet_maintenance_orders_v2'],
+    getLabel: (item: any) => item.type ? `${item.type} (${item.id})` : item.id
+  },
+  {
+    collectionName: 'technicians',
+    storageKeys: ['fleet_technicians_v2'],
+    getLabel: (item: any) => item.name || item.id
+  },
+  {
+    collectionName: 'inventory',
+    storageKeys: ['fleet_inventory_v2'],
+    getLabel: (item: any) => item.name ? `${item.name} (${item.id})` : item.id
+  },
+  {
+    collectionName: 'safety_inspections',
+    storageKeys: ['fleet_safety_inspections'],
+    getLabel: (item: any) => item.inspectorName ? `${item.inspectorName} (${item.id})` : item.id
+  }
+];
+
 // Bulk Upload (Local Storage -> Cloud Firestore)
 export async function pushLocalDataToCloud(): Promise<{ success: boolean; count: number }> {
   if (!db) {
@@ -156,68 +192,29 @@ export async function pushLocalDataToCloud(): Promise<{ success: boolean; count:
   }
   let count = 0;
   try {
-    // 1. Vehicles
-    const vehiclesStr = localStorage.getItem('fleet_vehicles_v3') || localStorage.getItem('fleet_vehicles_v2');
-    if (vehiclesStr) {
-      const vehicles = JSON.parse(vehiclesStr);
-      if (Array.isArray(vehicles)) {
-        for (const v of vehicles) {
-          if (v.id) {
-            await saveDocument('vehicles', v.id, v);
-            count++;
-          }
+    // Process regular fleet collections
+    for (const config of SYNC_CONFIGS) {
+      let items: any[] = [];
+      for (const key of config.storageKeys) {
+        items = getStorageJson<any[]>(key, []);
+        if (items.length > 0) break;
+      }
+      
+      for (const item of items) {
+        if (item.id) {
+          await saveDocument(config.collectionName, item.id, item);
+          count++;
         }
       }
     }
 
-    // 2. Orders
-    const ordersStr = localStorage.getItem('fleet_maintenance_orders_v2');
-    if (ordersStr) {
-      const orders = JSON.parse(ordersStr);
-      if (Array.isArray(orders)) {
-        for (const o of orders) {
-          if (o.id) {
-            await saveDocument('maintenance_orders', o.id, o);
-            count++;
-          }
-        }
-      }
-    }
-
-    // 3. Technicians
-    const techsStr = localStorage.getItem('fleet_technicians_v2');
-    if (techsStr) {
-      const techs = JSON.parse(techsStr);
-      if (Array.isArray(techs)) {
-        for (const t of techs) {
-          if (t.id) {
-            await saveDocument('technicians', t.id, t);
-            count++;
-          }
-        }
-      }
-    }
-
-    // 4. Inventory
-    const invStr = localStorage.getItem('fleet_inventory_v2');
-    if (invStr) {
-      const items = JSON.parse(invStr);
-      if (Array.isArray(items)) {
-        for (const item of items) {
-          if (item.id) {
-            await saveDocument('inventory', item.id, item);
-            count++;
-          }
-        }
-      }
-    }
-
-    // 5. App-wide generic white-label settings
-    const brandName = localStorage.getItem('saas_brand_name') || '';
-    const brandDesc = localStorage.getItem('saas_brand_desc') || '';
-    const brandLogo = localStorage.getItem('saas_brand_logo') || '';
-    const brandColor = localStorage.getItem('saas_brand_color') || 'blue';
-    const brandPrimaryColor = localStorage.getItem('saas_brand_primary_color') || '#6d28d9';
+    // Process app-wide branding settings
+    const brandName = safeLocalStorage.getItem('saas_brand_name') || '';
+    const brandDesc = safeLocalStorage.getItem('saas_brand_desc') || '';
+    const brandLogo = safeLocalStorage.getItem('saas_brand_logo') || '';
+    const brandColor = safeLocalStorage.getItem('saas_brand_color') || 'blue';
+    const brandPrimaryColor = safeLocalStorage.getItem('saas_brand_primary_color') || '#6d28d9';
+    
     await saveDocument('settings', 'branding', {
       name: brandName,
       description: brandDesc,
@@ -227,20 +224,6 @@ export async function pushLocalDataToCloud(): Promise<{ success: boolean; count:
       updatedAt: new Date().toISOString()
     });
     count++;
-
-    // 6. Safety Inspections
-    const inspectionsStr = localStorage.getItem('fleet_safety_inspections');
-    if (inspectionsStr) {
-      const inspections = JSON.parse(inspectionsStr);
-      if (Array.isArray(inspections)) {
-        for (const insp of inspections) {
-          if (insp.id) {
-            await saveDocument('safety_inspections', insp.id, insp);
-            count++;
-          }
-        }
-      }
-    }
 
     return { success: true, count };
   } catch (error) {
@@ -257,76 +240,36 @@ export async function pullCloudDataToLocal(): Promise<{ success: boolean; count:
   }
   let count = 0;
   try {
-    // 1. Download Vehicles
-    const vehiclesSnap = await getDocs(collection(db, 'vehicles'));
-    const vehiclesList: any[] = [];
-    vehiclesSnap.forEach((d) => {
-      vehiclesList.push(d.data());
-      count++;
-    });
-    if (vehiclesList.length > 0) {
-      localStorage.setItem('fleet_vehicles_v3', JSON.stringify(vehiclesList));
-      localStorage.setItem('fleet_vehicles_v2', JSON.stringify(vehiclesList));
+    // Process regular fleet collections
+    for (const config of SYNC_CONFIGS) {
+      try {
+        const snap = await getDocs(collection(db, config.collectionName));
+        const list: any[] = [];
+        snap.forEach((doc) => {
+          list.push(doc.data());
+          count++;
+        });
+        
+        if (list.length > 0) {
+          for (const key of config.storageKeys) {
+            setStorageJson(key, list);
+          }
+        }
+      } catch (e) {
+        console.warn(`Could not download collection "${config.collectionName}", fallback to local storage`, e);
+      }
     }
 
-    // 2. Download Orders
-    const ordersSnap = await getDocs(collection(db, 'maintenance_orders'));
-    const ordersList: any[] = [];
-    ordersSnap.forEach((d) => {
-      ordersList.push(d.data());
-      count++;
-    });
-    if (ordersList.length > 0) {
-      localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(ordersList));
-    }
-
-    // 3. Download Technicians
-    const techsSnap = await getDocs(collection(db, 'technicians'));
-    const techsList: any[] = [];
-    techsSnap.forEach((d) => {
-      techsList.push(d.data());
-      count++;
-    });
-    if (techsList.length > 0) {
-      localStorage.setItem('fleet_technicians_v2', JSON.stringify(techsList));
-    }
-
-    // 4. Download Inventory
-    const invSnap = await getDocs(collection(db, 'inventory'));
-    const invList: any[] = [];
-    invSnap.forEach((d) => {
-      invList.push(d.data());
-      count++;
-    });
-    if (invList.length > 0) {
-      localStorage.setItem('fleet_inventory_v2', JSON.stringify(invList));
-    }
-
-    // 5. Download Custom Branding settings
+    // Download custom branding settings
     const brandingDoc = await getDoc(doc(db, 'settings', 'branding'));
     if (brandingDoc.exists()) {
       const bData = brandingDoc.data();
-      if (bData.name) localStorage.setItem('saas_brand_name', bData.name);
-      if (bData.description) localStorage.setItem('saas_brand_desc', bData.description);
-      if (bData.logo) localStorage.setItem('saas_brand_logo', bData.logo);
-      if (bData.color) localStorage.setItem('saas_brand_color', bData.color);
-      if (bData.primaryColor) localStorage.setItem('saas_brand_primary_color', bData.primaryColor);
+      if (bData.name) safeLocalStorage.setItem('saas_brand_name', bData.name);
+      if (bData.description) safeLocalStorage.setItem('saas_brand_desc', bData.description);
+      if (bData.logo) safeLocalStorage.setItem('saas_brand_logo', bData.logo);
+      if (bData.color) safeLocalStorage.setItem('saas_brand_color', bData.color);
+      if (bData.primaryColor) safeLocalStorage.setItem('saas_brand_primary_color', bData.primaryColor);
       count++;
-    }
-
-    // 6. Download Safety Inspections
-    try {
-      const inspectionsSnap = await getDocs(collection(db, 'safety_inspections'));
-      const inspectionsList: any[] = [];
-      inspectionsSnap.forEach((d) => {
-        inspectionsList.push(d.data());
-        count++;
-      });
-      if (inspectionsList.length > 0) {
-        localStorage.setItem('fleet_safety_inspections', JSON.stringify(inspectionsList));
-      }
-    } catch (e) {
-      console.warn("Could not download safety inspections, fallback to local storage", e);
     }
 
     // Trigger window storage event to refresh React state
@@ -368,120 +311,36 @@ export async function getSyncConflicts(): Promise<ConflictItem[]> {
   if (!db) return conflicts;
 
   try {
-    // 1. Vehicles
-    const localVehiclesStr = localStorage.getItem('fleet_vehicles_v3') || localStorage.getItem('fleet_vehicles_v2') || '[]';
-    const localVehicles = JSON.parse(localVehiclesStr);
-    const vehiclesSnap = await getDocs(collection(db, 'vehicles'));
-    const cloudVehicles: Record<string, any> = {};
-    vehiclesSnap.forEach(d => { cloudVehicles[d.id] = d.data(); });
-
-    localVehicles.forEach((lv: any) => {
-      if (lv.id && cloudVehicles[lv.id]) {
-        const cv = cloudVehicles[lv.id];
-        if (!deepEqual(lv, cv)) {
-          conflicts.push({
-            id: lv.id,
-            collection: 'vehicles',
-            localData: lv,
-            cloudData: cv,
-            label: lv.plateNumber || lv.name || lv.model || lv.id
-          });
+    for (const config of SYNC_CONFIGS) {
+      try {
+        let localItems: any[] = [];
+        for (const key of config.storageKeys) {
+          localItems = getStorageJson<any[]>(key, []);
+          if (localItems.length > 0) break;
         }
+
+        const snap = await getDocs(collection(db, config.collectionName));
+        const cloudMap: Record<string, any> = {};
+        snap.forEach(d => { cloudMap[d.id] = d.data(); });
+
+        localItems.forEach((item: any) => {
+          if (item.id && cloudMap[item.id]) {
+            const cloudItem = cloudMap[item.id];
+            if (!deepEqual(item, cloudItem)) {
+              conflicts.push({
+                id: item.id,
+                collection: config.collectionName,
+                localData: item,
+                cloudData: cloudItem,
+                label: config.getLabel(item)
+              });
+            }
+          }
+        });
+      } catch (err) {
+        console.warn(`Error scanning conflicts for collection "${config.collectionName}":`, err);
       }
-    });
-
-    // 2. Orders
-    const localOrdersStr = localStorage.getItem('fleet_maintenance_orders_v2') || '[]';
-    const localOrders = JSON.parse(localOrdersStr);
-    const ordersSnap = await getDocs(collection(db, 'maintenance_orders'));
-    const cloudOrders: Record<string, any> = {};
-    ordersSnap.forEach(d => { cloudOrders[d.id] = d.data(); });
-
-    localOrders.forEach((lo: any) => {
-      if (lo.id && cloudOrders[lo.id]) {
-        const co = cloudOrders[lo.id];
-        if (!deepEqual(lo, co)) {
-          conflicts.push({
-            id: lo.id,
-            collection: 'maintenance_orders',
-            localData: lo,
-            cloudData: co,
-            label: lo.type ? `${lo.type} (${lo.id})` : lo.id
-          });
-        }
-      }
-    });
-
-    // 3. Technicians
-    const localTechsStr = localStorage.getItem('fleet_technicians_v2') || '[]';
-    const localTechs = JSON.parse(localTechsStr);
-    const techsSnap = await getDocs(collection(db, 'technicians'));
-    const cloudTechs: Record<string, any> = {};
-    techsSnap.forEach(d => { cloudTechs[d.id] = d.data(); });
-
-    localTechs.forEach((lt: any) => {
-      if (lt.id && cloudTechs[lt.id]) {
-        const ct = cloudTechs[lt.id];
-        if (!deepEqual(lt, ct)) {
-          conflicts.push({
-            id: lt.id,
-            collection: 'technicians',
-            localData: lt,
-            cloudData: ct,
-            label: lt.name || lt.id
-          });
-        }
-      }
-    });
-
-    // 4. Inventory
-    const localInvStr = localStorage.getItem('fleet_inventory_v2') || '[]';
-    const localInv = JSON.parse(localInvStr);
-    const invSnap = await getDocs(collection(db, 'inventory'));
-    const cloudInv: Record<string, any> = {};
-    invSnap.forEach(d => { cloudInv[d.id] = d.data(); });
-
-    localInv.forEach((li: any) => {
-      if (li.id && cloudInv[li.id]) {
-        const ci = cloudInv[li.id];
-        if (!deepEqual(li, ci)) {
-          conflicts.push({
-            id: li.id,
-            collection: 'inventory',
-            localData: li,
-            cloudData: ci,
-            label: li.name ? `${li.name} (${li.id})` : li.id
-          });
-        }
-      }
-    });
-
-    // 5. Safety Inspections
-    const localInspectionsStr = localStorage.getItem('fleet_safety_inspections') || '[]';
-    const localInspections = JSON.parse(localInspectionsStr);
-    let cloudInspections: Record<string, any> = {};
-    try {
-      const inspectionsSnap = await getDocs(collection(db, 'safety_inspections'));
-      inspectionsSnap.forEach(d => { cloudInspections[d.id] = d.data(); });
-    } catch (err) {
-      console.warn("Could not load safety inspections from Cloud:", err);
     }
-
-    localInspections.forEach((li: any) => {
-      if (li.id && cloudInspections[li.id]) {
-        const ci = cloudInspections[li.id];
-        if (!deepEqual(li, ci)) {
-          conflicts.push({
-            id: li.id,
-            collection: 'safety_inspections',
-            localData: li,
-            cloudData: ci,
-            label: li.inspectorName ? `${li.inspectorName} (${li.id})` : li.id
-          });
-        }
-      }
-    });
-
   } catch (error) {
     console.error("Error detecting conflicts", error);
   }
@@ -494,27 +353,14 @@ export async function resolveConflictKeepLocal(conflict: ConflictItem): Promise<
 }
 
 export function resolveConflictKeepCloud(conflict: ConflictItem) {
-  const collectionToStorageKey: Record<string, string[]> = {
-    'vehicles': ['fleet_vehicles_v3', 'fleet_vehicles_v2'],
-    'maintenance_orders': ['fleet_maintenance_orders_v2'],
-    'technicians': ['fleet_technicians_v2'],
-    'inventory': ['fleet_inventory_v2'],
-    'safety_inspections': ['fleet_safety_inspections']
-  };
-
-  const keys = collectionToStorageKey[conflict.collection];
-  if (keys) {
-    for (const key of keys) {
-      const localStr = localStorage.getItem(key);
-      if (localStr) {
-        const list = JSON.parse(localStr);
-        if (Array.isArray(list)) {
-          const idx = list.findIndex((item: any) => item.id === conflict.id);
-          if (idx > -1) {
-            list[idx] = conflict.cloudData;
-            localStorage.setItem(key, JSON.stringify(list));
-          }
-        }
+  const config = SYNC_CONFIGS.find(c => c.collectionName === conflict.collection);
+  if (config) {
+    for (const key of config.storageKeys) {
+      const list = getStorageJson<any[]>(key, []);
+      const idx = list.findIndex((item: any) => item.id === conflict.id);
+      if (idx > -1) {
+        list[idx] = conflict.cloudData;
+        setStorageJson(key, list);
       }
     }
   }

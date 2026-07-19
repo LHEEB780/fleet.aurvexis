@@ -1826,7 +1826,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                   <button
                                     onClick={() => toggleAgentActive(agent.id)}
                                     className={`relative w-9.5 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-hidden cursor-pointer ${
-                                      isAct ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                                      isAct ? 'bg-gradient-to-r from-purple-600 to-indigo-500' : 'bg-slate-300 dark:bg-slate-700'
                                     }`}
                                     title={isAct 
                                       ? (language === 'ar' ? 'إيقاف الوكيل' : 'Stop Agent') 
@@ -2600,7 +2600,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                   <button
                                     onClick={() => toggleAgentActive(agent.id)}
                                     className={`relative w-9.5 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-hidden cursor-pointer ${
-                                      isAct ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                                      isAct ? 'bg-gradient-to-r from-purple-600 to-indigo-500' : 'bg-slate-300 dark:bg-slate-700'
                                     }`}
                                     title={isAct 
                                       ? (language === 'ar' ? 'إيقاف الوكيل' : 'Stop Agent') 

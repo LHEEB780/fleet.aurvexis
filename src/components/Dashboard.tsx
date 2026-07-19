@@ -3160,7 +3160,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                                   <button
                                                     type="button"
                                                     onClick={() => handlePauseTimer()}
-                                                    className="py-1 px-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                                    className="py-1 px-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none shadow-sm shadow-violet-500/10"
                                                   >
                                                     <Pause size={11} />
                                                     <span>{language === 'ar' ? 'إيقاف مؤقت' : 'Pause'}</span>
@@ -3169,7 +3169,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                                   <button
                                                     type="button"
                                                     onClick={() => handleStartTimer(order.id, order.actualWorkTime || 0)}
-                                                    className="py-1 px-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                                    className="py-1 px-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none shadow-sm shadow-purple-500/10"
                                                   >
                                                     <Play size={11} fill="currentColor" />
                                                     <span>{language === 'ar' ? 'ابدأ العمل' : 'Start/Resume'}</span>
@@ -3813,7 +3813,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                       <button
                                         type="button"
                                         onClick={() => handlePauseTimer()}
-                                        className="py-1 px-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                        className="py-1 px-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none shadow-sm shadow-violet-500/10"
                                       >
                                         <Pause size={11} />
                                         <span>{language === 'ar' ? 'إيقاف مؤقت' : 'Pause'}</span>
@@ -3822,7 +3822,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                       <button
                                         type="button"
                                         onClick={() => handleStartTimer(order.id, order.actualWorkTime || 0)}
-                                        className="py-1 px-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none"
+                                        className="py-1 px-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-[9.5px] rounded-lg transition-all flex items-center gap-1 cursor-pointer select-none shadow-sm shadow-purple-500/10"
                                       >
                                         <Play size={11} fill="currentColor" />
                                         <span>{language === 'ar' ? 'ابدأ العمل' : 'Start/Resume'}</span>

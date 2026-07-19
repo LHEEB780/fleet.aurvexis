@@ -334,7 +334,7 @@ export default function SaasBilling({ user }: { user?: User }) {
       {/* Verification Loader overlay */}
       {verificationLoading && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-50 flex flex-col items-center justify-center text-white font-sans gap-4">
-          <RefreshCw className="animate-spin text-brand-blue-400" size={36} />
+          <RefreshCw className="animate-spin text-purple-400" size={36} />
           <div className="text-center space-y-1">
             <h3 className="text-sm font-black">جاري الاستعلام عن بيانات الدفع الآمنة...</h3>
             <p className="text-[11px] text-slate-300">نقوم الآن بالتحقق من الرموز المشفرة عبر خوادم Stripe الموثقة.</p>
@@ -383,9 +383,11 @@ export default function SaasBilling({ user }: { user?: User }) {
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{language === 'ar' ? 'إدارة الاشتراك واستغلال سعة باقة الـ SaaS' : 'Subscription & SaaS Billing Panel'}</span>
-              <span className="text-[10px] bg-brand-blue-500/10 text-brand-blue-600 dark:text-[#38bdf8] px-2 py-0.5 rounded-full font-black border border-brand-blue-500/15 shrink-0">
-                {language === 'ar' ? 'بوابة الفوترة الفعالة' : 'Billing Gateway'}
+              <span className="bg-gradient-to-r from-violet-650 via-indigo-600 to-purple-650 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                {language === 'ar' ? 'إدارة الاشتراك والفوترة الموحدة' : 'Subscription & SaaS Billing Panel'}
+              </span>
+              <span className="text-[10px] bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full font-black border border-violet-500/15 shrink-0 animate-pulse">
+                {language === 'ar' ? 'بوابة الفوترة والاشتراكات' : 'Billing Gateway'}
               </span>
             </h1>
             <ContextualHelp 
@@ -419,27 +421,27 @@ export default function SaasBilling({ user }: { user?: User }) {
         </div>
 
         {/* Billing Plan toggler */}
-        <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-xl max-w-xs self-start shrink-0 select-none">
-          <button
-            onClick={() => setBillingCycle('monthly')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
-              billingCycle === 'monthly'
-                ? 'bg-brand-blue-500 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            دفع شهري 🗓️
-          </button>
+        <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-[#0f1422] border border-slate-150 dark:border-slate-800 rounded-xl max-w-xs self-start shrink-0 select-none shadow-xs">
           <button
             onClick={() => setBillingCycle('yearly')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
               billingCycle === 'yearly'
-                ? 'bg-brand-blue-500 text-white shadow-xs'
+                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white shadow-md shadow-violet-500/20'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <span>دفع سنوي 🎉</span>
             <span className="bg-emerald-500 text-white text-[8.5px] px-1 py-0.1 rounded font-black">وفر 20%</span>
+          </button>
+          <button
+            onClick={() => setBillingCycle('monthly')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+              billingCycle === 'monthly'
+                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white shadow-md shadow-violet-500/20'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            دفع شهري 🗓️
           </button>
         </div>
       </div>
@@ -448,15 +450,15 @@ export default function SaasBilling({ user }: { user?: User }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans">
         
         {/* Current active plan Summary Card */}
-        <div className="lg:col-span-1 bg-gradient-to-br from-indigo-950 to-slate-900 text-white rounded-3xl p-6 border border-indigo-900/60 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[320px]">
+        <div className="lg:col-span-1 bg-gradient-to-br from-violet-950 via-indigo-950 to-purple-950 text-white rounded-3xl p-6 border border-violet-500/40 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[320px]">
           {/* Decorative shapes */}
-          <div className="absolute top-0 left-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -translate-x-10 -translate-y-10" />
-          <div className="absolute bottom-0 right-0 w-44 h-44 bg-blue-500/10 rounded-full blur-3xl translate-x-12 translate-y-12" />
+          <div className="absolute top-0 left-0 w-32 h-32 bg-violet-500/20 rounded-full blur-2xl -translate-x-10 -translate-y-10" />
+          <div className="absolute bottom-0 right-0 w-44 h-44 bg-indigo-500/20 rounded-full blur-3xl translate-x-12 translate-y-12" />
 
           <div className="space-y-4 relative z-10">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest bg-indigo-505/20 text-indigo-200 border border-indigo-500/30 px-2.5 py-0.5 rounded-full">
-                باص المجمع الفعال
+              <span className="text-[10px] font-black uppercase tracking-widest bg-violet-500/30 text-violet-200 border border-violet-500/40 px-2.5 py-0.5 rounded-full">
+                {language === 'ar' ? 'باص المجمع الفعال' : 'Active Fleet Pass'}
               </span>
               <Crown className="text-yellow-400 animate-bounce" size={24} />
             </div>
@@ -465,7 +467,7 @@ export default function SaasBilling({ user }: { user?: User }) {
               <h2 className="text-2xl font-black">
                 {activePlan === 'basic' ? 'الباقة الأساسية' : activePlan === 'pro' ? 'الباقة المتقدمة' : 'باقة المؤسسات الضخمة'}
               </h2>
-              <p className="text-xs text-indigo-200/80">المستوى المشترك به لمؤسستك حالياً</p>
+              <p className="text-xs text-purple-200/80">المستوى المشترك به لمؤسستك حالياً</p>
             </div>
 
             {/* Price indicator */}
@@ -473,18 +475,18 @@ export default function SaasBilling({ user }: { user?: User }) {
               <span className="text-4xl font-extrabold font-mono tracking-tight">
                 ${activePlan === 'basic' ? (billingCycle === 'yearly' ? 49 : 59) : activePlan === 'pro' ? (billingCycle === 'yearly' ? 149 : 179) : (billingCycle === 'yearly' ? 499 : 599)}
               </span>
-              <span className="text-xs text-indigo-200/70 mr-1.5">
+              <span className="text-xs text-purple-200/70 mr-1.5">
                 / {billingCycle === 'yearly' ? 'شهرياً (بدفع سنوي)' : 'شهرياً'}
               </span>
             </div>
 
             <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="opacity-85 text-indigo-150">تاريخ التجديد القادم:</span>
+                <span className="opacity-85 text-purple-200">تاريخ التجديد القادم:</span>
                 <span className="font-mono font-black text-emerald-400">2026-06-24</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="opacity-85 text-indigo-150 text-[10.5px]">المستحقات القادمة المقدرة:</span>
+                <span className="opacity-85 text-purple-200 text-[10.5px]">المستحقات القادمة المقدرة:</span>
                 <span className="font-mono font-bold">
                   ${activePlan === 'basic' ? (billingCycle === 'yearly' ? 588 : 59) : activePlan === 'pro' ? (billingCycle === 'yearly' ? 1788 : 179) : (billingCycle === 'yearly' ? 5988 : 599)}
                 </span>
@@ -493,26 +495,26 @@ export default function SaasBilling({ user }: { user?: User }) {
           </div>
 
           <div className="pt-4 relative z-10 space-y-2">
-            <div className="flex items-center gap-1.5 text-[10px] text-indigo-250">
+            <div className="flex items-center gap-1.5 text-[10px] text-purple-300">
               <CheckCircle2 size={12} className="text-emerald-400 shrink-0" />
               <span>يتضمن جميع صلاحيات الصيانة الدورية الذكية والـ AI</span>
             </div>
             <button 
               onClick={() => handlePlanSelection('enterprise')} 
-              className="w-full h-11 bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs rounded-xl transition-all duration-200 shadow-sm flex items-center justify-center gap-2 group cursor-pointer"
+              className="w-full h-11 bg-white hover:bg-violet-50 text-violet-950 font-extrabold text-xs rounded-xl transition-all duration-200 shadow-md flex items-center justify-center gap-2 group cursor-pointer border border-violet-200"
             >
               <span>طلب ميزات مخصصة (Enterprise)</span>
-              <ArrowUpRight size={14} className="group-hover:translate-y-[-1px] group-hover:translate-x-[1px] transition-transform text-slate-700" />
+              <ArrowUpRight size={14} className="group-hover:translate-y-[-1px] group-hover:translate-x-[1px] transition-transform text-violet-700" />
             </button>
           </div>
         </div>
 
         {/* Resource Consumption Meters Panel */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#0f1422] p-6 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-xs space-y-6 flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white dark:bg-[#0f1422] p-6 border border-slate-150 dark:border-slate-800 rounded-3xl shadow-xs space-y-6 flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Gauge size={16} className="text-brand-blue-500" />
-              <span>أجهزة قياس استهلاك حصة الـ SaaS الافتراضية</span>
+              <Gauge size={16} className="text-violet-500 animate-pulse" />
+              <span className="bg-gradient-to-r from-violet-650 via-indigo-600 to-purple-650 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-transparent">أجهزة قياس استهلاك حصة الـ SaaS الافتراضية</span>
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
               يتم مراقبة استهلاك الموارد المتاحة لكل مستأجر لمنع الضغط الزائد وضمان امتثال العقود البرمجية المبرمة.
@@ -522,7 +524,7 @@ export default function SaasBilling({ user }: { user?: User }) {
           {/* Meter grids */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4.5">
             {/* Meter: Vehicles */}
-            <div className="p-3 px-4 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-2">
+            <div className="p-3 px-4 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-150 dark:border-slate-800 rounded-2xl space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-slate-700 dark:text-slate-300">المركبات النشطة بالمجمع</span>
                 <span className="font-mono text-slate-650 dark:text-slate-200">
@@ -532,7 +534,9 @@ export default function SaasBilling({ user }: { user?: User }) {
               <div className="w-full h-2 bg-slate-200/50 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full transition-all duration-500 ${
-                    (quotas.vehicles.current / quotas.vehicles.limit) > 0.8 ? 'bg-rose-500' : 'bg-brand-blue-500'
+                    (quotas.vehicles.current / quotas.vehicles.limit) > 0.8 
+                      ? 'bg-gradient-to-r from-rose-500 to-red-650' 
+                      : 'bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-600'
                   }`} 
                   style={{ width: `${Math.min(100, (quotas.vehicles.current / quotas.vehicles.limit) * 100)}%` }}
                 />
@@ -544,7 +548,7 @@ export default function SaasBilling({ user }: { user?: User }) {
             </div>
 
             {/* Meter: Workshops */}
-            <div className="p-3 px-4 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-2">
+            <div className="p-3 px-4 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-150 dark:border-slate-800 rounded-2xl space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-slate-700 dark:text-slate-300">ورش الصيانة الفعالة</span>
                 <span className="font-mono text-slate-650 dark:text-slate-200">
@@ -554,7 +558,9 @@ export default function SaasBilling({ user }: { user?: User }) {
               <div className="w-full h-2 bg-slate-200/50 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full transition-all duration-500 ${
-                    (quotas.workshops.current / quotas.workshops.limit) > 0.8 ? 'bg-rose-500' : 'bg-indigo-505'
+                    (quotas.workshops.current / quotas.workshops.limit) > 0.8 
+                      ? 'bg-gradient-to-r from-rose-500 to-red-650' 
+                      : 'bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-600'
                   }`} 
                   style={{ width: `${Math.min(100, (quotas.workshops.current / quotas.workshops.limit) * 100)}%` }}
                 />
@@ -566,7 +572,7 @@ export default function SaasBilling({ user }: { user?: User }) {
             </div>
 
             {/* Meter: Technicians */}
-            <div className="p-3 px-4 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-2">
+            <div className="p-3 px-4 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-150 dark:border-slate-800 rounded-2xl space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-slate-700 dark:text-slate-300">طاقم الفنيين (المستخدمين)</span>
                 <span className="font-mono text-slate-650 dark:text-slate-200">
@@ -576,7 +582,9 @@ export default function SaasBilling({ user }: { user?: User }) {
               <div className="w-full h-2 bg-slate-200/50 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full transition-all duration-500 ${
-                    (quotas.technicians.current / quotas.technicians.limit) > 0.8 ? 'bg-rose-500' : 'bg-emerald-500'
+                    (quotas.technicians.current / quotas.technicians.limit) > 0.8 
+                      ? 'bg-gradient-to-r from-rose-500 to-red-650' 
+                      : 'bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-600'
                   }`} 
                   style={{ width: `${Math.min(100, (quotas.technicians.current / quotas.technicians.limit) * 100)}%` }}
                 />
@@ -588,10 +596,10 @@ export default function SaasBilling({ user }: { user?: User }) {
             </div>
 
             {/* Meter: AI Queries */}
-            <div className="p-3 px-4 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-2xl space-y-2">
+            <div className="p-3 px-4 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-150 dark:border-slate-800 rounded-2xl space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                  <Zap size={11} className="text-emerald-500 animate-pulse" />
+                  <Zap size={11} className="text-violet-500 animate-pulse" />
                   <span>استفسارات الذكاء الاصطناعي الذكي</span>
                 </span>
                 <span className="font-mono text-slate-650 dark:text-slate-200">
@@ -601,7 +609,9 @@ export default function SaasBilling({ user }: { user?: User }) {
               <div className="w-full h-2 bg-slate-200/50 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full transition-all duration-500 ${
-                    (quotas.aiAssistantQueries.current / quotas.aiAssistantQueries.limit) > 0.8 ? 'bg-rose-500' : 'bg-amber-500'
+                    (quotas.aiAssistantQueries.current / quotas.aiAssistantQueries.limit) > 0.8 
+                      ? 'bg-gradient-to-r from-rose-500 to-red-650' 
+                      : 'bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-600'
                   }`} 
                   style={{ width: `${Math.min(100, (quotas.aiAssistantQueries.current / quotas.aiAssistantQueries.limit) * 100)}%` }}
                 />
@@ -627,7 +637,7 @@ export default function SaasBilling({ user }: { user?: User }) {
       <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-5">
         <div className="pb-3 border-b border-slate-150/50 dark:border-slate-800/60 font-sans">
           <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-            <Percent size={16} className="text-brand-blue-500" />
+            <Percent size={16} className="text-purple-500" />
             <span>باقات الاشتراك وخارطة الخدمات المتطابقة</span>
           </h3>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
@@ -639,7 +649,7 @@ export default function SaasBilling({ user }: { user?: User }) {
           {/* Plan: Basic */}
           <div className={`p-5 rounded-2xl border transition-all ${
             activePlan === 'basic' 
-              ? 'border-brand-blue-500 bg-brand-blue-50/10 dark:bg-brand-blue-900/10 ring-1 ring-brand-blue-500' 
+              ? 'border-purple-500 bg-purple-50/5 dark:bg-purple-950/10 ring-1 ring-purple-500' 
               : 'border-slate-150 dark:border-slate-800 bg-slate-50/20'
           }`}>
             <div className="space-y-4">
@@ -698,18 +708,18 @@ export default function SaasBilling({ user }: { user?: User }) {
           {/* Plan: Pro */}
           <div className={`p-5 rounded-2xl border transition-all relative ${
             activePlan === 'pro' 
-              ? 'border-brand-blue-500 bg-brand-blue-50/20 dark:bg-[#1a2035] ring-1 ring-brand-blue-500' 
+              ? 'border-violet-500 bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-purple-500/10 dark:from-[#1d1433] dark:to-[#171128] ring-2 ring-violet-500/20 shadow-xl shadow-violet-500/5' 
               : 'border-slate-150 dark:border-slate-800 bg-slate-50/20'
           }`}>
-            <div className="absolute top-3.5 left-3.5 bg-amber-500/10 text-amber-600 border border-amber-500/20 text-[8.5px] font-black px-2 py-0.5 rounded-md flex items-center gap-0.5">
-              <Flame size={9} className="animate-pulse" />
+            <div className="absolute top-3.5 left-3.5 bg-violet-500/10 text-violet-600 border border-violet-500/20 text-[8.5px] font-black px-2 py-0.5 rounded-md flex items-center gap-0.5">
+              <Flame size={9} className="animate-pulse text-violet-600" />
               <span>الأكثر طلباً</span>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">الخطة المتقدمة (Pro)</h4>
+                  <h4 className="text-xs font-black text-slate-850 dark:text-slate-250">الخطة المتقدمة (Pro)</h4>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">للأساطيل الكبيرة والمجمعات المركزية</p>
                 </div>
                 {activePlan === 'pro' && (
@@ -730,7 +740,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                 className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all text-center ${
                   activePlan === 'pro' 
                     ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed' 
-                    : 'bg-brand-blue-500 hover:bg-brand-blue-600 text-white cursor-pointer'
+                    : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 hover:from-violet-700 hover:to-purple-700 text-white cursor-pointer shadow-md shadow-violet-500/20'
                 }`}
               >
                 {activePlan === 'pro' ? 'الباقة الحالية' : 'التحويل لهذه الباقة 🌟'}
@@ -764,13 +774,13 @@ export default function SaasBilling({ user }: { user?: User }) {
           {/* Plan: Enterprise */}
           <div className={`p-5 rounded-2xl border transition-all ${
             activePlan === 'enterprise' 
-              ? 'border-brand-blue-500 bg-brand-blue-50/10 dark:bg-brand-blue-900/10 ring-1 ring-brand-blue-500' 
+              ? 'border-violet-500 bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-purple-500/10 dark:from-[#1d1433] dark:to-[#171128] ring-2 ring-violet-500/20 shadow-xl shadow-violet-500/5' 
               : 'border-slate-150 dark:border-slate-800 bg-slate-50/20'
           }`}>
             <div className="space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">باقة الهيئات الكبرى (Enterprise)</h4>
+                  <h4 className="text-xs font-black text-slate-850 dark:text-slate-250">باقة الهيئات الكبرى (Enterprise)</h4>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">للشركات والموانئ والمجموعات الكبرى</p>
                 </div>
                 {activePlan === 'enterprise' && (
@@ -791,7 +801,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                 className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all text-center ${
                   activePlan === 'enterprise' 
                     ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white cursor-pointer'
+                    : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 hover:from-violet-700 hover:to-purple-700 text-white cursor-pointer shadow-md shadow-violet-500/20'
                 }`}
               >
                 {activePlan === 'enterprise' ? 'الباقة الحالية' : 'التحويل لهذه الباقة 🚀'}
@@ -824,7 +834,7 @@ export default function SaasBilling({ user }: { user?: User }) {
       <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between font-sans">
           <div className="flex items-center gap-1.5">
-            <History size={16} className="text-brand-blue-500" />
+            <History size={16} className="text-purple-500" />
             <h3 className="text-sm font-black text-slate-900 dark:text-white">سجل الفواتير والدفع للحساب</h3>
           </div>
           <span className="text-[10px] font-bold text-slate-500">تم رصد آخر 3 عمليات تلقائية</span>
@@ -857,7 +867,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                   <td className="py-3 px-3 text-left">
                     <button 
                       onClick={() => alert(`جاري تنزيل الفاتورة رقم ${inv.invoiceNo} بصيغة المبيعات الافتراضية PDF...`)}
-                      className="p-1.5 text-slate-505 hover:text-brand-blue-500 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg hover:scale-[1.03] active:scale-[0.98] cursor-pointer"
+                      className="p-1.5 text-slate-505 hover:text-purple-500 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg hover:scale-[1.03] active:scale-[0.98] cursor-pointer"
                       title="تحميل كـ PDF"
                     >
                       <Download size={13} />
@@ -895,8 +905,8 @@ export default function SaasBilling({ user }: { user?: User }) {
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-500/10 text-indigo-505 flex items-center justify-center rounded-xl shrink-0">
-                    <CreditCard size={20} className="text-brand-blue-500" />
+                  <div className="w-10 h-10 bg-purple-500/10 text-purple-605 flex items-center justify-center rounded-xl shrink-0">
+                    <CreditCard size={20} className="text-purple-500" />
                   </div>
                   <div>
                     <h3 className="text-xs font-black text-slate-900 dark:text-white leading-none">تأكيد الاشتراك وتفويض الدفع</h3>
@@ -919,7 +929,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                   <div className={`p-2.5 rounded-xl border text-[10.5px] leading-relaxed font-bold flex items-center gap-2 ${
                     isStripeConfigured 
                       ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-600'
-                      : 'bg-indigo-500/5 border-indigo-500/10 text-indigo-600'
+                      : 'bg-purple-550/5 border-purple-500/10 text-purple-600'
                   }`}>
                     <div className="w-2 h-2 rounded-full bg-current animate-pulse shrink-0" />
                     <span>
@@ -937,7 +947,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                         {activePlan === 'basic' ? 'الباقة الأساسية' : activePlan === 'pro' ? 'الباقة المتقدمة' : 'باقة الهيئات (Enterprise)'}
                       </span>
                     </div>
-                    <div className="flex justify-between text-brand-blue-600 dark:text-brand-blue-400">
+                    <div className="flex justify-between text-purple-600 dark:text-purple-400">
                       <span className="font-bold">الباقة المستهدفة والمميزات:</span>
                       <span className="font-black">
                         {modalTargetPlan === 'basic' ? 'الأساسية' : modalTargetPlan === 'pro' ? 'المتقدمة' : 'الهيئات والمؤسسات'}
@@ -975,7 +985,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                               const val = e.target.value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim();
                               setCardNumber(val.slice(0, 19));
                             }}
-                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-brand-blue-500 text-slate-950 dark:text-white"
+                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white"
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -990,14 +1000,14 @@ export default function SaasBilling({ user }: { user?: User }) {
                               }
                               setCardExpiry(val.slice(0, 5));
                             }}
-                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-brand-blue-500 text-slate-950 dark:text-white"
+                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white"
                           />
                           <input
                             type="password"
                             placeholder="الرقم السري CVC/CVV"
                             value={cardCvc}
                             onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-brand-blue-500 text-slate-950 dark:text-white text-center"
+                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white text-center"
                           />
                         </div>
                         <div>
@@ -1006,32 +1016,32 @@ export default function SaasBilling({ user }: { user?: User }) {
                             placeholder="اسم حامل البطاقة كما يظهر بالهوية"
                             value={cardName}
                             onChange={(e) => setCardName(e.target.value)}
-                            className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-brand-blue-500 text-slate-950 dark:text-white text-right"
+                            className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white text-right"
                           />
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-3 bg-brand-blue-50/10 text-brand-blue-600 rounded-xl text-[11px] leading-relaxed border border-brand-blue-500/10">
+                    <div className="p-3 bg-purple-50/10 text-purple-600 rounded-xl text-[11px] leading-relaxed border border-purple-500/10">
                       🔒 ستفتح هذه العملية صفحة تفويض مشفرة خاصة بشركة Stripe لإتمام الدفع السحابي المؤمّن لـ {modalTargetPlan === 'basic' ? 'الباقة الأساسية' : modalTargetPlan === 'pro' ? 'الباقة المتقدمة' : 'باقة المؤسسات'}.
                     </div>
                   )}
 
-                  {/* Footer buttons */}
+                  {/* Footer buttons (Rearranged: primary pay action first so it aligns on the right in RTL) */}
                   <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={executeCheckoutPayment}
+                      className="py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md shadow-violet-500/20 flex items-center justify-center gap-1.5"
+                    >
+                      <span>{isStripeConfigured ? 'التوجيه لـ Stripe 🔒' : 'إرساء دفع محاكى ✓'}</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setShowUpgradeModal(false)}
                       className="py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black transition-all cursor-pointer"
                     >
                       إلغاء الأمر
-                    </button>
-                    <button
-                      type="button"
-                      onClick={executeCheckoutPayment}
-                      className="py-2.5 bg-brand-blue-500 hover:bg-brand-blue-600 text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md shadow-brand-blue-500/10 flex items-center justify-center gap-1.5"
-                    >
-                      <span>{isStripeConfigured ? 'التوجيه لـ Stripe 🔒' : 'إرساء دفع محاكى ✓'}</span>
                     </button>
                   </div>
                 </div>
@@ -1041,7 +1051,7 @@ export default function SaasBilling({ user }: { user?: User }) {
               {checkoutStep === 'processing' && (
                 <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
                   <div className="relative">
-                    <div className="w-16 h-16 rounded-full border-4 border-slate-100 dar:border-slate-800 border-t-brand-blue-500 animate-spin" />
+                    <div className="w-16 h-16 rounded-full border-4 border-slate-100 dark:border-slate-800 border-t-purple-600 animate-spin" />
                     <Sparkles className="text-yellow-400 absolute inset-0 m-auto animate-ping" size={20} />
                   </div>
                   <div className="space-y-1.5">

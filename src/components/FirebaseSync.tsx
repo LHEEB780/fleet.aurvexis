@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
+import { safeLocalStorage } from '../services/safeStorage';
 import { 
   Cloud, 
   Database, 
@@ -41,16 +42,16 @@ export default function FirebaseSync({ user }: { user?: User }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncDirection, setSyncDirection] = useState<'upload' | 'download' | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
-    return localStorage.getItem('last_firestore_sync_time') || (isRtl ? 'لم يتم المزامنة بعد' : 'Not synced yet');
+    return safeLocalStorage.getItem('last_firestore_sync_time') || (isRtl ? 'لم يتم المزامنة بعد' : 'Not synced yet');
   });
   const [syncFeedbackLog, setSyncFeedbackLog] = useState<string>('');
 
   // Volume threshold configuration states
   const [adminThreshold, setAdminThreshold] = useState<number>(() => {
-    return parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5');
+    return parseFloat(safeLocalStorage.getItem('saas_sync_threshold_mb') || '5');
   });
   const [simulatedWeight, setSimulatedWeight] = useState<number>(() => {
-    return parseFloat(localStorage.getItem('saas_simulated_offline_weight') || '0');
+    return parseFloat(safeLocalStorage.getItem('saas_simulated_offline_weight') || '0');
   });
 
   const getRealLocalSizeMB = (): number => {
@@ -68,7 +69,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
       'saas_brand_color'
     ];
     for (const key of keys) {
-      const val = localStorage.getItem(key);
+      const val = safeLocalStorage.getItem(key);
       if (val) {
         totalChars += val.length;
       }
@@ -87,8 +88,8 @@ export default function FirebaseSync({ user }: { user?: User }) {
 
   useEffect(() => {
     const handleStorage = () => {
-      setAdminThreshold(parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5'));
-      setSimulatedWeight(parseFloat(localStorage.getItem('saas_simulated_offline_weight') || '0'));
+      setAdminThreshold(parseFloat(safeLocalStorage.getItem('saas_sync_threshold_mb') || '5'));
+      setSimulatedWeight(parseFloat(safeLocalStorage.getItem('saas_simulated_offline_weight') || '0'));
       setRealLocalSize(getRealLocalSizeMB());
     };
     window.addEventListener('storage', handleStorage);
@@ -97,13 +98,13 @@ export default function FirebaseSync({ user }: { user?: User }) {
 
   const handleThresholdChange = (val: number) => {
     setAdminThreshold(val);
-    localStorage.setItem('saas_sync_threshold_mb', val.toString());
+    safeLocalStorage.setItem('saas_sync_threshold_mb', val.toString());
     window.dispatchEvent(new Event('storage'));
   };
 
   const handleSimulatedWeightChange = (val: number) => {
     setSimulatedWeight(val);
-    localStorage.setItem('saas_simulated_offline_weight', val.toString());
+    safeLocalStorage.setItem('saas_simulated_offline_weight', val.toString());
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -248,7 +249,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#121829] p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
               <Cloud size={20} />
             </div>
             <div className="text-right">
@@ -303,7 +304,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
       {/* FIRESTORE CLOUD CONNECTION & LIVE SYNCHRONIZATION DASHBOARD */}
       <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-6 shadow-xl space-y-5 flex flex-col justify-between relative overflow-hidden" id="firestore-sync-dashboard">
         {/* Background ambient lighting */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-slate-800 relative z-10">
@@ -318,7 +319,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
                 <span>{isDbConnected ? 'Active Cloud Core' : 'Offline Emulator'}</span>
               </span>
               <h2 className="text-sm font-black text-white flex items-center gap-1.5">
-                <Database size={15} className="text-indigo-400" />
+                <Database size={15} className="text-purple-400" />
                 <span>{language === 'ar' ? 'بوابة الربط والمزامنة السحابية الذكية (Google Firebase)' : 'Smart Cloud Sync & Backup Gate (Google Firebase)'}</span>
               </h2>
             </div>
@@ -330,6 +331,15 @@ export default function FirebaseSync({ user }: { user?: User }) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
+            <a 
+              href="https://console.firebase.google.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-1.5 px-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-[10px] font-black rounded-xl transition-all flex items-center gap-1 border border-transparent shadow-sm shadow-purple-500/20"
+            >
+              <Globe size={11} />
+              <span>{language === 'ar' ? 'افتح Firebase Console 🌐' : 'Open Firebase Console 🌐'}</span>
+            </a>
             <button
               onClick={async () => {
                 setIsDbConnecting(true);
@@ -343,20 +353,11 @@ export default function FirebaseSync({ user }: { user?: User }) {
                 );
               }}
               disabled={isDbConnecting}
-              className="p-1.5 px-3 bg-slate-800 hover:bg-slate-750 disabled:opacity-50 text-slate-200 text-[10px] font-bold rounded-xl border border-slate-700/60 transition-all flex items-center gap-1 cursor-pointer"
+              className="p-1.5 px-3 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-50 text-white text-[10px] font-black rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-violet-500/10"
             >
               <RefreshCw size={10} className={isDbConnecting ? "animate-spin" : ""} />
               <span>{language === 'ar' ? 'فحص الاتصال الفوري' : 'Check Live Ping'}</span>
             </button>
-            <a 
-              href="https://console.firebase.google.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="p-1.5 px-3 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white text-[10px] font-black rounded-xl transition-all flex items-center gap-1 border border-indigo-500/30"
-            >
-              <Globe size={11} />
-              <span>{language === 'ar' ? 'افتح Firebase Console 🌐' : 'Open Firebase Console 🌐'}</span>
-            </a>
           </div>
         </div>
 
@@ -410,23 +411,23 @@ export default function FirebaseSync({ user }: { user?: User }) {
 
             <div className="grid grid-cols-2 gap-2 mt-2">
               <button
-                onClick={handleUploadBackup}
-                disabled={isSyncing}
-                className="p-2 px-2.5 bg-indigo-900/30 hover:bg-indigo-900/55 disabled:opacity-40 text-indigo-300 hover:text-white rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer border border-indigo-500/20"
-                title={language === 'ar' ? "تصدير كل البيانات من المتصفح إلى سحابة Firestore" : "Export all data to Firestore Cloud"}
-              >
-                <ArrowUpRight size={11} className={isSyncing && syncDirection === 'upload' ? 'animate-bounce' : ''} />
-                <span>{language === 'ar' ? 'نسخ احتياطي ⬆️' : 'Upload Backup ⬆️'}</span>
-              </button>
-
-              <button
                 onClick={handleDownloadRestore}
                 disabled={isSyncing}
-                className="p-2 px-2.5 bg-emerald-950/30 hover:bg-emerald-900/55 disabled:opacity-40 text-emerald-300 hover:text-white rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer border border-emerald-500/20"
+                className="p-2 px-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-40 text-white rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer border border-transparent shadow-md shadow-violet-500/10"
                 title={language === 'ar' ? "سحب كل البيانات من سحابة Firestore وتثبيتها بالمتصفح" : "Pull all cloud data and override local storage"}
               >
                 <ArrowDownLeft size={11} className={isSyncing && syncDirection === 'download' ? 'animate-bounce' : ''} />
                 <span>{language === 'ar' ? 'استرداد السحابة ⬇️' : 'Pull Cloud ⬇️'}</span>
+              </button>
+
+              <button
+                onClick={handleUploadBackup}
+                disabled={isSyncing}
+                className="p-2 px-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-40 text-white rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer border border-transparent shadow-md shadow-purple-500/10"
+                title={language === 'ar' ? "تصدير كل البيانات من المتصفح إلى سحابة Firestore" : "Export all data to Firestore Cloud"}
+              >
+                <ArrowUpRight size={11} className={isSyncing && syncDirection === 'upload' ? 'animate-bounce' : ''} />
+                <span>{language === 'ar' ? 'نسخ احتياطي ⬆️' : 'Upload Backup ⬆️'}</span>
               </button>
             </div>
           </div>
@@ -438,7 +439,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
               
               {/* Dynamic Console feedback display */}
               <div className="p-2 bg-slate-900/90 rounded-xl border border-slate-850 text-[10px] font-semibold text-slate-300 leading-normal flex items-start gap-1.5 mt-1 min-h-[50px] overflow-hidden text-right">
-                <span className="text-indigo-400 font-black shrink-0 font-mono">&gt;_</span>
+                <span className="text-purple-400 font-black shrink-0 font-mono">&gt;_</span>
                 <span className="text-slate-200">{syncFeedbackLog || (language === 'ar' ? 'في انتظار طلب فحص أو نسخ سحابي...' : 'Ready for diagnostics sync...')}</span>
               </div>
             </div>
@@ -446,7 +447,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
             {/* Last successful process timestamp */}
             <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[10px]">
               <span className="text-slate-400">{language === 'ar' ? 'آخر تزامن وتأكيد ناجح:' : 'Latest Sync Timestamp:'}</span>
-              <span className="text-indigo-400 font-mono font-bold">{lastSyncTime}</span>
+              <span className="text-purple-400 font-mono font-bold">{lastSyncTime}</span>
             </div>
           </div>
 
@@ -499,7 +500,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
                       className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-900/40 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[9px] font-black uppercase rounded-md border border-indigo-500/25">
+                        <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[9px] font-black uppercase rounded-md border border-purple-500/25">
                           {conflict.collection}
                         </span>
                         <span className="text-xs font-black text-slate-100">
@@ -522,7 +523,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-[11px] font-mono p-3 bg-slate-950/90 rounded-xl border border-slate-900 max-h-64 overflow-y-auto">
                           {/* Local Version Column */}
                           <div className="space-y-2">
-                            <div className="text-indigo-400 font-black border-b border-indigo-950/80 pb-1 flex items-center gap-1">
+                            <div className="text-purple-400 font-black border-b border-purple-950/80 pb-1 flex items-center gap-1">
                               <Laptop size={12} />
                               <span>{language === 'ar' ? 'النسخة المحلية (هذا المتصفح)' : 'Local Version (This browser)'}</span>
                             </div>
@@ -571,7 +572,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
                             type="button"
                             disabled={isResolving}
                             onClick={() => handleResolveKeepLocal(conflict)}
-                            className="px-4 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white rounded-xl text-xs font-black shadow-md hover:opacity-90 active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                            className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-md hover:opacity-90 active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <Laptop size={13} />
                             <span>{language === 'ar' ? 'الاحتفاظ بالنسخة المحلية 💻' : 'Keep Local 💻'}</span>
@@ -601,7 +602,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
           <div className="bg-slate-50 dark:bg-slate-900/30 p-5 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-5 relative z-10 text-right">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-850 pb-3 gap-2">
               <div className="space-y-0.5">
-                <span className="inline-flex items-center px-2 py-0.5 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 rounded-lg text-[9px] font-black uppercase">
+                <span className="inline-flex items-center px-2 py-0.5 bg-purple-500/10 text-purple-500 dark:text-purple-400 rounded-lg text-[9px] font-black uppercase">
                   {language === 'ar' ? 'صلاحيات الإدارة والتحكم' : 'Administrator Controls'}
                 </span>
                 <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5 justify-end">
@@ -625,7 +626,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
                     step="0.5"
                     value={adminThreshold}
                     onChange={(e) => handleThresholdChange(parseFloat(e.target.value) || 5)}
-                    className="w-24 p-2 text-center text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100"
+                    className="w-24 p-2 text-center text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-purple-500 text-slate-800 dark:text-slate-100"
                   />
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{language === 'ar' ? 'ميغا بايت (MB)' : 'Megabytes (MB)'}</span>
                 </div>
@@ -639,7 +640,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
                       onClick={() => handleThresholdChange(preset)}
                       className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
                         adminThreshold === preset
-                          ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-sm'
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-transparent shadow-sm shadow-purple-500/25'
                           : 'bg-white hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800'
                       }`}
                     >
@@ -665,7 +666,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-[9px] font-extrabold text-slate-400 font-mono">
                     <span>0 MB</span>
-                    <span className="text-indigo-500 font-bold">{simulatedWeight} MB</span>
+                    <span className="text-purple-500 font-bold">{simulatedWeight} MB</span>
                     <span>10 MB</span>
                   </div>
                   <input
@@ -675,7 +676,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
                     step="0.1"
                     value={simulatedWeight}
                     onChange={(e) => handleSimulatedWeightChange(parseFloat(e.target.value))}
-                    className="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-100 dark:bg-slate-900 rounded-lg appearance-none"
+                    className="w-full accent-purple-500 cursor-pointer h-1.5 bg-slate-100 dark:bg-slate-900 rounded-lg appearance-none"
                   />
                 </div>
 
@@ -702,8 +703,8 @@ export default function FirebaseSync({ user }: { user?: User }) {
         )}
 
         {/* Quick Instructions about Console Access */}
-        <div className="p-3.5 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl text-[10px] text-indigo-300 leading-relaxed flex items-start gap-2 relative z-10 text-right">
-          <AlertCircle size={14} className="mt-0.5 text-indigo-400 shrink-0" />
+        <div className="p-3.5 bg-purple-500/5 border border-purple-500/10 rounded-2xl text-[10px] text-purple-300 leading-relaxed flex items-start gap-2 relative z-10 text-right">
+          <AlertCircle size={14} className="mt-0.5 text-purple-400 shrink-0" />
           <div>
             <span className="font-extrabold text-white">{language === 'ar' ? 'كيف تدخل لموقع Firestore لمطالعة مشروعك؟ ' : 'How to browse your cloud documents inside Firebase console? '}</span>
             {language === 'ar' 
@@ -716,7 +717,7 @@ export default function FirebaseSync({ user }: { user?: User }) {
       {/* Overview section explaining security details */}
       <div className="p-6 bg-white dark:bg-[#121829] border border-slate-100 dark:border-slate-800 rounded-3xl space-y-4">
         <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-          <Info size={14} className="text-indigo-500" />
+          <Info size={14} className="text-purple-500" />
           <span>{language === 'ar' ? 'معايير الاتصال والموثوقية السحابية' : 'Cloud Integration and Reliability Standards'}</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">

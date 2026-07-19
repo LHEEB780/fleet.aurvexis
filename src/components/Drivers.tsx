@@ -299,6 +299,7 @@ export default function Drivers({ user }: DriversProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [licenseFilter, setLicenseFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
 
   // Modals / forms state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -315,7 +316,10 @@ export default function Drivers({ user }: DriversProps) {
     department: 'قسم الآليات',
     status: 'active' as 'active' | 'suspended' | 'vacation',
     assignedVehicleId: '',
-    avatarSeed: ''
+    avatarSeed: '',
+    driverRole: 'driver' as 'driver' | 'dispatcher' | 'both',
+    movementAuthNumber: '',
+    movementAuthExpiry: ''
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -342,6 +346,18 @@ export default function Drivers({ user }: DriversProps) {
     return 'valid';
   };
 
+  // Helper: check dispatch authority status
+  const getAuthStatus = (expiryDateStr?: string) => {
+    if (!expiryDateStr) return 'valid';
+    const expiry = new Date(expiryDateStr);
+    const anchor = new Date(SYSTEM_ANCHOR_DATE);
+    if (expiry < anchor) return 'expired';
+    const diffTime = expiry.getTime() - anchor.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays <= 90) return 'critical';
+    return 'valid';
+  };
+
   // Helper: format days remaining or expired
   const getLicenseRemainingLabel = (expiryDateStr: string) => {
     if (!expiryDateStr) return '';
@@ -362,14 +378,35 @@ export default function Drivers({ user }: DriversProps) {
     }
   };
 
+  // Helper: format authority remaining label
+  const getAuthRemainingLabel = (expiryDateStr?: string) => {
+    if (!expiryDateStr) return 'غير محدد';
+    const expiry = new Date(expiryDateStr);
+    const anchor = new Date(SYSTEM_ANCHOR_DATE);
+    if (expiry < anchor) {
+      const diffTime = anchor.getTime() - expiry.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return `منتهٍ منذ ${diffDays} يوم`;
+    } else {
+      const diffTime = expiry.getTime() - anchor.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays <= 30) {
+        return `ينتهي خلال ${diffDays} يوم ⚠️`;
+      }
+      return `صالح لـ ${diffDays} يوم`;
+    }
+  };
+
   // KPI calculations
   const totalDriversCount = drivers.length;
-  const activeCount = drivers.filter(d => d.status === 'active').count || drivers.filter(d => d.status === 'active').length;
+  const activeCount = drivers.filter(d => d.status === 'active').length;
+  const dispatchersCount = drivers.filter(d => d.driverRole === 'dispatcher' || d.driverRole === 'both').length;
   const unassignedCount = drivers.filter(d => !d.assignedVehicleId).length;
   
   const criticalLicensesCount = drivers.filter(d => {
-    const stat = getLicenseStatus(d.licenseExpiry);
-    return stat === 'expired' || stat === 'critical';
+    const licStat = getLicenseStatus(d.licenseExpiry);
+    const authStat = d.driverRole !== 'driver' ? getAuthStatus(d.movementAuthExpiry) : 'valid';
+    return licStat === 'expired' || licStat === 'critical' || authStat === 'expired' || authStat === 'critical';
   }).length;
 
   // Search/Filters execution
@@ -382,8 +419,13 @@ export default function Drivers({ user }: DriversProps) {
     
     const matchesStatus = statusFilter === 'all' || driver.status === statusFilter;
     const matchesLicense = licenseFilter === 'all' || driver.licenseType === licenseFilter;
+    const matchesRole = 
+      roleFilter === 'all' || 
+      (roleFilter === 'driver' && (driver.driverRole === 'driver' || driver.driverRole === 'both' || !driver.driverRole)) ||
+      (roleFilter === 'dispatcher' && (driver.driverRole === 'dispatcher' || driver.driverRole === 'both')) ||
+      (roleFilter === 'both' && driver.driverRole === 'both');
 
-    return matchesSearch && matchesStatus && matchesLicense;
+    return matchesSearch && matchesStatus && matchesLicense && matchesRole;
   });
 
   // Open modal for Adding
@@ -400,7 +442,10 @@ export default function Drivers({ user }: DriversProps) {
       department: 'قسم الآليات',
       status: 'active',
       assignedVehicleId: '',
-      avatarSeed: `seed-${Math.floor(Math.random() * 10000)}`
+      avatarSeed: `seed-${Math.floor(Math.random() * 10000)}`,
+      driverRole: 'driver',
+      movementAuthNumber: '',
+      movementAuthExpiry: ''
     });
     setFormErrors({});
     setIsModalOpen(true);
@@ -420,7 +465,10 @@ export default function Drivers({ user }: DriversProps) {
       department: driver.department,
       status: driver.status,
       assignedVehicleId: driver.assignedVehicleId || '',
-      avatarSeed: driver.name // placeholder seed fallback
+      avatarSeed: driver.name, // placeholder seed fallback
+      driverRole: driver.driverRole || 'driver',
+      movementAuthNumber: driver.movementAuthNumber || '',
+      movementAuthExpiry: driver.movementAuthExpiry || ''
     });
     setFormErrors({});
     setIsModalOpen(true);
@@ -488,6 +536,15 @@ export default function Drivers({ user }: DriversProps) {
     if (!formInputs.licenseNumber.trim()) errors.licenseNumber = 'رقم رخصة القيادة مطلوب';
     if (!formInputs.licenseExpiry) errors.licenseExpiry = 'تاريخ انتهاء الرخصة مطلوب';
 
+    if (formInputs.driverRole !== 'driver') {
+      if (!formInputs.movementAuthNumber.trim()) {
+        errors.movementAuthNumber = 'رقم قرار التفويض بالحركة مطلوب';
+      }
+      if (!formInputs.movementAuthExpiry) {
+        errors.movementAuthExpiry = 'تاريخ انتهاء قرار التفويض مطلوب';
+      }
+    }
+
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
@@ -510,7 +567,10 @@ export default function Drivers({ user }: DriversProps) {
             licenseExpiry: formInputs.licenseExpiry,
             department: formInputs.department,
             status: formInputs.status,
-            assignedVehicleId: linkedVehicleId
+            assignedVehicleId: linkedVehicleId,
+            driverRole: formInputs.driverRole,
+            movementAuthNumber: formInputs.driverRole !== 'driver' ? formInputs.movementAuthNumber : undefined,
+            movementAuthExpiry: formInputs.driverRole !== 'driver' ? formInputs.movementAuthExpiry : undefined
           };
         }
         return d;
@@ -566,7 +626,10 @@ export default function Drivers({ user }: DriversProps) {
         status: formInputs.status,
         avatar: getRealAvatarByName(formInputs.name),
         assignedVehicleId: linkedVehicleId,
-        joinDate: SYSTEM_ANCHOR_DATE
+        joinDate: SYSTEM_ANCHOR_DATE,
+        driverRole: formInputs.driverRole,
+        movementAuthNumber: formInputs.driverRole !== 'driver' ? formInputs.movementAuthNumber : undefined,
+        movementAuthExpiry: formInputs.driverRole !== 'driver' ? formInputs.movementAuthExpiry : undefined
       };
 
       const updatedDrivers = [newDriver, ...drivers];
@@ -618,21 +681,64 @@ export default function Drivers({ user }: DriversProps) {
               </button>
 
               <div className="flex items-center gap-2 mb-4 shrink-0">
-                <div className="p-2.5 bg-brand-blue-500 text-white rounded-xl">
+                <div className="p-2.5 bg-purple-600 text-white rounded-xl">
                   <IdCard size={20} />
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white">
-                     {editingDriver ? 'تعديل سجل بيانات السائق' : 'تسجيل وتوثيق سائق جديد بالمنظومة'}
+                     {editingDriver ? 'تعديل وتحديث بيانات الموظف' : 'تسجيل وتوثيق سائق أو مفوض حركة جديد'}
                   </h3>
                   <p className="text-[10px] text-slate-505 dark:text-slate-400">
-                    أدخل كود رخصة التشغيل وبيانات الهوية الوطنية المعتمدة من الجهات المختصة
+                    توثيق رخص القيادة وتفويضات الحركة الميدانية المعتمدة من الجهات المختصة بالمنظومة
                   </p>
                 </div>
               </div>
 
               <form onSubmit={handleSubmit} className="flex flex-col min-h-0 text-right">
                 <div className="flex-1 overflow-y-auto pr-1 pl-1 py-1 space-y-4 max-h-[55vh] md:max-h-[50vh] min-h-0">
+                  
+                  {/* Operational Role Selection */}
+                  <div className="bg-purple-500/5 dark:bg-purple-950/20 p-3 rounded-2xl border border-purple-500/10 space-y-2">
+                    <label className="text-[10.5px] font-black text-purple-800 dark:text-purple-400 block">
+                      الصفة التشغيلية والدور بالمنظومة:
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormInputs({ ...formInputs, driverRole: 'driver' })}
+                        className={`py-2 text-[10px] font-black rounded-xl border transition-all cursor-pointer text-center ${
+                          formInputs.driverRole === 'driver'
+                            ? 'bg-purple-600 border-purple-600 text-white shadow-xs'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50'
+                        }`}
+                      >
+                        سائق فقط
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormInputs({ ...formInputs, driverRole: 'dispatcher' })}
+                        className={`py-2 text-[10px] font-black rounded-xl border transition-all cursor-pointer text-center ${
+                          formInputs.driverRole === 'dispatcher'
+                            ? 'bg-purple-600 border-purple-600 text-white shadow-xs'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50'
+                        }`}
+                      >
+                        مفوض حركة فقط
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormInputs({ ...formInputs, driverRole: 'both' })}
+                        className={`py-2 text-[10px] font-black rounded-xl border transition-all cursor-pointer text-center ${
+                          formInputs.driverRole === 'both'
+                            ? 'bg-purple-600 border-purple-600 text-white shadow-xs'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50'
+                        }`}
+                      >
+                        سائق ومفوض معاً
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Name */}
                     <div className="space-y-1">
@@ -787,6 +893,44 @@ export default function Drivers({ user }: DriversProps) {
                       ))}
                     </select>
                   </div>
+
+                  {/* Dispatcher fields - shown only if role includes dispatcher */}
+                  {formInputs.driverRole !== 'driver' && (
+                    <div className="sm:col-span-2 p-4 bg-purple-500/5 dark:bg-purple-950/25 rounded-2xl border border-dashed border-purple-500/20 grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 animate-fadeIn text-right">
+                      <div className="sm:col-span-2 text-[10.5px] font-black text-purple-800 dark:text-purple-400">
+                        وثائق قرار التفويض بالحركة الصادرة:
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
+                          رقم قرار التفويض بالحركة:<span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 text-xs font-bold outline-none bg-white dark:bg-slate-900 border border-slate-200 rounded-xl focus:border-purple-500 text-slate-950 dark:text-white"
+                          placeholder="AUTH-2026-0XX"
+                          value={formInputs.movementAuthNumber}
+                          onChange={(e) => setFormInputs({ ...formInputs, movementAuthNumber: e.target.value })}
+                        />
+                        {formErrors.movementAuthNumber && (
+                          <p className="text-[9.5px] text-rose-500 font-bold">{formErrors.movementAuthNumber}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
+                          تاريخ انتهاء قرار التفويض:<span className="text-rose-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 text-xs font-bold outline-none bg-white dark:bg-slate-900 border border-slate-200 rounded-xl focus:border-purple-500 text-slate-950 dark:text-white font-mono"
+                          value={formInputs.movementAuthExpiry}
+                          onChange={(e) => setFormInputs({ ...formInputs, movementAuthExpiry: e.target.value })}
+                        />
+                        {formErrors.movementAuthExpiry && (
+                          <p className="text-[9.5px] text-rose-500 font-bold">{formErrors.movementAuthExpiry}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -801,7 +945,7 @@ export default function Drivers({ user }: DriversProps) {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-brand-blue-500 hover:bg-brand-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-brand-blue-500/10 flex items-center gap-1"
+                    className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-purple-500/15 flex items-center gap-1"
                   >
                     <Check size={14} />
                     <span>تأكيد الإجراء وحفظ السجل</span>
@@ -814,26 +958,30 @@ export default function Drivers({ user }: DriversProps) {
       </AnimatePresence>
 
       {/* Title Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0f1422] p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800/80 shadow-sm" dir="rtl">
-        <div className="text-right">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 rounded-full text-indigo-600 dark:text-indigo-400 text-[10px] font-black mb-1.5">
-            <Sparkles size={11} />
-            <span>وحدة ذكاء الأسطول المركزي 360</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 text-white p-6 rounded-[2rem] border border-purple-900/40 shadow-xl relative overflow-hidden" dir="rtl">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="text-right relative z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/20 rounded-full text-purple-300 text-[10px] font-black mb-1.5">
+            <Sparkles size={11} className="animate-pulse text-purple-400" />
+            <span>وحدة تفويض السائقين والحركة الميدانية 360</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg font-black text-slate-900 dark:text-white">
+            <h2 className="text-xl font-black text-white">
               قاعدة تسجيل وإدارة السائقين والمفوضين بالحركة
             </h2>
             <ContextualHelp 
               id="drivers"
               titleAr="إدارة السائقين والتفويضات"
               titleEn="Drivers & Authorizations Panel"
-              explanationAr="بوابة تنظيمية تفصيلية لتوثيق رخص القيادة وتفويض المهام الميدانية ومراقبة سجل الحوادث والسلامة ومؤشرات قياس السلوك الفني للسائقين."
+              explanationAr="بوابة تنظيمية تفصيلية لتوثيق رخص القيادة وتفويض المهام الميدانية ومراقبة سجل الحوادث والسلامة ومؤشرات قياس السلوك الفني للسائقين والمفوضين بالحركة."
               explanationEn="A complete tracking system logging driving license compliance, vehicle operational keys, accident histories, and automated safety/behavior radar diagrams."
               benefitsAr={[
-                "مراقبة دقيقة لتواريخ انتهاء رخص القيادة ووثائق المرور.",
-                "تقييم رقمي فوري لأداء السائقين (السرعة، الفرملة المفاجئة، الحوادث).",
-                "نظام رادار جرافي ثلاثي الأبعاد لتقييم السلوك الميداني للسلامة."
+                "مراقبة دقيقة لتواريخ انتهاء رخص القيادة وتفويضات الحركة.",
+                "تقييم رقمي فوري لأداء السائقين والمفوضين ميدانياً.",
+                "نظام رادار جرافي فني لتقييم كفاءة السياقة وتفادي المخاطر."
               ]}
               benefitsEn={[
                 "Ensures absolute compliance of all physical driver license periods.",
@@ -849,111 +997,111 @@ export default function Drivers({ user }: DriversProps) {
               language={language}
             />
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 block pt-0.5 max-w-xl">
-            {t('منظومة السيطرة الشاملة لتسجيل رخص القيادة وربطهم بالأجهزة والمعدات، ومراقبة فترات الصلاحية والأخلاقيات المهنية للسائقين والمساعدين.')}
+          <p className="text-xs text-purple-200/70 block pt-0.5 max-w-xl">
+            {t('منظومة السيطرة الشاملة لتسجيل رخص القيادة وتفويضات الحركة الميدانية، ومراقبة فترات الصلاحية للأذونات ومؤشرات كفاءة السلوك المهني.')}
           </p>
         </div>
 
         {user.role !== 'viewer' && (
           <button
             onClick={handleOpenAdd}
-            className="px-4 py-2.5 bg-brand-blue-500 hover:bg-brand-blue-600 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-brand-blue-500/10 flex items-center justify-center gap-1.5 cursor-pointer self-start sm:self-auto"
+            className="px-5 py-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-xl transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-1.5 cursor-pointer self-start sm:self-auto relative z-10 border border-purple-500/30"
           >
             <Plus size={15} />
-            <span>{t('إضافة سائق جديد')}</span>
+            <span>{t('إضافة موظف (سائق/مفوض)')}</span>
           </button>
         )}
       </div>
 
       {/* KPI Stats Widgets Area */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" dir="rtl">
-        {/* KPI 1 - Purple/Pink Theme (Total Drivers) */}
-        <div className="p-5 rounded-2xl border shadow-xs bg-[#fae8ff] dark:bg-fuchsia-950/40 border-fuchsia-200 dark:border-fuchsia-900/80 hover:border-fuchsia-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-2 text-right">
-            <p className="text-[11px] font-black tracking-wide uppercase text-fuchsia-800 dark:text-fuchsia-300">
-              {language === 'ar' ? 'إجمالي السائقين المعتمدين' : 'Total Approved Drivers'}
+        {/* KPI 1 - Total Registered (Sajeel/Employees) */}
+        <div className="p-5 rounded-2xl border shadow-xs bg-purple-50/40 dark:bg-purple-950/15 border-purple-200/80 dark:border-purple-900 hover:border-purple-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+          <div className="space-y-1.5 text-right">
+            <p className="text-[11px] font-black tracking-wide uppercase text-purple-800 dark:text-purple-300">
+              {language === 'ar' ? 'إجمالي السائقين والمفوضين' : 'Total Personnel Database'}
             </p>
             <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-black leading-none tracking-tight font-sans text-fuchsia-950 dark:text-fuchsia-100">{totalDriversCount}</h3>
-              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-black bg-fuchsia-50 dark:bg-fuchsia-950/30 text-fuchsia-600 dark:text-fuchsia-400 font-sans shrink-0 direction-ltr">
+              <h3 className="text-2xl font-black leading-none tracking-tight font-sans text-purple-950 dark:text-purple-100">{totalDriversCount}</h3>
+              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-black bg-purple-500/10 text-purple-600 dark:text-purple-400 font-sans shrink-0 direction-ltr">
                 <span>▲</span>
                 <span>+1</span>
               </div>
             </div>
-            <span className="text-[9.5px] text-fuchsia-600 dark:text-fuchsia-400/80 block font-bold">
-              {language === 'ar' ? 'المسجلين ببطاقات تفويض القيادة' : 'Registered with authority keys'}
+            <span className="text-[9.5px] text-purple-600 dark:text-purple-400/80 block font-bold">
+              {language === 'ar' ? 'سجلات السائقين وتفويضات الحركة' : 'Drivers & dispatchers logs'}
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#d946ef] to-[#ec4899] flex items-center justify-center text-white shadow-md hover:shadow-fuchsia-500/15 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative overflow-hidden shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md hover:shadow-purple-500/15 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative overflow-hidden shrink-0">
             <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
-            <User size={22} className="drop-shadow-sm" />
+            <IdCard size={22} className="drop-shadow-sm" />
           </div>
         </div>
 
-        {/* KPI 2 - Green Theme (Active Drivers) */}
-        <div className="p-5 rounded-2xl border shadow-xs bg-emerald-100/80 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800/80 hover:border-emerald-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-2 text-right">
-            <p className="text-[11px] font-black tracking-wide uppercase text-emerald-800 dark:text-emerald-300">
+        {/* KPI 2 - Approved Dispatchers */}
+        <div className="p-5 rounded-2xl border shadow-xs bg-violet-50/40 dark:bg-violet-950/15 border-violet-200/80 dark:border-violet-900 hover:border-violet-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+          <div className="space-y-1.5 text-right">
+            <p className="text-[11px] font-black tracking-wide uppercase text-violet-800 dark:text-violet-300">
+              {language === 'ar' ? 'المفوضون بالحركة المعتمدون' : 'Active Approved Dispatchers'}
+            </p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-black leading-none tracking-tight font-sans text-violet-950 dark:text-violet-100">{dispatchersCount}</h3>
+              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-black bg-violet-500/10 text-violet-600 dark:text-violet-400 font-sans shrink-0 direction-ltr">
+                <span>▲</span>
+                <span>+2</span>
+              </div>
+            </div>
+            <span className="text-[9.5px] text-violet-600 dark:text-violet-400/80 block font-bold">
+              {language === 'ar' ? 'بأرقام قرارات تفويض صالحة' : 'With validated authority code'}
+            </span>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-purple-500 flex items-center justify-center text-white shadow-md hover:shadow-violet-500/15 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative overflow-hidden shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+            <Award size={22} className="drop-shadow-sm" />
+          </div>
+        </div>
+
+        {/* KPI 3 - Active Field Drivers */}
+        <div className="p-5 rounded-2xl border shadow-xs bg-indigo-50/40 dark:bg-indigo-950/15 border-indigo-200/80 dark:border-indigo-900 hover:border-indigo-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+          <div className="space-y-1.5 text-right">
+            <p className="text-[11px] font-black tracking-wide uppercase text-indigo-800 dark:text-indigo-300">
               {language === 'ar' ? 'السائقون النشطون بالميدان' : 'Active Duty Field Drivers'}
             </p>
             <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-black leading-none tracking-tight font-sans text-emerald-950 dark:text-emerald-100">{activeCount}</h3>
-              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-black bg-brand-green-50 dark:bg-emerald-950/40 text-brand-green-600 dark:text-brand-green-400 font-sans shrink-0 direction-ltr">
+              <h3 className="text-2xl font-black leading-none tracking-tight font-sans text-indigo-950 dark:text-indigo-100">{activeCount}</h3>
+              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-sans shrink-0 direction-ltr">
                 <span>▲</span>
                 <span>+4</span>
               </div>
             </div>
-            <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400/80 block font-bold">
-              {language === 'ar' ? 'جاهزون لتلقي مهام التشغيل' : 'Ready for dispatch operations'}
+            <span className="text-[9.5px] text-indigo-600 dark:text-indigo-400/80 block font-bold">
+              {language === 'ar' ? 'جاهزون لتلقي أوامر التشغيل' : 'Ready for dispatch operations'}
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-green-500 to-[#4ade80] flex items-center justify-center text-white shadow-md hover:shadow-brand-green-500/15 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative overflow-hidden shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md hover:shadow-indigo-500/15 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative overflow-hidden shrink-0">
             <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
             <UserCheck size={22} className="drop-shadow-sm" />
           </div>
         </div>
 
-        {/* KPI 3 - Yellow/Orange Theme (Unassigned Drivers) */}
-        <div className="p-5 rounded-2xl border shadow-xs bg-amber-100/85 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800/80 hover:border-amber-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-2 text-right">
-            <p className="text-[11px] font-black tracking-wide uppercase text-amber-805 dark:text-amber-300">
-              {language === 'ar' ? 'سائقين بدون مركبات مخصصة' : 'Unassigned Field Drivers'}
+        {/* KPI 4 - Expiries Warnings (Rox & Authorizations) */}
+        <div className="p-5 rounded-2xl border shadow-xs bg-rose-50/40 dark:bg-rose-950/15 border-rose-200/80 dark:border-rose-900 hover:border-rose-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+          <div className="space-y-1.5 text-right">
+            <p className="text-[11px] font-black tracking-wide uppercase text-rose-800 dark:text-rose-300">
+              {language === 'ar' ? 'رخص وتفويضات حرجة / منتهية' : 'Critical / Expired Licenses'}
             </p>
             <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-black leading-none tracking-tight font-sans text-amber-950 dark:text-amber-100">{unassignedCount}</h3>
-              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-black bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-sans shrink-0 direction-ltr">
-                <span>▼</span>
-                <span>-2</span>
-              </div>
-            </div>
-            <span className="text-[9.5px] text-amber-600 dark:text-amber-400/80 block font-bold">
-              {language === 'ar' ? 'بدون ارتباط مركبة حالية بالورش' : 'No current vehicle association'}
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#ea580c] to-[#fbbf24] flex items-center justify-center text-white shadow-md hover:shadow-amber-500/15 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative overflow-hidden shrink-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
-            <UserMinus size={22} className="drop-shadow-sm" />
-          </div>
-        </div>
-
-        {/* KPI 4 - Sky Blue Theme (Critical Licenses) */}
-        <div className="p-5 rounded-2xl border shadow-xs bg-sky-100/80 dark:bg-sky-950/50 border-sky-200 dark:border-sky-800/80 hover:border-sky-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-2 text-right">
-            <p className="text-[11px] font-black tracking-wide uppercase text-sky-800 dark:text-sky-300">
-              {language === 'ar' ? 'حالة رخص القيادة الحرجة / المنتهية' : 'Critical / Expired Licenses'}
-            </p>
-            <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-black leading-none tracking-tight font-sans text-sky-950 dark:text-sky-100">{criticalLicensesCount}</h3>
-              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-black bg-brand-blue-50 dark:bg-brand-blue-950/40 text-brand-blue-600 dark:text-[#38bdf8] font-sans shrink-0 direction-ltr">
+              <h3 className="text-2xl font-black leading-none tracking-tight font-sans text-rose-950 dark:text-rose-100">{criticalLicensesCount}</h3>
+              <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[9px] font-black bg-rose-500/10 text-rose-600 dark:text-rose-400 font-sans shrink-0 direction-ltr">
                 <span>▲</span>
                 <span>+12</span>
               </div>
             </div>
-            <span className="text-[9.5px] text-sky-600 dark:text-sky-400/80 block font-bold">
+            <span className="text-[9.5px] text-rose-600 dark:text-rose-400/80 block font-bold">
               {language === 'ar' ? 'تنتهي خلال 90 يوم أو منتهية فعلياً ⚠️' : 'Expires under 90 days or expired ⚠️'}
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-blue-500 to-[#38bdf8] flex items-center justify-center text-white shadow-md hover:shadow-brand-blue-500/15 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative overflow-hidden shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-600 to-orange-500 flex items-center justify-center text-white shadow-md hover:shadow-rose-500/15 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative overflow-hidden shrink-0">
             <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
             <AlertTriangle size={22} className="drop-shadow-sm" />
           </div>
@@ -961,15 +1109,62 @@ export default function Drivers({ user }: DriversProps) {
       </div>
 
       {/* Advanced Filters Block */}
-      <div className="bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-100 dark:border-slate-800/80 p-4" dir="rtl">
+      <div className="bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-100 dark:border-slate-800/80 p-4 space-y-4" dir="rtl">
+        {/* Role Quick Filtering Tabs */}
+        <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+          <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 ml-2">الدور والصفة:</span>
+          <div className="flex flex-wrap gap-1.5 bg-slate-100/60 dark:bg-slate-900 p-1 rounded-2xl">
+            <button
+              onClick={() => setRoleFilter('all')}
+              className={`px-4 py-1.5 text-[10px] font-black rounded-xl transition-all cursor-pointer ${
+                roleFilter === 'all'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              الكل ({drivers.length})
+            </button>
+            <button
+              onClick={() => setRoleFilter('driver')}
+              className={`px-4 py-1.5 text-[10px] font-black rounded-xl transition-all cursor-pointer ${
+                roleFilter === 'driver'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              السائقين ({drivers.filter(d => !d.driverRole || d.driverRole === 'driver' || d.driverRole === 'both').length})
+            </button>
+            <button
+              onClick={() => setRoleFilter('dispatcher')}
+              className={`px-4 py-1.5 text-[10px] font-black rounded-xl transition-all cursor-pointer ${
+                roleFilter === 'dispatcher'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              المفوضين بالحركة ({drivers.filter(d => d.driverRole === 'dispatcher' || d.driverRole === 'both').length})
+            </button>
+            <button
+              onClick={() => setRoleFilter('both')}
+              className={`px-4 py-1.5 text-[10px] font-black rounded-xl transition-all cursor-pointer ${
+                roleFilter === 'both'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              الجمع بين الدورين ({drivers.filter(d => d.driverRole === 'both').length})
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Search box (Col: 6) */}
           <div className="md:col-span-6 relative">
             <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
-              className="w-full pr-10 pl-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-850 hover:border-slate-200 focus:border-brand-blue-500 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-white transition-all placeholder-slate-400"
-              placeholder="ابحث باسم السائق، رقم الهوية، رقم الرخصة القيادية أو رقم الهاتف..."
+              className="w-full pr-10 pl-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-850 hover:border-slate-200 focus:border-purple-500 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-white transition-all placeholder-slate-400"
+              placeholder="ابحث باسم الموظف، رقم الهوية، رقم الرخصة القيادية أو رقم الهاتف..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -1009,18 +1204,19 @@ export default function Drivers({ user }: DriversProps) {
           </div>
         </div>
 
-        {searchTerm || statusFilter !== 'all' || licenseFilter !== 'all' ? (
+        {searchTerm || statusFilter !== 'all' || licenseFilter !== 'all' || roleFilter !== 'all' ? (
           <div className="mt-3 text-[10.5px] font-bold text-slate-400 flex items-center justify-between px-1">
             <span>
-              عثرنا على <span className="text-brand-blue-500">{filteredDrivers.length}</span> نتيجة تطابق فلاتر البحث الحالية من إجمالي {totalDriversCount} سائق.
+              عثرنا على <span className="text-purple-600 dark:text-purple-400 font-sans">{filteredDrivers.length}</span> نتيجة تطابق فلاتر البحث الحالية من إجمالي {totalDriversCount} موظف.
             </span>
             <button
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
                 setLicenseFilter('all');
+                setRoleFilter('all');
               }}
-              className="text-brand-blue-500 hover:underline cursor-pointer flex items-center gap-0.5"
+              className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-0.5"
             >
               <RefreshCw size={10} />
               <span>إعادة تهيئة الفلاتر</span>
@@ -1049,9 +1245,13 @@ export default function Drivers({ user }: DriversProps) {
             const licStatus = getLicenseStatus(driver.licenseExpiry);
             const licDaysLabel = getLicenseRemainingLabel(driver.licenseExpiry);
 
+            const roleVal = driver.driverRole || 'driver';
+            const authStatus = roleVal !== 'driver' ? getAuthStatus(driver.movementAuthExpiry) : 'valid';
+            const authLabel = roleVal !== 'driver' ? getAuthRemainingLabel(driver.movementAuthExpiry) : '';
+
             // Set background color for license state indicator
-            let licBadgeColor = 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 border-emerald-200/50';
-            let licExpiryBar = 'bg-emerald-500';
+            let licBadgeColor = 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 border-purple-200/50';
+            let licExpiryBar = 'bg-purple-500';
             if (licStatus === 'expired') {
               licBadgeColor = 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 border-rose-200/50 animate-pulse';
               licExpiryBar = 'bg-rose-500';
@@ -1062,32 +1262,52 @@ export default function Drivers({ user }: DriversProps) {
 
             // Driver status styling
             let statusBadge = (
-              <span className="px-2.5 py-1 rounded-full text-[9px] font-black bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{language === 'ar' ? 'مستعد ونشط ميدانياً' : 'Active Duty'}</span>
+              <span className="px-2.5 py-1 rounded-full text-[9px] font-black bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                <span>{language === 'ar' ? 'نشط ومستعد' : 'Active Duty'}</span>
               </span>
             );
             if (driver.status === 'suspended') {
               statusBadge = (
                 <span className="px-2.5 py-1 rounded-full text-[9px] font-black bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
-                  <span>{language === 'ar' ? 'موقوف بالمنظومة ⛔' : 'Suspended ⛔'}</span>
+                  <span>{language === 'ar' ? 'موقوف مؤقتاً' : 'Suspended'}</span>
                 </span>
               );
             } else if (driver.status === 'vacation') {
               statusBadge = (
                 <span className="px-2.5 py-1 rounded-full text-[9px] font-black bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-bounce" />
-                  <span>{language === 'ar' ? 'في إجازة رسمية ✈️' : 'On Leave ✈️'}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span>{language === 'ar' ? 'في إجازة' : 'On Leave'}</span>
                 </span>
               );
             }
 
-            let driverColorStripe = 'border-r-[6px] border-r-emerald-500 hover:border-r-emerald-600';
+            let driverColorStripe = 'border-r-[6px] border-r-purple-500 hover:border-r-purple-600';
             if (driver.status === 'suspended') {
               driverColorStripe = 'border-r-[6px] border-r-rose-500 hover:border-r-rose-600';
             } else if (driver.status === 'vacation') {
               driverColorStripe = 'border-r-[6px] border-r-amber-500 hover:border-r-amber-600';
+            }
+
+            // Role Badge styling
+            let roleBadge = (
+              <span className="px-2 py-0.5 rounded-lg text-[8px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-350 border border-slate-200 dark:border-slate-700">
+                سائق
+              </span>
+            );
+            if (roleVal === 'dispatcher') {
+              roleBadge = (
+                <span className="px-2 py-0.5 rounded-lg text-[8px] font-black bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                  مفوض حركة
+                </span>
+              );
+            } else if (roleVal === 'both') {
+              roleBadge = (
+                <span className="px-2 py-0.5 rounded-lg text-[8px] font-black bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                  سائق ومفوض
+                </span>
+              );
             }
 
             // --- GRID VIEW LAYOUT BRANCH ---
@@ -1095,31 +1315,36 @@ export default function Drivers({ user }: DriversProps) {
               <div 
                 key={driver.id}
                 onClick={() => setSelectedDetailDriver(driver)}
-                className={`bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-105 dark:border-slate-800/80 p-4 shadow-xs hover:shadow-md transition-all duration-300 hover:border-slate-300 dark:hover:border-slate-705 relative overflow-hidden flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 ${driverColorStripe}`}
+                className={`bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-150/60 dark:border-slate-800/80 p-4 shadow-xs hover:shadow-md transition-all duration-300 hover:border-purple-500/30 dark:hover:border-purple-500/30 relative overflow-hidden flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 ${driverColorStripe}`}
               >
                 {/* Horizontal status line at top */}
                 <div className={`absolute top-0 right-0 left-0 h-1 md:h-1.5 ${licExpiryBar}`} />
 
                 <div className="space-y-3">
                   {/* Top card info: Avatar + Name + Core badge */}
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-11 h-11 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 dark:bg-[#151c2e] dark:border-slate-850 shrink-0 shadow-xs">
-                      <img 
-                        src={driver.avatar} 
-                        alt={driver.name} 
-                        className="w-full h-full object-cover scale-[1.05]"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    
-                    <div className="text-right flex-1 min-w-0">
-                      <h4 className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors">
-                        {driver.name}
-                      </h4>
-                      <div className="text-[10px] text-slate-450 dark:text-slate-400 font-bold flex items-center gap-1 mt-0.5">
-                        <Building2 size={10} className="text-slate-405 shrink-0" />
-                        <span className="truncate">{driver.department}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-11 h-11 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 dark:bg-[#151c2e] dark:border-slate-850 shrink-0 shadow-xs">
+                        <img 
+                          src={driver.avatar} 
+                          alt={driver.name} 
+                          className="w-full h-full object-cover scale-[1.05]"
+                          referrerPolicy="no-referrer"
+                        />
                       </div>
+                      
+                      <div className="text-right min-w-0">
+                        <h4 className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                          {driver.name}
+                        </h4>
+                        <div className="text-[10px] text-slate-450 dark:text-slate-400 font-bold flex items-center gap-1 mt-0.5">
+                          <Building2 size={10} className="text-slate-405 shrink-0" />
+                          <span className="truncate">{driver.department}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      {roleBadge}
                     </div>
                   </div>
 
@@ -1132,25 +1357,44 @@ export default function Drivers({ user }: DriversProps) {
                       </div>
                     </div>
                     <div className="bg-slate-50/70 dark:bg-slate-900/60 p-1.5 px-2 rounded-xl border border-slate-100/50 dark:border-slate-850">
-                      <span className="text-[8px] text-slate-400 block leading-tight font-bold font-sans">فئة الرخصة:</span>
+                      <span className="text-[8px] text-slate-400 block leading-tight font-bold font-sans">فئة رخصة القيادة:</span>
                       <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded border text-[8px] font-black truncate max-w-full ${getLicenseTypeColor(driver.licenseType)}`}>
                         {driver.licenseType}
                       </span>
                     </div>
                   </div>
 
+                  {/* Dispatcher authorization document segment if applicable */}
+                  {roleVal !== 'driver' && (
+                    <div className="bg-purple-500/5 dark:bg-purple-950/20 p-2 rounded-xl border border-purple-500/10 space-y-1 text-right">
+                      <div className="flex items-center justify-between text-[8px] font-black text-purple-800 dark:text-purple-400">
+                        <span className="flex items-center gap-0.5">
+                          <Award size={10} />
+                          <span>قرار تفويض الحركة:</span>
+                        </span>
+                        <span className="font-mono">{driver.movementAuthNumber || 'غير محدد'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[8px] text-slate-400">
+                        <span>تاريخ الصلاحية:</span>
+                        <span className={`font-black ${
+                          authStatus === 'expired' ? 'text-rose-500' : authStatus === 'critical' ? 'text-amber-500' : 'text-purple-600'
+                        }`}>{authLabel}</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Connected Vehicle Row */}
                   <div className="flex items-center justify-between text-right bg-slate-50/40 dark:bg-slate-900/30 p-2 rounded-xl border border-dotted border-slate-200/60 dark:border-slate-800">
                     <span className="text-[9px] text-slate-400 font-bold">الآلية المخصصة:</span>
                     {linkedVehicle ? (
                       <span className="text-[9.5px] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1 truncate max-w-[130px]">
-                        <Truck size={10} className="text-indigo-500 shrink-0" />
+                        <Truck size={10} className="text-purple-600 shrink-0" />
                         <span className="truncate">{linkedVehicle.name}</span>
                       </span>
                     ) : (
                       <span className="text-[9px] text-amber-600 font-black flex items-center gap-1.5">
                         <AlertTriangle size={10} className="text-amber-500" />
-                        <span>بدون مركبة</span>
+                        <span>بدون مركبة حالياً</span>
                       </span>
                     )}
                   </div>
@@ -1158,7 +1402,7 @@ export default function Drivers({ user }: DriversProps) {
 
                 {/* Footer interact hint & Admin tools */}
                 <div className="flex items-center justify-between border-t border-slate-50 dark:border-slate-850/40 pt-2.5 mt-3 self-end w-full">
-                  <span className="text-[9px] text-brand-blue-500 font-black group-hover:underline flex items-center gap-1 select-none">
+                  <span className="text-[9px] text-purple-600 dark:text-purple-400 font-black group-hover:underline flex items-center gap-1 select-none">
                     <span>عرض التفاصيل والتقارير 🔍</span>
                   </span>
 
@@ -1169,8 +1413,8 @@ export default function Drivers({ user }: DriversProps) {
                           e.stopPropagation();
                           handleOpenEdit(driver);
                         }}
-                        className="p-1 px-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-350 hover:text-brand-blue-500 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-slate-150/50 dark:border-slate-800"
-                        title="تعديل سجل السائق"
+                        className="p-1 px-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-350 hover:text-purple-600 dark:hover:text-purple-400 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-slate-150/50 dark:border-slate-800"
+                        title="تعديل سجل الموظف"
                       >
                         <Edit size={10} />
                         <span>تعديل</span>
@@ -1181,7 +1425,7 @@ export default function Drivers({ user }: DriversProps) {
                           handleDeleteDriver(driver.id, driver.name);
                         }}
                         className="p-1 px-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/15 text-rose-500 hover:text-rose-600 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-rose-100/50 dark:border-rose-950/30"
-                        title="حذف السائق نهائياً"
+                        title="حذف السجل نهائياً"
                       >
                         <Trash2 size={10} />
                         <span>حذف</span>
@@ -1215,7 +1459,7 @@ export default function Drivers({ user }: DriversProps) {
             safetyGrade = 'جيد جداً (A)';
           }
 
-          let licBadgeColor = 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 border-emerald-200/50';
+          let licBadgeColor = 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 border-purple-200/50';
           if (licStatus === 'expired') {
             licBadgeColor = 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 border-rose-200/50 animate-pulse';
           } else if (licStatus === 'critical') {
@@ -1251,7 +1495,7 @@ export default function Drivers({ user }: DriversProps) {
                         </h3>
                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
                           selectedDetailDriver.status === 'active' 
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' 
                             : selectedDetailDriver.status === 'vacation'
                             ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
                             : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
@@ -1281,7 +1525,7 @@ export default function Drivers({ user }: DriversProps) {
                 </div>
 
                 {/* Subtitle */}
-                <div className="mb-6 flex items-center gap-1.5 justify-start text-indigo-650 dark:text-indigo-400">
+                <div className="mb-6 flex items-center gap-1.5 justify-start text-purple-600 dark:text-purple-400">
                   <Award size={16} />
                   <span className="text-xs font-black uppercase tracking-wider">
                     {language === 'ar' ? 'التقرير السلوكي والتحليلي 360 للأخلاقيات المرورية والأعطال' : '360 Traffic Behavior & Incident Analytics Portal'}
@@ -1295,19 +1539,19 @@ export default function Drivers({ user }: DriversProps) {
                   <div className="lg:col-span-5 space-y-4">
                     
                     {/* Grade & General Assessment */}
-                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-[#111827] dark:to-[#1e1b4b] p-4 rounded-[1.8rem] border border-indigo-100/40 dark:border-indigo-950 flex items-center justify-between text-right">
+                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-[#111827] dark:to-[#171029] p-4 rounded-[1.8rem] border border-purple-100/40 dark:border-purple-950/60 flex items-center justify-between text-right">
                       <div className="space-y-1">
-                        <span className="text-[9.5px] font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-wider block">
-                          {language === 'ar' ? 'تصنيف السلامة الميداني' : 'Overall Safety Score'}
+                        <span className="text-[9.5px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider block">
+                          {language === 'ar' ? 'تصنيف السلامة والمهارة الميداني' : 'Overall Safety Score'}
                         </span>
-                        <h4 className="text-base font-black text-indigo-950 dark:text-white leading-tight">
+                        <h4 className="text-base font-black text-purple-950 dark:text-white leading-tight">
                           {language === 'ar' ? `السلوك العام: ${safetyGrade}` : `Overall Behavior: ${safetyGrade}`}
                         </h4>
-                        <p className="text-[9px] text-indigo-605 dark:text-indigo-400">
+                        <p className="text-[9px] text-purple-700/80 dark:text-purple-400/80">
                           {language === 'ar' ? 'يتم احتساب التصنيف تلقائياً بناءً على الحوادث والأعطال ومعدلات السرعة.' : 'Calculated automatically based on telematics telemetry, speeding logs, and repairs.'}
                         </p>
                       </div>
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-505 text-white flex items-center justify-center font-black text-sm shadow-md shadow-indigo-500/20">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-purple-500/20">
                         {safetyGrade.includes('امتياز') || safetyGrade.includes('A') ? 'A' : safetyGrade.includes('B') ? 'B' : 'C'}
                       </div>
                     </div>
@@ -1321,9 +1565,9 @@ export default function Drivers({ user }: DriversProps) {
                         </span>
                         <div className="flex items-baseline gap-1 mt-1">
                           <span className="text-xl font-black font-mono text-slate-800 dark:text-white">{metrics.totalTrips}</span>
-                          <span className="text-[9px] text-slate-450 font-bold">{language === 'ar' ? 'مهمة' : 'Missions'}</span>
+                          <span className="text-[9px] text-slate-455 font-bold">{language === 'ar' ? 'مهمة' : 'Missions'}</span>
                         </div>
-                        <span className="text-[8.5px] text-slate-450 block mt-1">
+                        <span className="text-[8.5px] text-slate-455 block mt-1">
                           {language === 'ar' ? 'منذ الالتحاق بالأسطول' : 'Since joining'}
                         </span>
                       </div>
@@ -1335,7 +1579,7 @@ export default function Drivers({ user }: DriversProps) {
                         </span>
                         <div className="flex items-baseline gap-1 mt-1 font-sans">
                           <span className={`text-[11px] font-black truncate leading-none ${
-                            licStatus === 'expired' ? 'text-rose-500' : licStatus === 'critical' ? 'text-amber-500' : 'text-emerald-500'
+                            licStatus === 'expired' ? 'text-rose-500' : licStatus === 'critical' ? 'text-amber-500' : 'text-purple-500'
                           }`}>
                             {licStatus === 'expired' 
                               ? (language === 'ar' ? 'منتهية الصلاحية ⛔' : 'Expired ⛔') 
@@ -1352,7 +1596,7 @@ export default function Drivers({ user }: DriversProps) {
 
                     {/* Documents & Personal Details */}
                     <div className="bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-right space-y-3">
-                      <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold uppercase tracking-wider block">
+                      <span className="text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block">
                         {language === 'ar' ? 'الوثائق الثبوتية وبيانات الاتصال 📋' : 'Identity Documents & Contact Info 📋'}
                       </span>
                       
@@ -1387,16 +1631,40 @@ export default function Drivers({ user }: DriversProps) {
                       </div>
                     </div>
 
+                    {/* Dispatcher Authorization Details if registered as dispatcher */}
+                    {selectedDetailDriver.driverRole && selectedDetailDriver.driverRole !== 'driver' && (
+                      <div className="bg-purple-500/5 dark:bg-purple-950/10 p-4 rounded-3xl border border-purple-500/10 text-right space-y-2.5">
+                        <span className="text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block">
+                          {language === 'ar' ? 'وثيقة قرار التفويض بالحركة المعتمدة 📄' : 'Movement Authorization Key 📄'}
+                        </span>
+                        <div className="flex items-center justify-between gap-2 p-2.5 px-3 bg-purple-500/10 dark:bg-purple-950/20 rounded-xl border border-purple-500/20">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-purple-600 text-white rounded-lg">
+                              <Award size={12} />
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-black text-slate-800 dark:text-white block leading-none">
+                                {selectedDetailDriver.movementAuthNumber || 'غير محدد'}
+                              </span>
+                              <span className="text-[9px] text-purple-600 dark:text-purple-400 block mt-1 leading-none font-bold">
+                                {getAuthRemainingLabel(selectedDetailDriver.movementAuthExpiry)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Operational Vehicle Assignment */}
                     <div className="bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-right space-y-2.5">
-                      <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold uppercase tracking-wider block">
+                      <span className="text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block">
                         {language === 'ar' ? 'المركبة التشغيلية المعينة 🚛' : 'Assigned Fleet Vehicle 🚛'}
                       </span>
 
                       {linkedVehicle ? (
-                        <div className="flex items-center justify-between gap-2 p-2 px-3 bg-indigo-500/5 dark:bg-indigo-950/20 rounded-xl border border-indigo-100/50 dark:border-indigo-950">
+                        <div className="flex items-center justify-between gap-2 p-2 px-3 bg-purple-500/5 dark:bg-purple-950/20 rounded-xl border border-purple-100/50 dark:border-purple-950">
                           <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-indigo-500 text-white rounded-lg">
+                            <div className="p-1.5 bg-purple-600 text-white rounded-lg">
                               <Truck size={12} />
                             </div>
                             <div className="text-right">
@@ -1434,7 +1702,7 @@ export default function Drivers({ user }: DriversProps) {
                                 setSelectedDetailDriver(null);
                                 handleOpenEdit(selectedDetailDriver);
                               }}
-                              className="text-[9.5px] text-indigo-600 hover:underline font-black cursor-pointer"
+                              className="text-[9.5px] text-purple-600 hover:underline font-black cursor-pointer"
                             >
                               {language === 'ar' ? 'تعيين المركبة ➕' : 'Assign ➕'}
                             </button>
@@ -1442,6 +1710,10 @@ export default function Drivers({ user }: DriversProps) {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Right Col - Analytics & Behavior (Span 7) */}
+                  <div className="lg:col-span-7 space-y-4 text-right">
 
                     {/* Accidents Highlight Card (Accident History Rate) */}
                     <div className={`p-4 rounded-3xl border ${
@@ -1468,7 +1740,7 @@ export default function Drivers({ user }: DriversProps) {
 
                       <div className="flex items-baseline gap-2 mt-2">
                         <span className="text-2xl font-black font-mono">{metrics.accidents}</span>
-                        <span className="text-[10px] text-slate-505 dark:text-slate-400 font-black">
+                        <span className="text-[10px] text-slate-550 dark:text-slate-400 font-black">
                           {language === 'ar' ? 'حوادث مرورية مسجلة بالمرور' : 'Accidents registered'}
                         </span>
                       </div>
@@ -1483,106 +1755,45 @@ export default function Drivers({ user }: DriversProps) {
                             ⚠ {language === 'ar' ? 'تنبيه: يوجد حادث مروري مسجل بالسابق. يرجى توجيه السائق لتجنب الأخطاء الميدانية.' : 'Notice: 1 historic accident recorded. Safety training recommended.'}
                           </p>
                         ) : (
-                          <p className="text-rose-600 dark:text-rose-455 font-black">
+                          <p className="text-rose-600 dark:text-rose-450 font-black font-bold">
                             🚨 {language === 'ar' ? 'تحذير: السائق يمتلك معدل حوادث حرج يتجاوز الحد المسموح به للشركة. يخضع لتقييم اللجنة الأمنية.' : 'Alert: Critical accident history. Exceeds standard safety boundaries.'}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    {/* Maintenance abuse incident indicator */}
-                    <div className={`p-4 rounded-3xl border ${
-                      metrics.maintenanceIncidents === 0 
-                        ? 'bg-emerald-500/5 border-emerald-100/50 dark:border-emerald-950 text-right' 
-                        : metrics.maintenanceIncidents <= 2
-                        ? 'bg-indigo-500/5 border-indigo-100/50 dark:border-indigo-950 text-right'
-                        : 'bg-amber-500/5 border-amber-100/50 dark:border-amber-950 text-right'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">
-                          {language === 'ar' ? 'معدل الأعطال الناجمة عن الإهمال' : 'Maintenance Abuse Incident Rate'}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded text-[8.5px] font-black ${
-                          metrics.maintenanceIncidents === 0 
-                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
-                            : metrics.maintenanceIncidents <= 2 
-                            ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                            : 'bg-amber-500/10 text-amber-600 dark:text-amber-450'
-                        }`}>
-                          {metrics.maintenanceIncidents === 0 ? (language === 'ar' ? 'مثالي وسليم' : 'Safe Handling') : (language === 'ar' ? 'أعطال مسجلة بقسم الآليات' : 'Repairs Logged')}
-                        </span>
-                      </div>
+                    {/* Visual 360 Behavioral Radar Chart */}
+                    <div className="bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-center space-y-3">
 
-                      <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-2xl font-black font-mono">{metrics.maintenanceIncidents}</span>
-                        <span className="text-[10px] text-slate-500 font-black flex items-center gap-1 font-sans">
-                          <Wrench size={10} className="text-indigo-505 shrink-0" />
-                          <span>{language === 'ar' ? 'بلاغات تلف غير طبيعي للآلية بسبب سوء الاستخدام' : 'Abuse-related work orders'}</span>
-                        </span>
-                      </div>
-
-                      <div className="mt-2 text-[9px] text-slate-450 dark:text-slate-400">
-                        {metrics.maintenanceIncidents === 0 ? (
-                          <p className="text-emerald-600 dark:text-emerald-400 font-bold">
-                            ✔ {language === 'ar' ? 'يلتزم السائق ببروتوكولات الفحص الدوري للمحرك والفرامل، ولا يسجل أي تلف تعسفي للأجهزة.' : 'Follows preventative checks rigorously. Zero recorded mechanical abuse tickets.'}
-                          </p>
-                        ) : metrics.maintenanceIncidents <= 2 ? (
-                          <p className="text-indigo-600 dark:text-indigo-400 font-bold">
-                            💡 {language === 'ar' ? 'مقبول: تم تقديم بلاغات صيانة طفيفة مسبقاً لمكونات الآلية (مثل تآكل الإطارات السريع).' : 'Moderate: Few minor maintenance queries recorded concerning normal usage deviation.'}
-                          </p>
-                        ) : (
-                          <p className="text-amber-600 dark:text-amber-500 font-bold">
-                            ⚠ {language === 'ar' ? 'ملاحظة: معدل التلفيات عالي للآلية. يتطلب فحص صندوق القيادة والعلبة الخلفية للمركبة لضمان جودة الأداء الميكانيكي.' : 'Performance flag: High mechanical fatigue rate on mechanical parts. Recommend physical audit.'}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* Right Column: Interactive Radar Chart (7 out of 12) */}
-                  <div className="lg:col-span-7 bg-slate-50 dark:bg-[#121829]/40 p-5 rounded-[2rem] border border-slate-100 dark:border-slate-800 space-y-4 text-center">
-                    <div>
-                      <h4 className="text-xs font-black text-slate-800 dark:text-white" dir="rtl">
-                        {language === 'ar' ? 'مخطط رادار لتقييم السلوك والأداء القيادي الميداني' : 'Driver Telemetry Behavior Radar Diagram'}
-                      </h4>
-                      <p className="text-[9.5px] text-slate-500 dark:text-slate-400" dir="rtl">
-                        {language === 'ar' ? 'فحص تلغراف الحركة والالتزام بالوقود والمكابح (تقييم شامل من ١٠٠ درجة)' : 'Cross-analyzing speeding alerts, braking force, fuel economy, and routing parameters'}
-                      </p>
-                    </div>
-
-                    {/* Chart Container wrapper with precise height */}
-                    <div className="h-[280px] w-full flex items-center justify-center relative select-none">
+                      <span className="text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block text-right">
+                        {language === 'ar' ? 'مخطط رادار المهارة والسلوك الميداني 📊' : 'Behavioral & Telematics Skill Radar 📊'}
+                      </span>
+                    <div className="h-64 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="75%" data={metrics.radarData}>
-                          <PolarGrid stroke="#cbd5e1" strokeDasharray="3 3" opacity={0.35} />
-                          <PolarAngleAxis 
-                            dataKey={language === 'ar' ? 'subject' : 'subjectEn'} 
-                            stroke="#64748b" 
-                            tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }} 
-                            dir="rtl"
-                          />
-                          <PolarRadiusAxis 
-                            angle={30} 
-                            domain={[0, 100]} 
-                            stroke="#94a3b8" 
-                            tick={{ fontSize: 7, fill: '#94a3b8' }} 
-                          />
-                          <Radar 
-                            name={language === 'ar' ? 'كفاءة قيادة السائق' : 'Driver Telemetry Rating'} 
-                            dataKey="score" 
-                            stroke="#6366f1" 
-                            fill="#6366f1" 
-                            fillOpacity={0.25} 
-                          />
-                        </RadarChart>
-                      </ResponsiveContainer>
+                          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metrics.radarData.map(item => ({
+                            subject: language === 'ar' ? item.subject : item.subjectEn,
+                            score: item.score,
+                            fullMark: 100
+                          }))}>
+                            <PolarGrid stroke="#e2e8f0" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 'bold' }} />
+                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 8 }} />
+                            <Radar 
+                              name={language === 'ar' ? 'كفاءة قيادة السائق' : 'Driver Telemetry Rating'} 
+                              dataKey="score" 
+                              stroke="#a855f7" 
+                              fill="#c084fc" 
+                              fillOpacity={0.25} 
+                            />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
 
                     {/* Radar details description / Summary Footer */}
                     <div className="bg-white dark:bg-[#0f1422] p-3 rounded-2xl border border-slate-100 dark:border-slate-805 text-right space-y-2">
-                      <h5 className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 justify-start">
-                        <ShieldAlert size={12} className="text-indigo-500" />
+                      <h5 className="text-[10px] font-black text-purple-600 dark:text-purple-400 flex items-center gap-1.5 justify-start">
+                        <ShieldAlert size={12} className="text-purple-500" />
                         <span>{language === 'ar' ? 'توصيات وملاحظات المراقب الفني للرحلات' : 'Operational Officer Recommendations'}</span>
                       </h5>
                       <p className="text-[9.5px] text-slate-655 dark:text-slate-400 leading-relaxed text-right">
@@ -1653,7 +1864,7 @@ export default function Drivers({ user }: DriversProps) {
                           setIsExporting(false);
                           const downloadMsg = language === 'ar' ? 'تم تحميل ملف التقرير الفني القيادي القياسي بنجاح!' : 'Technical driver evaluation summary document ready for download!';
                           const notifyDiv = document.createElement('div');
-                          notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-emerald-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 animate-bounce border border-emerald-500 text-xs font-black dir-rtl";
+                          notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-purple-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 animate-bounce border border-purple-500 text-xs font-black dir-rtl";
                           notifyDiv.innerHTML = `<span>✔ ${downloadMsg}</span>`;
                           document.body.appendChild(notifyDiv);
                           setTimeout(() => notifyDiv.remove(), 4000);

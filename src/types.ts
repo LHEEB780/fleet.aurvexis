@@ -42,6 +42,9 @@ export interface Driver {
   avatar: string;
   assignedVehicleId?: string;
   joinDate?: string;
+  driverRole?: 'driver' | 'dispatcher' | 'both'; // 'driver' | 'dispatcher' | 'both'
+  movementAuthNumber?: string; // رقم قرار التفويض بالحركة
+  movementAuthExpiry?: string; // تاريخ انتهاء قرار التفويض بالحركة
 }
 
 export interface MaintenanceOrder {

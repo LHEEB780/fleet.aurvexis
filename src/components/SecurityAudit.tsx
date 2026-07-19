@@ -39,6 +39,7 @@ import {
   CreditCard,
   Wrench,
   Bot,
+  Sparkles,
   Sliders,
   Info,
   Trash2,
@@ -803,7 +804,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
                     isLocked 
                       ? 'bg-slate-100 dark:bg-slate-800 opacity-60 cursor-not-allowed justify-start' 
                       : isEnabled 
-                        ? 'bg-emerald-500 justify-start' 
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-500 justify-start' 
                         : 'bg-slate-200 dark:bg-slate-700 justify-end'
                   }`}
                   title={isLocked ? 'محمية لمنع قفل النظام' : `انقر للتغيير`}
@@ -821,47 +822,69 @@ export default function SecurityAudit({ user }: { user?: User }) {
   return (
 
     <div className="space-y-6 text-right pb-12 font-sans" dir="rtl" id="security-audit-container">
-      {/* Page Title */}
-      <div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span>{language === 'ar' ? 'هرمية الرقابة وصلاحيات الموظفين والامتثال الأمني' : 'Governance & Operational Security Compliance'}</span>
-            <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black border border-emerald-500/15 shrink-0">
-              {language === 'ar' ? 'بوابة الامتثال والرقابة' : 'Security Board'}
+      {/* Page Title with elegant purple gradient commercial identity styling */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 text-white p-6 rounded-[2rem] border border-purple-900/40 shadow-xl relative overflow-hidden" dir="rtl">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/20 rounded-full text-purple-300 text-[10px] font-black">
+              <Sparkles size={11} className="animate-pulse text-purple-400" />
+              <span>{language === 'ar' ? 'بوابة الامتثال والرقابة' : 'Security & Compliance Portal'}</span>
             </span>
-          </h1>
-          <ContextualHelp 
-            id="security-audit"
-            titleAr="هرمية الرقابة والامتثال الأمني"
-            titleEn="Governance & Operational Security Compliance"
-            explanationAr="فضاء حوكمة شامل لإعداد مصفوفة الصلاحيات والحقوق للمهندسين والسائقين، وجرد الموظفين النشطين ومطابقة الحسابات، مع سجل لوغريتمي كامل لتتبع النشاطات لمنع الهجمات أو الهدر."
-            explanationEn="An enterprise-grade security desk to customize role-based matrices, call internal account activations, and audit full audit logs trail records."
-            benefitsAr={[
-              "تحديد دقيق ومحكم لما يمكن للفني والمراقب والمشاهد فعله لتفادي الهفوات والعبث بالبيانات.",
-              "سجل تتبع كامل (Audit Trail Logging) يرصد توقيت وهوية العمليات والـ IPs المرافقة لها.",
-              "لوحة تفاعلية فورية لدعوة موظف جديد وقبول أو تعليق حسابه."
-            ]}
-            benefitsEn={[
-              "Enforces customized permissions limiting tech, viewer or administrator actions specifically.",
-              "Maintains automated event logs including IP references for any system mutation or login.",
-              "Provides immediate dynamic triggers to activate or suspend any registered employee instantly."
-            ]}
-            tipsAr={[
-              "تأكد من تخصيص مصفوفة الصلاحيات بما يلبي رغبات الرقابة الميدانية ومطالعة سجل العمليات بشكل أسبوعي."
-            ]}
-            tipsEn={[
-              "We recommend auditing the security trail once every week to check for unusual remote locations or IPs."
-            ]}
-            language={language}
-          />
+          </div>
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+              <span>{language === 'ar' ? 'هرمية الرقابة وصلاحيات الموظفين والامتثال الأمني' : 'Governance & Operational Security Compliance'}</span>
+            </h1>
+            
+            <div className="shrink-0 text-slate-800 dark:text-slate-200">
+              <ContextualHelp 
+                id="security-audit"
+                titleAr="هرمية الرقابة والامتثال الأمني"
+                titleEn="Governance & Operational Security Compliance"
+                explanationAr="فضاء حوكمة شامل لإعداد مصفوفة الصلاحيات والحقوق للمهندسين والسائقين، وجرد الموظفين النشطين ومطابقة الحسابات، مع سجل لوغريتمي كامل لتتبع النشاطات لمنع الهجمات أو الهدر."
+                explanationEn="An enterprise-grade security desk to customize role-based matrices, call internal account activations, and audit full audit logs trail records."
+                benefitsAr={[
+                  "تحديد دقيق ومحكم لما يمكن للفني والمراقب والمشاهد فعله لتفادي الهفوات والعبث بالبيانات.",
+                  "سجل تتبع كامل (Audit Trail Logging) يرصد توقيت وهوية العمليات والـ IPs المرافقة لها.",
+                  "لوحة تفاعلية فورية لدعوة موظف جديد وقبول أو تعليق حسابه."
+                ]}
+                benefitsEn={[
+                  "Enforces customized permissions limiting tech, viewer or administrator actions specifically.",
+                  "Maintains automated event logs including IP references for any system mutation or login.",
+                  "Provides immediate dynamic triggers to activate or suspend any registered employee instantly."
+                ]}
+                tipsAr={[
+                  "تأكد من تخصيص مصفوفة الصلاحيات بما يلبي رغبات الرقابة الميدانية ومطالعة سجل العمليات بشكل أسبوعي."
+                ]}
+                tipsEn={[
+                  "We recommend auditing the security trail once every week to check for unusual remote locations or IPs."
+                ]}
+                language={language}
+              />
+            </div>
+          </div>
+          <p className="text-xs md:text-[13px] text-purple-200/80 font-bold mt-2 leading-relaxed">
+            {language === 'ar' 
+              ? 'نظام رقابي أمان بأسلوب SaaS: تحكم بالصلاحيات وتوزيع الحقوق على الفنيين ومدراء الأسطول، مع رصد حي ومعير فورياً ضد الاختراقات الأمنية عبر سجل تعقبي كامل (Audit Logs).'
+              : 'SaaS style security guard system: control permissions, assign privileges, and track real-time security events.'}
+          </p>
         </div>
-        <p className="text-xs text-slate-505 dark:text-slate-400 mt-1 leading-relaxed">
-          نظام رقابي أمان بأسلوب SaaS: تحكم بالصلاحيات وتوزيع الحقوق على الفنيين ومدراء الأسطول، مع رصد حي ومعير فوريّاً ضد الاختراقات الأمنية عبر سجلّ تعقبي كامل (Audit Logs).
-        </p>
+        
+        {/* Decorative badge */}
+        <div className="hidden md:flex relative z-10 self-center items-center justify-center bg-white/5 border border-white/10 rounded-2xl px-4 py-3 shrink-0">
+          <span className="text-[11px] font-bold text-purple-200 tracking-wide text-center">
+            {language === 'ar' ? 'درجة أمان قصوى 🔒' : 'Max Security Grade 🔒'}
+          </span>
+        </div>
       </div>
 
       {/* Sub-tabs for security audit */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100/60 dark:bg-slate-900 border border-slate-150 dark:border-slate-850 rounded-2xl max-w-max select-none">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 p-1.5 bg-slate-100/60 dark:bg-slate-900 border border-slate-150 dark:border-slate-850 rounded-2xl w-full md:max-w-max select-none">
         {[
           { key: 'features', labelAr: 'التحكم بميزات المنصة (Feature Access)', icon: <Sliders size={13} />, isNew: true },
           { key: 'matrix', labelAr: 'مصفوفة الصلاحيات والسياسات (RBAC Matrix)', icon: <ShieldAlert size={13} /> },
@@ -879,9 +902,9 @@ export default function SecurityAudit({ user }: { user?: User }) {
                 setIsPreviewActive(true);
               }
             }}
-            className={`flex items-center gap-2 p-2 px-3.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+            className={`flex items-center gap-2 p-2.5 px-3.5 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer w-full md:w-auto justify-start md:justify-center ${
               activeSubTab === tab.key
-                ? 'bg-violet-600 text-white shadow-md shadow-violet-500/10 scale-[1.02]'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/15 scale-[1.01]'
                 : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/40'
             }`}
           >
@@ -958,7 +981,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
                 <tbody className="divide-y divide-slate-100/50 dark:divide-slate-800/40 font-bold text-slate-700 dark:text-slate-300">
                   {/* Group 1: القيادة والتحكم الإستراتيجي */}
                   <tr>
-                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-purple-600 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
                       القيادة والتحكم الإستراتيجي (Command & Control)
                     </td>
                   </tr>
@@ -970,7 +993,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
 
                   {/* Group 2: إدارة الحركة والعمليات */}
                   <tr>
-                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-purple-600 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
                       إدارة الحركة والعمليات (Operations)
                     </td>
                   </tr>
@@ -982,7 +1005,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
 
                   {/* Group 3: إدارة الهندسة والصيانة الفنية */}
                   <tr>
-                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-purple-600 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
                       إدارة الهندسة والصيانة الفنية (Engineering)
                     </td>
                   </tr>
@@ -995,7 +1018,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
 
                   {/* Group 4: إدارة التموين وسلاسل الإمداد */}
                   <tr>
-                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-purple-600 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
                       سلاسل التموين والإمداد (Logistics)
                     </td>
                   </tr>
@@ -1006,7 +1029,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
 
                   {/* Group 5: الحوكمة والتفتيش والأمان */}
                   <tr>
-                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-brand-blue-500 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
+                    <td colSpan={5} className="py-2.5 pt-4 text-[10px] font-black text-purple-600 dark:text-emerald-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/30 px-3 rounded-lg">
                       الحوكمة والتفتيش والأمان (Compliance & Governance)
                     </td>
                   </tr>
@@ -1621,7 +1644,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
         <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center gap-1.5 pb-2.5 border-b border-slate-150/50 dark:border-slate-800/60">
-              <UserPlus size={16} className="text-brand-blue-500" />
+              <UserPlus size={16} className="text-purple-650" />
               <h2 className="text-sm font-black text-slate-900 dark:text-white">إضافة ودعوة موظفين جدد</h2>
             </div>
 
@@ -1634,7 +1657,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
                   placeholder="مثال: الفني مراد العمري"
                   value={newMember.name}
                   onChange={(e) => setNewMember(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl transition-all outline-none dark:text-white"
+                  className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-purple-500 rounded-xl transition-all outline-none dark:text-white"
                 />
               </div>
 
@@ -1646,7 +1669,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
                   placeholder="mourad@mech360.com"
                   value={newMember.email}
                   onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl transition-all outline-none dark:text-white"
+                  className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-purple-500 rounded-xl transition-all outline-none dark:text-white"
                 />
               </div>
 
@@ -1655,7 +1678,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
                 <select 
                   value={newMember.role}
                   onChange={(e) => setNewMember(prev => ({ ...prev, role: e.target.value as TeamMember['role'] }))}
-                  className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl transition-all outline-none dark:text-white font-bold text-slate-800"
+                  className="w-full text-xs p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-purple-500 rounded-xl transition-all outline-none dark:text-white font-bold text-slate-800"
                 >
                   <option value="admin">مدير نظام كامل (Super Admin)</option>
                   <option value="fleet_manager">مدير حركة المركبات واللوجستيات (Fleet Manager)</option>
@@ -1666,7 +1689,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
 
               <button 
                 type="submit"
-                className="w-full mt-2 h-10 bg-brand-blue-500 hover:bg-brand-blue-600 text-white font-black text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full mt-2 h-10 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>أرسل رمز دعوة وترخيص الانضمام</span>
               </button>
@@ -2224,7 +2247,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
       <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4 animate-fade-in">
         <div className="flex items-center justify-between font-sans pb-1">
           <div className="flex items-center gap-2">
-            <Users size={16} className="text-brand-blue-500" />
+            <Users size={16} className="text-purple-650" />
             <h3 className="text-sm font-black text-slate-900 dark:text-white">طاقم العمل المسجّل بالمنظمة ومستوى الوصول</h3>
           </div>
           <span className="text-[10px] font-bold text-slate-500">إجمالي: {teamMembers.length} مستخدمين مؤهلين</span>
@@ -2237,7 +2260,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
               className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3.5 relative ${
                 tm.status === 'suspended' 
                   ? 'border-rose-100 bg-rose-50/5 px-4 dark:border-rose-950/20 dark:bg-rose-950/5 text-slate-500' 
-                  : 'border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900/10 hover:border-brand-blue-150'
+                  : 'border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900/10 hover:border-purple-300'
               }`}
             >
               <div className="space-y-1">
@@ -2375,7 +2398,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
         {/* Module Header with Live Filter Controls */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans border-b border-slate-150/50 dark:border-slate-800/60 pb-3">
           <div className="flex items-center gap-2">
-            <History size={18} className="text-brand-blue-500 shrink-0" />
+            <History size={18} className="text-purple-650 shrink-0" />
             <div className="space-y-0.5">
               <h3 className="text-sm font-black text-slate-900 dark:text-white">سلاسل الامتثال الأمني وملاحظات الدخول النشط (Audit Trail Logging)</h3>
               <p className="text-[10px] text-slate-500 dark:text-slate-400">سجل غير قابل للمسح أو التلاعب يراقب كافة تعديلات الصيانة والمستودع والماليات لأسباب التأمين والامتثال.</p>
@@ -2400,7 +2423,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
               placeholder="ابحث בסجل الأمان (الاسم، العملية، عنوان IP، التفاصيل)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pr-8 pl-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-blue-500 rounded-xl transition-all outline-none text-xs font-semibold dark:text-white"
+              className="w-full pr-8 pl-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:border-purple-500 rounded-xl transition-all outline-none text-xs font-semibold dark:text-white"
             />
           </div>
 
@@ -2474,7 +2497,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
 
                   {/* Actor details */}
                   <div className="flex items-center gap-2 bg-white dark:bg-slate-950 p-1.5 px-3 rounded-xl border border-slate-100 dark:border-slate-850 shrink-0 select-none">
-                    <span className="w-2 h-2 rounded-full bg-brand-blue-500" />
+                    <span className="w-2 h-2 rounded-full bg-purple-500" />
                     <span className="text-[10px] font-bold text-slate-700 dark:text-slate-350">{log.user} ({log.role})</span>
                   </div>
                 </div>

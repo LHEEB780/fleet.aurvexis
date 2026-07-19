@@ -1315,72 +1315,87 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
         language={language}
       />
 
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-              {language === 'ar' ? 'إدارة المعدات والمركبات' : 'Fleet & Equipment Desk'}
-            </h1>
-            <ContextualHelp 
-              id="fleet-vehicles"
-              titleAr="مستودع أسطول المركبات"
-              titleEn="Fleet & Equipment Desk"
-              explanationAr="لوحة مركزية لتسجيل وتعديل وفلترة كافة شاحنات وآليات النقل والسيارات الخفيفة النشطة في أسطولك."
-              explanationEn="A master repository designed to track, audit, and filter all heavy duty trucks, mechanical machinery, and standard operational cars."
-              benefitsAr={[
-                "متابعة استهلاك الوقود اللحظي ومعدلات الكفاءة الإجمالية.",
-                "مراقبة مستوى سلامة وضغط الإطارات لكل محور عجلات صامت وعامل.",
-                "عرض فوري لتراخيص وتواريخ انتهاء الوثائق والتأمين."
-              ]}
-              benefitsEn={[
-                "Real-time monitoring of fuel indices and live idle statuses.",
-                "Accurate multi-axle tire pressures tracking to enhance safety.",
-                "Never miss mandatory license, registration, or lease renewals again."
-              ]}
-              tipsAr={[
-                "يمكنك النقر على أي مركبة لفتح السجل التاريخي الشامل وملفها الميكانيكي الكامل."
-              ]}
-              tipsEn={[
-                "Click on any vehicle card to open its absolute historic maintenance files."
-              ]}
-              language={language}
-            />
+      {/* Page Header with Elegant Purple Gradient */}
+      <div className="relative p-6 md:p-8 bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-950 rounded-3xl text-white shadow-2xl border border-purple-800/35 overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-[100px] -ml-20 -mb-20"></div>
+        
+        <div className="relative space-y-6">
+          {/* Title and Description block */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-2 flex-1">
+              <div className="inline-flex items-center gap-2 bg-purple-500/15 border border-purple-500/20 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-purple-300 uppercase">
+                <Sparkles size={11} className="animate-spin text-purple-400" />
+                <span>إدارة المعدات والأسطول الذكي</span>
+              </div>
+              
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+                  <Truck size={32} className="text-purple-300 animate-pulse" />
+                  <span>{language === 'ar' ? 'إدارة المعدات والمركبات' : 'Fleet & Equipment Desk'}</span>
+                </h1>
+                <ContextualHelp 
+                  id="fleet-vehicles"
+                  titleAr="مستودع أسطول المركبات"
+                  titleEn="Fleet & Equipment Desk"
+                  explanationAr="لوحة مركزية لتسجيل وتعديل وفلترة كافة شاحنات وآليات النقل والسيارات الخفيفة النشطة في أسطولك."
+                  explanationEn="A master repository designed to track, audit, and filter all heavy duty trucks, mechanical machinery, and standard operational cars."
+                  benefitsAr={[
+                    "متابعة استهلاك الوقود اللحظي ومعدلات الكفاءة الإجمالية.",
+                    "مراقبة مستوى سلامة وضغط الإطارات لكل محور عجلات صامت وعامل.",
+                    "عرض فوري لتراخيص وتواريخ انتهاء الوثائق والتأمين."
+                  ]}
+                  benefitsEn={[
+                    "Real-time monitoring of fuel indices and live idle statuses.",
+                    "Accurate multi-axle tire pressures tracking to enhance safety.",
+                    "Never miss mandatory license, registration, or lease renewals again."
+                  ]}
+                  tipsAr={[
+                    "يمكنك النقر على أي مركبة لفتح السجل التاريخي الشامل وملفها الميكانيكي الكامل."
+                  ]}
+                  tipsEn={[
+                    "Click on any vehicle card to open its absolute historic maintenance files."
+                  ]}
+                  language={language}
+                />
+              </div>
+              <p className="text-xs text-purple-100/70 max-w-2xl">
+                {language === 'ar' 
+                  ? 'سجل كامل بجميع الأصول التابعة للمؤسسة تفصيلياً مع الإطارات والبيانات المتقدمة.' 
+                  : 'Detailed inventory log spanning key components, live pressures, and operational status.'}
+              </p>
+            </div>
+
+            {user.role === 'admin' && (
+              <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch lg:items-center gap-2.5 shrink-0">
+                <button 
+                  id="bulk-import-vehicle-btn"
+                  onClick={() => setIsBulkModalOpen(true)}
+                  className="flex items-center justify-center gap-2 px-4 h-11 bg-white/10 hover:bg-white/15 text-white border border-white/20 hover:border-white/30 rounded-xl font-black shadow-sm active:scale-[98%] transition-all text-xs cursor-pointer w-full lg:w-auto"
+                >
+                  <Sparkles size={15} className="animate-pulse text-purple-300 shrink-0" />
+                  <span>{language === 'ar' ? 'الاستيراد والإنشاء الجماعي للأصول' : 'Smart Bulk Import & Creation'}</span>
+                </button>
+                <button 
+                  id="smart-input-assistant-btn"
+                  onClick={() => setIsSmartInputModalOpen(true)}
+                  className="flex items-center justify-center gap-2 px-4 h-11 bg-white/10 hover:bg-white/15 text-white border border-white/20 hover:border-white/30 rounded-xl font-black shadow-sm active:scale-[98%] transition-all text-xs cursor-pointer w-full lg:w-auto"
+                >
+                  <Wrench size={14} className="text-purple-300 shrink-0" />
+                  <span>{language === 'ar' ? 'مساعد الإدخال الذكي' : 'Smart Input Assistant'}</span>
+                </button>
+                <button 
+                  id="add-vehicle-btn"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="flex items-center justify-center gap-2 px-5 h-11 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black shadow-md hover:shadow-lg active:scale-[98%] transition-all text-xs cursor-pointer w-full lg:w-auto border border-purple-400/20"
+                >
+                  <Plus size={16} className="shrink-0" />
+                  <span>{t('إضافة مركبة تفصيلياً')}</span>
+                </button>
+              </div>
+            )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {language === 'ar' 
-              ? 'سجل كامل بجميع الأصول التابعة للمؤسسة تفصيلياً مع الإطارات والبيانات المتقدمة.' 
-              : 'Detailed inventory log spanning key components, live pressures, and operational status.'}
-          </p>
         </div>
-        {user.role === 'admin' && (
-          <div className="w-full lg:w-auto grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-row items-stretch lg:items-center gap-2.5">
-            <button 
-              id="bulk-import-vehicle-btn"
-              onClick={() => setIsBulkModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 h-11 bg-gradient-to-r from-violet-600/10 to-purple-600/10 hover:from-violet-600/15 hover:to-purple-600/15 text-violet-800 dark:text-violet-300 border border-violet-500/20 dark:border-violet-500/30 rounded-xl font-black shadow-sm active:scale-[98%] hover:shadow-md hover:border-violet-500/40 transition-all text-xs cursor-pointer w-full lg:w-auto"
-            >
-              <Sparkles size={15} className="animate-pulse text-violet-500 shrink-0" />
-              <span>{language === 'ar' ? 'الاستيراد والإنشاء الجماعي للأصول' : 'Smart Bulk Import & Creation'}</span>
-            </button>
-            <button 
-              id="smart-input-assistant-btn"
-              onClick={() => setIsSmartInputModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 h-11 bg-gradient-to-r from-indigo-600/10 to-blue-600/10 hover:from-indigo-600/15 hover:to-blue-600/15 text-indigo-800 dark:text-indigo-300 border border-indigo-500/20 dark:border-indigo-500/30 rounded-xl font-black shadow-sm active:scale-[98%] hover:shadow-md hover:border-indigo-500/40 transition-all text-xs cursor-pointer w-full lg:w-auto"
-            >
-              <Wrench size={14} className="text-indigo-500 shrink-0" />
-              <span>{language === 'ar' ? 'مساعد الإدخال الذكي' : 'Smart Input Assistant'}</span>
-            </button>
-            <button 
-              id="add-vehicle-btn"
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-5 h-11 bg-gradient-to-r from-brand-blue-600 to-indigo-600 text-white rounded-xl font-black shadow-md hover:from-brand-blue-700 hover:to-indigo-700 active:scale-[98%] hover:shadow-lg transition-all text-xs cursor-pointer w-full lg:w-auto"
-            >
-              <Plus size={16} className="shrink-0" />
-              <span>{t('إضافة مركبة تفصيلياً')}</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Filters Bar */}

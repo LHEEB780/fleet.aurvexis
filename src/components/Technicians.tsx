@@ -26,7 +26,8 @@ import {
   BookOpen,
   Upload,
   Image,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 import { technicians as initialTechnicians, maintenanceOrders } from '../data';
 import { Technician, User } from '../types';
@@ -55,7 +56,7 @@ const SYSTEM_ANCHOR_DATE = '2026-05-19';
 const SpecializationIcon = ({ spec, size = 18 }: { spec: string, size?: number }) => {
   switch (spec) {
     case 'electrical': return <Zap size={size} className="text-brand-yellow-500" />;
-    case 'mechanical': return <Wrench size={size} className="text-brand-blue-500" />;
+    case 'mechanical': return <Wrench size={size} className="text-purple-500" />;
     case 'cooling': return <Thermometer size={size} className="text-rose-500" />;
     case 'hydraulic': return <Droplets size={size} className="text-sky-500" />;
     case 'bodywork': return <Layers size={size} className="text-emerald-500" />;
@@ -73,7 +74,7 @@ const specLabels: Record<string, string> = {
 
 const specColors: Record<string, { bg: string; text: string; border: string }> = {
   electrical: { bg: 'bg-amber-50 dark:bg-amber-950/20', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-100 dark:border-amber-900/40' },
-  mechanical: { bg: 'bg-brand-blue-50 dark:bg-brand-blue-900/20', text: 'text-brand-blue-600 dark:text-brand-blue-400', border: 'border-brand-blue-100 dark:border-brand-blue-900/40' },
+  mechanical: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-100 dark:border-purple-900/40' },
   cooling: { bg: 'bg-rose-50 dark:bg-rose-950/20', text: 'text-rose-600 dark:text-rose-450', border: 'border-rose-100 dark:border-rose-900/40' },
   hydraulic: { bg: 'bg-sky-50 dark:bg-sky-950/20', text: 'text-sky-600 dark:text-sky-400', border: 'border-sky-100 dark:border-sky-900/40' },
   bodywork: { bg: 'bg-emerald-50 dark:bg-emerald-950/20', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-100 dark:border-emerald-900/40' }
@@ -378,18 +379,23 @@ export default function Technicians({ user }: { user?: User }) {
 
   return (
     <div className="space-y-6 text-right" dir="rtl">
-      {/* Header with main actionable focus-element */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-2 border-b border-slate-100/40 dark:border-slate-800/20">
-        <div>
+      {/* Header section styled elegantly like dashboard with purple gradient */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 text-white p-6 rounded-[2rem] border border-purple-900/40 shadow-xl relative overflow-hidden" dir="rtl">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/20 rounded-full text-purple-300 text-[10px] font-black mb-1.5">
+            <Sparkles size={11} className="animate-pulse text-purple-400" />
+            <span>متابعة وتوزيع كفاءة الكادر الفني للورش</span>
+          </span>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-brand-blue-50 dark:bg-brand-blue-950/30 flex items-center justify-center text-brand-blue-600 dark:text-brand-blue-400 shrink-0">
-                <Users size={22} />
-              </div>
+            <h1 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
               <span>{language === 'ar' ? 'إدارة الفنيين والعاملين' : 'Technicians & Staff Panel'}</span>
             </h1>
             
-            <div className="shrink-0">
+            <div className="shrink-0 text-slate-800 dark:text-slate-200">
               <ContextualHelp 
                 id="technicians"
                 titleAr="إدارة الفنيين والعاملين"
@@ -416,29 +422,29 @@ export default function Technicians({ user }: { user?: User }) {
               />
             </div>
           </div>
-          <p className="text-xs md:text-[13px] text-slate-500 dark:text-slate-400 font-bold mt-2 leading-relaxed">
+          <p className="text-xs md:text-[13px] text-purple-200/80 font-bold mt-2 leading-relaxed">
             متابعة تخصصات الفنيين بالورشة، توزيع جدول البلاغات، وإضافة الفنيين وحالاتهم التشغيلية.
           </p>
         </div>
         
         {/* Actions Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 shrink-0 relative z-10 w-full lg:w-auto">
           {/* Main search input */}
           <div className="relative flex-1 sm:flex-none w-full sm:w-64 md:w-80">
-            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={14} />
+            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-purple-300" size={14} />
             <input 
               type="text"
               placeholder="ابحث بالاسم، التخصص أو الهاتف..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10 pl-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-205 dark:border-slate-700/80 rounded-xl text-xs font-black outline-none w-full shadow-xs transition-all placeholder:text-slate-400 focus:border-brand-blue-500 focus:ring-2 focus:ring-brand-blue-100/20"
+              className="pr-10 pl-4 py-2.5 bg-white/10 dark:bg-slate-900/50 border border-purple-500/20 focus:border-purple-400 rounded-xl text-xs font-black outline-none w-full shadow-inner transition-all placeholder:text-purple-300 text-white focus:ring-2 focus:ring-purple-500/20"
             />
           </div>
 
           {/* ADD TECHNICIAN BUTTON */}
           <button 
             onClick={() => setIsFormOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-blue-600 hover:bg-brand-blue-700 text-white rounded-xl text-xs font-black shadow-md shadow-brand-blue-550/15 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+            className="px-4 py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-650 hover:from-purple-500 hover:via-fuchsia-500 hover:to-indigo-505 text-white font-black text-xs rounded-xl transition-all shadow-md hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer shadow-purple-500/10 whitespace-nowrap"
           >
             <UserPlus size={15} />
             <span>إضافة فني جديد</span>
@@ -455,8 +461,8 @@ export default function Technicians({ user }: { user?: User }) {
               onClick={() => setActiveSpec(spec)}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 border whitespace-nowrap cursor-pointer ${
                 activeSpec === spec 
-                  ? 'bg-brand-blue-600 text-white border-brand-blue-600 shadow-md shadow-brand-blue-100/10' 
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-705 hover:border-brand-blue-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750/50'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-650 text-white border-transparent shadow-md shadow-purple-500/10' 
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-705 hover:border-purple-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-750/50'
               }`}
             >
               {spec !== 'all' && <SpecializationIcon spec={spec} size={13} />}
@@ -503,7 +509,7 @@ export default function Technicians({ user }: { user?: User }) {
                   <th className="py-4.5 px-6">الحالة التشغيلية</th>
                   <th className="py-4.5 px-6 text-center">سرعة تتبع المهام</th>
                   <th className="py-4.5 px-6 text-center bg-slate-100/50 dark:bg-slate-900/20">ساعات العمل اليومية (اليوم 21 مايو)</th>
-                  <th className="py-4.5 px-6 text-center text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/15 dark:bg-brand-blue-950/10 font-black">إجمالي الساعات الشهرية (مايو)</th>
+                  <th className="py-4.5 px-6 text-center text-purple-600 dark:text-purple-400 bg-purple-50/15 dark:bg-purple-950/10 font-black">إجمالي الساعات الشهرية (مايو)</th>
                   <th className="py-4.5 px-6 text-center">الإجراءات</th>
                 </tr>
               </thead>
@@ -550,7 +556,7 @@ export default function Technicians({ user }: { user?: User }) {
                               className="w-9 h-9 rounded-xl object-cover bg-slate-50 border border-slate-100 dark:border-slate-700 shrink-0 self-start mt-0.5"
                             />
                             <div>
-                              <span className="block font-black text-slate-800 dark:text-white group-hover:text-brand-blue-600 transition-colors">{tech.name}</span>
+                              <span className="block font-black text-slate-800 dark:text-white group-hover:text-purple-650 transition-colors">{tech.name}</span>
                               <span className="block text-[9px] text-slate-400 font-bold mt-0.5 font-mono">{tech.id}</span>
                               {tech.skills && tech.skills.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-1 max-w-[220px]">
@@ -668,7 +674,7 @@ export default function Technicians({ user }: { user?: User }) {
                                 handleQuickLogSet(tech.id, todayStr, Math.min(24, Math.max(0, h)));
                               }}
                               placeholder="0"
-                              className="w-10 py-1 text-center font-black text-xs font-mono text-slate-800 dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded shadow-inner outline-none focus:border-brand-blue-500"
+                              className="w-10 py-1 text-center font-black text-xs font-mono text-slate-800 dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded shadow-inner outline-none focus:border-purple-500"
                               title="ساعات عمل اليوم"
                             />
                             
@@ -685,7 +691,7 @@ export default function Technicians({ user }: { user?: User }) {
                         </td>
 
                         {/* Monthly Hours Total */}
-                        <td className="py-3 px-6 text-center text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/10 dark:bg-brand-blue-950/10 font-bold">
+                        <td className="py-3 px-6 text-center text-purple-600 dark:text-purple-400 bg-purple-50/10 dark:bg-purple-950/10 font-bold">
                           <div className="flex items-center justify-center gap-1 font-mono">
                             <span className="font-black text-sm">{monthlyTotal}</span>
                             <span className="text-[10px] font-bold text-slate-400">ساعة</span>
@@ -698,7 +704,7 @@ export default function Technicians({ user }: { user?: User }) {
                             <button
                               type="button"
                               onClick={() => setSelectedTech(tech)}
-                              className="px-2.5 py-1 bg-brand-blue-50 hover:bg-brand-blue-100 dark:bg-brand-blue-900/40 text-brand-blue-600 dark:text-brand-blue-400 rounded-lg text-[9.5px] font-black transition-all cursor-pointer"
+                              className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg text-[9.5px] font-black transition-all cursor-pointer"
                             >
                               كشف الساعات
                             </button>
@@ -763,7 +769,7 @@ export default function Technicians({ user }: { user?: User }) {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   onClick={() => setSelectedTech(tech)}
-                  className={`bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-100 dark:border-slate-705 shadow-sm overflow-hidden group hover:border-brand-blue-200 dark:hover:border-slate-600 transition-all cursor-pointer flex flex-col justify-between ${borderSpecialization}`}
+                  className={`bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-100 dark:border-slate-755 shadow-sm overflow-hidden group hover:border-purple-300 dark:hover:border-slate-600 transition-all cursor-pointer flex flex-col justify-between ${borderSpecialization}`}
                 >
                   <div className="p-4 flex-1">
                     
@@ -783,7 +789,7 @@ export default function Technicians({ user }: { user?: User }) {
                           }`} />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-[12px] font-black text-slate-900 dark:text-white group-hover:text-brand-blue-600 transition-colors truncate">
+                          <h3 className="text-[12px] font-black text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors truncate">
                             {tech.name}
                           </h3>
                           <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold truncate mt-0.5">
@@ -809,9 +815,9 @@ export default function Technicians({ user }: { user?: User }) {
                           <p className="text-[7.5px] font-extrabold text-slate-400 dark:text-slate-500 leading-tight mb-0.5">المنجز المكتمل</p>
                           <span className="text-xs font-black text-brand-green-500 font-mono">{completedCount || 4}</span>
                         </div>
-                        <div className="bg-brand-blue-50/50 dark:bg-brand-blue-950/20 p-1.5 rounded-xl border border-brand-blue-105/10 text-center flex flex-col justify-center min-h-[48px]">
-                          <p className="text-[7.5px] font-extrabold text-brand-blue-600 dark:text-brand-blue-400 leading-tight mb-0.5">ساعات الشهر</p>
-                          <span className="text-xs font-black text-brand-blue-600 dark:text-brand-blue-400 font-mono">{monthlyTotal}س</span>
+                        <div className="bg-purple-50/50 dark:bg-purple-950/20 p-1.5 rounded-xl border border-purple-500/10 text-center flex flex-col justify-center min-h-[48px]">
+                          <p className="text-[7.5px] font-extrabold text-purple-600 dark:text-purple-400 leading-tight mb-0.5">ساعات الشهر</p>
+                          <span className="text-xs font-black text-purple-600 dark:text-purple-400 font-mono">{monthlyTotal}س</span>
                         </div>
                       </div>
 
@@ -892,7 +898,7 @@ export default function Technicians({ user }: { user?: User }) {
                         e.stopPropagation();
                         setSelectedTech(tech);
                       }}
-                      className="w-full text-center text-slate-650 dark:text-slate-300 hover:bg-brand-blue-50 hover:text-brand-blue-600 dark:hover:bg-brand-blue-900/30 py-1.5 rounded-xl text-[10.5px] font-extrabold transition-all duration-200 cursor-pointer block border border-slate-200/40 dark:border-slate-800"
+                      className="w-full text-center text-slate-650 dark:text-slate-300 hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/30 py-1.5 rounded-xl text-[10.5px] font-extrabold transition-all duration-200 cursor-pointer block border border-slate-200/40 dark:border-slate-800"
                     >
                       عرض الملف والتحكم الفني
                     </button>
@@ -903,7 +909,7 @@ export default function Technicians({ user }: { user?: User }) {
                         onClick={() => handleStartEdit(tech)}
                         className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-255 rounded-xl text-[10px] font-black border border-slate-200 dark:border-slate-700 cursor-pointer transition-all"
                       >
-                        <Wrench size={11} className="text-brand-blue-500" />
+                        <Wrench size={11} className="text-purple-500" />
                         <span>تعديل البيانات</span>
                       </button>
 
@@ -935,13 +941,13 @@ export default function Technicians({ user }: { user?: User }) {
       {/* Bottom statistics and fast action cards */}
       <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-705 shadow-soft flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400 rounded-xl flex items-center justify-center">
+          <div className="w-11 h-11 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl flex items-center justify-center">
             <Users size={20} />
           </div>
           <div>
             <h4 className="text-xs font-black text-slate-900 dark:text-white">توطيد الموارد الفنية وساعات التواجد</h4>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-0.5">
-              يتكون الطاقم الحالي من <span className="font-extrabold text-brand-blue-600">{techList.length} فنيين</span> نشطين وموزعين يغطون شفت الصيانة الميكانيكية والهيدروليكية على مدار 24 ساعة.
+              يتكون الطاقم الحالي من <span className="font-extrabold text-purple-600">{techList.length} فنيين</span> نشطين وموزعين يغطون شفت الصيانة الميكانيكية والهيدروليكية على مدار 24 ساعة.
             </p>
           </div>
         </div>
@@ -958,7 +964,7 @@ export default function Technicians({ user }: { user?: User }) {
           <button 
             type="button"
             onClick={() => alert('جاري تصدير كشف الحالة والصيانة للفنيين...')}
-            className="flex-1 md:flex-initial px-5 py-2.5 bg-brand-blue-600 text-white rounded-xl text-xs font-black shadow-lg shadow-brand-blue-500/10 hover:bg-brand-blue-700 transition-all cursor-pointer"
+            className="flex-1 md:flex-initial px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-black shadow-lg shadow-purple-500/10 hover:bg-purple-700 transition-all cursor-pointer"
           >
             طباعة كشف الإنتاجية
           </button>
@@ -987,7 +993,7 @@ export default function Technicians({ user }: { user?: User }) {
               {/* Header */}
               <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/30">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-brand-blue-100 dark:bg-brand-blue-900/30 flex items-center justify-center text-brand-blue-600 dark:text-brand-blue-400">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
                     <UserPlus size={16} />
                   </div>
                   <div>
@@ -1020,7 +1026,7 @@ export default function Technicians({ user }: { user?: User }) {
                       placeholder="مثال: المهندس محمد العلي"
                       value={newTechForm.name}
                       onChange={(e) => setNewTechForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-extrabold outline-none focus:ring-1 focus:ring-brand-blue-500 dark:text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-extrabold outline-none focus:ring-1 focus:ring-purple-500 dark:text-white"
                     />
                   </div>
 
@@ -1032,7 +1038,7 @@ export default function Technicians({ user }: { user?: User }) {
                       placeholder="05xxxxxxxx"
                       value={newTechForm.phone}
                       onChange={(e) => setNewTechForm(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-black font-mono text-left outline-none focus:ring-1 focus:ring-brand-blue-500 dark:text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-black font-mono text-left outline-none focus:ring-1 focus:ring-purple-500 dark:text-white"
                       dir="ltr"
                     />
                   </div>
@@ -1048,7 +1054,7 @@ export default function Technicians({ user }: { user?: User }) {
                       placeholder="مثال: فني ميكانيك ثقيل أول"
                       value={newTechForm.role}
                       onChange={(e) => setNewTechForm(prev => ({ ...prev, role: e.target.value }))}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-extrabold outline-none focus:ring-1 focus:ring-brand-blue-500 dark:text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-extrabold outline-none focus:ring-1 focus:ring-purple-500 dark:text-white"
                     />
                   </div>
 
@@ -1058,7 +1064,7 @@ export default function Technicians({ user }: { user?: User }) {
                       type="date"
                       value={newTechForm.joinDate}
                       onChange={(e) => setNewTechForm(prev => ({ ...prev, joinDate: e.target.value }))}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-black text-left outline-none focus:ring-1 focus:ring-brand-blue-500 dark:text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-black text-left outline-none focus:ring-1 focus:ring-purple-500 dark:text-white"
                       dir="ltr"
                     />
                   </div>
@@ -1078,7 +1084,7 @@ export default function Technicians({ user }: { user?: User }) {
                           onClick={() => setNewTechForm(p => ({ ...p, specialization: key as any }))}
                           className={`p-3 rounded-xl border text-right flex flex-col items-center justify-center gap-1.5 transition-all text-center cursor-pointer ${
                             isSelected 
-                              ? 'border-brand-blue-500 bg-brand-blue-50/50 dark:bg-brand-blue-950/40 font-black' 
+                              ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/40 font-black' 
                               : 'border-slate-150 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-900/20 hover:border-slate-300'
                           }`}
                         >
@@ -1156,7 +1162,7 @@ export default function Technicians({ user }: { user?: User }) {
                             }
                           }
                         }}
-                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:ring-1 focus:ring-brand-blue-500 dark:text-white"
+                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:ring-1 focus:ring-purple-500 dark:text-white"
                       />
                     </div>
                     <button
@@ -1175,7 +1181,7 @@ export default function Technicians({ user }: { user?: User }) {
                           input.value = '';
                         }
                       }}
-                      className="px-4 py-2.5 bg-brand-blue-50 dark:bg-brand-blue-900/30 text-brand-blue-600 dark:text-brand-blue-400 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/50 rounded-xl text-xs font-black cursor-pointer whitespace-nowrap"
+                      className="px-4 py-2.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-xl text-xs font-black cursor-pointer whitespace-nowrap"
                     >
                       إضافة مهارة
                     </button>
@@ -1221,7 +1227,7 @@ export default function Technicians({ user }: { user?: User }) {
                     <select
                       value={newTechForm.status}
                       onChange={(e) => setNewTechForm(p => ({ ...p, status: e.target.value as any }))}
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-extrabold outline-none focus:ring-1 focus:ring-brand-blue-500 dark:text-white"
+                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-extrabold outline-none focus:ring-1 focus:ring-purple-500 dark:text-white"
                     >
                       <option value="available">متاح حالياً (نشط ومستعد وبلا مهام)</option>
                       <option value="busy">مشغول بالعمل (منخرط في أمر صيانة)</option>
@@ -1264,8 +1270,8 @@ export default function Technicians({ user }: { user?: User }) {
                       <div className="space-y-1.5 border-t md:border-t-0 md:border-r border-slate-200/40 dark:border-slate-800 pt-2.5 md:pt-0 md:pr-3">
                         <span className="text-[9.5px] font-black text-slate-450 uppercase block">خيار ب: رفع صورة من الملفات المحفوظة</span>
                         <div className="flex items-center gap-2">
-                          <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-brand-blue-400 dark:hover:border-brand-blue-900 hover:bg-slate-50 dark:hover:bg-slate-900/60 rounded-xl text-[11px] font-bold text-slate-700 dark:text-slate-300 cursor-pointer transition-all">
-                            <Upload size={13} className="text-brand-blue-500" />
+                          <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-purple-400 dark:hover:border-purple-900 hover:bg-slate-50 dark:hover:bg-slate-900/60 rounded-xl text-[11px] font-bold text-slate-700 dark:text-slate-300 cursor-pointer transition-all">
+                            <Upload size={13} className="text-purple-500" />
                             <span>اختر ملف صورة</span>
                             <input 
                               type="file" 
@@ -1333,7 +1339,7 @@ export default function Technicians({ user }: { user?: User }) {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-brand-blue-600 hover:bg-brand-blue-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer flex items-center gap-1"
+                    className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer flex items-center gap-1"
                   >
                     <Check size={12} />
                     <span>
@@ -1374,9 +1380,9 @@ export default function Technicians({ user }: { user?: User }) {
                 className="bg-white dark:bg-slate-850 w-full max-w-md rounded-3xl shadow-2xl relative border border-slate-200/60 dark:border-slate-700 overflow-hidden z-10"
               >
                 {/* Header Profile background band */}
-                <div className="h-28 bg-gradient-to-l from-brand-blue-500/10 via-brand-blue-400/5 to-transparent relative p-5 flex items-end justify-between border-b border-slate-100 dark:border-slate-800">
+                <div className="h-28 bg-gradient-to-l from-purple-500/10 via-purple-400/5 to-transparent relative p-5 flex items-end justify-between border-b border-slate-100 dark:border-slate-800">
                   <div className="absolute top-3 right-3 flex items-center gap-1.5 text-[9px] font-black text-slate-500 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-200/50">
-                    <Award size={10} className="text-brand-blue-600" />
+                    <Award size={10} className="text-purple-600" />
                     <span>ملف كادر معتمد</span>
                   </div>
                   <button 
@@ -1433,7 +1439,7 @@ export default function Technicians({ user }: { user?: User }) {
                             onClick={() => handleUpdateStatus(selectedTech.id, st.key as any)}
                             className={`py-1 rounded-lg text-[9px] font-black transition-all cursor-pointer ${
                               isCurrent 
-                                ? 'bg-brand-blue-600 text-white shadow-sm' 
+                                ? 'bg-purple-600 text-white shadow-sm' 
                                 : `bg-white dark:bg-slate-850 text-slate-500 border border-slate-100 dark:border-slate-800 ${st.color}`
                             }`}
                           >
@@ -1523,10 +1529,10 @@ export default function Technicians({ user }: { user?: User }) {
                   <div className="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-150 dark:border-slate-800/60 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Clock className="text-brand-blue-500" size={15} />
+                        <Clock className="text-purple-500" size={15} />
                         <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">سجل ساعات الحضور والعمل اليومية</h4>
                       </div>
-                      <span className="text-[10px] font-black text-brand-blue-600 bg-brand-blue-50 dark:bg-brand-blue-950/40 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-black text-purple-600 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-full">
                         {getMonthlyHours(selectedTech)} س الشهر الحالي
                       </span>
                     </div>
@@ -1602,7 +1608,7 @@ export default function Technicians({ user }: { user?: User }) {
 
                             alert(`تم بنجاح قيد تسجيل ساعات اليوم (${draftLogHours} س) للفني.`);
                           }}
-                          className="px-3.5 py-2 bg-brand-blue-600 hover:bg-brand-blue-700 text-white rounded-lg text-[10px] font-black transition-all cursor-pointer inline-flex items-center"
+                          className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[10px] font-black transition-all cursor-pointer inline-flex items-center"
                         >
                           قيد ساعات اليوم
                         </button>
@@ -1756,7 +1762,7 @@ export default function Technicians({ user }: { user?: User }) {
                         }}
                         className="flex-1 py-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-250 rounded-xl text-[10.5px] font-black flex items-center justify-center gap-1.5 border border-slate-200/60 dark:border-slate-700 cursor-pointer transition-colors"
                       >
-                        <Wrench size={11} className="text-brand-blue-500" />
+                        <Wrench size={11} className="text-purple-500" />
                         <span>تعديل البيانات</span>
                       </button>
 
@@ -1778,7 +1784,7 @@ export default function Technicians({ user }: { user?: User }) {
                     <button
                       type="button"
                       onClick={() => setSelectedTech(null)}
-                      className="w-full py-2 bg-brand-blue-600 hover:bg-brand-blue-700 text-white rounded-xl text-xs font-black cursor-pointer transition-all mt-1 shadow-sm"
+                      className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black cursor-pointer transition-all mt-1 shadow-sm"
                     >
                       إغلاق نافذة الملف
                     </button>

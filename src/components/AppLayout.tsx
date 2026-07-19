@@ -87,7 +87,7 @@ const SidebarItem = ({ icon, label, active, onClick, collapsed }: SidebarItemPro
       {icon}
     </div>
     {!collapsed && (
-      <span className="mr-3 ml-3 text-[10px] font-semibold tracking-wide">
+      <span className="mr-3 ml-3 text-[11.5px] font-bold tracking-wide">
         {label}
       </span>
     )}
@@ -2286,7 +2286,7 @@ export default function AppLayout({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className={activeTab === 'maintenance-bot' ? 'w-full h-full flex flex-col flex-1' : 'max-w-6xl mx-auto h-full space-y-6'}
+              className={activeTab === 'maintenance-bot' ? 'w-full h-full flex flex-col flex-1' : 'max-w-[1400px] w-full mx-auto h-full space-y-6'}
             >
               {/* Page Sub-Header (Scrolls Naturally, Not Sticky) */}
               {activeTab !== 'maintenance-bot' && (
@@ -2571,15 +2571,19 @@ export default function AppLayout({
       {/* Settings Modal - Fully Interactive with Left-Right Tab Layout */}
       <AnimatePresence>
         {isSettingsModalOpen && (
-          <div className="fixed inset-0 bg-slate-50 dark:bg-[#070b13] z-[80] flex flex-col w-full h-full overflow-y-auto">
+          <div className="fixed inset-0 bg-slate-50 dark:bg-[#070b13] z-[80] flex flex-col w-full h-full overflow-y-auto relative">
+            {/* Elegant Ambient Purple/Indigo Radial Gradients for Background Depth */}
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-violet-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-indigo-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 15 }}
-              className="w-full flex-1 flex flex-col text-slate-900 dark:text-white pb-16"
+              className="w-full flex-1 flex flex-col text-slate-900 dark:text-white pb-16 relative z-10"
             >
               {/* Header */}
-              <div className={`p-6 border-b border-slate-200 dark:border-slate-850/80 flex items-center justify-between bg-white dark:bg-[#0f1422] shadow-xs shrink-0 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+              <div className={`p-6 border-b border-violet-100 dark:border-violet-900/40 flex items-center justify-between bg-white/95 dark:bg-[#0f1422]/95 backdrop-blur-md shadow-xs shrink-0 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
                 <div className={`flex items-center gap-3.5 ${dir === 'rtl' ? 'flex-row-reverse text-right' : 'text-left'}`}>
                   <button 
                     onClick={() => {
@@ -2589,15 +2593,18 @@ export default function AppLayout({
                         setIsSettingsModalOpen(false);
                       }
                     }}
-                    className={`p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-705 text-slate-500 rounded-xl cursor-pointer flex items-center gap-1.5 text-xs font-black transition-all ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
+                    className={`p-2.5 bg-slate-50 hover:bg-violet-50 dark:bg-[#131124] dark:hover:bg-violet-950/40 border border-slate-150 dark:border-violet-900/30 text-slate-600 dark:text-violet-300 rounded-2xl cursor-pointer flex items-center justify-center transition-all`}
                     title={language === 'ar' ? 'رجوع' : 'Back'}
                   >
-                    <span>←</span>
-                    <span className="hidden sm:inline">{language === 'ar' ? (selectedSettingsTab !== null ? 'للإعدادات' : 'للنظام') : (selectedSettingsTab !== null ? 'Back' : 'System')}</span>
+                    <span className="text-sm font-black">←</span>
+                    <span className="hidden sm:inline text-[10.5px] font-black mr-1 ml-1">{language === 'ar' ? (selectedSettingsTab !== null ? 'للإعدادات' : 'للنظام') : (selectedSettingsTab !== null ? 'Back' : 'System')}</span>
                   </button>
-                  <div className="w-10 h-10 bg-brand-blue-50 dark:bg-brand-blue-900/30 text-brand-blue-500 border border-brand-blue-100/30 rounded-xl flex items-center justify-center">
-                    <Settings className="text-brand-blue-500" size={20} />
+                  
+                  {/* Beautiful Purple Settings Icon Container */}
+                  <div className="w-10 h-10 bg-gradient-to-br from-violet-500/10 to-indigo-500/10 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-900/20 rounded-2xl flex items-center justify-center shadow-xs">
+                    <Settings className="text-violet-500 animate-spin-slow" size={20} />
                   </div>
+                  
                   <div>
                     <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
                       {selectedSettingsTab === null ? (
@@ -2616,7 +2623,7 @@ export default function AppLayout({
                         language === 'ar' ? 'بوابة المزامنة والنسخ السحابي' : 'Cloud Backup & DB Synchronization'
                       )}
                     </h3>
-                    <p className="text-[10px] text-slate-450 dark:text-slate-500">
+                    <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-0.5">
                       {selectedSettingsTab === null ? (
                         language === 'ar' ? 'تهيئة وتخصيص هوية المستأجر والتحقق من حسابات الموظفين والصلاحيات المتكاملة' : 'Configure and customize tenant styling, verify staff accounts, and authorize system overrides'
                       ) : (
@@ -2627,7 +2634,7 @@ export default function AppLayout({
                 </div>
                 <button 
                   onClick={() => setIsSettingsModalOpen(false)}
-                  className="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-705 text-slate-500 rounded-xl cursor-pointer"
+                  className="p-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-705 text-slate-500 dark:text-slate-400 rounded-2xl cursor-pointer border border-slate-150 dark:border-slate-800 transition-colors"
                 >
                   <X size={18} />
                 </button>
@@ -2637,11 +2644,11 @@ export default function AppLayout({
               <div className="flex-1 overflow-y-auto w-full">
                 {selectedSettingsTab === null ? (
                   <div className="max-w-5xl mx-auto w-full px-6 py-10">
-                    <div className={`mb-8 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                      <h4 className="text-sm font-extrabold text-slate-400 uppercase tracking-widest mb-1 pb-1 border-b border-slate-200/50 dark:border-slate-800 w-fit">
-                        {language === 'ar' ? 'البوابة الكلية لوحدات الـ SaaS' : 'SaaS Console Configuration Modules'}
+                    <div className={`mb-8 space-y-1.5 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                      <h4 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-transparent tracking-tight">
+                        {language === 'ar' ? 'البوابة الكلية لوحدات الـ SAAS' : 'SaaS Console Configuration Modules'}
                       </h4>
-                      <p className="text-xs text-slate-500 max-w-2xl">
+                      <p className="text-xs sm:text-sm text-slate-450 dark:text-slate-400 max-w-3xl leading-relaxed">
                         {language === 'ar' ? 'اختر أحد الأقسام التالية لضبط معايير الهوية، وإدارة الصلاحيات المتقدمة للأدمن والفنيين بالكامل وبشكل منعزل.' : 'Select a node below to configure white-labeled client brands, establish fine-grained technical authorization, and audit databases.'}
                       </p>
                     </div>
@@ -2654,7 +2661,7 @@ export default function AppLayout({
                           labelEn: 'Corporate Visual Identity & Logo',
                           descAr: 'تخصيص الاسم التجاري، رفع الشعار المعتمد، واختيار تدرج الألوان المتطابق مع علامتكم التجارية لتقديم مظهر White-Label متكامل.',
                           descEn: 'Configure your custom business brand name, upload official company logo, and align theme accents for a complete white-labeled look.',
-                          icon: <Sparkles size={24} className="text-amber-500" />,
+                          icon: <Sparkles size={24} className="text-amber-500 group-hover:animate-pulse" />,
                           tagAr: 'الهوية البصرية واللوجو',
                           tagEn: 'Visual Identity & Logo',
                           color: 'amber'
@@ -2665,7 +2672,7 @@ export default function AppLayout({
                           labelEn: 'Admin Profile & Security',
                           descAr: 'ضبط ملف المدير العام للورشة، رمز التحقق الشخصي (Security PIN)، صلاحيات الأدمن الفرعيين وجدول تكليفات المهام الصيانة.',
                           descEn: 'Change expert supervisor titles, main safety PIN code, and toggle backend action overrides.',
-                          icon: <UserCheck size={24} className="text-brand-blue-500" />,
+                          icon: <UserCheck size={24} className="text-violet-500" />,
                           tagAr: 'الحساب والأمن',
                           tagEn: 'Credentials & PIN',
                           color: 'blue'
@@ -2726,32 +2733,34 @@ export default function AppLayout({
                               setSelectedSettingsTab(item.id as any);
                             }
                           }}
-                          className={`w-full p-6 sm:p-8 bg-white dark:bg-[#0f1422] rounded-[2rem] border border-slate-200/60 dark:border-slate-800 hover:border-slate-350 dark:hover:border-slate-700 hover:scale-[1.012] hover:shadow-lg transition-all text-right outline-none cursor-pointer flex flex-col justify-between h-[210px] group ${dir === 'rtl' ? 'flex-col text-right' : 'flex-col text-left'}`}
+                          className={`w-full p-6 sm:p-8 bg-white dark:bg-[#0c101d]/90 rounded-[2rem] border border-slate-150 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-800/80 hover:scale-[1.018] hover:shadow-xl hover:shadow-violet-500/5 transition-all text-right outline-none cursor-pointer flex flex-col justify-between h-[210px] group ${dir === 'rtl' ? 'flex-col text-right' : 'flex-col text-left'}`}
                         >
                           <div className={`flex items-start justify-between w-full ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
-                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 group-hover:bg-slate-100 dark:group-hover:bg-slate-800 transition-colors">
+                            <div className="p-4 rounded-3xl bg-slate-50 dark:bg-slate-900 group-hover:bg-gradient-to-br group-hover:from-violet-500/10 group-hover:to-indigo-500/10 group-hover:text-violet-600 transition-all shadow-3xs border border-slate-100 dark:border-slate-800">
                               {item.icon}
                             </div>
                             <span className={`text-[9.5px] font-black px-2.5 py-1 rounded-full ${
-                              item.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-500' :
-                              item.color === 'amber' ? 'bg-amber-500/10 text-amber-500' :
-                              item.color === 'rose' ? 'bg-rose-500/10 text-rose-500' :
-                              'bg-brand-blue-500/10 text-brand-blue-500'
+                              item.color === 'emerald' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' :
+                              item.color === 'amber' ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400' :
+                              item.color === 'blue' ? 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400' :
+                              item.color === 'rose' ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400' :
+                              item.color === 'brand-blue' ? 'bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-400' :
+                              'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400'
                             }`}>
                               {language === 'ar' ? item.tagAr : item.tagEn}
                             </span>
                           </div>
                           
                           <div className="mt-4 flex-1">
-                            <span className="block text-sm font-black text-slate-900 dark:text-white mb-1 group-hover:text-brand-blue-500 transition-colors">
+                            <span className="block text-sm sm:text-base font-black text-slate-900 dark:text-white mb-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
                               {language === 'ar' ? item.labelAr : item.labelEn}
                             </span>
-                            <span className="block text-[11px] text-slate-400 dark:text-slate-500 leading-normal line-clamp-2">
+                            <span className="block text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 leading-normal line-clamp-2">
                               {language === 'ar' ? item.descAr : item.descEn}
                             </span>
                           </div>
 
-                          <div className={`text-[10px] font-black mt-2 text-slate-500 dark:text-slate-400 group-hover:text-brand-blue-500 transition-colors flex items-center gap-1 ${dir === 'rtl' ? 'justify-start hover:gap-2' : 'justify-end'}`}>
+                          <div className={`text-[10.5px] font-black mt-2 text-slate-500 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-all flex items-center gap-1 ${dir === 'rtl' ? 'justify-start group-hover:translate-x-[-4px]' : 'justify-end group-hover:translate-x-[4px]'}`}>
                             <span>{language === 'ar' ? 'افتح صفحة الإعدادات الكلية ←' : 'Open full configuration page ←'}</span>
                           </div>
                         </button>
@@ -2765,7 +2774,7 @@ export default function AppLayout({
                       <button
                         type="button"
                         onClick={() => setSelectedSettingsTab(null)}
-                        className={`px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer text-slate-500 hover:text-slate-800 dark:hover:text-white ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
+                        className={`px-4 py-2 bg-white dark:bg-slate-900 hover:bg-violet-50 dark:hover:bg-violet-950/40 border border-slate-150 dark:border-slate-800 rounded-xl text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer text-slate-500 hover:text-violet-600 dark:hover:text-violet-400 ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}
                       >
                         <span>{language === 'ar' ? '← العودة لوحة التحكم الكلية' : '← Back to Master Control Panel'}</span>
                       </button>
@@ -4093,13 +4102,15 @@ export default function AppLayout({
                   {/* TAB 4: SYSTEM PREFERENCES & MODULARITY */}
                   {selectedSettingsTab === 'system' && (
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                      <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div className="border-b border-violet-100 dark:border-violet-900/60 pb-3">
                         <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                          <Cpu size={16} className="text-violet-500" />
-                          <span>{language === 'ar' ? 'تفضيلات النظام وتخصيص الموديولات' : 'System Preferences & Modularity'}</span>
+                          <Cpu size={16} className="text-violet-500 animate-pulse" />
+                          <span className="bg-gradient-to-r from-violet-650 via-indigo-600 to-purple-650 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                            {language === 'ar' ? 'بوابة التحكم بالمنصة وإعدادات الـ SaaS' : 'SaaS System Control Portal & Settings'}
+                          </span>
                         </h4>
                         <p className="text-[10px] text-slate-450 mt-1">
-                          {language === 'ar' ? 'تحكّم باللغة الافتراضية للتطبيق، واضبط الموديولات المفعلة مسبقاً، واطلق معالج التهيئة أو حدد حزم العمل الجاهزة لتناسب حجم كادر ورشتك.' : 'Configure default system language, fine-tune live event notifications, toggle platform capabilities, or deploy quick workspace scope presets.'}
+                          {language === 'ar' ? 'تحكّم بلون الهوية، واضبط موديولات الـ SaaS المفعلة، ووفر بيئة عمل مخصصة بالكامل مجهزة بالهوية التجارية.' : 'Configure default system language, fine-tune live event notifications, toggle platform capabilities, or deploy quick workspace scope presets.'}
                         </p>
                       </div>
 
@@ -4311,26 +4322,31 @@ export default function AppLayout({
                   {/* TAB 5: CLOUD DATABASE BACKUP & SYNC */}
                   {selectedSettingsTab === 'cloud_sync' && (
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                      <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <div className="border-b border-violet-100 dark:border-violet-900/60 pb-3">
                         <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                          <Database size={16} className="text-emerald-500" />
-                          <span>{language === 'ar' ? 'النسخ الاحتياطي السحابي ومزامنة البيانات' : 'Cloud Backup & DB Synchronization'}</span>
+                          <Database size={16} className="text-violet-500 animate-pulse" />
+                          <span className="bg-gradient-to-r from-violet-650 via-indigo-600 to-purple-650 dark:from-violet-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                            {language === 'ar' ? 'بوابة المزامنة والربط السحابي الذكي' : 'Cloud Database Sync Portal'}
+                          </span>
                         </h4>
                         <p className="text-[10px] text-slate-450 mt-1">
-                          {language === 'ar' ? 'راقب سعة قاعدة البيانات المباشرة (Google Firestore)، وجدول النسخ الاحتياطي للأوراق والكشوف، وقم بإجراء عمليات الرفع والاسترجاع فورياً.' : 'Monitor server-capacity quotas of live Google Firestore schemas, configure automated backup synchronization timers, and force offsite data uploads.'}
+                          {language === 'ar' ? 'راقب سعة قاعدة البيانات المباشرة، وجدول المزامنة التلقائية مع خدمات الدعم، وقم برفع وحفظ النسخ الاحتياطية فورا.' : 'Monitor server-capacity quotas of live Google Firestore schemas, configure automated backup synchronization timers, and force offsite data uploads.'}
                         </p>
                       </div>
 
                       {/* Cloud Storage Database Management Center */}
-                      <div className="p-5 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950/40 dark:to-slate-900 border border-slate-205 dark:border-slate-800/80 rounded-3xl space-y-4">
-                        <div className={`flex items-center justify-between ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
+                      <div className="p-6 bg-gradient-to-br from-violet-600/10 via-indigo-600/5 to-purple-650/10 dark:from-violet-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-violet-500/25 dark:border-violet-500/30 rounded-3xl space-y-6 relative overflow-hidden shadow-lg shadow-violet-500/5">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+                        
+                        <div className={`flex items-center justify-between ${dir === 'rtl' ? 'flex-row-reverse' : ''} relative z-10`}>
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-xl bg-violet-500/15 text-violet-500 flex items-center justify-center shadow-inner">
                               <Database size={16} />
                             </div>
                             <div className={dir === 'rtl' ? 'text-right' : 'text-left'}>
                               <h5 className="text-xs font-black text-slate-800 dark:text-slate-100">
-                                {language === 'ar' ? 'اتصال قاعدة البيانات السحابية المباشرة (Google Firestore)' : 'Live Google Firestore Database Integration'}
+                                {language === 'ar' ? 'بوابة المزامنة والربط السحابي (Google Firestore)' : 'Live Google Firestore Database Integration'}
                               </h5>
                               <p className="text-[9.5px] text-slate-450">
                                 {language === 'ar' ? 'مزامنة وتخزين فوري آمن لجميع كشوف الفحص وحالات سيارات أسطولك' : 'Fully scalable real-time database syncing diagnostic checklists, vehicles and staff history'}
@@ -4338,9 +4354,9 @@ export default function AppLayout({
                             </div>
                           </div>
 
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-black animate-pulse">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" />
-                            {language === 'ar' ? 'اتصال مشفر آمن' : 'Firestore Live Secured'}
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[9px] font-black animate-pulse">
+                            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 block" />
+                            {language === 'ar' ? 'قناة مشفرة متطابقة' : 'Firestore Live Secured'}
                           </span>
                         </div>
 
@@ -4348,13 +4364,13 @@ export default function AppLayout({
                         <div className={`p-4 bg-white dark:bg-slate-950/60 rounded-2xl border border-slate-150 dark:border-slate-850 space-y-3 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                           <div className={`flex justify-between items-center text-xs font-black ${dir === 'rtl' ? 'flex-row-reverse' : ''}`}>
                             <span className="flex items-center gap-1.5 text-slate-705 dark:text-slate-300">
-                              <HardDrive size={13} className="text-brand-blue-500" />
+                              <HardDrive size={13} className="text-violet-500" />
                               {language === 'ar' ? 'حالة السعة المحددة لقاعدة بيانات ورشتك' : 'Workshop Cloud Storage Quota'}
                             </span>
                             <span className={`text-[10px] ${
                               (storageUsed / storageMax) >= 1.0 ? 'text-rose-500 font-extrabold' :
                               (storageUsed / storageMax) >= 0.9 ? 'text-amber-500 font-extrabold' :
-                              'text-emerald-500'
+                              'text-violet-500'
                             }`}>
                               {Math.round((storageUsed / storageMax) * 100)}% {language === 'ar' ? 'ممتلئ' : 'consumed'}
                             </span>
@@ -4369,7 +4385,7 @@ export default function AppLayout({
                               className={`h-full rounded-full ${
                                 (storageUsed / storageMax) >= 1.0 ? 'bg-gradient-to-r from-rose-500 to-red-650' :
                                 (storageUsed / storageMax) >= 0.9 ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
-                                'bg-gradient-to-r from-emerald-400 to-brand-blue-500'
+                                'bg-gradient-to-r from-emerald-400 to-violet-500'
                               }`}
                             />
                           </div>
@@ -4470,22 +4486,22 @@ export default function AppLayout({
                         <div className="grid grid-cols-2 gap-3 pt-1">
                           <button
                             type="button"
-                            onClick={handleCloudUpload}
+                            onClick={handleCloudDownload}
                             disabled={isCloudSyncing}
-                            className="p-3 bg-brand-blue-500 hover:bg-brand-blue-600 disabled:opacity-50 text-white rounded-2xl flex items-center justify-center gap-2 text-xs font-black cursor-pointer transition-all shadow-sm shadow-brand-blue-500/10 border-0"
+                            className="p-3 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 disabled:opacity-50 text-slate-800 dark:text-slate-200 rounded-2xl flex items-center justify-center gap-2 text-xs font-black cursor-pointer transition-all"
                           >
-                            <Upload size={14} className={isCloudSyncing ? "animate-spin" : ""} />
-                            <span>{language === 'ar' ? 'رفع ومزامنة السحاب' : 'Cloud Push Backup'}</span>
+                            <Database size={14} className={isCloudSyncing ? "animate-spin" : ""} />
+                            <span>{language === 'ar' ? 'استعادة وجلب النسخة' : 'Cloud Restore Sync'}</span>
                           </button>
 
                           <button
                             type="button"
-                            onClick={handleCloudDownload}
+                            onClick={handleCloudUpload}
                             disabled={isCloudSyncing}
-                            className="p-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-800 dark:text-slate-200 rounded-2xl flex items-center justify-center gap-2 text-xs font-black cursor-pointer transition-all border-0"
+                            className="p-3 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white disabled:opacity-50 rounded-2xl flex items-center justify-center gap-2 text-xs font-black cursor-pointer transition-all shadow-md shadow-violet-500/15 border-0 hover:opacity-95 hover:scale-[1.01] active:scale-[0.99]"
                           >
-                            <Database size={14} className={isCloudSyncing ? "animate-spin" : ""} />
-                            <span>{language === 'ar' ? 'استعادة وجلب النسخة' : 'Cloud Restore Sync'}</span>
+                            <Upload size={14} className={isCloudSyncing ? "animate-spin text-white" : "text-white"} />
+                            <span>{language === 'ar' ? 'رفع ومزامنة السحاب' : 'Cloud Push Backup'}</span>
                           </button>
                         </div>
 
@@ -4497,9 +4513,9 @@ export default function AppLayout({
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0 }}
                               className={`p-3 rounded-2xl text-[10px] font-black border ${
-                                cloudFeedback.type === 'success' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                cloudFeedback.type === 'error' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
-                                'bg-brand-blue-500/10 text-brand-blue-500 border-brand-blue-500/20'
+                                cloudFeedback.type === 'success' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/25' :
+                                cloudFeedback.type === 'error' ? 'bg-rose-500/10 text-rose-600 border-rose-500/25' :
+                                'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/25'
                               }`}
                             >
                               <div className={`flex items-start gap-1 p-0.5 ${dir === 'rtl' ? 'flex-row-reverse text-right' : 'text-left'}`}>
@@ -4583,17 +4599,17 @@ export default function AppLayout({
                                               setUpgradeSuccessPlan(null);
                                             }, 3500);
                                           }}
-                                          className="p-4 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex justify-between items-center transition-all text-right cursor-pointer hover:border-brand-blue-500 group"
+                                          className="p-4 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex justify-between items-center transition-all text-right cursor-pointer hover:border-violet-500 group"
                                         >
-                                          <span className="p-2 bg-brand-blue-500 hover:bg-brand-blue-600 text-white font-extrabold text-[11px] rounded-xl transition-all">
+                                          <span className="p-2 bg-gradient-to-r from-violet-650 to-indigo-600 hover:opacity-95 text-white font-extrabold text-[11px] rounded-xl transition-all">
                                             ترقية السعة
                                           </span>
                                           <div className="space-y-1">
                                             <div className="flex items-center gap-2 justify-end">
-                                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 font-extrabold text-slate-650 dark:text-slate-300">
+                                              <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 font-extrabold text-slate-600 dark:text-slate-300">
                                                 {plan.price} / شهرياً
                                               </span>
-                                              <h4 className="text-xs font-black text-slate-850 dark:text-slate-100 group-hover:text-brand-blue-500 transition-colors">
+                                              <h4 className="text-xs font-black text-slate-850 dark:text-slate-100 group-hover:text-violet-500 transition-colors">
                                                 {plan.name} ({plan.space >= 1000 ? `${plan.space / 1000} تيرابايت` : `${plan.space} جيجابايت`})
                                               </h4>
                                             </div>
