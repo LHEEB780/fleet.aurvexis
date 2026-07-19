@@ -41,6 +41,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Vehicle, MaintenanceOrder } from '../types';
 import ContextualHelp from './ContextualHelp';
+import { getCurrencyLabel, getConversionRateFromSAR } from '../services/formatters';
 
 interface ManagerDashboardReportProps {
   vehicles: Vehicle[];
@@ -83,7 +84,7 @@ export function ManagerDashboardReport({ vehicles, orders, language, isDarkMode 
     insight2Desc: language === 'ar' ? 'تراجع معدل التوفر الميداني في مارس بسبب تأخر توريد قطع الغيار الضرورية للفرامل. ننصح برفع الحد الآمن لقطع الغيار الحاكمة في المستودع.' : 'The operational availability rate dipped during March due to supply-chain delays in braking parts. Raising safety stock thresholds for critical components will stabilize uptime.',
     insight3Title: language === 'ar' ? 'كفاءة دورة العمل ووقت الاستجابة' : 'Operational Efficiency & Work Order Lifecycle',
     insight3Desc: language === 'ar' ? 'بلغ متوسط مدة إغلاق طلبات الصيانة الخفيفة 1.8 يوم وهو معدل ممتاز، بينما استغرقت المعدات الهندسية 5.2 يوم لقلة تخصص الكادر الفني.' : 'Light fleet work orders cleared in an average of 1.8 days (excellent), while heavy engineering equipment averaged 5.2 days due to specialized technician constraints.',
-    currency: language === 'ar' ? 'ر.س' : 'SAR',
+    currency: getCurrencyLabel(language),
     days: language === 'ar' ? 'أيام' : 'days',
     percentage: language === 'ar' ? 'نسبة مئوية' : 'percentage',
     month: language === 'ar' ? 'الشهر' : 'Month',
@@ -184,7 +185,7 @@ export function ManagerDashboardReport({ vehicles, orders, language, isDarkMode 
       if (o.status === 'completed' && o.date && o.cost) {
         const monthVal = parseInt(o.date.split('-')[1]);
         if (monthVal >= 1 && monthVal <= 12) {
-          monthlyCosts[monthVal] += o.cost;
+          monthlyCosts[monthVal] += o.cost * getConversionRateFromSAR();
           monthlyOrdersCount[monthVal]++;
         }
       }
@@ -310,7 +311,7 @@ export function ManagerDashboardReport({ vehicles, orders, language, isDarkMode 
         const vehicle = vehicles.find(v => v.id === o.vehicleId);
         const typeLabel = vehicle ? vehicle.type : (language === 'ar' ? 'غير معروف' : 'Unknown');
         
-        typeCosts[typeLabel] = (typeCosts[typeLabel] || 0) + o.cost;
+        typeCosts[typeLabel] = (typeCosts[typeLabel] || 0) + (o.cost * getConversionRateFromSAR());
         typeOrdersCount[typeLabel] = (typeOrdersCount[typeLabel] || 0) + 1;
       }
     });
@@ -345,7 +346,7 @@ export function ManagerDashboardReport({ vehicles, orders, language, isDarkMode 
               count: 0
             };
           }
-          vehicleCosts[vehicle.id].cost += o.cost;
+          vehicleCosts[vehicle.id].cost += o.cost * getConversionRateFromSAR();
           vehicleCosts[vehicle.id].count += 1;
         }
       }

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { loadStripe } from '@stripe/stripe-js';
+import { formatCurrency } from '../services/formatters';
 
 interface BillingInvoice {
   id: string;
@@ -111,6 +112,19 @@ export default function SaasBilling({ user }: { user?: User }) {
   useEffect(() => {
     localStorage.setItem('saas_quotas', JSON.stringify(quotas));
   }, [quotas]);
+
+  const [currencyTrigger, setCurrencyTrigger] = useState(0);
+  useEffect(() => {
+    const handleCurrencyChange = () => {
+      setCurrencyTrigger(prev => prev + 1);
+    };
+    window.addEventListener('storage', handleCurrencyChange);
+    window.addEventListener('base-currency-changed', handleCurrencyChange);
+    return () => {
+      window.removeEventListener('storage', handleCurrencyChange);
+      window.removeEventListener('base-currency-changed', handleCurrencyChange);
+    };
+  }, []);
 
   // Hook to handle success callback from Stripe redirections
   useEffect(() => {
@@ -473,7 +487,11 @@ export default function SaasBilling({ user }: { user?: User }) {
             {/* Price indicator */}
             <div className="pt-2">
               <span className="text-4xl font-extrabold font-mono tracking-tight">
-                ${activePlan === 'basic' ? (billingCycle === 'yearly' ? 49 : 59) : activePlan === 'pro' ? (billingCycle === 'yearly' ? 149 : 179) : (billingCycle === 'yearly' ? 499 : 599)}
+                {formatCurrency(
+                  activePlan === 'basic' ? (billingCycle === 'yearly' ? 49 : 59) : activePlan === 'pro' ? (billingCycle === 'yearly' ? 149 : 179) : (billingCycle === 'yearly' ? 499 : 599),
+                  language,
+                  'USD'
+                )}
               </span>
               <span className="text-xs text-purple-200/70 mr-1.5">
                 / {billingCycle === 'yearly' ? 'شهرياً (بدفع سنوي)' : 'شهرياً'}
@@ -488,7 +506,11 @@ export default function SaasBilling({ user }: { user?: User }) {
               <div className="flex items-center justify-between text-xs">
                 <span className="opacity-85 text-purple-200 text-[10.5px]">المستحقات القادمة المقدرة:</span>
                 <span className="font-mono font-bold">
-                  ${activePlan === 'basic' ? (billingCycle === 'yearly' ? 588 : 59) : activePlan === 'pro' ? (billingCycle === 'yearly' ? 1788 : 179) : (billingCycle === 'yearly' ? 5988 : 599)}
+                  {formatCurrency(
+                    activePlan === 'basic' ? (billingCycle === 'yearly' ? 588 : 59) : activePlan === 'pro' ? (billingCycle === 'yearly' ? 1788 : 179) : (billingCycle === 'yearly' ? 5988 : 599),
+                    language,
+                    'USD'
+                  )}
                 </span>
               </div>
             </div>
@@ -665,7 +687,7 @@ export default function SaasBilling({ user }: { user?: User }) {
 
               <div>
                 <span className="text-2xl font-black font-mono">
-                  ${billingCycle === 'yearly' ? '49' : '59'}
+                  {formatCurrency(billingCycle === 'yearly' ? '49' : '59', language, 'USD')}
                 </span>
                 <span className="text-[10px] text-slate-500 mr-1">/ شهريًا</span>
               </div>
@@ -729,7 +751,7 @@ export default function SaasBilling({ user }: { user?: User }) {
 
               <div>
                 <span className="text-2xl font-black font-mono">
-                  ${billingCycle === 'yearly' ? '149' : '179'}
+                  {formatCurrency(billingCycle === 'yearly' ? '149' : '179', language, 'USD')}
                 </span>
                 <span className="text-[10px] text-slate-500 mr-1">/ شهريًا</span>
               </div>
@@ -790,7 +812,7 @@ export default function SaasBilling({ user }: { user?: User }) {
 
               <div>
                 <span className="text-2xl font-black font-mono">
-                  ${billingCycle === 'yearly' ? '499' : '599'}
+                  {formatCurrency(billingCycle === 'yearly' ? '499' : '599', language, 'USD')}
                 </span>
                 <span className="text-[10px] text-slate-500 mr-1">/ شهريًا</span>
               </div>
@@ -858,7 +880,9 @@ export default function SaasBilling({ user }: { user?: User }) {
                   <td className="py-3 px-3 font-mono font-bold text-slate-700 dark:text-slate-300">{inv.invoiceNo}</td>
                   <td className="py-3 px-3 text-slate-500 dark:text-slate-400">{inv.date}</td>
                   <td className="py-3 px-3 font-semibold text-slate-800 dark:text-slate-200">{inv.plan}</td>
-                  <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-white">${inv.amount}</td>
+                  <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-white">
+                    {formatCurrency(inv.amount, language, 'USD')}
+                  </td>
                   <td className="py-3 px-3">
                     <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
                       مكتملة الدفع ✓

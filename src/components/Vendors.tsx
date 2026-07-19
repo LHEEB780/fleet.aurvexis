@@ -31,6 +31,7 @@ import { Vendor, SupplyOrder, InventoryItem } from '../types';
 import VendorReports from './VendorReports';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
+import { formatCurrency, getCurrencyLabel } from '../services/formatters';
 
 interface VendorsProps {
   user: {
@@ -859,7 +860,7 @@ export default function Vendors({ user }: VendorsProps) {
         <div className="p-4 rounded-2xl border bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-slate-900/40 dark:to-slate-900/10 border-emerald-200 dark:border-slate-800 border-r-4 border-r-emerald-500 dark:border-r-emerald-400 transition-all shadow-md">
           <p className="text-[10px] font-bold text-emerald-850 dark:text-emerald-300">قيمة التوريد المكتمل</p>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-lg font-black text-emerald-950 dark:text-white">{stats.totalSpend.toLocaleString()} ر.س</span>
+            <span className="text-lg font-black text-emerald-950 dark:text-white">{formatCurrency(stats.totalSpend, language, 'SAR')}</span>
           </div>
           <p className="text-[9px] text-slate-500 mt-2">إجمالي المسحوبات المستلمة بنجاح</p>
         </div>
@@ -867,7 +868,7 @@ export default function Vendors({ user }: VendorsProps) {
         <div className="p-4 rounded-2xl border bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-900/40 dark:to-slate-900/10 border-slate-200 dark:border-slate-800 border-r-4 border-r-slate-500 dark:border-r-slate-450 transition-all shadow-md col-span-2 lg:col-span-1">
           <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">التزامات جارية (أوردرات موثقة)</p>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-base font-black text-slate-900 dark:text-white">{stats.pendingSpend.toLocaleString()} ر.س</span>
+            <span className="text-base font-black text-slate-900 dark:text-white">{formatCurrency(stats.pendingSpend, language, 'SAR')}</span>
           </div>
           <p className="text-[9px] text-slate-500 mt-1.5">قيم العقود قيد التنفيذ اللوجستي</p>
         </div>
@@ -1232,8 +1233,8 @@ export default function Vendors({ user }: VendorsProps) {
                           {/* Unit price and Total price */}
                           <td className="py-3.5 px-4">
                             <div className="space-y-0.5 font-mono">
-                              <p className="font-bold text-slate-800 dark:text-slate-205">{order.unitPrice.toLocaleString()} ر.س/الوحدة</p>
-                              <p className="text-[10px] text-brand-blue-500 font-extrabold">المجموع: {order.totalPrice.toLocaleString()} ر.س</p>
+                              <p className="font-bold text-slate-800 dark:text-slate-205">{formatCurrency(order.unitPrice, language, 'SAR')}/{language === 'ar' ? 'الوحدة' : 'Unit'}</p>
+                              <p className="text-[10px] text-brand-blue-500 font-extrabold">{language === 'ar' ? 'المجموع' : 'Total'}: {formatCurrency(order.totalPrice, language, 'SAR')}</p>
                             </div>
                           </td>
 
@@ -1568,7 +1569,7 @@ export default function Vendors({ user }: VendorsProps) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-450 block font-bold">سعر الشراء المتفق للوحدة (ر.س) *</label>
+                  <label className="text-[10px] text-slate-450 block font-bold">{language === 'ar' ? `سعر الشراء المتفق للوحدة (${getCurrencyLabel('ar')}) *` : `Agreed purchase price per unit (${getCurrencyLabel('en')}) *`}</label>
                   <input
                     type="number"
                     required
@@ -1597,7 +1598,7 @@ export default function Vendors({ user }: VendorsProps) {
                 <div className="p-3 bg-brand-blue-50/40 dark:bg-brand-blue-950/10 rounded-xl border border-brand-blue-200/40 dark:border-brand-blue-900/30 text-center">
                   <span className="text-[9px] text-brand-blue-500 dark:text-brand-blue-400 block font-black">إجمالي قيمة التوريد التوريدي:</span>
                   <span className="text-sm font-black text-brand-blue-600 dark:text-brand-blue-300 font-mono">
-                    {(orderForm.quantity * orderForm.unitPrice).toLocaleString()} ر.س
+                    {formatCurrency(orderForm.quantity * orderForm.unitPrice, language, 'SAR')}
                   </span>
                 </div>
               </div>

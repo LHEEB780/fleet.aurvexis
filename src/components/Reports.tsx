@@ -54,6 +54,7 @@ import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
 import { PartsConsumptionAnalysis } from './PartsConsumptionAnalysis';
 import { ManagerDashboardReport } from './ManagerDashboardReport';
+import { formatCurrency, getCurrencyLabel, getConversionRateFromSAR } from '../services/formatters';
 
 interface ReportsProps {
   user: User;
@@ -474,13 +475,13 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
     // Header schema
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // Include UTF-8 BOM for Excel support in Arabic
     csvContent += "المؤشر الفني،القيمة الإحصائية،ملاحظة الجودة\n";
-    csvContent += `إجمالي مصروفات الصيانة,${analysis.totalExpenditures} ر.س,منجز بالكامل بالأسطول\n`;
-    csvContent += `متوسط تكلفة الإصلاح لكل أمر,${analysis.averageRepairCost} ر.س,معدل الربع السنوي المالي\n`;
+    csvContent += `إجمالي مصروفات الصيانة,${formatCurrency(analysis.totalExpenditures, language, 'SAR')},منجز بالكامل بالأسطول\n`;
+    csvContent += `متوسط تكلفة الإصلاح لكل أمر,${formatCurrency(analysis.averageRepairCost, language, 'SAR')},معدل الربع السنوي المالي\n`;
     csvContent += `إجمالي أوامر التشغيل المسجلة,${analysis.totalOrders} أمر,نطاق البحث المحدد\n`;
     csvContent += `الأوامر المنجزة,${analysis.completedCount} أمر مفرغ,كفاءة الورشة\n`;
     csvContent += `الأوامر الجارية,${analysis.inProgressCount} تحت الفحص والتركيب,تحميل العمل المباشر\n`;
     csvContent += `قطع الغيار المهددة بالنقص الحرج,${analysis.criticalUnderstock} أطقم,تنبيه المستودعات الذكي\n`;
-    csvContent += `وقيمة رأس المال الحالي للبضائع بالمخازن,${analysis.totalInventoryValue} ر.س,قيمة تقديرية على الرف\n`;
+    csvContent += `وقيمة رأس المال الحالي للبضائع بالمخازن,${formatCurrency(analysis.totalInventoryValue, language, 'SAR')},قيمة تقديرية على الرف\n`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -542,7 +543,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
             ${analysis.categoryCostChartData.map(c => `
               <tr>
                 <td><strong>${c.name}</strong></td>
-                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #b91c1c;">${(c['إجمالي التكلفة'] || 0).toLocaleString()} ر.س</td>
+                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #b91c1c;">${formatCurrency(c['إجمالي التكلفة'] || 0, language, 'SAR')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -568,7 +569,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                 <td style="font-family: monospace; color: #475569;">${v.plate}</td>
                 <td><span class="badge badge-info">${v.type}</span></td>
                 <td style="text-align: center; font-family: monospace;">${v.ordersCount} أمر</td>
-                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #ef4444;">${v.totalCost.toLocaleString()} ر.س</td>
+                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #ef4444;">${formatCurrency(v.totalCost, language, 'SAR')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -707,7 +708,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                   <td style="text-align: center; font-family: monospace; color: #64748b;">${item.minQuantity} وحدة</td>
                   <td style="text-align: left; font-family: monospace;">
                     ${isLow ? '<span class="badge badge-danger">عجز حرج!</span>' : '<span class="badge badge-success">مستقر بالرف</span>'}
-                    <strong>${totalVal.toLocaleString()} ر.س</strong>
+                    <strong>${formatCurrency(totalVal, language, 'SAR')}</strong>
                   </td>
                 </tr>
               `;
@@ -866,156 +867,23 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
             color: #0f172a;
           }
           
-          .kpi-grid {
-            display: grid;
-            grid-template-cols: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 40px;
-          }
-          
-          .kpi-card {
-            border: 1px solid #cbd5e1;
-            border-radius: 16px;
-            padding: 15px;
-            background: #ffffff;
-            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
-          }
-          
-          .kpi-card label {
-            font-size: 10px;
-            font-weight: 800;
-            color: #475569;
-            display: block;
-            margin-bottom: 6px;
-          }
-          
-          .kpi-card .val {
-            font-size: 16px;
-            font-weight: 900;
-            color: #0f172a;
-            font-family: monospace;
-          }
-          
-          .kpi-card .desc {
-            font-size: 9px;
-            color: #64748b;
-            margin-top: 4px;
-            font-weight: bold;
-          }
-
-          .section-title {
-            font-size: 13px;
-            font-weight: 900;
-            color: #1e1b4b;
-            border-right: 4px solid #4f46e5;
-            padding-right: 8px;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          
-          .report-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 40px;
-            font-size: 11px;
-          }
-          
-          .report-table th {
-            background-color: #f1f5f9;
-            border-bottom: 2px solid #cbd5e1;
-            padding: 10px 12px;
-            font-weight: 900;
-            text-align: right;
-            color: #334155;
-          }
-          
-          .report-table td {
-            border-bottom: 1px solid #e2e8f0;
-            padding: 10px 12px;
-            color: #334155;
-          }
-          
-          .report-table tr:nth-child(even) {
-            background-color: #f8fafc;
-          }
-          
-          .badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 9px;
-            font-weight: bold;
-          }
-          
-          .badge-danger {
-            background-color: #fee2e2;
-            color: #991b1b;
-          }
-          
-          .badge-info {
-            background-color: #e0f2fe;
-            color: #0369a1;
-          }
-
-          .badge-success {
+             .badge-success {
             background-color: #dcfce7;
             color: #166534;
-          }
-          
-          .status-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-left: 6px;
-          }
-          
-          .meeting-signatures {
-            margin-top: 60px;
-            display: grid;
-            grid-template-cols: repeat(3, 1fr);
-            gap: 30px;
-            border-top: 1px dashed #cbd5e1;
-            padding-top: 30px;
-            text-align: center;
-          }
-          
-          .signature-box {
-            font-size: 11px;
-            color: #475569;
-          }
-          
-          .signature-box .line {
-            width: 150px;
-            height: 1px;
-            background-color: #94a3b8;
-            margin: 25px auto 8px auto;
-          }
-          
-          .print-footer {
-            margin-top: 50px;
-            text-align: center;
-            font-size: 9px;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 15px;
-            font-weight: bold;
-          }
-
-          @media print {
-            body {
-              padding: 0;
-            }
           }
         </style>
       </head>
       <body>
-        
         <div class="print-header">
           <div class="brand-logo">
-            ${activeBrandName}
-            <span class="brand-tag">لوحة الصيانة والأسطول الذكي</span>
+            ${activeBrandName} <span class="brand-tag">صيانة والأسطول الذك�        </div>            <div class="desc">أصناف قطع الغيار: ${inventoryList.length} نوعاً</div>
+          </div>
+          <div class="kpi-card" style="border-right: 4px solid #ef4444;">
+            <label>أصناف حرجة النقص بالرف</label>
+            <div class="val" style="color: #ef4444;">${analysis.criticalUnderstock} أصناف</div>
+            <div class="desc">تطلب تعبئة تموينية فورية</div>
+          </div>
+        </div>� والأسطول الذكي</span>
           </div>
           <div class="document-title">
             <h1>تقرير جودة وأداء الصيانة الدوري - لجان الصيانة</h1>
@@ -1045,8 +913,8 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
         <div class="kpi-grid">
           <div class="kpi-card" style="border-right: 4px solid #10b981;">
             <label>إجمالي نفقات الصيانة</label>
-            <div class="val" style="color: #10b981;">${analysis.totalExpenditures.toLocaleString()} ر.س</div>
-            <div class="desc">متوسط للأمر: ${analysis.averageRepairCost.toLocaleString()} ر.س</div>
+            <div class="val" style="color: #10b981;">${formatCurrency(analysis.totalExpenditures, language, 'SAR')}</div>
+            <div class="desc">متوسط للأمر: ${formatCurrency(analysis.averageRepairCost, language, 'SAR')}</div>
           </div>
           <div class="kpi-card" style="border-right: 4px solid #4f46e5;">
             <label>معدل إنجاز وإغلاق الأوامر</label>
@@ -1055,7 +923,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
           </div>
           <div class="kpi-card" style="border-right: 4px solid #f59e0b;">
             <label>رأس المال السلعي بالمخزن</label>
-            <div class="val" style="color: #f59e0b;">${analysis.totalInventoryValue.toLocaleString()} ر.س</div>
+            <div class="val" style="color: #f59e0b;">${formatCurrency(analysis.totalInventoryValue, language, 'SAR')}</div>
             <div class="desc">أصناف قطع الغيار: ${inventoryList.length} نوعاً</div>
           </div>
           <div class="kpi-card" style="border-right: 4px solid #ef4444;">
@@ -1122,7 +990,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                 {language === 'ar' ? 'إجمالي تكلفة الصيانة:' : 'Total Maintenance Cost:'}
               </span>
               <span className="font-mono text-slate-850 dark:text-slate-105">
-                {payload[0].value.toLocaleString()} {language === 'ar' ? 'ر.س' : 'SAR'}
+                {formatCurrency(payload[0].value, language, 'SAR')}
               </span>
             </div>
             <div className="flex items-center justify-between gap-6">
@@ -1333,8 +1201,8 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
         {[
           { 
             label: 'إجمالي نفقات الصيانة المعتمدة', 
-            val: `${analysis.totalExpenditures.toLocaleString()} ر.س`, 
-            desc: `متوسط للأمر: ${analysis.averageRepairCost.toLocaleString()} ر.س`, 
+            val: formatCurrency(analysis.totalExpenditures, language, 'SAR'), 
+            desc: `متوسط للأمر: ${formatCurrency(analysis.averageRepairCost, language, 'SAR')}`, 
             icon: <DollarSign size={18} />,
             bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 border-emerald-300 dark:border-emerald-800 border-r-4 border-r-emerald-500 dark:border-r-emerald-400',
             text: 'text-emerald-955 dark:text-emerald-50',
@@ -1357,7 +1225,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
           },
           { 
             label: 'رصيد أصول قطع الغيار بالمخازن', 
-            val: `${analysis.totalInventoryValue.toLocaleString()} ر.س`, 
+            val: formatCurrency(analysis.totalInventoryValue, language, 'SAR'), 
             desc: `تنوع بالأصناف: ${inventoryList.length} نوعاً مستقلاً`, 
             icon: <Layers size={18} />,
             bg: 'bg-gradient-to-br from-amber-50 to-amber-100/55 dark:from-amber-950/30 dark:to-amber-900/10 border-amber-300 dark:border-amber-800 border-r-4 border-r-amber-500 dark:border-r-amber-400',
@@ -1559,7 +1427,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                             </td>
                             <td className="text-center font-mono text-slate-655 dark:text-slate-350">{v.ordersCount} أمر</td>
                             <td className="text-left py-2 font-mono font-black text-rose-600 dark:text-rose-400">
-                              {v.totalCost.toLocaleString()} ر.س
+                              {formatCurrency(v.totalCost, language, 'SAR')}
                             </td>
                             <td className="text-left py-2 pr-4">
                               <div className="flex items-center gap-1.5 justify-end">
@@ -1638,8 +1506,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       إجمالي تكاليف الصيانة الداخلية
                     </span>
                     <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono block">
-                      {analysis.totalInternalCost.toLocaleString()}
-                      <span className="text-[10px] font-bold text-slate-400 mr-1">ر.س</span>
+                      {formatCurrency(analysis.totalInternalCost, language, 'SAR')}
                     </span>
                     <span className="text-[9px] text-slate-500 font-bold block mt-1">
                       عدد الأوامر: {analysis.internalCount} صيانة داخلية
@@ -1652,8 +1519,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       متوسط كلفة الصيانة الداخلية للأمر
                     </span>
                     <span className="text-xl font-black text-indigo-700 dark:text-indigo-350 font-mono block">
-                      {analysis.avgInternalCost.toLocaleString()}
-                      <span className="text-[10px] font-bold text-slate-400 mr-1">ر.س / أمر</span>
+                      {formatCurrency(analysis.avgInternalCost, language, 'SAR')}
                     </span>
                     <span className="text-[9px] text-slate-500 font-bold block mt-1">
                       الإنفاق الموزع على الكادر والقطع
@@ -1666,8 +1532,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       إجمالي نفقات الصيانة الخارجية
                     </span>
                     <span className="text-xl font-black text-purple-600 dark:text-purple-400 font-mono block">
-                      {analysis.totalExternalCost.toLocaleString()}
-                      <span className="text-[10px] font-bold text-slate-400 mr-1">ر.س</span>
+                      {formatCurrency(analysis.totalExternalCost, language, 'SAR')}
                     </span>
                     <span className="text-[9px] text-slate-500 font-bold block mt-1">
                       عدد الأوامر: {analysis.externalCount} صيانة خارجية
@@ -1680,8 +1545,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       متوسط كلفة الصيانة الخارجية للأمر
                     </span>
                     <span className="text-xl font-black text-purple-700 dark:text-purple-350 font-mono block">
-                      {analysis.avgExternalCost.toLocaleString()}
-                      <span className="text-[10px] font-bold text-slate-400 mr-1">ر.س / أمر</span>
+                      {formatCurrency(analysis.avgExternalCost, language, 'SAR')}
                     </span>
                     <span className="text-[9px] text-slate-500 font-bold block mt-1">
                       الفواتير والذمم المستحقة للمراكز
@@ -1702,9 +1566,9 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       />
                       <YAxis 
                         tickLine={false} 
-                        tickFormatter={(val) => `${val.toLocaleString()}`}
+                        tickFormatter={(val) => `${Math.round(val * getConversionRateFromSAR()).toLocaleString()}`}
                         tick={{ fontSize: 10, fill: '#64748B', fontWeight: 'bold' }} 
-                        unit=" ر.س"
+                        unit={` ${getCurrencyLabel()}`}
                       />
                       <Tooltip 
                         contentStyle={{ 
@@ -1917,8 +1781,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       {language === 'ar' ? 'إجمالي نفقات الصيانة' : 'Total Maintenance Cost'}
                     </span>
                     <span className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">
-                      {fleetHealthStats.totalCost.toLocaleString()}
-                      <span className="text-[10px] font-bold text-slate-400 ml-1 font-sans">{language === 'ar' ? 'ر.س' : 'SAR'}</span>
+                      {formatCurrency(fleetHealthStats.totalCost, language, 'SAR')}
                     </span>
                   </div>
 
@@ -1936,9 +1799,9 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                     <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider mb-1">
                       {language === 'ar' ? 'معدل التكلفة لكل يوم تعطل' : 'Cost Per Downtime Day'}
                     </span>
-                    <span className="text-lg font-black text-slate-800 dark:text-slate-100 font-mono">
-                      {fleetHealthStats.avgCostPerDay.toLocaleString()}
-                      <span className="text-[10px] font-bold text-slate-400 ml-1 font-sans">{language === 'ar' ? 'ر.س / يوم' : 'SAR / Day'}</span>
+                    <span className="text-lg font-black text-slate-800 dark:text-slate-105 font-mono">
+                      {formatCurrency(fleetHealthStats.avgCostPerDay, language, 'SAR')}
+                      <span className="text-[10px] font-bold text-slate-400 ml-1 font-sans"> / {language === 'ar' ? 'يوم' : 'Day'}</span>
                     </span>
                   </div>
 
@@ -1973,10 +1836,10 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                         yAxisId="left" 
                         orientation={language === 'ar' ? 'right' : 'left'}
                         tickLine={false} 
-                        tickFormatter={(val) => `${val.toLocaleString()}`}
+                        tickFormatter={(val) => `${Math.round(val * getConversionRateFromSAR()).toLocaleString()}`}
                         tick={{ fontSize: 10, fill: '#4F46E5', fontWeight: 'bold' }} 
                         label={{ 
-                          value: language === 'ar' ? 'التكلفة (ر.س)' : 'Maintenance Cost (SAR)', 
+                          value: language === 'ar' ? `التكلفة (${getCurrencyLabel('ar')})` : `Maintenance Cost (${getCurrencyLabel('en')})`, 
                           angle: language === 'ar' ? 90 : -90, 
                           position: 'insideLeft',
                           offset: -5,
@@ -2006,7 +1869,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                             <div className="flex justify-center gap-6 text-xs font-bold font-sans select-none pb-4">
                               <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
                                 <span className="w-3 h-3 rounded bg-indigo-500 opacity-80 inline-block" />
-                                {language === 'ar' ? 'تكاليف الصيانة (ر.س)' : 'Maintenance Cost (SAR)'}
+                                {language === 'ar' ? `تكاليف الصيانة (${getCurrencyLabel('ar')})` : `Maintenance Cost (${getCurrencyLabel('en')})`}
                               </span>
                               <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                                 <span className="w-3 h-0.5 bg-amber-500 inline-block" />
@@ -2185,7 +2048,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                   <div className="p-3 bg-emerald-50/40 dark:bg-slate-900 rounded-2xl flex items-center justify-between text-right">
                     <div className="space-y-0.5">
                       <span className="text-slate-400 text-[10px] block">رأس مال البضاعة في الرفوف</span>
-                      <span className="text-sm font-black text-slate-800 dark:text-white block">{analysis.totalInventoryValue.toLocaleString()} ر.س</span>
+                      <span className="text-sm font-black text-slate-800 dark:text-white block">{formatCurrency(analysis.totalInventoryValue, language, 'SAR')}</span>
                     </div>
                     <DollarSign size={18} className="text-emerald-600" />
                   </div>

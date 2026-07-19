@@ -41,6 +41,7 @@ import { InventoryItem, User } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
+import { formatCurrency } from '../services/formatters';
 
 const SYSTEM_ANCHOR_DATE = '2026-05-19';
 
@@ -623,6 +624,7 @@ interface HistoricalAuditRowProps {
 
 function HistoricalAuditRow({ record }: HistoricalAuditRowProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { language } = useLanguage();
 
   return (
     <div className="p-4 space-y-3 hover:bg-slate-50/20 dark:hover:bg-slate-900/10">
@@ -642,7 +644,7 @@ function HistoricalAuditRow({ record }: HistoricalAuditRowProps) {
           </div>
           <div className="text-left font-mono">
             <span className="text-[10px] text-slate-400 block">خسائر/فوائد مالية للعد الفردي:</span>
-            <span className="font-extrabold text-emerald-600 dark:text-emerald-400 block">{record.totalValueAdjusted.toLocaleString()} ر.س</span>
+            <span className="font-extrabold text-emerald-600 dark:text-emerald-400 block">{formatCurrency(record.totalValueAdjusted, language, 'SAR')}</span>
           </div>
           <button
             type="button"
@@ -1494,8 +1496,8 @@ export default function Inventory({ user }: InventoryProps) {
           <td>${item.category}</td>
           <td style="text-align: center; font-weight: bold;">${item.quantity}</td>
           <td style="text-align: center; color: #64748b;">${item.minQuantity}</td>
-          <td style="text-align: right; font-family: monospace;">${(item.price || 0).toLocaleString()} ${isAr ? 'ريال' : 'SAR'}</td>
-          <td style="text-align: right; font-family: monospace; font-weight: bold; color: #4f46e5;">${totalItemValue.toLocaleString()} ${isAr ? 'ريال' : 'SAR'}</td>
+          <td style="text-align: right; font-family: monospace;">${formatCurrency(item.price || 0, isAr ? 'ar' : 'en', 'SAR')}</td>
+          <td style="text-align: right; font-family: monospace; font-weight: bold; color: #4f46e5;">${formatCurrency(totalItemValue, isAr ? 'ar' : 'en', 'SAR')}</td>
           <td>${item.shelfLocation || '-'}</td>
           <td style="text-align: center;">
             <span class="status-badge ${statusClass}">${statusText}</span>
@@ -1750,7 +1752,7 @@ export default function Inventory({ user }: InventoryProps) {
             </div>
             <div class="stat-card">
               <div class="stat-label">${isAr ? 'القيمة التقديرية للأصول المحددة' : 'Selected Assets Valuation'}</div>
-              <div class="stat-value">${totalValue.toLocaleString()} ${isAr ? 'ريال' : 'SAR'}</div>
+              <div class="stat-value">${formatCurrency(totalValue, isAr ? 'ar' : 'en', 'SAR')}</div>
             </div>
           </div>
 
@@ -2050,7 +2052,7 @@ export default function Inventory({ user }: InventoryProps) {
           },
           { 
             label: 'القيمة التقديرية للأصول', 
-            val: `${totalStockValue.toLocaleString()} ر.س`, 
+            val: formatCurrency(totalStockValue, language, 'SAR'), 
             desc: 'رأس مال البضاعة في الرف', 
             icon: <DollarSign size={18} className="text-amber-600 dark:text-amber-400" />,
             bg: 'bg-amber-100/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40 hover:border-amber-300',
@@ -2791,7 +2793,7 @@ export default function Inventory({ user }: InventoryProps) {
                       netCost += diff * (item.price || 0);
                     }
                   });
-                  return `${netCost.toLocaleString()} ر.س`;
+                  return formatCurrency(netCost, language, 'SAR');
                 })(),
                 desc: 'القيمة المالية لإعادة التسوية الجردية',
                 icon: <DollarSign size={16} className="text-emerald-600 dark:text-emerald-400" />,

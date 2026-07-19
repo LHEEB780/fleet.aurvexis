@@ -52,6 +52,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { User, UserRole } from '../types';
 import { MENU_ITEMS } from '../constants';
 import { useLanguage } from '../services/LanguageContext';
+import { safeLocalStorage } from '../services/safeStorage';
 import { pushLocalDataToCloud, pullCloudDataToLocal, testFirestoreConnection } from '../services/firebase';
 import { SystemSettings } from './SystemSettings';
 import { SupportTickets } from './SupportTickets';
@@ -621,12 +622,16 @@ export default function AppLayout({
   };
   
   // Custom structured settings state
-  const [selectedSettingsTab, setSelectedSettingsTab] = useState<'branding' | 'admin' | 'staff' | 'system' | 'cloud_sync' | 'tickets' | null>(null);
+  const [selectedSettingsTab, setSelectedSettingsTab] = useState<'branding' | 'admin' | 'staff' | 'system' | 'cloud_sync' | 'tickets' | 'currency' | null>(null);
   const [settingsMobileSection, setSettingsMobileSection] = useState<'menu' | 'content'>('menu');
   const [adminPin, setAdminPin] = useState(() => localStorage.getItem('saas_admin_pin') || '4321');
   const [saasBrandColor, setSaasBrandColor] = useState(() => localStorage.getItem('saas_brand_color') || 'blue');
   const [brandTheme, setBrandTheme] = useState(() => localStorage.getItem('saas_brand_theme') || 'classic-blue');
   const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => localStorage.getItem('saas_brand_primary_color') || '#6d28d9');
+  const [selectedCurrencyState, setSelectedCurrencyState] = useState(() => {
+    return safeLocalStorage.getItem('saas_base_currency') || 'SAR';
+  });
+  const [isCurrencySaving, setIsCurrencySaving] = useState(false);
   const [staffList, setStaffList] = useState<Array<{
     id: number;
     name: string;
@@ -2576,6 +2581,34 @@ export default function AppLayout({
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-violet-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-indigo-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
+            {/* Countdown Overlay for Currency Reload */}
+            <AnimatePresence>
+              {isCurrencySaving && (
+                <div className="absolute inset-0 bg-[#070b13]/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-6 text-center">
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    className="space-y-4 max-w-sm"
+                  >
+                    <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
+                      <Coins size={32} className="animate-spin text-emerald-400" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="text-base font-black text-white">
+                        {language === 'ar' ? 'تطبيق العملة الجديدة وإعادة هيكلة البيانات...' : 'Applying Base Currency & Restructuring Ledgers...'}
+                      </h4>
+                      <p className="text-xs text-slate-450 leading-relaxed">
+                        {language === 'ar' 
+                          ? 'جاري حفظ التفضيلات وإعادة تشغيل واجهات المنصة لتطبيق أسعار الصرف والتقارير بدقة متكاملة.' 
+                          : 'Finalizing configuration writes. Reloading workspace variables to apply live exchange updates.'}
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -2619,6 +2652,8 @@ export default function AppLayout({
                         language === 'ar' ? 'تفضيلات وموديولات النظام العام' : 'System Preferences & Modularity'
                       ) : selectedSettingsTab === 'tickets' ? (
                         language === 'ar' ? 'مكتب تذاكر الدعم والربط الفني' : 'Technical Support Tickets & Connectivity Guide'
+                      ) : selectedSettingsTab === 'currency' ? (
+                        language === 'ar' ? 'تغيير العملة وإعدادات الصرف المالي' : 'System Currency & Financial Exchange Settings'
                       ) : (
                         language === 'ar' ? 'بوابة المزامنة والنسخ السحابي' : 'Cloud Backup & DB Synchronization'
                       )}
@@ -2709,6 +2744,17 @@ export default function AppLayout({
                           tagAr: 'تذاكر الدعم والربط',
                           tagEn: 'Help Desk & Guides',
                           color: 'brand-blue'
+                        },
+                        {
+                          id: 'currency',
+                          labelAr: 'تغيير العملة وإعدادات الصرف المالي',
+                          labelEn: 'System Currency & Financial Exchange Settings',
+                          descAr: 'تغيير العملة الأساسية للمنصة بالكامل وإعادة تحميل التطبيق تلقائياً لتطبيق الأسعار والتقارير المالية والتحويلات الحية.',
+                          descEn: 'Change the master base currency of the platform and trigger an automated system-wide reload to apply converted values.',
+                          icon: <Coins size={24} className="text-emerald-500 group-hover:rotate-12 transition-transform" />,
+                          tagAr: 'تهيئة العملة والصرف',
+                          tagEn: 'Currency & Rates',
+                          color: 'emerald'
                         },
                         {
                           id: 'marketing-admin',
@@ -4654,6 +4700,146 @@ export default function AppLayout({
                       <SupportTickets />
                     </motion.div>
                   )}
+
+                  {/* TAB 7: GLOBAL BASE CURRENCY CONFIGURATION */}
+                  {selectedSettingsTab === 'currency' && (
+                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+                      <div className="border-b border-violet-100 dark:border-violet-900/60 pb-3">
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                          <Coins size={18} className="text-emerald-500 animate-pulse" />
+                          <span>
+                            {language === 'ar' ? 'تهيئة العملة وصرف الميزانية الكلية للمنصة' : 'Global Platform Base Currency & Exchange Rates'}
+                          </span>
+                        </h4>
+                        <p className="text-[10px] text-slate-450 mt-1">
+                          {language === 'ar' 
+                            ? 'اضبط العملة الحاكمة للنظام؛ سيتم تحويل وحساب الموازنات، وتكاليف أوامر العمل، والقطع تلقائياً فور الحفظ.' 
+                            : 'Define the global master currency; financial ledger calculations, parts inventory values, and service orders convert instantly.'}
+                        </p>
+                      </div>
+
+                      {/* Active Indicator Banner */}
+                      <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between text-right" dir="rtl">
+                        <div className="space-y-1">
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wider block">
+                            {language === 'ar' ? 'العملة الفعالة حالياً بالمنصة' : 'Current Active Platform Currency'}
+                          </span>
+                          <span className="text-base font-black text-slate-900 dark:text-white block">
+                            {selectedCurrencyState} ({selectedCurrencyState === 'SAR' ? 'ريال سعودي' : selectedCurrencyState === 'USD' ? 'دولار أمريكي' : selectedCurrencyState === 'AED' ? 'درهم إماراتي' : selectedCurrencyState === 'EGP' ? 'جنيه مصري' : selectedCurrencyState === 'QAR' ? 'ريال قطري' : selectedCurrencyState === 'KWD' ? 'دينار كويتي' : selectedCurrencyState === 'OMR' ? 'ريال عماني' : selectedCurrencyState === 'BHD' ? 'دينار بحريني' : 'يورو أوروبي'})
+                          </span>
+                        </div>
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center font-black text-lg">
+                          {selectedCurrencyState === 'USD' ? '$' : selectedCurrencyState === 'EUR' ? '€' : 'ر.س'}
+                        </div>
+                      </div>
+
+                      {/* Grid Selection */}
+                      <div className="space-y-3">
+                        <span className="text-[10.5px] font-black text-slate-400 dark:text-slate-500 block uppercase tracking-wider text-right">
+                          {language === 'ar' ? 'اختر العملة المطلوبة للتطبيق الكلي' : 'Select Master System Currency'}
+                        </span>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { id: 'SAR', labelAr: 'ريال سعودي', labelEn: 'Saudi Riyal', symbolAr: 'ر.س', symbolEn: 'SAR', rate: '1.0 (عملة المرجع الأساسي)' },
+                            { id: 'USD', labelAr: 'دولار أمريكي', labelEn: 'US Dollar', symbolAr: '$', symbolEn: 'USD', rate: '0.27 (نسبة صرف ر.س)' },
+                            { id: 'AED', labelAr: 'درهم إماراتي', labelEn: 'UAE Dirham', symbolAr: 'د.إ', symbolEn: 'AED', rate: '0.98 (نسبة صرف ر.س)' },
+                            { id: 'EGP', labelAr: 'جنيه مصري', labelEn: 'Egyptian Pound', symbolAr: 'ج.م', symbolEn: 'EGP', rate: '12.80 (نسبة صرف ر.س)' },
+                            { id: 'QAR', labelAr: 'ريال قطري', labelEn: 'Qatari Riyal', symbolAr: 'ر.ق', symbolEn: 'QAR', rate: '0.97 (نسبة صرف ر.س)' },
+                            { id: 'KWD', labelAr: 'دينار كويتي', labelEn: 'Kuwaiti Dinar', symbolAr: 'د.ك', symbolEn: 'KWD', rate: '0.082 (نسبة صرف ر.س)' },
+                            { id: 'OMR', labelAr: 'ريال عماني', labelEn: 'Omani Riyal', symbolAr: 'ر.ع', symbolEn: 'OMR', rate: '0.10 (نسبة صرف ر.س)' },
+                            { id: 'BHD', labelAr: 'دينار بحريني', labelEn: 'Bahraini Dinar', symbolAr: 'د.ب', symbolEn: 'BHD', rate: '0.10 (نسبة صرف ر.س)' },
+                            { id: 'EUR', labelAr: 'يورو أوروبي', labelEn: 'Euro', symbolAr: '€', symbolEn: 'EUR', rate: '0.25 (نسبة صرف ر.س)' }
+                          ].map((curr) => {
+                            const isSelected = selectedCurrencyState === curr.id;
+                            return (
+                              <button
+                                key={curr.id}
+                                type="button"
+                                onClick={() => setSelectedCurrencyState(curr.id)}
+                                className={`p-4 rounded-2xl border text-right transition-all duration-200 cursor-pointer flex items-center justify-between group relative ${
+                                  isSelected
+                                    ? 'border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/20 ring-2 ring-emerald-500/15'
+                                    : 'border-slate-150 dark:border-slate-800 bg-white dark:bg-[#0c101d] hover:border-slate-300 dark:hover:border-slate-700'
+                                }`}
+                                dir="rtl"
+                              >
+                                <div className="space-y-1">
+                                  <span className={`text-xs font-black block ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                                    {language === 'ar' ? curr.labelAr : curr.labelEn}
+                                  </span>
+                                  <span className="text-[10px] text-slate-450 block font-mono">
+                                    {curr.rate}
+                                  </span>
+                                </div>
+                                
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-emerald-500/20 text-emerald-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400'}`}>
+                                  {language === 'ar' ? curr.symbolAr : curr.symbolEn}
+                                </div>
+
+                                {isSelected && (
+                                  <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center text-white p-0.5">
+                                    <Check size={8} className="stroke-[4]" />
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Important Information Warning Box */}
+                      <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-right" dir="rtl">
+                        <div className="p-2 bg-amber-500/20 rounded-xl text-amber-500 shrink-0 mt-0.5">
+                          <AlertTriangle size={16} />
+                        </div>
+                        <div className="space-y-1">
+                          <h5 className="text-xs font-black text-amber-600 dark:text-amber-400">
+                            {language === 'ar' ? 'تنبيه إعادة تهيئة النظام الفوري' : 'System-Wide Cache Remount warning'}
+                          </h5>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                            {language === 'ar' 
+                              ? 'تغيير العملة يتطلب إعادة تحميل فوري لجميع بوابات الورشة وأجهزة الاستقصاء لضمان تطبيق حسابات أسعار الصرف بدقة على الرسوم البيانية، وتقارير المخزون، وأوامر العمل. سيتم حفظ البيانات وإعادة تحميل الصفحة تلقائياً بمجرد النقر على زر الحفظ أدناه.'
+                              : 'Altering base currency structures necessitates a complete context reload to align real-time calculations on live charts, logs, parts valuations, and budgets.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Big Interactive Action Button */}
+                      <div className="pt-4 flex justify-end">
+                        <button
+                          type="button"
+                          disabled={isCurrencySaving}
+                          onClick={() => {
+                            setIsCurrencySaving(true);
+                            // Set to local storage
+                            safeLocalStorage.setItem('saas_base_currency', selectedCurrencyState);
+                            // Dispatch standard storage event
+                            window.dispatchEvent(new Event('storage'));
+                            
+                            // Trigger beautiful countdown overlay for 1.2 seconds, then reload!
+                            setTimeout(() => {
+                              setIsCurrencySaving(false);
+                              window.location.reload();
+                            }, 1200);
+                          }}
+                          className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-600/50 text-white rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10"
+                        >
+                          {isCurrencySaving ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              <span>{language === 'ar' ? 'جاري الحفظ وإعادة تهيئة النظام...' : 'Saving & Reloading...'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check size={16} className="stroke-[3]" />
+                              <span>{language === 'ar' ? 'حفظ وتطبيق التغييرات وإعادة تحميل التطبيق' : 'Save, Apply base currency & Reload Now'}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               )}
               </div>
@@ -4668,7 +4854,7 @@ export default function AppLayout({
                   >
                     {language === 'ar' ? 'رجوع للقسم الرئيسي' : 'Back to Panel'}
                   </button>
-                  {selectedSettingsTab !== 'tickets' && (
+                  {selectedSettingsTab !== 'tickets' && selectedSettingsTab !== 'currency' && (
                     <button
                       type="button"
                       onClick={handleSaveSettings}

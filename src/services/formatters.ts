@@ -1,15 +1,119 @@
-// Centralized Formatters and Helpers for localized currencies, dates, and state indicators.
+import { safeLocalStorage } from './safeStorage';
 
 /**
- * Formats a numeric value into a localized currency string (SAR / ر.س).
+ * Gets the selected base currency from local storage. Defaults to 'SAR'.
  */
-export function formatCurrency(amount: number | string | undefined | null, language: 'ar' | 'en' = 'ar'): string {
-  const num = Number(amount) || 0;
+export function getBaseCurrency(): string {
+  if (typeof window === 'undefined') return 'SAR';
+  return safeLocalStorage.getItem('saas_base_currency') || 'SAR';
+}
+
+/**
+ * Gets the localized currency label/symbol based on selected currency and language.
+ */
+export function getCurrencyLabel(language: 'ar' | 'en' = 'ar'): string {
+  const baseCurrency = getBaseCurrency();
+  const currencyLabelsAr: Record<string, string> = {
+    'SAR': 'ر.س',
+    'USD': '$',
+    'AED': 'د.إ',
+    'EGP': 'ج.م',
+    'QAR': 'ر.ق',
+    'KWD': 'د.ك',
+    'OMR': 'ر.ع',
+    'BHD': 'د.ب',
+    'EUR': '€'
+  };
+
+  const currencyLabelsEn: Record<string, string> = {
+    'SAR': 'SAR',
+    'USD': 'USD',
+    'AED': 'AED',
+    'EGP': 'EGP',
+    'QAR': 'QAR',
+    'KWD': 'KWD',
+    'OMR': 'OMR',
+    'BHD': 'BHD',
+    'EUR': 'EUR'
+  };
+
+  return language === 'ar' 
+    ? (currencyLabelsAr[baseCurrency] || baseCurrency) 
+    : (currencyLabelsEn[baseCurrency] || baseCurrency);
+}
+
+/**
+ * Returns conversion rate from SAR to selected currency.
+ * The application's local maintenance/inventory costs are authored in SAR (ر.س).
+ */
+export function getConversionRateFromSAR(): number {
+  const baseCurrency = getBaseCurrency();
+  // 1 SAR equivalents
+  const rates: Record<string, number> = {
+    'SAR': 1.0,
+    'USD': 0.27,      // 1 SAR = 0.266 USD
+    'AED': 0.98,      // 1 SAR = 0.979 AED
+    'EGP': 12.80,     // 1 SAR = ~12.80 EGP
+    'QAR': 0.97,      // 1 SAR = 0.97 QAR
+    'KWD': 0.082,     // 1 SAR = 0.082 KWD
+    'OMR': 0.10,      // 1 SAR = 0.10 OMR
+    'BHD': 0.10,      // 1 SAR = 0.10 BHD
+    'EUR': 0.25       // 1 SAR = 0.25 EUR
+  };
+  return rates[baseCurrency] || 1.0;
+}
+
+/**
+ * Returns conversion rate from USD to selected currency.
+ * The SaaS billing/pricing plans are authored in USD.
+ */
+export function getConversionRateFromUSD(): number {
+  const baseCurrency = getBaseCurrency();
+  // 1 USD equivalents
+  const rates: Record<string, number> = {
+    'SAR': 3.75,
+    'USD': 1.0,
+    'AED': 3.67,
+    'EGP': 48.0,
+    'QAR': 3.64,
+    'KWD': 0.31,
+    'OMR': 0.38,
+    'BHD': 0.38,
+    'EUR': 0.92
+  };
+  return rates[baseCurrency] || 1.0;
+}
+
+/**
+ * Formats a numeric value (assumed in local currency or converted) into a localized currency string.
+ * If convertFromSource is provided ('SAR' or 'USD'), it first converts the value.
+ */
+export function formatCurrency(
+  amount: number | string | undefined | null, 
+  language: 'ar' | 'en' = 'ar',
+  convertFromSource?: 'SAR' | 'USD'
+): string {
+  let num = Number(amount) || 0;
+  
+  if (convertFromSource === 'SAR') {
+    num = num * getConversionRateFromSAR();
+  } else if (convertFromSource === 'USD') {
+    num = num * getConversionRateFromUSD();
+  }
+
   const formatted = num.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
-  return language === 'ar' ? `${formatted} ر.س` : `${formatted} SAR`;
+  
+  const label = getCurrencyLabel(language);
+  
+  // Return format with currency label
+  if (language === 'ar') {
+    return `${formatted} ${label}`;
+  } else {
+    return `${formatted} ${label}`;
+  }
 }
 
 /**

@@ -7,10 +7,11 @@ import {
   Building2, Calendar, ClipboardList, IdCard, 
   ShieldAlert, Box, Users, BarChart3, Truck, 
   Warehouse, Handshake, AlertCircle, Briefcase,
-  Palette
+  Palette, Coins
 } from 'lucide-react';
 import { MENU_ITEMS, MenuItem } from '../constants';
 import { useLanguage } from '../services/LanguageContext';
+import { safeLocalStorage } from '../services/safeStorage';
 
 export interface SystemSettingsProps {
   onModuleChange?: (enabledModules: string[]) => void;
@@ -103,7 +104,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
 
   // State to track activated module IDs
   const [enabledModules, setEnabledModules] = useState<string[]>(() => {
-    const saved = localStorage.getItem('saas_enabled_modules');
+    const saved = safeLocalStorage.getItem('saas_enabled_modules');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -120,7 +121,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
 
   // --- DYNAMIC BRAND PRIMARY COLOR STATE & PRESETS ---
   const [primaryColor, setPrimaryColor] = useState(() => {
-    return localStorage.getItem('saas_primary_color') || '#673de6';
+    return safeLocalStorage.getItem('saas_primary_color') || '#673de6';
   });
 
   const COLOR_PRESETS = [
@@ -137,7 +138,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
   const handleColorChange = (hex: string) => {
     setAutosaveStatus('saving');
     setPrimaryColor(hex);
-    localStorage.setItem('saas_primary_color', hex);
+    safeLocalStorage.setItem('saas_primary_color', hex);
     
     // Dispatch standard storage event and custom brand color event
     window.dispatchEvent(new Event('storage'));
@@ -148,16 +149,41 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
     }, 400);
   };
 
+  // --- BASE CURRENCY SELECTION ---
+  const [baseCurrency, setBaseCurrency] = useState(() => {
+    return safeLocalStorage.getItem('saas_base_currency') || 'SAR';
+  });
+
+  const handleCurrencyChange = (currency: string) => {
+    setAutosaveStatus('saving');
+    setBaseCurrency(currency);
+    safeLocalStorage.setItem('saas_base_currency', currency);
+    
+    // Dispatch standard storage event and custom currency event
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('base-currency-changed'));
+    
+    setTimeout(() => {
+      setAutosaveStatus('saved');
+      // Reload full page to ensure all components cleanly remount with the updated base currency format
+      window.location.reload();
+    }, 450);
+  };
+
   useEffect(() => {
     const handleStorageChange = () => {
-      const savedColor = localStorage.getItem('saas_primary_color') || '#673de6';
+      const savedColor = safeLocalStorage.getItem('saas_primary_color') || '#673de6';
       setPrimaryColor(savedColor);
+      const savedCurrency = safeLocalStorage.getItem('saas_base_currency') || 'SAR';
+      setBaseCurrency(savedCurrency);
     };
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('brand-color-changed', handleStorageChange);
+    window.addEventListener('base-currency-changed', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('brand-color-changed', handleStorageChange);
+      window.removeEventListener('base-currency-changed', handleStorageChange);
     };
   }, []);
 
@@ -169,7 +195,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
   // Sync state if localStorage shifts elsewhere
   useEffect(() => {
     const handleStorage = () => {
-      const saved = localStorage.getItem('saas_enabled_modules');
+      const saved = safeLocalStorage.getItem('saas_enabled_modules');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -196,7 +222,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
     if (!updated.includes('saas-billing')) updated.push('saas-billing');
 
     setEnabledModules(updated);
-    localStorage.setItem('saas_enabled_modules', JSON.stringify(updated));
+    safeLocalStorage.setItem('saas_enabled_modules', JSON.stringify(updated));
     
     // Dispatch standard storage event so AppLayout listens to it
     window.dispatchEvent(new Event('storage'));
@@ -239,7 +265,7 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
     }
 
     setEnabledModules(updated);
-    localStorage.setItem('saas_enabled_modules', JSON.stringify(updated));
+    safeLocalStorage.setItem('saas_enabled_modules', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
 
     if (onModuleChange) {
@@ -351,6 +377,79 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
                 <span className="text-[9.5px] font-black text-slate-600 dark:text-slate-350 text-center truncate w-full">
                   {isRtl ? preset.labelAr : preset.labelEn}
                 </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Dynamic Base Currency Customization Section */}
+      <div className={`p-5 bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-cyan-500/5 dark:from-[#0d1e1a] dark:via-[#091512] dark:to-[#0d1e1a] rounded-3xl border border-emerald-500/20 dark:border-emerald-500/40 shadow-3xs space-y-4 ${isRtl ? 'text-right' : 'text-left'}`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isRtl ? 'sm:flex-row-reverse' : ''}`}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Coins size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-850 dark:text-white">
+                {isRtl ? 'العملة الأساسية للمنشأة' : 'Facility Base Currency Settings'}
+              </h3>
+              <p className="text-[10px] text-slate-450 dark:text-slate-400">
+                {isRtl ? 'اختر العملة الرسمية للمنشأة. سيقوم النظام بتحديث أسعار الفواتير وعروض التقارير المالية والتحليلات آلياً.' : 'Set the primary facility currency. All billing plans, local spare parts costs, and financial analytics will adjust dynamically.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <span className="text-[10px] text-slate-400 font-bold">
+              {isRtl ? 'العملة الحالية:' : 'Active Currency:'}
+            </span>
+            <div className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black rounded-lg border border-emerald-500/10">
+              {baseCurrency}
+            </div>
+          </div>
+        </div>
+
+        {/* Currencies Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-9 gap-2">
+          {[
+            { id: 'SAR', labelAr: 'ريال سعودي', labelEn: 'Saudi Riyal', symbolAr: 'ر.س', symbolEn: 'SAR' },
+            { id: 'USD', labelAr: 'دولار أمريكي', labelEn: 'US Dollar', symbolAr: '$', symbolEn: 'USD' },
+            { id: 'AED', labelAr: 'درهم إماراتي', labelEn: 'UAE Dirham', symbolAr: 'د.إ', symbolEn: 'AED' },
+            { id: 'EGP', labelAr: 'جنيه مصري', labelEn: 'Egyptian Pound', symbolAr: 'ج.م', symbolEn: 'EGP' },
+            { id: 'QAR', labelAr: 'ريال قطري', labelEn: 'Qatari Riyal', symbolAr: 'ر.ق', symbolEn: 'QAR' },
+            { id: 'KWD', labelAr: 'دينار كويتي', labelEn: 'Kuwaiti Dinar', symbolAr: 'د.ك', symbolEn: 'KWD' },
+            { id: 'OMR', labelAr: 'ريال عماني', labelEn: 'Omani Riyal', symbolAr: 'ر.ع', symbolEn: 'OMR' },
+            { id: 'BHD', labelAr: 'دينار بحريني', labelEn: 'Bahraini Dinar', symbolAr: 'د.ب', symbolEn: 'BHD' },
+            { id: 'EUR', labelAr: 'يورو أوروبي', labelEn: 'Euro', symbolAr: '€', symbolEn: 'EUR' }
+          ].map((curr) => {
+            const isActive = baseCurrency === curr.id;
+            return (
+              <button
+                key={curr.id}
+                type="button"
+                onClick={() => handleCurrencyChange(curr.id)}
+                className={`p-2.5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-1.5 relative ${
+                  isActive
+                    ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50/10 dark:bg-emerald-950/20 ring-2 ring-emerald-500/10'
+                    : 'border-slate-100 dark:border-slate-850 bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-slate-900/40'
+                }`}
+              >
+                {/* Symbol / Icon display */}
+                <span className={`text-xs font-black font-sans leading-none block shrink-0 ${isActive ? 'text-emerald-500' : 'text-slate-400'}`}>
+                  {isRtl ? curr.symbolAr : curr.symbolEn}
+                </span>
+
+                {/* Label */}
+                <span className={`text-[9.5px] font-black text-center truncate w-full ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-550 dark:text-slate-400'}`}>
+                  {isRtl ? curr.labelAr : curr.labelEn}
+                </span>
+
+                {isActive && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 flex items-center justify-center text-white p-0.5">
+                    <Check size={6} className="stroke-[4]" />
+                  </span>
+                )}
               </button>
             );
           })}
