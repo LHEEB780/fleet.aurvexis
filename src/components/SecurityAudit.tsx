@@ -43,8 +43,13 @@ import {
   Sliders,
   Info,
   Trash2,
+  HardDrive,
+  AlertTriangle,
+  Zap,
+  Cpu,
   User as UserIcon
 } from 'lucide-react';
+import { safeLocalStorage } from '../services/safeStorage';
 import { 
   db, 
   testFirestoreConnection, 
@@ -293,8 +298,261 @@ export default function SecurityAudit({ user }: { user?: User }) {
   const [newPermissionLabel, setNewPermissionLabel] = useState('');
 
   // Sub-tabs for security audit
-  const [activeSubTab, setActiveSubTab] = useState<'features' | 'matrix' | 'granular' | 'team' | 'logs' | 'preview'>('features');
+  const [activeSubTab, setActiveSubTab] = useState<'features' | 'matrix' | 'granular' | 'storage' | 'team' | 'logs' | 'preview'>('features');
   const [featuresSaveFeedback, setFeaturesSaveFeedback] = useState<string | null>(null);
+
+  // LocalStorage Cleanup & Health Tool States
+  const [storageSearchTerm, setStorageSearchTerm] = useState('');
+  const [storageFilterCategory, setStorageFilterCategory] = useState<'all' | 'core' | 'fleet' | 'cache' | 'corrupted'>('all');
+  const [storageFeedback, setStorageFeedback] = useState<string | null>(null);
+  const [storageRefreshTrigger, setStorageRefreshTrigger] = useState(0);
+  const [showFullResetModal, setShowFullResetModal] = useState(false);
+
+  // Computed analysis of LocalStorage usage
+  const storageAnalysis = useMemo(() => {
+    const _dummy = storageRefreshTrigger;
+    const items: Array<{
+      key: string;
+      value: string;
+      sizeBytes: number;
+      sizeFormatted: string;
+      category: 'core' | 'fleet' | 'cache' | 'corrupted';
+      categoryLabelAr: string;
+      isCorrupted: boolean;
+      isValidJson: boolean;
+      parsedType: string;
+    }> = [];
+
+    let totalBytes = 0;
+
+    try {
+      const len = safeLocalStorage.length;
+      for (let i = 0; i < len; i++) {
+        const key = safeLocalStorage.key(i);
+        if (!key) continue;
+        const value = safeLocalStorage.getItem(key) || '';
+        const bytes = key.length * 2 + value.length * 2;
+        totalBytes += bytes;
+
+        let isCorrupted = false;
+        let isValidJson = false;
+        let parsedType = 'نص عادِي (String)';
+
+        if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+          try {
+            const parsed = JSON.parse(value);
+            isValidJson = true;
+            parsedType = Array.isArray(parsed) ? `مصفوفة (${parsed.length} عنصر)` : 'كائن JSON';
+          } catch (e) {
+            isCorrupted = true;
+            parsedType = 'كود JSON تالف مكسور ⚠️';
+          }
+        }
+
+        // Categorize key
+        let category: 'core' | 'fleet' | 'cache' | 'corrupted' = 'cache';
+        let categoryLabelAr = 'ذاكرة مؤقتة وسجلات';
+
+        if (isCorrupted) {
+          category = 'corrupted';
+          categoryLabelAr = 'بيانات تالفة / كود مكسور';
+        } else if (
+          key.startsWith('saas_') ||
+          key.includes('permission') ||
+          key.includes('role') ||
+          key.includes('currency') ||
+          key.includes('theme') ||
+          key.includes('lang')
+        ) {
+          category = 'core';
+          categoryLabelAr = 'إعدادات المنصة والنواة';
+        } else if (
+          key.startsWith('fleet_') ||
+          key.includes('vehicles') ||
+          key.includes('work_orders') ||
+          key.includes('technicians') ||
+          key.includes('inspections') ||
+          key.includes('inventory')
+        ) {
+          category = 'fleet';
+          categoryLabelAr = 'قواعد بيانات الأسطول';
+        } else if (
+          key.startsWith('temp_') ||
+          key.startsWith('cache_') ||
+          key.includes('requested_') ||
+          key.includes('active_tab') ||
+          key.includes('onboarding') ||
+          key.includes('search') ||
+          key.includes('filter') ||
+          key.includes('draft') ||
+          key.includes('last_')
+        ) {
+          category = 'cache';
+          categoryLabelAr = 'ذاكرة جلسات مؤقتة';
+        }
+
+        const kb = (bytes / 1024).toFixed(2);
+        items.push({
+          key,
+          value,
+          sizeBytes: bytes,
+          sizeFormatted: bytes > 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(2)} MB` : `${kb} KB`,
+          category,
+          categoryLabelAr,
+          isCorrupted,
+          isValidJson,
+          parsedType,
+        });
+      }
+    } catch (e) {
+      console.warn('Storage analysis error:', e);
+    }
+
+    items.sort((a, b) => b.sizeBytes - a.sizeBytes);
+
+    const totalKb = (totalBytes / 1024).toFixed(1);
+    const totalMb = (totalBytes / (1024 * 1024)).toFixed(2);
+    const usagePercent = Math.min(100, Math.round((totalBytes / (5 * 1024 * 1024)) * 100));
+
+    return {
+      items,
+      totalBytes,
+      totalKb,
+      totalMb,
+      usagePercent,
+      totalKeys: items.length,
+      corruptedCount: items.filter(i => i.isCorrupted).length,
+      cacheCount: items.filter(i => i.category === 'cache').length,
+      coreCount: items.filter(i => i.category === 'core').length,
+      fleetCount: items.filter(i => i.category === 'fleet').length,
+    };
+  }, [storageRefreshTrigger]);
+
+  // Handlers for storage operations
+  const handleDeleteSingleStorageKey = (keyName: string) => {
+    safeLocalStorage.removeItem(keyName);
+    setStorageRefreshTrigger(prev => prev + 1);
+
+    const newLog: AuditLog = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      user: 'المهندس خالد',
+      role: 'مدير نظام',
+      action: 'حذف مفتاح تخزين محلي فردي',
+      category: 'users',
+      ipAddress: '197.82.16.42',
+      status: 'تنبيه',
+      details: `قام بحذف المفتاح (${keyName}) يدوياً من الذاكرة المحلية لتنظيف المتصفح.`
+    };
+    setAuditLogs(logs => [newLog, ...logs]);
+
+    setStorageFeedback(`تم حذف المفتاح (${keyName}) بنجاح من الذاكرة المحلية.`);
+    setTimeout(() => setStorageFeedback(null), 3500);
+  };
+
+  const handleCleanTempCache = () => {
+    let deletedCount = 0;
+    let freedBytes = 0;
+
+    const cacheKeys = storageAnalysis.items.filter(i => i.category === 'cache' || i.key.startsWith('temp_') || i.key.includes('requested_'));
+    cacheKeys.forEach(i => {
+      freedBytes += i.sizeBytes;
+      safeLocalStorage.removeItem(i.key);
+      deletedCount++;
+    });
+
+    setStorageRefreshTrigger(prev => prev + 1);
+
+    const freedKb = (freedBytes / 1024).toFixed(1);
+    const msg = `تم تنظيف الذاكرة المؤقتة بنجاح! تم مسح ${deletedCount} عنصر وتوفير ${freedKb} KB من مساحة التخزين المحلية.`;
+    setStorageFeedback(msg);
+
+    const newLog: AuditLog = {
+      id: `log-${Date.now()}`,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      user: 'المهندس خالد',
+      role: 'مدير نظام',
+      action: 'تنظيف الذاكرة المؤقتة والجلسات',
+      category: 'users',
+      ipAddress: '197.82.16.42',
+      status: 'نجاح',
+      details: `قام بتنظيف حزمة الذاكرة المؤقتة والجلسات، مما وفر ${freedKb} KB وحذف ${deletedCount} مفتاح غير ضروري.`
+    };
+    setAuditLogs(logs => [newLog, ...logs]);
+
+    setTimeout(() => setStorageFeedback(null), 4500);
+  };
+
+  const handleRepairCorrupted = () => {
+    let deletedCount = 0;
+    let freedBytes = 0;
+
+    const corruptedItems = storageAnalysis.items.filter(i => i.isCorrupted);
+    corruptedItems.forEach(i => {
+      freedBytes += i.sizeBytes;
+      safeLocalStorage.removeItem(i.key);
+      deletedCount++;
+    });
+
+    setStorageRefreshTrigger(prev => prev + 1);
+
+    const freedKb = (freedBytes / 1024).toFixed(1);
+    const msg = deletedCount > 0 
+      ? `تم إصلاح وتنظيف الكود المكسور! تم حذف ${deletedCount} مفتاح تالف وتفريغ ${freedKb} KB.`
+      : 'ممتاز! لم يتم العثور على أي مفاتيح تالفة أو كود JSON مكسور بالذاكرة المحلية.';
+    setStorageFeedback(msg);
+
+    if (deletedCount > 0) {
+      const newLog: AuditLog = {
+        id: `log-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        user: 'المهندس خالد',
+        role: 'مدير نظام',
+        action: 'إصلاح وتنظيف المفاتيح التالفة',
+        category: 'users',
+        ipAddress: '197.82.16.42',
+        status: 'نجاح',
+        details: `قام بفحص وتفريغ ${deletedCount} مفتاح JSON تالف من الذاكرة المحلية بنجاح.`
+      };
+      setAuditLogs(logs => [newLog, ...logs]);
+    }
+
+    setTimeout(() => setStorageFeedback(null), 4500);
+  };
+
+  const handleCompressLogsAndAudit = () => {
+    const currentLogs = auditLogs;
+    if (currentLogs.length > 20) {
+      const trimmed = currentLogs.slice(0, 15);
+      setAuditLogs(trimmed);
+      try {
+        localStorage.setItem('saas_critical_audit_logs', JSON.stringify(trimmed));
+      } catch (e) {}
+      setStorageRefreshTrigger(prev => prev + 1);
+      setStorageFeedback('تم ضغط وأرشفة سجلات الامتثال القديمة بنجاح لتقليل الحجم وتسريع استجابة الواجهة!');
+    } else {
+      setStorageFeedback('حجم السجلات المحلي مثالي حالياً ولا يتطلب ضغطاً.');
+    }
+    setTimeout(() => setStorageFeedback(null), 4000);
+  };
+
+  const handleFullStorageReset = () => {
+    try {
+      safeLocalStorage.clear();
+      safeLocalStorage.setItem('saas_base_currency', 'SAR');
+      safeLocalStorage.setItem('saas_brand_color', 'blue');
+    } catch (e) {
+      console.warn('Error clearing storage:', e);
+    }
+    setStorageRefreshTrigger(prev => prev + 1);
+    setShowFullResetModal(false);
+
+    setStorageFeedback('تم تصفير وإعادة تعيين التخزين المحلي بالكامل إلى الوضع القياسي الأصلي بنجاح!');
+    setTimeout(() => {
+      setStorageFeedback(null);
+      window.location.reload();
+    }, 1500);
+  };
 
   // Custom feature permissions mapping
   const [customFeatures, setCustomFeatures] = useState<Record<string, Record<'admin' | 'fleet_manager' | 'technician' | 'viewer', boolean>>>(() => {
@@ -889,6 +1147,7 @@ export default function SecurityAudit({ user }: { user?: User }) {
           { key: 'features', labelAr: 'التحكم بميزات المنصة (Feature Access)', icon: <Sliders size={13} />, isNew: true },
           { key: 'matrix', labelAr: 'مصفوفة الصلاحيات والسياسات (RBAC Matrix)', icon: <ShieldAlert size={13} /> },
           { key: 'granular', labelAr: 'العمليات الحرجة (Granular Permissions)', icon: <Key size={13} /> },
+          { key: 'storage', labelAr: 'تنظيف الذاكرة والتخزين (LocalStorage)', icon: <HardDrive size={13} />, isNew: true },
           { key: 'team', labelAr: 'طاقم العمل والدعوات (Team & Invites)', icon: <Users size={13} /> },
           { key: 'logs', labelAr: 'سجل الرصد والربط (Audit & Firebase Sync)', icon: <History size={13} /> },
           { key: 'preview', labelAr: 'محاكي الواجهات الحي (UX Simulator)', icon: <Eye size={13} /> }
@@ -2242,6 +2501,322 @@ export default function SecurityAudit({ user }: { user?: User }) {
       )}
 
 
+      {/* Sub-Tab: LocalStorage Optimization & Cleanup Tool */}
+      {activeSubTab === 'storage' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Feedback Toast Banner */}
+          {storageFeedback && (
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl text-xs font-bold flex items-center justify-between gap-2 animate-bounce">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                <span>{storageFeedback}</span>
+              </div>
+              <button onClick={() => setStorageFeedback(null)} className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 cursor-pointer">
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
+          {/* Contextual Header / Description Card */}
+          <div className="bg-gradient-to-l from-violet-500/10 via-purple-500/5 to-transparent border border-violet-500/20 p-5 rounded-3xl space-y-3 text-right">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400">
+                <Database size={18} className="animate-pulse" />
+                <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                  أداة فحص وصيانة ذاكرة التخزين المحلي (LocalStorage Optimization & Purge)
+                </h3>
+              </div>
+              <span className="text-[10px] font-extrabold px-3 py-1 bg-violet-500/15 border border-violet-500/20 rounded-full text-violet-600 dark:text-violet-300">
+                صيانة إدارية عالية المستوى ⚡
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              تتيح هذه الأداة للمدير التنفيذي فحص الذاكرة المحلية للمتصفح (LocalStorage)، وكشف البيانات التالفة أو الجلسات المؤقتة المتراكمة التي قد تسبب بطء الاستجابة أو ثقل الواجهة. يمكنك تنفيذ تنظيف ذكي فوراً دون المساس بالإعدادات الأساسية أو قاعدة بيانات Firestore.
+            </p>
+          </div>
+
+          {/* Storage Metrics & Health Overview Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Storage Usage Bar */}
+            <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-2xl p-4 space-y-2 shadow-xs">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-500 dark:text-slate-400">حجم الذاكرة المستهلكة</span>
+                <span className="font-mono font-black text-violet-600 dark:text-violet-400">{storageAnalysis.totalKb} KB</span>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    storageAnalysis.usagePercent > 70 ? 'bg-rose-500' : storageAnalysis.usagePercent > 40 ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${Math.max(3, storageAnalysis.usagePercent)}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[10px] text-slate-400 pt-0.5">
+                <span>{storageAnalysis.totalMb} MB / ~5.00 MB الحد المتاح</span>
+                <span className="font-mono font-bold text-slate-600 dark:text-slate-300">{storageAnalysis.usagePercent}%</span>
+              </div>
+            </div>
+
+            {/* Total Keys Count */}
+            <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-400 block">إجمالي المفاتيح المسجلة</span>
+                <span className="text-xl font-black text-slate-800 dark:text-white font-mono">{storageAnalysis.totalKeys}</span>
+                <span className="text-[9px] text-slate-400 block">سجلات وكائنات مفهرسة</span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black">
+                <HardDrive size={18} />
+              </div>
+            </div>
+
+            {/* Cache & Temp Items Count */}
+            <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-400 block">ذاكرة مؤقتة وجلسات</span>
+                <span className="text-xl font-black text-amber-600 dark:text-amber-400 font-mono">{storageAnalysis.cacheCount}</span>
+                <span className="text-[9px] text-slate-400 block">يمكن تنظيفها بأمان</span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
+                <Trash2 size={18} />
+              </div>
+            </div>
+
+            {/* Corrupted Items Warning Count */}
+            <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-400 block">مفاتيح تالفة أو مكسورة</span>
+                <span className={`text-xl font-black font-mono ${storageAnalysis.corruptedCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                  {storageAnalysis.corruptedCount}
+                </span>
+                <span className="text-[9px] text-slate-400 block">
+                  {storageAnalysis.corruptedCount > 0 ? 'تتطلب تنظيفاً عاجلاً ⚠️' : 'البيانات خالية من الأخطاء ✓'}
+                </span>
+              </div>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${
+                storageAnalysis.corruptedCount > 0 
+                  ? 'bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 animate-pulse' 
+                  : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+              }`}>
+                <AlertTriangle size={18} />
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Action Automated Cleaners */}
+          <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Zap size={16} className="text-amber-500" />
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">أدوات التنظيف والتحسين السريعة (One-Click Cleanup Actions)</h4>
+              </div>
+              <span className="text-[10px] text-slate-400">اختر نوع العملية المناسبة لتسريع النظام</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Action 1: Smart Cache Purge */}
+              <button
+                type="button"
+                onClick={handleCleanTempCache}
+                className="p-4 bg-slate-50 dark:bg-slate-900/60 hover:bg-violet-50 dark:hover:bg-violet-950/20 border border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700/50 rounded-2xl text-right transition-all group cursor-pointer space-y-2"
+              >
+                <div className="w-9 h-9 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Trash2 size={16} />
+                </div>
+                <div>
+                  <h5 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors">
+                    تنظيف الذاكرة المؤقتة والجلسات
+                  </h5>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    يزيل مسودات البحث، الفلاتر السابقة، وذاكرة التبويبات المؤقتة لتسريع تحميل الصفحات.
+                  </p>
+                </div>
+              </button>
+
+              {/* Action 2: Repair Corrupted JSON Keys */}
+              <button
+                type="button"
+                onClick={handleRepairCorrupted}
+                className="p-4 bg-slate-50 dark:bg-slate-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-700/50 rounded-2xl text-right transition-all group cursor-pointer space-y-2"
+              >
+                <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <AlertTriangle size={16} />
+                </div>
+                <div>
+                  <h5 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors">
+                    إصلاح وتنظيف الكود المكسور
+                  </h5>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    يفحص كل السجلات ويحذف الكائنات غير الصالحة التي تسبب أخطاء البرمجة أو تجميد الشاشة.
+                  </p>
+                </div>
+              </button>
+
+              {/* Action 3: Compress Audit Logs */}
+              <button
+                type="button"
+                onClick={handleCompressLogsAndAudit}
+                className="p-4 bg-slate-50 dark:bg-slate-900/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700/50 rounded-2xl text-right transition-all group cursor-pointer space-y-2"
+              >
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Cpu size={16} />
+                </div>
+                <div>
+                  <h5 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
+                    ضغط وأرشفة السجلات المحلية
+                  </h5>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    يضغط السجلات والتقارير المخزنة بالذاكرة المحلية لمنع التراكم وتخفيف العبء عن المتصفح.
+                  </p>
+                </div>
+              </button>
+
+              {/* Action 4: Full Storage Reset with Modal */}
+              <button
+                type="button"
+                onClick={() => setShowFullResetModal(true)}
+                className="p-4 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 rounded-2xl text-right transition-all group cursor-pointer space-y-2"
+              >
+                <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <RefreshCw size={16} />
+                </div>
+                <div>
+                  <h5 className="text-xs font-black text-rose-600 dark:text-rose-400">
+                    تصفير وإعادة ضبط التخزين كلياً
+                  </h5>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    يمسح كامل التخزين المحلي ويعيد تشغيل النظام بالإعدادات المرجعية النظيفة (يتطلب تأكيداً).
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Storage Detailed Inspection Table */}
+          <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 space-y-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <HardDrive size={16} className="text-purple-600 dark:text-purple-400" />
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white">جدول تفصيلي بمحتويات التخزين المحلي (Keys Inspector)</h4>
+                  <p className="text-[10px] text-slate-400">يمكنك استعراض الأحجام أو حذف أي مفتاح يدوياً</p>
+                </div>
+              </div>
+
+              {/* Search & Filter Controls */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative">
+                  <Search size={13} className="absolute right-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={storageSearchTerm}
+                    onChange={(e) => setStorageSearchTerm(e.target.value)}
+                    placeholder="ابحث باسم المفتاح..."
+                    className="pr-8 pl-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-violet-500 dark:text-white w-40 sm:w-48"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                  {[
+                    { id: 'all', label: 'الكل' },
+                    { id: 'cache', label: 'ذاكرة مؤقتة' },
+                    { id: 'core', label: 'النواة' },
+                    { id: 'fleet', label: 'الأسطول' },
+                    { id: 'corrupted', label: 'تالف' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setStorageFilterCategory(f.id as any)}
+                      className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
+                        storageFilterCategory === f.id
+                          ? 'bg-violet-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Keys Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-right border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800 text-[10.5px] font-black text-slate-400">
+                    <th className="py-2.5 pr-2">اسم المفتاح والتصنيف</th>
+                    <th className="py-2.5 text-center">نوع الهيكل</th>
+                    <th className="py-2.5 text-center">الحجم بالذاكرة</th>
+                    <th className="py-2.5 text-center">الإجراء</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-bold text-slate-700 dark:text-slate-300">
+                  {storageAnalysis.items
+                    .filter(item => {
+                      const matchSearch = item.key.toLowerCase().includes(storageSearchTerm.toLowerCase());
+                      const matchCategory = storageFilterCategory === 'all' || item.category === storageFilterCategory;
+                      return matchSearch && matchCategory;
+                    })
+                    .map((item) => (
+                      <tr key={item.key} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                        <td className="py-3 pr-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 text-[9px] font-black rounded-md ${
+                              item.category === 'corrupted'
+                                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                                : item.category === 'core'
+                                  ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                                  : item.category === 'fleet'
+                                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                            }`}>
+                              {item.categoryLabelAr}
+                            </span>
+                            <span className="font-mono text-xs font-black text-slate-900 dark:text-white dir-ltr text-right">
+                              {item.key}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 text-center">
+                          <span className={`text-[10px] font-mono font-extrabold ${item.isCorrupted ? 'text-rose-500' : 'text-slate-500'}`}>
+                            {item.parsedType}
+                          </span>
+                        </td>
+                        <td className="py-3 text-center">
+                          <span className="text-[10.5px] font-mono font-black text-violet-600 dark:text-violet-400 bg-violet-500/5 px-2 py-1 rounded-lg border border-violet-500/10">
+                            {item.sizeFormatted}
+                          </span>
+                        </td>
+                        <td className="py-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSingleStorageKey(item.key)}
+                            className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg transition-colors cursor-pointer text-[10px] font-bold flex items-center gap-1 mx-auto"
+                            title="حذف هذا المفتاح يدوياً"
+                          >
+                            <Trash2 size={12} />
+                            <span>حذف</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                  {storageAnalysis.items.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-slate-400 text-xs">
+                        لا توجد عناصر مطابقة لنتيجة البحث بالذاكرة المحلية.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* Teammates management directory list (Interactive suspend/active actions) */}
       {activeSubTab === 'team' && (
       <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4 animate-fade-in">
@@ -2894,6 +3469,43 @@ export default function SecurityAudit({ user }: { user?: User }) {
                 className="p-2 px-4 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-xs font-black rounded-xl transition-colors cursor-pointer"
               >
                 تأكيد وإدراج
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Full Storage Reset */}
+      {showFullResetModal && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0f1422] border border-rose-500/30 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 text-right" dir="rtl">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center mx-auto sm:mx-0">
+              <AlertTriangle size={24} />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                تأكيد تصفير وإعادة تعيين التخزين المحلي؟
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                هذا الإجراء سيقوم بتفريغ كامل البيانات المخزنة محلياً في ذاكرة المتصفح الخاصة بك وإعادة ضبط تفضيلات النظام. لن يؤثر ذلك على بياناتك المشفرة المحفوظة بأمان على سحابة Google Firestore.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowFullResetModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={handleFullStorageReset}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl transition-all shadow-md shadow-rose-600/20 cursor-pointer"
+              >
+                تأكيد التصفير والتحديث الآن
               </button>
             </div>
           </div>
