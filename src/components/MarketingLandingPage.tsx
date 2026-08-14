@@ -1524,15 +1524,21 @@ export default function MarketingLandingPage({
       {/* Customer Success Stories & Case Studies */}
       <CustomerSuccessStories />
 
-      {/* Comprehensive Standard Footer */}
-      <footer className="bg-slate-950 text-slate-400 text-xs py-16 border-t border-slate-900 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 space-y-12">
+      {/* Comprehensive Standard Footer with Brighter Vibrant Purple Gradient */}
+      <footer className="bg-gradient-to-b from-[#4c1d95] via-[#3b0764] to-[#2e1065] text-purple-100/90 text-xs py-16 border-t border-purple-400/30 mt-auto relative overflow-hidden">
+        {/* Ambient Gradient Glows */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl pointer-events-none -translate-y-1/2"></div>
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none translate-y-1/2"></div>
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-300/50 to-transparent"></div>
+
+        <div className="max-w-7xl mx-auto px-6 space-y-12 relative z-10">
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {footerColumnsList.map((col) => (
               <div key={col.id} className="space-y-4">
-                <h4 className="font-bold text-white text-[11px] uppercase tracking-wider">
-                  {language === 'ar' ? col.titleAr : col.titleEn}
+                <h4 className="font-extrabold text-white text-[11.5px] uppercase tracking-wider flex items-center gap-1.5 drop-shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-purple-300 shadow-xs shadow-purple-300/50"></span>
+                  <span>{language === 'ar' ? col.titleAr : col.titleEn}</span>
                 </h4>
                 <ul className="space-y-2 text-[11px] leading-relaxed">
                   {col.items.map((item) => (
@@ -1574,7 +1580,7 @@ export default function MarketingLandingPage({
                             setShowSignupModal(true);
                           }
                         }}
-                        className="hover:text-white transition-colors"
+                        className="text-purple-200 hover:text-white hover:translate-x-0.5 rtl:hover:-translate-x-0.5 transition-all inline-block font-medium"
                       >
                         {language === 'ar' ? item.labelAr : item.labelEn}
                       </a>
@@ -1585,9 +1591,9 @@ export default function MarketingLandingPage({
             ))}
           </div>
 
-          <div className="border-t border-slate-900 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap text-[10px]">
+          <div className="border-t border-purple-500/30 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap text-[10.5px] text-purple-200/90 font-medium">
             <div className="flex items-center gap-3">
-              <span className="font-mono text-white tracking-widest font-black">
+              <span className="font-mono text-white tracking-widest font-black text-xs">
                 {effectiveBrandName.toUpperCase()}
               </span>
               <span>
@@ -1603,7 +1609,7 @@ export default function MarketingLandingPage({
                   onNavigateToSaaS();
                 }} 
                 style={{ display: effectivePortalMode === 'saas' ? 'inline-block' : 'none' }}
-                className="hover:text-violet-300 transition-all font-semibold text-violet-400 border border-violet-500/40 rounded-full px-3 py-1 bg-violet-950/40 hover:bg-violet-900/60"
+                className="hover:text-white transition-all font-extrabold text-purple-100 border border-purple-300/40 rounded-full px-3.5 py-1 bg-purple-700/60 hover:bg-purple-600/80 shadow-xs"
               >
                 {language === 'ar' ? 'لوحة التحكم للمنشأة' : 'Organization Control Panel'}
               </a>
