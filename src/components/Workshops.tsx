@@ -26,10 +26,14 @@ import {
   Sliders,
   TrendingUp,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   LayoutGrid,
   LayoutList,
   Edit,
-  Trash2
+  Trash2,
+  Phone,
+  UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -254,6 +258,14 @@ export default function Workshops({ user }: { user?: User }) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'icons'>('grid');
   const [sortByLoad, setSortByLoad] = useState<boolean>(false);
+  const [expandedWorkshopIds, setExpandedWorkshopIds] = useState<Record<string, boolean>>({});
+
+  const toggleWorkshopExpand = (id: string) => {
+    setExpandedWorkshopIds(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
   
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -531,12 +543,23 @@ export default function Workshops({ user }: { user?: User }) {
     });
   }, [workshops]);
 
-  // Calculate system-wide occupation rate statistics for workshops
-  const { totalBays, occupiedBays, occupationRate } = useMemo(() => {
-    const total = workshops.reduce((acc, curr) => acc + curr.capacity, 0);
-    const occupied = workshops.reduce((acc, curr) => acc + curr.activeBays, 0);
-    const rate = total > 0 ? Math.round((occupied / total) * 100) : 0;
-    return { totalBays: total, occupiedBays: occupied, occupationRate: rate };
+  // Calculate system-wide occupation rate statistics for workshops based on active vehicles under maintenance vs total available capacity
+  const { totalCapacity, totalVehiclesInMaintenance, workshopOccupancyRate, totalBays, occupiedBays } = useMemo(() => {
+    const totalCap = workshops.reduce((acc, curr) => acc + (Number(curr.capacity) || 0), 0);
+    const totalVehicles = workshops.reduce((acc, curr) => {
+      const vCount = Array.isArray(curr.currentVehicles) ? curr.currentVehicles.length : 0;
+      return acc + (vCount > 0 ? vCount : (Number(curr.activeBays) || 0));
+    }, 0);
+    const rate = totalCap > 0 ? Math.round((totalVehicles / totalCap) * 100) : 0;
+    const occBays = workshops.reduce((acc, curr) => acc + (Number(curr.activeBays) || 0), 0);
+
+    return { 
+      totalCapacity: totalCap, 
+      totalVehiclesInMaintenance: totalVehicles, 
+      workshopOccupancyRate: rate,
+      totalBays: totalCap,
+      occupiedBays: occBays
+    };
   }, [workshops]);
 
   // Filter workshops based on search term, specialization, and status
@@ -780,88 +803,88 @@ export default function Workshops({ user }: { user?: User }) {
       </AnimatePresence>
 
       {/* Broad Basic Information Stats Box - Critical for Project Manager */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
         
         {/* KPI 1 */}
-        <div className="p-5 rounded-2xl border bg-indigo-100/80 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/40 hover:border-indigo-300 shadow-md hover:shadow-lg transition-all duration-300 -translate-y-[1px] hover:-translate-y-[3px] flex items-center justify-between group">
-          <div className="space-y-1.5 text-right">
-            <span className="text-[10px] font-black text-indigo-800 dark:text-indigo-300 block leading-none">{t('إجمالي الورش القائمة بالميدان')}</span>
+        <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border bg-indigo-100/80 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/40 hover:border-indigo-300 shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-between group">
+          <div className="space-y-1 text-right">
+            <span className="text-[9.5px] sm:text-[10px] font-black text-indigo-800 dark:text-indigo-300 block leading-none">{t('إجمالي الورش القائمة بالميدان')}</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-indigo-955 dark:text-indigo-100">{workshops.length}</span>
-              <span className="text-[10px] text-indigo-750 dark:text-indigo-400">{t('وحدات تتبع مدمجة')}</span>
+              <span className="text-xl sm:text-2xl font-black text-indigo-955 dark:text-indigo-100">{workshops.length}</span>
+              <span className="text-[9.5px] text-indigo-750 dark:text-indigo-400">{t('وحدات تتبع مدمجة')}</span>
             </div>
-            <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-0.5 mt-1 bg-white/60 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-md w-fit">
-              <CheckCircle2 size={10} /> 100% {t('جاهزية اتصالات الاستشعار')}
+            <span className="text-[8.5px] sm:text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-0.5 mt-0.5 bg-white/60 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-md w-fit">
+              <CheckCircle2 size={9} /> 100% {t('جاهزية اتصالات الاستشعار')}
             </span>
           </div>
-          <div className="w-12 h-12 bg-white/90 dark:bg-indigo-905/60 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-xs shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <Building2 size={22} />
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white/90 dark:bg-indigo-905/60 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-xs shrink-0 transition-transform duration-200 group-hover:scale-105">
+            <Building2 size={19} />
           </div>
         </div>
 
         {/* KPI 2 */}
-        <div className="p-5 rounded-2xl border bg-amber-100/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40 hover:border-amber-300 shadow-md hover:shadow-lg transition-all duration-300 -translate-y-[1px] hover:-translate-y-[3px] flex items-center justify-between group">
-          <div className="space-y-1.5 text-right">
-            <span className="text-[10px] font-black text-amber-800 dark:text-amber-300 block leading-none">{t('معدل انشغال خطوط الفحص')}</span>
+        <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border bg-amber-100/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40 hover:border-amber-300 shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-between group">
+          <div className="space-y-1 text-right">
+            <span className="text-[9.5px] sm:text-[10px] font-black text-amber-800 dark:text-amber-300 block leading-none">{t('نسبة إشغال الورش الحالية')}</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-amber-955 dark:text-indigo-100">{occupationRate}%</span>
-              <span className="text-[10px] text-amber-750 dark:text-amber-450">({occupiedBays} {t('من أصل')} {totalBays} {t('مسارات')})</span>
+              <span className="text-xl sm:text-2xl font-black text-amber-955 dark:text-indigo-100">{workshopOccupancyRate}%</span>
+              <span className="text-[9.5px] text-amber-750 dark:text-amber-450">({totalVehiclesInMaintenance} {t('من أصل')} {totalCapacity} {t('سعة متاحة')})</span>
             </div>
-            <span className="text-[9px] text-amber-900/95 dark:text-amber-300 font-extrabold flex items-center gap-0.5 mt-1 bg-white/60 dark:bg-amber-950/20 px-1.5 py-0.5 rounded-md w-fit">
-              {t('طاقة استيعابية تشغيلية متوازنة')}
+            <span className="text-[8.5px] sm:text-[9px] text-amber-900/95 dark:text-amber-300 font-extrabold flex items-center gap-0.5 mt-0.5 bg-white/60 dark:bg-amber-950/20 px-1.5 py-0.5 rounded-md w-fit">
+              <Activity size={9} /> {totalVehiclesInMaintenance} {t('مركبة قيد الصيانة')}
             </span>
           </div>
-          <div className="w-12 h-12 bg-white/90 dark:bg-amber-905/60 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-xs shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <Activity size={22} />
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white/90 dark:bg-amber-905/60 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-xs shrink-0 transition-transform duration-200 group-hover:scale-105">
+            <Activity size={19} />
           </div>
         </div>
 
         {/* KPI 3 */}
-        <div className="p-5 rounded-2xl border bg-emerald-100/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-300 shadow-md hover:shadow-lg transition-all duration-300 -translate-y-[1px] hover:-translate-y-[3px] flex items-center justify-between group">
-          <div className="space-y-1.5 text-right">
-            <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 block leading-none">{t('مؤشر جودة نجاح الإصلاح الأول FTR')}</span>
+        <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border bg-emerald-100/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-300 shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-between group">
+          <div className="space-y-1 text-right">
+            <span className="text-[9.5px] sm:text-[10px] font-black text-emerald-800 dark:text-emerald-300 block leading-none">{t('مؤشر جودة نجاح الإصلاح الأول FTR')}</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-emerald-955 dark:text-indigo-100">93.9%</span>
-              <span className="text-[10px] text-emerald-750 dark:text-emerald-400">{t('إجمالي الورش')}</span>
+              <span className="text-xl sm:text-2xl font-black text-emerald-955 dark:text-indigo-100">93.9%</span>
+              <span className="text-[9.5px] text-emerald-750 dark:text-emerald-400">{t('إجمالي الورش')}</span>
             </div>
-            <span className="text-[9px] text-emerald-700 dark:text-emerald-355 font-extrabold flex items-center gap-0.5 mt-1 bg-white/60 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-md w-fit">
-              <TrendingUp size={10} /> +1.2% {t('تحسن في الأداء الربع سنوي')}
+            <span className="text-[8.5px] sm:text-[9px] text-emerald-700 dark:text-emerald-355 font-extrabold flex items-center gap-0.5 mt-0.5 bg-white/60 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-md w-fit">
+              <TrendingUp size={9} /> +1.2% {t('تحسن في الأداء الربع سنوي')}
             </span>
           </div>
-          <div className="w-12 h-12 bg-white/90 dark:bg-emerald-905/60 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <Wrench size={22} />
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white/90 dark:bg-emerald-905/60 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-xs shrink-0 transition-transform duration-200 group-hover:scale-105">
+            <Wrench size={19} />
           </div>
         </div>
 
         {/* KPI 4 */}
-        <div className="p-5 rounded-2xl border bg-violet-100/80 dark:bg-violet-950/40 border-violet-200 dark:border-violet-900/40 hover:border-violet-300 shadow-md hover:shadow-lg transition-all duration-300 -translate-y-[1px] hover:-translate-y-[3px] flex items-center justify-between group">
-          <div className="space-y-1.5 text-right">
-            <span className="text-[10px] font-black text-violet-800 dark:text-violet-300 block leading-none">{t('متوسط دورة إقامة المركبة بالمسار')}</span>
+        <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border bg-violet-100/80 dark:bg-violet-950/40 border-violet-200 dark:border-violet-900/40 hover:border-violet-300 shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-between group">
+          <div className="space-y-1 text-right">
+            <span className="text-[9.5px] sm:text-[10px] font-black text-violet-800 dark:text-violet-300 block leading-none">{t('متوسط دورة إقامة المركبة بالمسار')}</span>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-violet-955 dark:text-indigo-100">5.9 س</span>
-              <span className="text-[10px] text-violet-750 dark:text-violet-400">{t('من الفحص للتخريج الميداني')}</span>
+              <span className="text-xl sm:text-2xl font-black text-violet-955 dark:text-indigo-100">5.9 س</span>
+              <span className="text-[9.5px] text-violet-750 dark:text-violet-400">{t('من الفحص للتخريج الميداني')}</span>
             </div>
-            <span className="text-[9px] text-violet-700/90 dark:text-violet-305 font-medium block mt-1 bg-white/60 dark:bg-violet-905/20 px-1.5 py-0.5 rounded-md w-fit">{t('تحديث ديناميكي كل 12 ساعة')}</span>
+            <span className="text-[8.5px] sm:text-[9px] text-violet-700/90 dark:text-violet-305 font-medium block mt-0.5 bg-white/60 dark:bg-violet-905/20 px-1.5 py-0.5 rounded-md w-fit">{t('تحديث ديناميكي كل 12 ساعة')}</span>
           </div>
-          <div className="w-12 h-12 bg-white/90 dark:bg-violet-905/60 rounded-2xl flex items-center justify-center text-violet-600 dark:text-violet-400 shadow-xs shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <Clock size={22} />
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-white/90 dark:bg-violet-905/60 rounded-xl flex items-center justify-center text-violet-600 dark:text-violet-400 shadow-xs shrink-0 transition-transform duration-200 group-hover:scale-105">
+            <Clock size={19} />
           </div>
         </div>
 
       </div>
 
       {/* FTR Operational Efficiency Distribution Chart Card */}
-      <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3.5 border-b border-slate-150/50 dark:border-slate-800/60">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-              <TrendingUp size={20} className="animate-pulse" />
+      <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-150/50 dark:border-slate-800/60">
+          <div className="flex items-start gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+              <TrendingUp size={18} className="animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                   <span>{t('توزيع كفاءة العمليات (First Time Right) عبر الأقسام التقنية')}</span>
-                  <span className="hidden sm:inline-block text-[9.5px] font-black tracking-widest text-[#34d399] uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10 shrink-0">{t('مؤشر كفاءة الإصلاح الأمني FTR')}</span>
+                  <span className="hidden sm:inline-block text-[9px] font-black tracking-wider text-[#34d399] uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10 shrink-0">{t('مؤشر كفاءة الإصلاح الأمني FTR')}</span>
                 </h2>
                 <ContextualHelp 
                   id="workshops-ftr"
@@ -888,27 +911,27 @@ export default function Workshops({ user }: { user?: User }) {
                   language={language}
                 />
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
                 رصد فوري لنسب نجاح المهام الفنية من المرة الأولى للفحص والتشخيص الفعلي في كل قسم. انقر على أي عمود بالرسم البياني لتصفية الورش تلقائياً والمطابقة الفورية.
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 text-[10px] font-black bg-slate-50/80 dark:bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-150 dark:border-slate-900 shrink-0">
-            <span className="text-slate-400">مستهدف الجودة العام:</span>
+          <div className="flex items-center gap-1.5 text-[9.5px] font-black bg-slate-50/80 dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-150 dark:border-slate-900 shrink-0 self-start sm:self-auto">
+            <span className="text-slate-400">مستهدف الجودة:</span>
             <span className="text-[#34d399] font-black" dir="ltr">≥ 90.0%</span>
           </div>
         </div>
 
         {/* Chart Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-center">
           {/* Recharts BarChart container */}
-          <div className="lg:col-span-8 h-64 w-full">
+          <div className="lg:col-span-8 h-56 sm:h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={specFtrData}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                barSize={32}
+                barSize={28}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:hidden" />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" className="hidden dark:block" />
@@ -916,13 +939,13 @@ export default function Workshops({ user }: { user?: User }) {
                   dataKey="label" 
                   tickLine={false} 
                   axisLine={false}
-                  tick={{ fontSize: 10, fontWeight: 900, fill: '#64748b' }}
+                  tick={{ fontSize: 9.5, fontWeight: 900, fill: '#64748b' }}
                 />
                 <YAxis 
                   domain={[70, 100]}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 10, fontWeight: 800, fill: '#64748b' }}
+                  tick={{ fontSize: 9.5, fontWeight: 800, fill: '#64748b' }}
                 />
                 <Tooltip
                   cursor={{ fill: 'rgba(100, 116, 139, 0.05)' }}
@@ -930,7 +953,7 @@ export default function Workshops({ user }: { user?: User }) {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-slate-950/95 dark:bg-[#080d1a]/95 text-white p-3.5 rounded-2xl border border-slate-800 shadow-xl text-xs space-y-1 text-right" dir="rtl">
+                        <div className="bg-slate-950/95 dark:bg-[#080d1a]/95 text-white p-3 rounded-xl border border-slate-800 shadow-xl text-xs space-y-1 text-right" dir="rtl">
                           <p className="font-extrabold">{data.name}</p>
                           <p className="text-[#34d399] font-black font-mono">الكفاءة: {data.ftr}% FTR</p>
                           <p className="text-slate-400 font-bold">عدد الورش: {data.count}</p>
@@ -1003,17 +1026,17 @@ export default function Workshops({ user }: { user?: User }) {
       </div>
 
       {/* --- WORKLOAD HEATMAP --- */}
-      <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3.5 border-b border-slate-150/50 dark:border-slate-800/60 font-sans">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0">
-              <Activity size={20} className="animate-pulse text-orange-600 dark:text-orange-400" />
+      <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-150/50 dark:border-slate-800/60 font-sans">
+          <div className="flex items-start gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0">
+              <Activity size={18} className="animate-pulse text-orange-600 dark:text-orange-400" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                   <span>الخريطة الحرارية لمؤشر ضغط العمل والترشيح التفاعلي (Heatmap)</span>
-                  <span className="hidden sm:inline-block text-[9.5px] font-black tracking-widest text-[#f59e0b] uppercase bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/10 shrink-0">مستوى الإشغال الميداني</span>
+                  <span className="hidden sm:inline-block text-[9px] font-black tracking-wider text-[#f59e0b] uppercase bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/10 shrink-0">مستوى الإشغال الميداني</span>
                 </h2>
                 <ContextualHelp 
                   id="workshops-heatmap"
@@ -1040,35 +1063,35 @@ export default function Workshops({ user }: { user?: User }) {
                   language={language}
                 />
               </div>
-              <p className="text-[11px] text-slate-550 dark:text-slate-400 mt-1 leading-relaxed">
+              <p className="text-[10.5px] text-slate-550 dark:text-slate-400 mt-0.5 leading-relaxed">
                 رصد فوري لدرجة ضغط وسعة الورش ملوّنة حرارياً (🔴 ضغط عمل حرج، 🟡 ضغط متوسط، 🟢 متاح ومستقر) مع الكشف التلقائي عن الفنيين المتاحين للعمل فوريّاً. انقر على أي ورشة لتصفيتها بالجدول أدناه.
               </p>
             </div>
           </div>
 
           {/* Color Code Legend */}
-          <div className="flex flex-wrap items-center gap-3 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-100 dark:border-slate-900 text-[10px] font-bold">
+          <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-950 p-1.5 px-2.5 rounded-xl border border-slate-100 dark:border-slate-900 text-[9.5px] font-bold self-start sm:self-auto">
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
               <span className="text-slate-600 dark:text-slate-400">🔴 حرج (≥75%)</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
               <span className="text-slate-600 dark:text-slate-400">🟡 متوسط (35-74%)</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               <span className="text-slate-600 dark:text-slate-400">🟢 منخفض (&lt;35%)</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0" />
-              <span className="text-slate-600 dark:text-slate-400">🔧 صيانة المرفق</span>
+              <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+              <span className="text-slate-600 dark:text-slate-400">🔧 صيانة</span>
             </div>
           </div>
         </div>
 
-        {/* Heatmap Grid Layout */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 font-sans">
+        {/* Heatmap Grid Layout - Compact & Balanced */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 font-sans">
           {workshops.map((ws) => {
             const safeCap = Number(ws.capacity) || 5;
             const safeAct = Math.min(Math.max(0, Number(ws.activeBays) || 0), safeCap);
@@ -1129,8 +1152,8 @@ export default function Workshops({ user }: { user?: User }) {
                     setSearchTerm(ws.name);
                   }
                 }}
-                className={`bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-105 dark:border-slate-805/80 p-3 sm:p-4 pb-3 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 aspect-square select-none ${
-                  isCurrentlyFiltered ? 'ring-2 ring-brand-blue-500 border-transparent scale-[1.02]' : ''
+                className={`bg-white dark:bg-[#0f1422] rounded-xl border border-slate-105 dark:border-slate-805/80 p-2.5 sm:p-3 shadow-2xs hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 select-none ${
+                  isCurrentlyFiltered ? 'ring-2 ring-brand-blue-500 border-transparent scale-[1.01]' : ''
                 }`}
               >
                 {/* Horizontal status line at top */}
@@ -1138,7 +1161,7 @@ export default function Workshops({ user }: { user?: User }) {
 
                 {/* Cell Corner Indicator (Glow) */}
                 {pressureLevel === 'critical' && (
-                  <span className="absolute top-2.5 left-2.5 flex h-2 w-2">
+                  <span className="absolute top-2 left-2 flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
                   </span>
@@ -1147,83 +1170,79 @@ export default function Workshops({ user }: { user?: User }) {
                 <div className="space-y-1.5 flex-1 flex flex-col justify-between min-h-0">
                   {/* Top card info: Icon + Name + Specialty classification */}
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-9.5 h-9.5 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 dark:bg-[#151c2e] dark:border-slate-850 shrink-0 shadow-xs flex items-center justify-center">
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100/50 dark:bg-slate-900/50">
-                        <SpecIcon spec={ws.specialization} size={16} />
-                      </div>
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 dark:bg-[#151c2e] dark:border-slate-850 shrink-0 shadow-2xs flex items-center justify-center">
+                      <SpecIcon spec={ws.specialization} size={14} />
                     </div>
                     
                     <div className="text-right flex-1 min-w-0">
                       <div className="flex items-center gap-1 min-w-0">
                         {ws.isExternal && (
-                          <span className="px-1 py-0.5 rounded bg-purple-600 text-white text-[7.5px] font-black shrink-0 animate-pulse">خارجية</span>
+                          <span className="px-1 py-0.2 rounded bg-purple-600 text-white text-[7px] font-black shrink-0">خارجية</span>
                         )}
-                        <h3 className="text-[11px] sm:text-[12.5px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors leading-tight" title={ws.name}>
+                        <h3 className="text-[11px] sm:text-[11.5px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors leading-tight" title={ws.name}>
                           {ws.name}
                         </h3>
                       </div>
-                      <div className="text-[8.5px] sm:text-[9.5px] text-slate-455 dark:text-slate-500 font-bold flex items-center gap-1 mt-0.5">
-                        <MapPin size={8} className="text-slate-450 shrink-0" />
+                      <div className="text-[8px] sm:text-[8.5px] text-slate-455 dark:text-slate-500 font-bold flex items-center gap-0.5 mt-0.5">
+                        <MapPin size={7.5} className="text-slate-450 shrink-0" />
                         <span className="truncate">{ws.location ? (ws.location.split('(')[0] || '').trim() : 'غير محدد'}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Sub-specialty classification text badge */}
-                  <div className="flex items-center justify-between text-[8.5px] sm:text-[9.5px] font-bold text-slate-500 dark:text-slate-405 gap-1 border-t border-slate-50 dark:border-slate-850/40 pt-1.5">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500">التخصص الفني:</span>
-                    <span className={`text-[9.5px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-md min-w-[50px] text-center ${ws.isExternal ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400' : 'bg-slate-50 dark:bg-slate-900/60'}`}>
-                      {ws.isExternal ? 'صيانة خارجية متعاقدة' : specText[ws.specialization]}
+                  <div className="flex items-center justify-between text-[8px] sm:text-[8.5px] font-bold text-slate-500 dark:text-slate-405 gap-1 border-t border-slate-100/60 dark:border-slate-850/40 pt-1">
+                    <span className="text-[8px] font-black uppercase text-slate-450 dark:text-slate-500">التخصص:</span>
+                    <span className={`text-[8.5px] font-black tracking-tight px-1.5 py-0.5 rounded-md min-w-[45px] text-center truncate ${ws.isExternal ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400' : 'bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300'}`}>
+                      {ws.isExternal ? 'صيانة خارجية' : specText[ws.specialization]}
                     </span>
                   </div>
 
-                  {/* Capacity Plate styled as a real plate */}
-                  <div className="relative">
-                    <div className="inline-flex bg-slate-50 dark:bg-slate-900/85 border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded-lg text-[9px] sm:text-[10px] font-black font-mono text-slate-800 dark:text-slate-200 tracking-wider text-center w-full justify-center items-center shadow-inner select-none h-6 truncate">
-                      معدل الصيانة: {ws.avgTurnaround}
-                    </div>
+                  {/* Turnaround speed indicator */}
+                  <div className="bg-slate-50 dark:bg-slate-900/85 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md text-[8.5px] sm:text-[9px] font-black font-mono text-slate-750 dark:text-slate-300 text-center w-full justify-center items-center select-none truncate">
+                    معدل الصيانة: {ws.avgTurnaround}
                   </div>
 
                   {/* 4 Dashboard cells (Status, Tasks, Capacity, KPI) */}
-                  <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  <div className="grid grid-cols-2 gap-1 pt-0.5">
                     {/* Cell 1: Occupancy State */}
-                    <div className="bg-slate-50/70 dark:bg-slate-905/60 p-1 px-1.5 rounded-lg border border-slate-105/10 dark:border-slate-850">
-                      <span className="text-[7.5px] sm:text-[8px] text-slate-405 block leading-tight font-bold">نسبة الإشغال:</span>
-                      <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black font-mono text-brand-blue-600 dark:text-brand-blue-400">
+                    <div className="bg-slate-50/80 dark:bg-slate-905/60 p-1 px-1.5 rounded-md border border-slate-105/10 dark:border-slate-850">
+                      <span className="text-[7px] sm:text-[7.5px] text-slate-405 block leading-tight font-bold">نسبة الإشغال:</span>
+                      <div className="mt-0.5 text-[9px] sm:text-[9.5px] font-black font-mono text-brand-blue-600 dark:text-brand-blue-400">
                         {occupancyRate}%
                       </div>
                     </div>
                     {/* Cell 2: In-shop volume */}
-                    <div className="bg-slate-50/70 dark:bg-[#131b31]/40 p-1 px-1.5 rounded-lg border border-slate-105/10 dark:border-slate-850">
-                      <span className="text-[7.5px] sm:text-[8px] text-slate-405 block leading-tight font-bold">المهام الجارية:</span>
-                      <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-rose-600 dark:text-rose-450 flex items-center gap-0.5">
-                        <Wrench size={8} className="w-1.5 h-1.5 shrink-0" />
+                    <div className="bg-slate-50/80 dark:bg-[#131b31]/40 p-1 px-1.5 rounded-md border border-slate-105/10 dark:border-slate-850">
+                      <span className="text-[7px] sm:text-[7.5px] text-slate-405 block leading-tight font-bold">المهام الجارية:</span>
+                      <div className="mt-0.5 text-[9px] sm:text-[9.5px] font-black text-rose-600 dark:text-rose-450 flex items-center gap-0.5">
+                        <Wrench size={7.5} className="shrink-0" />
                         <span>{activeOrdersCount} طلب</span>
                       </div>
                     </div>
                     {/* Cell 3: KPI first-run success rate */}
-                    <div className="bg-emerald-500/5 dark:bg-emerald-500/10 p-1 px-1.5 rounded-lg border border-emerald-500/10 dark:border-emerald-500/20">
-                      <span className="text-[7.5px] sm:text-[8px] text-emerald-600 dark:text-emerald-400 block leading-tight font-bold">كفاءة المرفق FTR:</span>
-                      <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-emerald-700 dark:text-emerald-500 flex items-center gap-0.5">
-                        <Activity size={8} className="text-emerald-500 shrink-0" />
+                    <div className="bg-emerald-500/5 dark:bg-emerald-500/10 p-1 px-1.5 rounded-md border border-emerald-500/10 dark:border-emerald-500/20">
+                      <span className="text-[7px] sm:text-[7.5px] text-emerald-600 dark:text-emerald-400 block leading-tight font-bold">كفاءة FTR:</span>
+                      <div className="mt-0.5 text-[9px] sm:text-[9.5px] font-black text-emerald-700 dark:text-emerald-500 flex items-center gap-0.5">
+                        <Activity size={7.5} className="text-emerald-500 shrink-0" />
                         <span>{ws.kpiFtr}</span>
                       </div>
                     </div>
                     {/* Cell 4: Available Techs */}
-                    <div className="bg-brand-blue-500/5 dark:bg-brand-blue-500/10 p-1 px-1.5 rounded-lg border border-brand-blue-500/10 dark:border-brand-blue-500/20">
-                      <span className="text-[7.5px] sm:text-[8px] text-brand-blue-600 dark:text-brand-blue-405 block leading-tight font-bold">فنيون متاحون:</span>
-                      <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-brand-blue-650 dark:text-brand-blue-400 flex items-center gap-0.5">
-                        <Users size={8} className="text-brand-blue-500 shrink-0" />
+                    <div className="bg-brand-blue-500/5 dark:bg-brand-blue-500/10 p-1 px-1.5 rounded-md border border-brand-blue-500/10 dark:border-brand-blue-500/20">
+                      <span className="text-[7px] sm:text-[7.5px] text-brand-blue-600 dark:text-brand-blue-405 block leading-tight font-bold">فنيون متاحون:</span>
+                      <div className="mt-0.5 text-[9px] sm:text-[9.5px] font-black text-brand-blue-650 dark:text-brand-blue-400 flex items-center gap-0.5">
+                        <Users size={7.5} className="text-brand-blue-500 shrink-0" />
                         <span>{availableTechs.length} شاغر</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Occupancy progress bar at bottom */}
-                  <div className="pt-1.5 space-y-1">
+                  <div className="pt-0.5 space-y-0.5">
                     <div className="w-full h-1 bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden block">
                       <div 
-                        className={`h-full rounded-full transition-all duration-300 ${
+                        className={`h-full rounded-full transition-all duration-200 ${
                           pressureLevel === 'critical' 
                             ? 'bg-rose-500' 
                             : pressureLevel === 'moderate' 
@@ -1238,11 +1257,11 @@ export default function Workshops({ user }: { user?: User }) {
                   </div>
 
                   {/* Alert Row & Matching Tag indicator */}
-                  <div className="flex items-center justify-between text-[9px] font-extrabold border-t border-slate-50 dark:border-slate-850/45 pt-1.5">
-                    <span className={pressureLevel === 'critical' ? 'text-rose-500 font-extrabold flex items-center gap-1 animate-pulse' : 'text-slate-500 dark:text-slate-400'}>
+                  <div className="flex items-center justify-between text-[8px] sm:text-[8.5px] font-extrabold border-t border-slate-100/60 dark:border-slate-850/45 pt-1">
+                    <span className={pressureLevel === 'critical' ? 'text-rose-500 font-extrabold flex items-center gap-0.5 animate-pulse' : 'text-slate-500 dark:text-slate-400'}>
                       {levelLabel}
                     </span>
-                    <span className="text-[8.5px] text-slate-400 dark:text-slate-500 font-medium">
+                    <span className="text-[7.5px] sm:text-[8px] text-slate-400 dark:text-slate-500 font-medium">
                       {isCurrentlyFiltered ? 'تصفية نشطة 🔒' : 'انقر للتصفية 🔍'}
                     </span>
                   </div>
@@ -1254,7 +1273,7 @@ export default function Workshops({ user }: { user?: User }) {
       </div>
 
       {/* PM Smart Filtering Control Bar */}
-      <div className="bg-white dark:bg-[#0f1422] p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center gap-4 justify-between">
+      <div className="bg-white dark:bg-[#0f1422] p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center gap-3 justify-between">
         
         {/* Search */}
         <div className="relative w-full md:max-w-sm flex-1">
@@ -1366,145 +1385,311 @@ export default function Workshops({ user }: { user?: User }) {
       </div>
 
       {/* Main Grid displaying Physical Workshop Layout and details */}
-      <div className={viewMode === 'grid' ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : "grid grid-cols-1 gap-2.5"}>
+      <div className={viewMode === 'grid' ? "grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4.5" : "grid grid-cols-1 gap-2"}>
         <AnimatePresence>
           {filteredWorkshops.map((ws) => {
             const meta = statusMeta[ws.status];
+            const isExpanded = Boolean(expandedWorkshopIds[ws.id]);
+
+            // Technicians assigned to this workshop specialization
+            const wsTechnicians = technicians.filter(t => t.specialization === ws.specialization);
+            const displayTechnicians = wsTechnicians.length > 0 ? wsTechnicians : technicians.slice(0, 2);
+
+            // Active maintenance orders associated with this workshop
+            const wsOrders = maintenanceOrders.filter(o => 
+              o.workshopId === ws.id || 
+              o.category === ws.specialization ||
+              ws.currentVehicles.some(v => v.includes(o.vehicleId))
+            ).slice(0, 4);
 
             const specColors: Record<string, string> = {
-              mechanical: 'border-r-[6px] border-r-blue-500 hover:bg-blue-500/5',
-              electrical: 'border-r-[6px] border-r-amber-500 hover:bg-amber-500/5',
-              hydraulic: 'border-r-[6px] border-r-fuchsia-500 hover:bg-fuchsia-500/5',
-              cooling: 'border-r-[6px] border-r-cyan-500 hover:bg-cyan-500/5',
-              bodywork: 'border-r-[6px] border-r-emerald-500 hover:bg-emerald-500/5',
+              mechanical: 'border-r-4 border-r-blue-500 hover:bg-blue-500/5',
+              electrical: 'border-r-4 border-r-amber-500 hover:bg-amber-500/5',
+              hydraulic: 'border-r-4 border-r-fuchsia-500 hover:bg-fuchsia-500/5',
+              cooling: 'border-r-4 border-r-cyan-500 hover:bg-cyan-500/5',
+              bodywork: 'border-r-4 border-r-emerald-500 hover:bg-emerald-500/5',
             };
-            const specStripe = specColors[ws.specialization] || 'border-r-[6px] border-r-brand-blue-500';
+            const specStripe = specColors[ws.specialization] || 'border-r-4 border-r-brand-blue-500';
 
             if (viewMode === 'icons') {
               return (
                 <motion.div
                   key={ws.id}
                   layout
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className={`bg-white dark:bg-[#0f1422] rounded-[1.25rem] border border-slate-105 dark:border-slate-800/85 hover:shadow-lg transition-all p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4 relative group cursor-pointer ${specStripe}`}
-                  onClick={() => setSelectedWorkshop(ws)}
+                  transition={{ duration: 0.15 }}
+                  className={`bg-white dark:bg-[#0f1422] rounded-xl border border-slate-105 dark:border-slate-800/85 hover:shadow-md transition-all overflow-hidden flex flex-col relative group cursor-pointer ${specStripe}`}
+                  onClick={() => toggleWorkshopExpand(ws.id)}
                 >
-                  {/* Workshop Icon, Name, Specialization */}
-                  <div className="flex items-center gap-3 min-w-[200px] max-w-full md:max-w-[260px] truncate">
-                    <div className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-center border border-slate-100 dark:border-slate-800/80 group-hover:bg-brand-blue-50/50 dark:group-hover:bg-brand-blue-950/20 transition-all shadow-inner group-hover:scale-105 shrink-0">
-                      <SpecIcon spec={ws.specialization} size={18} />
-                    </div>
-                    <div className="space-y-0.5 truncate">
-                      <h4 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-brand-blue-500 transition-colors truncate" title={ws.name}>
-                        {ws.name}
-                      </h4>
-                      <div className="flex items-center gap-1.5 text-[9px] text-slate-400 dark:text-slate-500 font-bold">
-                        <span>{specText[ws.specialization]}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-0.5"><MapPin size={8} /> {ws.location}</span>
+                  <div className="p-2.5 sm:p-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    {/* Workshop Icon, Name, Specialization */}
+                    <div className="flex items-center gap-2.5 min-w-[180px] max-w-full md:max-w-[240px] truncate">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 bg-slate-50 dark:bg-slate-900 rounded-lg flex items-center justify-center border border-slate-100 dark:border-slate-800/80 group-hover:bg-brand-blue-50/50 dark:group-hover:bg-brand-blue-950/20 transition-all shadow-2xs group-hover:scale-105 shrink-0">
+                        <SpecIcon spec={ws.specialization} size={16} />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Supervisor */}
-                  <div className="flex items-center gap-1.5 min-w-[130px] shrink-0">
-                    <span className="text-[10px] text-slate-400 font-extrabold">المشرف المسؤول:</span>
-                    <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">👤 {ws.supervisor}</span>
-                  </div>
-
-                  {/* Occupied bays progress / capacity with nice mini bar */}
-                  {(() => {
-                    const safeCap = Number(ws.capacity) || 5;
-                    const safeAct = Math.min(Math.max(0, Number(ws.activeBays) || 0), safeCap);
-                    const pct = safeCap > 0 ? Math.round((safeAct / safeCap) * 100) : 0;
-                    return (
-                      <div className="flex flex-col gap-1 min-w-[130px] shrink-0">
-                        <div className="flex items-center justify-between text-[9px] font-black">
-                          <span className="text-slate-400">إشغال الممرات:</span>
-                          <span className="text-slate-700 dark:text-slate-350 font-mono">{safeAct} / {safeCap} ممر</span>
-                        </div>
-                        <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div 
-                            className="bg-brand-blue-50 h-full rounded-full transition-all duration-300" 
-                            style={{ width: `${pct}%` }} 
-                          />
+                      <div className="space-y-0.5 truncate">
+                        <h4 className="text-xs font-black text-slate-900 dark:text-white group-hover:text-brand-blue-500 transition-colors truncate" title={ws.name}>
+                          {ws.name}
+                        </h4>
+                        <div className="flex items-center gap-1.5 text-[8.5px] text-slate-400 dark:text-slate-500 font-bold">
+                          <span>{specText[ws.specialization]}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-0.5"><MapPin size={7.5} /> {ws.location}</span>
                         </div>
                       </div>
-                    );
-                  })()}
+                    </div>
 
-                  {/* FTR Rate KPI */}
-                  <div className="flex items-center gap-1.5 min-w-[70px] shrink-0 text-[10px] font-black">
-                    <span className="text-slate-400">كفاءة الفحص:</span>
-                    <span className="text-emerald-500 font-mono">{ws.kpiFtr}</span>
-                  </div>
+                    {/* Supervisor */}
+                    <div className="flex items-center gap-1.5 min-w-[120px] shrink-0">
+                      <span className="text-[9.5px] text-slate-400 font-extrabold">المشرف:</span>
+                      <span className="text-[9.5px] font-black text-slate-700 dark:text-slate-300">👤 {ws.supervisor}</span>
+                    </div>
 
-                  {/* Vehicles currently in the shop */}
-                  <div className="flex items-center gap-1.5 flex-1 min-w-[150px] overflow-hidden justify-start md:justify-center">
-                    <span className="text-[9px] font-black text-slate-400 shrink-0">الآليات بالورشة:</span>
-                    <div className="flex gap-1 overflow-x-auto py-0.5 no-scrollbar">
-                      {ws.currentVehicles.length > 0 ? (
-                        ws.currentVehicles.map((vh, i) => (
-                          <span key={i} className="px-1.5 py-0.5 bg-brand-blue-50/50 dark:bg-[#151d30] text-brand-blue-600 dark:text-brand-blue-400 rounded-md text-[8px] font-black border border-brand-blue-100/10 shrink-0">
-                            {vh}
-                          </span>
-                        ))
+                    {/* Occupied bays progress / capacity with nice mini bar */}
+                    {(() => {
+                      const safeCap = Number(ws.capacity) || 5;
+                      const safeAct = Math.min(Math.max(0, Number(ws.activeBays) || 0), safeCap);
+                      const pct = safeCap > 0 ? Math.round((safeAct / safeCap) * 100) : 0;
+                      return (
+                        <div className="flex flex-col gap-0.5 min-w-[110px] shrink-0">
+                          <div className="flex items-center justify-between text-[8.5px] font-black">
+                            <span className="text-slate-400">إشغال الممرات:</span>
+                            <span className="text-slate-700 dark:text-slate-350 font-mono">{safeAct} / {safeCap}</span>
+                          </div>
+                          <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-brand-blue-500 h-full rounded-full transition-all duration-300" 
+                              style={{ width: `${pct}%` }} 
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* FTR Rate KPI */}
+                    <div className="flex items-center gap-1.5 min-w-[65px] shrink-0 text-[9.5px] font-black">
+                      <span className="text-slate-400">FTR:</span>
+                      <span className="text-emerald-500 font-mono">{ws.kpiFtr}</span>
+                    </div>
+
+                    {/* Vehicles currently in the shop */}
+                    <div className="flex items-center gap-1.5 flex-1 min-w-[130px] overflow-hidden justify-start md:justify-center">
+                      <span className="text-[8.5px] font-black text-slate-400 shrink-0">الآليات:</span>
+                      <div className="flex gap-1 overflow-x-auto py-0.5 no-scrollbar">
+                        {ws.currentVehicles.length > 0 ? (
+                          ws.currentVehicles.map((vh, i) => (
+                            <span key={i} className="px-1.5 py-0.5 bg-brand-blue-50/50 dark:bg-[#151d30] text-brand-blue-600 dark:text-brand-blue-400 rounded-md text-[7.5px] font-black border border-brand-blue-100/10 shrink-0">
+                              {vh}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[8.5px] text-emerald-500 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded-md">متاحة</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expand Indicator & Action Buttons */}
+                    <div className="flex items-center gap-1.5 shrink-0 md:self-center" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => toggleWorkshopExpand(ws.id)}
+                        className={`p-1 px-2.5 rounded-lg text-[8.5px] font-black flex items-center gap-1 cursor-pointer transition-colors ${
+                          isExpanded 
+                            ? 'bg-brand-blue-600 text-white shadow-xs' 
+                            : 'bg-slate-100 dark:bg-slate-800 hover:bg-brand-blue-50 dark:hover:bg-brand-blue-950/40 text-slate-700 dark:text-slate-300'
+                        }`}
+                        title={isExpanded ? 'طي تفاصيل الوردية' : 'توسيع لعرض الفنيين وتفاصيل الوردية'}
+                      >
+                        <Users size={11} />
+                        <span>{isExpanded ? 'طي' : 'فريق الوردية'}</span>
+                        {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                      </button>
+
+                      {user?.role === 'admin' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleStartEdit(ws)}
+                            className="p-1 px-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/45 rounded-lg text-[8.5px] font-black text-amber-600 dark:text-amber-400 cursor-pointer transition-colors"
+                            title="تعديل بيانات الورشة"
+                          >
+                            تعديل ✍️
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteWorkshop(ws.id, ws.name)}
+                            className="p-1 px-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/40 dark:hover:bg-rose-900/45 rounded-lg text-[8.5px] font-black text-rose-600 dark:text-rose-400 cursor-pointer transition-colors"
+                            title="حذف بيانات الورشة"
+                          >
+                            حذف 🗑️
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleWorkshopStatus(ws.id)}
+                            className={`text-[8.5px] font-black px-2 py-1 rounded-lg border flex items-center gap-1 cursor-pointer transition-all duration-200 hover:scale-[1.02] ${meta.bg} ${meta.color}`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                            <span>{meta.label}</span>
+                          </button>
+                        </>
+                      ) : null}
+
+                      {user?.role !== 'viewer' ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAllocatingTargetWsId(ws.id);
+                            setIsAllocateModalOpen(true);
+                          }}
+                          className="p-1 px-2.5 bg-brand-blue-50 hover:bg-brand-blue-105 dark:bg-brand-blue-95/40 dark:hover:bg-brand-blue-90/45 rounded-lg text-[8.5px] font-black text-brand-blue-600 dark:text-brand-blue-400 cursor-pointer transition-colors"
+                          title="تسكين آلية جديدة"
+                        >
+                          تسكين آلية 🔓
+                        </button>
                       ) : (
-                        <span className="text-[9px] text-emerald-500 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded-md">شاغرة ومتاحة</span>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">عرض فقط 👁️</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-2 shrink-0 md:self-center" onClick={(e) => e.stopPropagation()}>
-                    {user?.role === 'admin' ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleStartEdit(ws)}
-                          className="p-1.5 px-2.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/45 rounded-xl text-[9px] font-black text-amber-600 dark:text-amber-400 cursor-pointer transition-colors"
-                          title="تعديل بيانات الورشة"
-                        >
-                          تعديل ✍️
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteWorkshop(ws.id, ws.name)}
-                          className="p-1.5 px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/40 dark:hover:bg-rose-900/45 rounded-xl text-[9px] font-black text-rose-600 dark:text-rose-400 cursor-pointer transition-colors"
-                          title="حذف بيانات الورشة"
-                        >
-                          حذف 🗑️
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toggleWorkshopStatus(ws.id)}
-                          className={`text-[9px] font-black px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 cursor-pointer transition-all duration-200 hover:scale-[1.03] ${meta.bg} ${meta.color}`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                          <span>{meta.label}</span>
-                        </button>
-                      </>
-                    ) : null}
-
-                    {user?.role !== 'viewer' ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAllocatingTargetWsId(ws.id);
-                          setIsAllocateModalOpen(true);
-                        }}
-                        className="p-1.5 px-3 bg-brand-blue-50 hover:bg-brand-blue-105 dark:bg-brand-blue-95/40 dark:hover:bg-brand-blue-90/45 rounded-xl text-[9px] font-black text-brand-blue-600 dark:text-brand-blue-400 cursor-pointer transition-colors"
-                        title="تسكين آلية جديدة"
+                  {/* Expanded Content Drawer in List View */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        key={`expanded-list-${ws.id}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: 'easeInOut' }}
+                        className="overflow-hidden border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        تسكين آلية 🔓
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">عرض فقط 👁️</span>
+                        <div className="p-3.5 sm:p-4 space-y-3">
+                          {/* Header of expanded details */}
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/70">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 rounded-lg bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400">
+                                <Users size={14} />
+                              </div>
+                              <div>
+                                <h5 className="text-[11px] font-black text-slate-800 dark:text-slate-200">
+                                  {t('فريق الفنيين المسؤولين عن الوردية الحالية')}
+                                </h5>
+                                <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500">
+                                  {t('الوردية الميدانية النشطة')} (07:00 ص - 03:30 م) • {displayTechnicians.length} {t('فنيين متواجدين')}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="px-2.5 py-0.5 rounded-full text-[8.5px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              {t('جاهزية الكادر الفني: 100%')}
+                            </span>
+                          </div>
+
+                          {/* Technicians Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            {displayTechnicians.map((tech) => (
+                              <div
+                                key={tech.id}
+                                className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-start gap-2.5 shadow-2xs hover:border-brand-blue-300 dark:hover:border-brand-blue-800 transition-all"
+                              >
+                                <div className="relative shrink-0">
+                                  <img
+                                    src={tech.avatar}
+                                    alt={tech.name}
+                                    referrerPolicy="no-referrer"
+                                    className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                                  />
+                                  <span
+                                    className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${
+                                      tech.status === 'available' ? 'bg-emerald-500' : tech.status === 'busy' ? 'bg-amber-500' : 'bg-slate-400'
+                                    }`}
+                                    title={tech.status === 'available' ? 'متاح للعمل' : tech.status === 'busy' ? 'مشغول بمهمة صيانة' : 'في استراحة'}
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0 space-y-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <h6 className="text-[11px] font-black text-slate-900 dark:text-white truncate">
+                                      {tech.name}
+                                    </h6>
+                                    <span className={`px-1.5 py-0.2 rounded text-[7.5px] font-extrabold ${
+                                      tech.status === 'available'
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50'
+                                        : tech.status === 'busy'
+                                        ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200/50'
+                                    }`}>
+                                      {tech.status === 'available' ? 'متاح' : tech.status === 'busy' ? `مشغول (${tech.activeTasks})` : 'استراحة'}
+                                    </span>
+                                  </div>
+                                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                                    <UserCheck size={9.5} className="text-brand-blue-500 shrink-0" />
+                                    <span>{tech.role}</span>
+                                  </p>
+                                  {tech.phone && (
+                                    <div className="flex items-center justify-between pt-0.5 text-[8.5px]">
+                                      <a
+                                        href={`tel:${tech.phone}`}
+                                        className="text-brand-blue-600 dark:text-brand-blue-400 hover:underline flex items-center gap-1 font-mono font-bold"
+                                      >
+                                        <Phone size={8.5} />
+                                        <span dir="ltr">{tech.phone}</span>
+                                      </a>
+                                      <span className="text-[8px] text-slate-400 font-bold">
+                                        {tech.activeTasks} {t('مهام')}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {tech.skills && tech.skills.length > 0 && (
+                                    <div className="flex flex-wrap gap-0.5 pt-0.5">
+                                      {tech.skills.slice(0, 2).map((sk, sIdx) => (
+                                        <span key={sIdx} className="text-[7.5px] px-1 py-0.2 bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 rounded font-medium">
+                                          {sk}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Extra Workshop Details */}
+                          <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/70 grid grid-cols-1 md:grid-cols-2 gap-2 text-[9px]">
+                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                              <span className="font-black text-slate-700 dark:text-slate-300 block">المعدات التخصصية المجهزة:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {ws.equipment.map((eq, eIdx) => (
+                                  <span key={eIdx} className="px-1.5 py-0.5 bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 rounded text-[8px] font-bold text-slate-600 dark:text-slate-300">
+                                    ⚙️ {eq}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                              <span className="font-black text-slate-700 dark:text-slate-300 block">أوامر العمل المرتبطة:</span>
+                              {wsOrders.length > 0 ? (
+                                <div className="space-y-1">
+                                  {wsOrders.slice(0, 2).map(ord => (
+                                    <div key={ord.id} className="flex items-center justify-between text-[8px] p-1 bg-slate-50 dark:bg-slate-950 rounded">
+                                      <span className="font-mono font-bold text-brand-blue-600">{ord.orderNumber}</span>
+                                      <span className="text-slate-600 dark:text-slate-300 truncate max-w-[150px]">{ord.description}</span>
+                                      <span className="text-slate-400 font-bold">{ord.date}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic text-[8px]">لا توجد أوامر صيانة معلقة حالياً.</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
                     )}
-                  </div>
+                  </AnimatePresence>
                 </motion.div>
               );
             }
@@ -1513,74 +1698,85 @@ export default function Workshops({ user }: { user?: User }) {
               <motion.div
                 key={ws.id}
                 layout
-                initial={{ opacity: 0, y: 15 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className={`bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-105 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col justify-between ${specStripe}`}
+                className={`bg-white dark:bg-[#0f1422] rounded-xl sm:rounded-2xl border border-slate-105 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col justify-between transition-all ${specStripe}`}
               >
-                {/* Workshop Header section */}
-                <div className="p-6 border-b border-slate-50 dark:border-slate-850 space-y-3 bg-slate-50/30 dark:bg-slate-950/10">
+                {/* Workshop Header section (Clickable to expand/collapse) */}
+                <div 
+                  className="p-3.5 sm:p-4 border-b border-slate-50 dark:border-slate-850 space-y-2.5 bg-slate-50/30 dark:bg-slate-950/10 cursor-pointer select-none hover:bg-slate-50/60 dark:hover:bg-slate-900/30 transition-colors"
+                  onClick={() => toggleWorkshopExpand(ws.id)}
+                >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-                        <SpecIcon spec={ws.specialization} size={18} />
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center shrink-0">
+                        <SpecIcon spec={ws.specialization} size={16} />
                       </div>
                       <div>
-                        <h3 className="text-sm font-black text-slate-900 dark:text-white line-clamp-1">{ws.name}</h3>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-bold flex items-center gap-1">
-                          <MapPin size={10} className="text-slate-450" />
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white line-clamp-1">{ws.name}</h3>
+                          <span className={`p-0.5 rounded-full text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand-blue-600' : ''}`}>
+                            <ChevronDown size={14} />
+                          </span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 font-bold flex items-center gap-1">
+                          <MapPin size={8.5} className="text-slate-450" />
                           <span>{ws.location}</span>
                         </p>
                       </div>
                     </div>
                     {/* Status Badge */}
                     <button
-                      onClick={() => toggleWorkshopStatus(ws.id)}
-                      className={`text-[9px] font-black shrink-0 px-3 py-1.5 rounded-full border flex items-center gap-1.5 transition-all duration-300 ease-in-out hover:scale-[1.03] active:scale-95 cursor-pointer ${meta.bg} ${meta.color}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWorkshopStatus(ws.id);
+                      }}
+                      className={`text-[8.5px] font-black shrink-0 px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all duration-200 ease-in-out hover:scale-[1.02] active:scale-95 cursor-pointer ${meta.bg} ${meta.color}`}
                       title="اضغط للتغيير السريع لحالة النشاط"
                     >
-                      <span className={`w-2 h-2 rounded-full shadow-xs ${meta.dot}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full shadow-2xs ${meta.dot}`} />
                       <span className="tracking-tight">{meta.label}</span>
                     </button>
                   </div>
 
                   {/* Core KPI micro-metrics inside each workshop card */}
-                  <div className="grid grid-cols-3 gap-2 bg-white dark:bg-slate-950/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                  <div className="grid grid-cols-3 gap-1.5 bg-white dark:bg-slate-950/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
                     <div className="text-center">
-                      <span className="text-[9px] text-slate-400 dark:text-slate-500 block">نسبة الفحص الأولاد (FTR)</span>
-                      <span className="text-xs font-black text-emerald-500 mt-0.5 block">{ws.kpiFtr}</span>
+                      <span className="text-[8px] sm:text-[8.5px] text-slate-400 dark:text-slate-500 block leading-tight">كفاءة الفحص FTR</span>
+                      <span className="text-[11px] font-black text-emerald-500 mt-0.5 block">{ws.kpiFtr}</span>
                     </div>
                     <div className="text-center border-x border-slate-100 dark:border-slate-800">
-                      <span className="text-[9px] text-slate-400 dark:text-slate-500 block">دورة الصيانة الوسيطة</span>
-                      <span className="text-xs font-black text-brand-blue-500 mt-0.5 block">{ws.avgTurnaround}</span>
+                      <span className="text-[8px] sm:text-[8.5px] text-slate-400 dark:text-slate-500 block leading-tight">دورة الصيانة</span>
+                      <span className="text-[11px] font-black text-brand-blue-500 mt-0.5 block">{ws.avgTurnaround}</span>
                     </div>
                     <div className="text-center">
-                      <span className="text-[9px] text-slate-400 dark:text-slate-500 block">معدل الإشغال الجاري</span>
-                      <span className="text-xs font-black text-purple-500 mt-0.5 block">{ws.activeBays} / {ws.capacity}</span>
+                      <span className="text-[8px] sm:text-[8.5px] text-slate-400 dark:text-slate-500 block leading-tight">معدل الإشغال</span>
+                      <span className="text-[11px] font-black text-purple-500 mt-0.5 block">{ws.activeBays} / {ws.capacity}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Supervisor, Equipment List & Active Vehicles */}
-                <div className="p-6 space-y-4">
+                <div className="p-3.5 sm:p-4 space-y-3">
                   
                   {/* Supervisor */}
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1">
-                      <Briefcase size={12} />
-                      <span>المشرف الفني المسؤول:</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold flex items-center gap-1">
+                      <Briefcase size={11} />
+                      <span>المشرف المسؤول:</span>
                     </span>
-                    <span className="font-extrabold text-[#34d399] dark:text-emerald-400">{ws.supervisor}</span>
+                    <span className="text-[10.5px] font-extrabold text-[#34d399] dark:text-emerald-400">{ws.supervisor}</span>
                   </div>
 
                   {/* Equipment list */}
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-black text-slate-400 dark:text-slate-505 block">الأدوات والمعدات المتاحة بالموقع:</span>
-                    <div className="flex flex-wrap gap-1.5">
+                  <div className="space-y-1.5">
+                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-505 block">الأدوات والمعدات بالموقع:</span>
+                    <div className="flex flex-wrap gap-1">
                       {ws.equipment.map((eq, i) => (
                         <span 
                           key={i}
-                          className="px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-150/50 dark:border-slate-800/60 rounded-md text-[9px] font-bold text-slate-650 dark:text-slate-350"
+                          className="px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900 border border-slate-150/50 dark:border-slate-800/60 rounded-md text-[8px] sm:text-[8.5px] font-bold text-slate-650 dark:text-slate-350"
                         >
                           ⚙️ {eq}
                         </span>
@@ -1589,67 +1785,243 @@ export default function Workshops({ user }: { user?: User }) {
                   </div>
 
                   {/* Vehicles in the Shop */}
-                  <div className="pt-2 border-t border-slate-100/60 dark:border-slate-850/50 space-y-2">
+                  <div className="pt-2 border-t border-slate-100/60 dark:border-slate-850/50 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-500">المركبات القابعة بالخدمة الفنية حالياً ({ws.currentVehicles.length}):</span>
+                      <span className="text-[9px] font-black text-slate-400 dark:text-slate-500">المركبات بالخدمة حالياً ({ws.currentVehicles.length}):</span>
                       {ws.currentVehicles.length === 0 && (
-                        <span className="text-[9px] text-emerald-500 font-black">متاحة لاستقبال الآليات 🟢</span>
+                        <span className="text-[8.5px] text-emerald-500 font-black">متاحة لاستقبال الآليات 🟢</span>
                       )}
                     </div>
 
                     {ws.currentVehicles.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-28 overflow-y-auto no-scrollbar">
                         {ws.currentVehicles.map((vhName, keyIdx) => (
                           <div 
                             key={keyIdx}
-                            className="bg-brand-blue-50/30 dark:bg-brand-blue-950/10 p-2 rounded-xl border border-brand-blue-100/20 text-right flex items-center justify-between"
+                            className="bg-brand-blue-50/30 dark:bg-brand-blue-950/10 p-1.5 px-2 rounded-lg border border-brand-blue-100/20 text-right flex items-center justify-between"
                           >
-                            <span className="text-[10px] font-black text-slate-700 dark:text-slate-200 truncate max-w-[130px]">{vhName}</span>
+                            <span className="text-[9.5px] font-black text-slate-700 dark:text-slate-200 truncate max-w-[120px]">{vhName}</span>
                             <button
-                              onClick={() => handleRemoveVehicleFromWorkshop(ws.id, vhName)}
-                              className="text-[9px] font-black text-rose-500 hover:text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 p-1 px-1.5 rounded-md cursor-pointer transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveVehicleFromWorkshop(ws.id, vhName);
+                              }}
+                              className="text-[8px] font-black text-rose-500 hover:text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 p-0.5 px-1.5 rounded cursor-pointer transition-colors"
                               title="تخريج الآلية وتأكيد الجاهزية"
                             >
-                              تخريج وسحب 🔓
+                              تخريج 🔓
                             </button>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-[10px] text-slate-400 dark:text-slate-550 italic leading-none pt-1">لا يوجد أي مركبات داخل الورشة في الوقت الراهن.</p>
+                      <p className="text-[9px] text-slate-400 dark:text-slate-550 italic leading-none pt-0.5">لا يوجد أي مركبات داخل الورشة في الوقت الراهن.</p>
                     )}
                   </div>
 
                 </div>
 
+                {/* Expandable Section: Technicians on Shift & Deep Dive Info */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      key={`expanded-grid-${ws.id}`}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="overflow-hidden border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/70"
+                    >
+                      <div className="p-3.5 sm:p-4 space-y-3.5">
+                        
+                        {/* Technicians Section Header */}
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800/70">
+                          <div className="flex items-center gap-1.5">
+                            <div className="p-1.5 rounded-lg bg-brand-blue-500/10 text-brand-blue-600 dark:text-brand-blue-400">
+                              <Users size={13} />
+                            </div>
+                            <div>
+                              <span className="text-[11px] font-black text-slate-800 dark:text-slate-200 block leading-tight">
+                                {t('فريق الفنيين المسؤولين عن الوردية الحالية')}
+                              </span>
+                              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500">
+                                {t('الوردية الميدانية النشطة')} (07:00 ص - 03:30 م) • {displayTechnicians.length} {t('فنيين')}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[8.5px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1 border border-emerald-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            {t('جاهزية الوردية 100%')}
+                          </span>
+                        </div>
+
+                        {/* Technicians Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {displayTechnicians.map((tech) => (
+                            <div 
+                              key={tech.id} 
+                              className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 flex items-start gap-2.5 shadow-2xs hover:border-brand-blue-300 dark:hover:border-brand-blue-900/40 transition-colors"
+                            >
+                              <div className="relative shrink-0">
+                                <img 
+                                  src={tech.avatar} 
+                                  alt={tech.name} 
+                                  referrerPolicy="no-referrer"
+                                  className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700" 
+                                />
+                                <span 
+                                  className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${
+                                    tech.status === 'available' ? 'bg-emerald-500' : tech.status === 'busy' ? 'bg-amber-500' : 'bg-slate-400'
+                                  }`}
+                                  title={tech.status === 'available' ? 'متاح للعمل' : tech.status === 'busy' ? 'مشغول بمهمة صيانة' : 'في استراحة'}
+                                />
+                              </div>
+
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex items-center justify-between gap-1">
+                                  <h5 className="text-[11px] font-black text-slate-900 dark:text-white truncate">
+                                    {tech.name}
+                                  </h5>
+                                  <span className={`px-1.5 py-0.2 rounded text-[7.5px] font-extrabold ${
+                                    tech.status === 'available' 
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50' 
+                                      : tech.status === 'busy'
+                                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50'
+                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200/50'
+                                  }`}>
+                                    {tech.status === 'available' ? 'متاح' : tech.status === 'busy' ? `مشغول (${tech.activeTasks})` : 'استراحة'}
+                                  </span>
+                                </div>
+
+                                <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                                  <UserCheck size={9.5} className="text-brand-blue-500 shrink-0" />
+                                  <span>{tech.role}</span>
+                                </p>
+
+                                {tech.phone && (
+                                  <div className="flex items-center justify-between pt-0.5 text-[8.5px]">
+                                    <a 
+                                      href={`tel:${tech.phone}`} 
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-brand-blue-600 dark:text-brand-blue-400 hover:underline flex items-center gap-1 font-mono font-bold"
+                                    >
+                                      <Phone size={8.5} />
+                                      <span dir="ltr">{tech.phone}</span>
+                                    </a>
+                                    <span className="text-[8px] text-slate-400 font-bold">
+                                      {tech.activeTasks} مهام نشطة
+                                    </span>
+                                  </div>
+                                )}
+
+                                {tech.skills && tech.skills.length > 0 && (
+                                  <div className="flex flex-wrap gap-0.5 pt-0.5">
+                                    {tech.skills.slice(0, 2).map((sk, idx) => (
+                                      <span key={idx} className="text-[7.5px] px-1 py-0.2 bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 rounded font-medium">
+                                        {sk}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Operational Overview & Active Work Orders in Workshop */}
+                        <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/70 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          
+                          {/* Active Work Orders */}
+                          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9.5px] font-black text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                <FileText size={10} className="text-brand-blue-500" />
+                                <span>{t('أوامر العمل الجارية')}</span>
+                              </span>
+                              <span className="text-[8.5px] font-bold text-slate-400 font-mono">
+                                {wsOrders.length} {t('أوامر')}
+                              </span>
+                            </div>
+
+                            {wsOrders.length > 0 ? (
+                              <div className="space-y-1 max-h-24 overflow-y-auto no-scrollbar">
+                                {wsOrders.map((ord) => (
+                                  <div key={ord.id} className="p-1 px-2 rounded-lg bg-slate-50 dark:bg-slate-950/70 border border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[8.5px]">
+                                    <div className="truncate max-w-[130px]">
+                                      <span className="font-mono font-bold text-brand-blue-600 dark:text-brand-blue-400">{ord.orderNumber}</span>
+                                      <span className="text-slate-500 mr-1 truncate">{ord.description}</span>
+                                    </div>
+                                    <span className={`px-1 py-0.2 rounded text-[7.5px] font-bold ${
+                                      ord.priority === 'high' ? 'bg-rose-500/10 text-rose-500' : 'bg-brand-blue-500/10 text-brand-blue-500'
+                                    }`}>
+                                      {ord.priority === 'high' ? 'أولوية' : 'عادي'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-[8.5px] text-slate-400 dark:text-slate-500 italic">لا توجد أوامر صيانة معلقة لهذا النطاق حالياً.</p>
+                            )}
+                          </div>
+
+                          {/* Quick Facility Indicators */}
+                          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 space-y-1.5">
+                            <span className="text-[9.5px] font-black text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                              <ShieldCheck size={10} className="text-emerald-500" />
+                              <span>{t('مؤشرات الجاهزية والسلامة')}</span>
+                            </span>
+                            <div className="grid grid-cols-2 gap-1 text-[8.5px]">
+                              <div className="p-1 rounded bg-slate-50 dark:bg-slate-950/50">
+                                <span className="text-slate-400 block text-[7.5px]">المسارات الشاغرة:</span>
+                                <span className="font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                  {Math.max(0, (Number(ws.capacity) || 5) - (Number(ws.activeBays) || 0))} مسار متاح
+                                </span>
+                              </div>
+                              <div className="p-1 rounded bg-slate-50 dark:bg-slate-950/50">
+                                <span className="text-slate-400 block text-[7.5px]">معايرة الأجهزة:</span>
+                                <span className="font-black text-brand-blue-600 dark:text-brand-blue-400">معايرة معتمدة ✓</span>
+                              </div>
+                            </div>
+                            <p className="text-[8px] text-slate-400 dark:text-slate-500 truncate">
+                              المشرف المناوب: <strong className="text-slate-700 dark:text-slate-300">{ws.supervisor}</strong>
+                            </p>
+                          </div>
+
+                        </div>
+
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Footer Controls for Workshop Item */}
-                <div className="p-4 px-6 bg-slate-50/40 dark:bg-slate-950/20 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-                  <span className="text-[10px] font-bold text-slate-400">مكود برقم أصل: {ws.id}</span>
-                  <div className="flex items-center gap-1.5">
+                <div className="p-2.5 px-3.5 sm:px-4 bg-slate-50/40 dark:bg-slate-950/20 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                  <button
+                    type="button"
+                    onClick={() => toggleWorkshopExpand(ws.id)}
+                    className="flex items-center gap-1 text-[9px] font-black text-brand-blue-600 dark:text-brand-blue-400 hover:text-brand-blue-700 cursor-pointer transition-colors"
+                  >
+                    <Users size={11} />
+                    <span>{isExpanded ? 'طي تفاصيل الوردية' : 'عرض الفنيين المسؤولين والوردية'}</span>
+                    {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                  </button>
+
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     {user?.role === 'admin' ? (
                       <>
                         <button
                           onClick={() => handleStartEdit(ws)}
-                          className="p-1 px-2.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-955/40 dark:hover:bg-amber-900/45 rounded-md text-[9px] font-black text-amber-600 dark:text-amber-400 cursor-pointer flex items-center gap-1 transition-colors"
+                          className="p-1 px-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-955/40 dark:hover:bg-amber-900/45 rounded-md text-[8.5px] font-black text-amber-600 dark:text-amber-400 cursor-pointer flex items-center gap-1 transition-colors"
                           title="تعديل بيانات الورشة"
                         >
                           <span>تعديل ✍️</span>
                         </button>
                         <button
                           onClick={() => handleDeleteWorkshop(ws.id, ws.name)}
-                          className="p-1 px-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/40 dark:hover:bg-rose-900/45 rounded-md text-[9px] font-black text-rose-600 dark:text-rose-400 cursor-pointer flex items-center gap-1 transition-colors"
+                          className="p-1 px-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/40 dark:hover:bg-rose-900/45 rounded-md text-[8.5px] font-black text-rose-600 dark:text-rose-400 cursor-pointer flex items-center gap-1 transition-colors"
                           title="حذف بيانات الورشة"
                         >
                           <span>حذف 🗑️</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedWorkshop(ws);
-                            toggleWorkshopStatus(ws.id);
-                          }}
-                          className="p-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md text-[9px] font-black text-slate-655 dark:text-slate-300 cursor-pointer"
-                        >
-                          تغيير الحالة الدائرية
                         </button>
                       </>
                     ) : null}
@@ -1660,12 +2032,12 @@ export default function Workshops({ user }: { user?: User }) {
                           setAllocatingTargetWsId(ws.id);
                           setIsAllocateModalOpen(true);
                         }}
-                        className="p-1 px-2.5 bg-brand-blue-50 hover:bg-brand-blue-101 dark:bg-brand-blue-951/40 dark:hover:bg-brand-blue-901/45 rounded-md text-[9px] font-black text-brand-blue-600 dark:text-brand-blue-400 cursor-pointer"
+                        className="p-1 px-2.5 bg-brand-blue-50 hover:bg-brand-blue-101 dark:bg-brand-blue-951/40 dark:hover:bg-brand-blue-901/45 rounded-md text-[8.5px] font-black text-brand-blue-600 dark:text-brand-blue-400 cursor-pointer"
                       >
-                        إسناد آلية مخصصة
+                        إسناد آلية
                       </button>
                     ) : (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">عرض فقط 👁️</span>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">عرض فقط 👁️</span>
                     )}
                   </div>
                 </div>

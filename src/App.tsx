@@ -23,7 +23,7 @@ import Projects from './components/Projects';
 import { User, UserRole } from './types';
 import { MENU_ITEMS } from './constants';
 import { useLanguage } from './services/LanguageContext';
-import { Shield, Key, Eye, EyeOff, Wrench, Languages, Fingerprint, Layers, WifiOff, Globe, Check, AlertTriangle, RotateCcw, Loader2, Building2, CreditCard, Printer, Sparkles, ShieldAlert, UserCheck, ShieldCheck, X } from 'lucide-react';
+import { Shield, Key, Eye, EyeOff, Wrench, Languages, Fingerprint, Layers, WifiOff, Globe, Check, AlertTriangle, RotateCcw, Loader2, Building2, CreditCard, Printer, Sparkles, ShieldAlert, UserCheck, ShieldCheck, X, Timer, Calendar, Clock, Headphones, MessageSquare, Send, CheckCircle2, Phone, Mail, HelpCircle, FileText, ChevronRight, ArrowRight, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import MarketingLandingPage from './components/MarketingLandingPage';
 import { MarketingAdmin } from './components/MarketingAdmin';
@@ -293,6 +293,33 @@ export default function App() {
   const [regError, setRegError] = useState('');
   const [isSubmittingReg, setIsSubmittingReg] = useState(false);
   const [regSuccessData, setRegSuccessData] = useState<any>(null);
+
+  // Sales & Subscription Support Modal State
+  const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
+  const [salesInquiryCategory, setSalesInquiryCategory] = useState<'activation' | 'plan_upgrade' | 'fleet_expansion' | 'billing' | 'general'>('activation');
+  const [salesInquirySubject, setSalesInquirySubject] = useState('');
+  const [salesInquiryMessage, setSalesInquiryMessage] = useState('');
+  const [salesInquiryPhone, setSalesInquiryPhone] = useState('');
+  const [salesInquiryEmail, setSalesInquiryEmail] = useState('');
+  const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
+  const [inquirySubmittedSuccess, setInquirySubmittedSuccess] = useState(false);
+
+  const openSalesModalWithPreFill = (data: any) => {
+    if (!data) return;
+    setSalesInquiryEmail(data.email || '');
+    setSalesInquiryPhone(data.phone || '');
+    const defaultSubject = language === 'ar'
+      ? `استفسار بخصوص اشتراك منشأة (${data.companyAr}) - باقة ${data.plan === 'basic' ? 'الأساسية' : data.plan === 'pro' ? 'المهنية Pro' : 'المؤسسات'}`
+      : `Subscription Inquiry: ${data.companyEn || data.companyAr} - ${data.plan.toUpperCase()} Plan`;
+    setSalesInquirySubject(defaultSubject);
+
+    const defaultMsg = language === 'ar'
+      ? `تحية طيبة لفريق المبيعات والدعم الفني،\n\nنود الاستفسار بخصوص تفاصيل تفعيل الاشتراك المجدول لمنشأة (${data.companyAr}) برقم اشتراك (#${data.subscriptionId}) وحجم أسطول (${data.fleetSize} شاحنة/مركبة) والمقرر تفعيله رسمياً في نوفمبر ٢٠٢٦.\n\nالرجاء تزويدنا بكافة التفاصيل المطلوبة وإمكانية الجدولة المسبقة.`
+      : `Hello Sales & Support Team,\n\nWe would like to inquire about the scheduled subscription activation for (${data.companyEn || data.companyAr}) with Subscription ID (#${data.subscriptionId}), fleet capacity (${data.fleetSize} vehicles), scheduled for activation on November 1, 2026.\n\nPlease provide any additional onboarding and setup instructions.`;
+    setSalesInquiryMessage(defaultMsg);
+    setInquirySubmittedSuccess(false);
+    setIsSalesModalOpen(true);
+  };
 
   const { language, setLanguage, t, dir } = useLanguage();
 
@@ -1480,6 +1507,74 @@ export default function App() {
                           <span className="text-[10.5px] font-black text-indigo-600 dark:text-indigo-400">1 {language === 'ar' ? 'نوفمبر ٢٠٢٦' : 'November 2026'}</span>
                         </div>
                       </div>
+
+                      {/* Dynamic Visual Progress Bar for November 2026 Activation Date */}
+                      {(() => {
+                        const targetDate = new Date(2026, 10, 1);
+                        const now = new Date();
+                        const diffTime = targetDate.getTime() - now.getTime();
+                        const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                        const totalCountdownDays = 90; // Standard 90-day transition timeline
+                        const elapsedDays = Math.max(0, totalCountdownDays - daysRemaining);
+                        const progressPercent = Math.min(100, Math.max(8, Math.round((elapsedDays / totalCountdownDays) * 100)));
+
+                        return (
+                          <div className="pt-2.5 mt-2 border-t border-slate-200/80 dark:border-slate-800/80 space-y-2">
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                                <Timer size={13} className="text-indigo-500 shrink-0 animate-pulse" />
+                                <span>{language === 'ar' ? 'المدة المتبقية حتى بدء موعد التفعيل:' : 'Countdown to Activation Date:'}</span>
+                              </span>
+                              <span className="font-black font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60 flex items-center gap-1 shadow-2xs">
+                                <span>{daysRemaining}</span>
+                                <span className="text-[9px] font-sans font-bold">{language === 'ar' ? 'يوم' : 'days left'}</span>
+                              </span>
+                            </div>
+
+                            {/* Visual Dynamic Progress Bar */}
+                            <div className="space-y-1">
+                              <div className="w-full h-2.5 bg-slate-200/90 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-300/40 dark:border-slate-700/60 shadow-inner">
+                                <div
+                                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 relative transition-all duration-700 shadow-xs"
+                                  style={{ width: `${progressPercent}%` }}
+                                >
+                                  <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
+                                </div>
+                              </div>
+                              
+                              <div className="flex justify-between items-center text-[8.5px] font-bold text-slate-400 dark:text-slate-500 px-0.5">
+                                <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  {language === 'ar' ? 'الاشتراك جاهز ومثبت' : 'Provisioned & Ready'}
+                                </span>
+                                <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+                                  {progressPercent}% {language === 'ar' ? 'اكتمال الجدولة' : 'scheduled'}
+                                </span>
+                                <span className="flex items-center gap-0.5 font-mono text-slate-600 dark:text-slate-300">
+                                  <Calendar size={10} className="text-indigo-500" />
+                                  <span>01/11/2026</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Contact Sales & Inquiries Button inside Invoice Card */}
+                      <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                        <button
+                          id="btn-contact-sales"
+                          type="button"
+                          onClick={() => openSalesModalWithPreFill(regSuccessData)}
+                          className="w-full py-2 px-3 bg-gradient-to-r from-indigo-50 dark:from-indigo-950/40 via-purple-50 dark:via-purple-950/30 to-brand-blue-50 dark:to-brand-blue-950/40 hover:from-indigo-100 hover:via-purple-100 hover:to-brand-blue-100 dark:hover:from-indigo-900/50 dark:hover:via-purple-900/40 dark:hover:to-brand-blue-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/70 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
+                        >
+                          <Headphones size={14} className="text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+                          <span>{language === 'ar' ? 'التواصل مع المبيعات والدعم الفني' : 'Contact Sales & Inquiries'}</span>
+                          <span className="text-[9.5px] bg-indigo-500/10 dark:bg-indigo-400/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-md font-bold">
+                            {language === 'ar' ? 'استفسار فوري' : 'Direct Support'}
+                          </span>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 font-sans pt-1">
@@ -2354,6 +2449,242 @@ export default function App() {
             {t('login.footerSecurity')}
           </div>
         </div>
+
+        {/* Pre-Filled Subscription Support & Sales Modal */}
+        <AnimatePresence>
+          {isSalesModalOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+              onClick={() => setIsSalesModalOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.92, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.92, opacity: 0, y: 20 }}
+                transition={{ type: 'spring', duration: 0.35, bounce: 0.15 }}
+                className="bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 w-full max-w-lg shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto font-sans text-right"
+                dir={dir}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0">
+                      <Headphones size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                        {language === 'ar' ? 'استفسارات المبيعات والاشتراك' : 'Sales & Subscription Support'}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold mt-0.5">
+                        {language === 'ar' ? 'تواصل مباشر مع فريق مبيعات ودعم Axoventra SaaS' : 'Direct channel with Axoventra SaaS Sales Team'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSalesModalOpen(false)}
+                    className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {inquirySubmittedSuccess ? (
+                  <div className="py-8 text-center space-y-3">
+                    <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto animate-bounce">
+                      <CheckCircle2 size={36} />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-base font-black text-slate-900 dark:text-white">
+                        {language === 'ar' ? 'تم إرسال استفسارك بنجاح!' : 'Inquiry Dispatched Successfully!'}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-bold max-w-sm mx-auto leading-relaxed">
+                        {language === 'ar'
+                          ? 'تم تسجيل طلب الاستفسار المسبق لبيانات اشتراك منشأتكم، وسيقوم مسؤول الحسابات بالتواصل معكم خلال وقت وجيز.'
+                          : 'Your subscription inquiry has been recorded. An enterprise account manager will reach out to you shortly.'}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-800 inline-block text-[11px] font-mono font-black text-indigo-600 dark:text-indigo-400">
+                      Ref: AXO-SALES-2026-{(Math.random() * 8999 + 1000).toFixed(0)}
+                    </div>
+                    <div className="pt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSalesModalOpen(false);
+                          setInquirySubmittedSuccess(false);
+                        }}
+                        className="px-6 py-2.5 bg-brand-blue-500 hover:bg-brand-blue-600 text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md shadow-brand-blue-500/15"
+                      >
+                        {language === 'ar' ? 'حسناً، تم' : 'Close'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      setIsSubmittingInquiry(true);
+                      setTimeout(() => {
+                        setIsSubmittingInquiry(false);
+                        setInquirySubmittedSuccess(true);
+                      }, 800);
+                    }}
+                    className="space-y-3.5"
+                  >
+                    {/* Pre-filled Context Badge */}
+                    {regSuccessData && (
+                      <div className="p-3 bg-gradient-to-r from-indigo-50/80 dark:from-indigo-950/30 to-purple-50/80 dark:to-purple-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 space-y-1.5 text-xs">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="font-extrabold text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
+                            <Building2 size={12} />
+                            <span>{regSuccessData.companyAr}</span>
+                          </span>
+                          <span className="font-mono font-bold text-slate-500 dark:text-slate-400">#{regSuccessData.subscriptionId}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-300 font-bold">
+                          <span>{language === 'ar' ? 'الباقة المعتمدة:' : 'Plan:'} <strong className="text-indigo-600 dark:text-indigo-400 uppercase">{regSuccessData.plan}</strong></span>
+                          <span>{language === 'ar' ? 'الأسطول:' : 'Fleet:'} <strong>{regSuccessData.fleetSize}</strong></span>
+                          <span className="text-emerald-600 dark:text-emerald-400">{language === 'ar' ? 'تفعيل: نوفمبر ٢٠٢٦' : 'Starts: Nov 2026'}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inquiry Category Selector */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+                        {language === 'ar' ? 'تصنيف الاستفسار:' : 'Inquiry Category:'}
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                        {[
+                          { id: 'activation', ar: 'موعد تفعيل نوفمبر ٢٠٢٦', en: 'Nov 2026 Activation' },
+                          { id: 'plan_upgrade', ar: 'تعديل أو ترقية الباقة', en: 'Plan Adjustment' },
+                          { id: 'fleet_expansion', ar: 'زيادة سعة الأسطول', en: 'Fleet Expansion' },
+                          { id: 'billing', ar: 'الفواتير والخصومات', en: 'Billing & Discounts' },
+                          { id: 'general', ar: 'استفسار مخصص عام', en: 'General Inquiry' },
+                        ].map((cat) => (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => setSalesInquiryCategory(cat.id as any)}
+                            className={`p-2 rounded-xl text-[10px] font-bold border transition-all text-center cursor-pointer ${
+                              salesInquiryCategory === cat.id
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200/80 dark:border-slate-800 hover:border-indigo-300'
+                            }`}
+                          >
+                            {language === 'ar' ? cat.ar : cat.en}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Subject */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+                        {language === 'ar' ? 'عنوان الموضوع:' : 'Subject:'}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={salesInquirySubject}
+                        onChange={(e) => setSalesInquirySubject(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    {/* Contact Email & Phone */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+                          {language === 'ar' ? 'البريد الإلكتروني:' : 'Contact Email:'}
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={salesInquiryEmail}
+                          onChange={(e) => setSalesInquiryEmail(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+                          {language === 'ar' ? 'رقم الهاتف / الجوال:' : 'Phone Number:'}
+                        </label>
+                        <input
+                          type="tel"
+                          value={salesInquiryPhone}
+                          onChange={(e) => setSalesInquiryPhone(e.target.value)}
+                          placeholder="05XXXXXXXX"
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Message Details */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+                        {language === 'ar' ? 'تفاصيل الاستفسار والطلب:' : 'Inquiry Message:'}
+                      </label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={salesInquiryMessage}
+                        onChange={(e) => setSalesInquiryMessage(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white font-semibold focus:outline-hidden focus:ring-2 focus:ring-indigo-500 resize-none leading-relaxed"
+                      />
+                    </div>
+
+                    {/* Direct Contact Hotline Bar */}
+                    <div className="p-2.5 bg-slate-100 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2 text-[10px]">
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 font-bold">
+                        <Phone size={12} className="text-indigo-500" />
+                        <span>{language === 'ar' ? 'هاتف المبيعات المباشر:' : 'Direct Sales:'}</span>
+                        <strong className="text-slate-900 dark:text-white font-mono">+966 800 123 4567</strong>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-bold">
+                        <Mail size={12} className="text-indigo-500" />
+                        <span>sales@axoventra.com</span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setIsSalesModalOpen(false)}
+                        className="px-4 py-2 text-xs font-black text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+                      >
+                        {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmittingInquiry}
+                        className="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-md shadow-indigo-500/20 cursor-pointer disabled:opacity-50"
+                      >
+                        {isSubmittingInquiry ? (
+                          <>
+                            <Loader2 size={13} className="animate-spin" />
+                            <span>{language === 'ar' ? 'جاري الإرسال...' : 'Submitting...'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send size={13} />
+                            <span>{language === 'ar' ? 'إرسال الاستفسار للمبيعات' : 'Submit Inquiry'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }

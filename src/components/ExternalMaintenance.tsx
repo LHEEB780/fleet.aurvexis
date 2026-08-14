@@ -41,8 +41,8 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
   const [workshops, setWorkshops] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   
-  // Quick Guide active index
-  const [guideExpanded, setGuideExpanded] = useState(true);
+  // Quick Guide active index (collapsed by default as requested)
+  const [guideExpanded, setGuideExpanded] = useState(false);
   const [activeGuideStep, setActiveGuideStep] = useState<number | null>(null);
 
   // Filters & Search
@@ -337,15 +337,20 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
         <div className="absolute top-0 left-0 w-32 h-32 bg-purple-500/5 rounded-full blur-2xl -translate-x-12 -translate-y-12"></div>
         <div className="absolute bottom-0 right-0 w-48 h-48 bg-brand-blue-500/5 rounded-full blur-3xl translate-x-12 translate-y-12"></div>
 
-        <div className="flex items-center justify-between relative z-10 border-b border-purple-500/10 pb-3 mb-4">
+        <div 
+          onClick={() => setGuideExpanded(!guideExpanded)}
+          className={`flex items-center justify-between relative z-10 cursor-pointer select-none transition-all duration-200 ${
+            guideExpanded ? 'border-b border-purple-500/10 pb-3 mb-4' : 'pb-0 mb-0'
+          }`}
+        >
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20 animate-pulse">
+            <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20 shrink-0">
               <BookOpen size={18} />
             </div>
             <div>
               <h2 className="text-[14px] font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                 <span>الدليل الاسترشادي السريع للصيانة الخارجية</span>
-                <span className="text-[8.5px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-black tracking-widest animate-pulse">
+                <span className="text-[8.5px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-black tracking-widest">
                   تعاقد خارجي
                 </span>
               </h2>
@@ -356,11 +361,15 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
           </div>
           
           <button 
-            onClick={() => setGuideExpanded(!guideExpanded)}
-            className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all border border-slate-200/50 dark:border-slate-800"
-            title={guideExpanded ? "إخفاء الدليل" : "إظهار الدليل"}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setGuideExpanded(!guideExpanded);
+            }}
+            className="p-2 rounded-xl bg-white/80 dark:bg-slate-900 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition-all border border-purple-200/50 dark:border-purple-800/60 shadow-2xs shrink-0 cursor-pointer"
+            title={guideExpanded ? "إخفاء الدليل (طي لأعلى)" : "إظهار الدليل (توسيع لأسفل)"}
           >
-            {guideExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {guideExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         </div>
 

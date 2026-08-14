@@ -2295,16 +2295,32 @@ export default function AppLayout({
             >
               {/* Page Sub-Header (Scrolls Naturally, Not Sticky) */}
               {activeTab !== 'maintenance-bot' && (
-                <div className="bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-100 dark:border-slate-800/80 p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-colors duration-300 shadow-xs">
+                <div className={`rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-all duration-300 shadow-xs ${
+                  activeTab === 'external-maintenance'
+                    ? 'bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 dark:from-purple-950 dark:via-purple-900 dark:to-[#0f1422] text-white border border-purple-500/40 dark:border-purple-800/60 shadow-lg shadow-purple-900/15'
+                    : 'bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800/80'
+                }`}>
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-brand-blue-500/10 text-brand-blue-600 dark:text-[#38bdf8] rounded-xl shrink-0">
+                    <div className={`p-2.5 rounded-xl shrink-0 ${
+                      activeTab === 'external-maintenance'
+                        ? 'bg-white/20 dark:bg-purple-500/25 text-white border border-white/20 shadow-xs backdrop-blur-xs'
+                        : 'bg-brand-blue-500/10 text-brand-blue-600 dark:text-[#38bdf8]'
+                    }`}>
                       {TAB_LABELS[activeTab]?.icon || <LayoutDashboard size={18} />}
                     </div>
                     <div>
-                      <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                      <h1 className={`text-base sm:text-lg font-black leading-tight ${
+                        activeTab === 'external-maintenance'
+                          ? 'text-white drop-shadow-xs'
+                          : 'text-slate-900 dark:text-white'
+                      }`}>
                         {language === 'ar' ? TAB_LABELS[activeTab]?.ar : TAB_LABELS[activeTab]?.en}
                       </h1>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-0.5">
+                      <p className={`text-[10px] font-bold mt-0.5 ${
+                        activeTab === 'external-maintenance'
+                          ? 'text-purple-200 dark:text-purple-300/90'
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}>
                         {language === 'ar' ? 'بوابة التشغيل الشاملة والتحكم بالأسطول' : 'Comprehensive Operations & Fleet Control Portal'}
                       </p>
                     </div>

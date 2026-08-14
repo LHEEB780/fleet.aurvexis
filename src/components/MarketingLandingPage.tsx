@@ -1135,7 +1135,7 @@ export default function MarketingLandingPage({
               {language === 'ar' ? 'تقدير العائد المالي' : 'ROI Estimation Calculator'}
             </span>
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-              {language === 'ar' ? 'احسب وفوراتك المباشرة مع Axoventra' : 'Predict Your Fleet Savings & ROI with Axoventra'}
+              {language === 'ar' ? 'حاسبة التوفير المباشرة من Axoventra' : 'Predict Your Fleet Savings & ROI with Axoventra'}
             </h2>
             <p className="text-slate-600 text-xs leading-relaxed">
               {language === 'ar' 

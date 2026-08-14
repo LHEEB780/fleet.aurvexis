@@ -73,6 +73,8 @@ export default function Breadcrumbs({ activeTab, setActiveTab, language, variant
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all ${
             activeTab === 'dashboard'
               ? 'bg-brand-blue-500/10 text-brand-blue-600 dark:text-[#38bdf8] font-black'
+              : activeTab === 'external-maintenance' && variant === 'inline'
+              ? 'text-purple-200 hover:text-white hover:bg-white/10 cursor-pointer font-bold'
               : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-850 hover:text-slate-800 dark:hover:text-white cursor-pointer'
           }`}
           title={isRtl ? 'الذهاب للوحة التحكم الرئيسية' : 'Go to Home Dashboard'}
@@ -83,21 +85,27 @@ export default function Breadcrumbs({ activeTab, setActiveTab, language, variant
 
         {currentGroup && currentItem && activeTab !== 'dashboard' && (
           <>
-            <ArrowIcon size={12} className="text-slate-400 shrink-0" />
+            <ArrowIcon size={12} className={`shrink-0 ${activeTab === 'external-maintenance' && variant === 'inline' ? 'text-purple-300/80' : 'text-slate-400'}`} />
             
             {/* Group Label (Static or navigation helper) */}
-            <div className="flex items-center gap-1.5 px-2 py-1.5 text-slate-400 dark:text-slate-500 font-medium">
+            <div className={`flex items-center gap-1.5 px-2 py-1.5 font-medium ${
+              activeTab === 'external-maintenance' && variant === 'inline' ? 'text-purple-200/90' : 'text-slate-400 dark:text-slate-500'
+            }`}>
               <Folder size={12} className="shrink-0" />
               <span>{isRtl ? GROUP_LABELS[currentGroup].ar : GROUP_LABELS[currentGroup].en}</span>
             </div>
 
-            <ArrowIcon size={12} className="text-slate-400 shrink-0" />
+            <ArrowIcon size={12} className={`shrink-0 ${activeTab === 'external-maintenance' && variant === 'inline' ? 'text-purple-300/80' : 'text-slate-400'}`} />
 
             {/* Current Item with Interactive Dropdown switcher to switch inline */}
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-blue-50/50 dark:bg-brand-blue-950/30 text-brand-blue-700 dark:text-[#38bdf8] border border-brand-blue-100/30 hover:border-brand-blue-300 dark:hover:border-slate-700 font-extrabold rounded-lg transition-all cursor-pointer"
+                className={`flex items-center gap-1.5 px-3 py-1.5 font-extrabold rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'external-maintenance' && variant === 'inline'
+                    ? 'bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-xs shadow-xs'
+                    : 'bg-brand-blue-50/50 dark:bg-brand-blue-950/30 text-brand-blue-700 dark:text-[#38bdf8] border border-brand-blue-100/30 hover:border-brand-blue-300 dark:hover:border-slate-700'
+                }`}
               >
                 {TAB_LABELS[activeTab]?.icon}
                 <span>{isRtl ? TAB_LABELS[activeTab]?.ar : TAB_LABELS[activeTab]?.en}</span>
