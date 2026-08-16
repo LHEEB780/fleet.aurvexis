@@ -67,7 +67,7 @@ const DEFAULT_FEATURES = [
     descEn: 'Log technical properties, active drivers, and safety validation statuses cleanly across any layout.',
     badgeAr: 'أساسي',
     badgeEn: 'Core',
-    image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=80'
+    image: '/src/assets/images/highway_logistics_truck_1782935190395.jpg'
   },
   {
     id: 'f-2',
@@ -78,7 +78,7 @@ const DEFAULT_FEATURES = [
     descEn: 'Instant reporting desk that allows drivers to submit issues, including fast voice note capture.',
     badgeAr: 'تفاعلي',
     badgeEn: 'Interactive',
-    image: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?w=600&auto=format&fit=crop&q=80'
+    image: '/src/assets/images/driver_truck_inspection_1786784371761.jpg'
   },
   {
     id: 'f-3',
@@ -89,7 +89,7 @@ const DEFAULT_FEATURES = [
     descEn: 'Instantly query diagnostic codes and parse engine troubleshooting scripts natively using model integrations.',
     badgeAr: 'حصري',
     badgeEn: 'AI Powered',
-    image: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=600&auto=format&fit=crop&q=80'
+    image: '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg'
   },
   {
     id: 'f-4',
@@ -100,7 +100,7 @@ const DEFAULT_FEATURES = [
     descEn: 'Schedule service plans, dispatch workorders, and optimize technician workbench allocations dynamically.',
     badgeAr: 'جديد',
     badgeEn: 'New Update',
-    image: 'https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?w=600&auto=format&fit=crop&q=80'
+    image: '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg'
   }
 ];
 
@@ -285,12 +285,34 @@ export default function MarketingLandingPage({
 
   const effectivePortalMode = portalMode || (localStorage.getItem('saas_portal_mode') as 'marketing' | 'saas') || 'marketing';
 
+  // Helper to migrate legacy/broken feature image URLs to reliable local assets
+  const migrateFeatures = (features: typeof DEFAULT_FEATURES) => {
+    return features.map((feat) => {
+      if (feat.id === 'f-1' && (!feat.image || feat.image.includes('unsplash.com'))) {
+        return { ...feat, image: '/src/assets/images/highway_logistics_truck_1782935190395.jpg' };
+      }
+      if (feat.id === 'f-2' && (!feat.image || feat.image.includes('unsplash.com'))) {
+        return { ...feat, image: '/src/assets/images/driver_truck_inspection_1786784371761.jpg' };
+      }
+      if (feat.id === 'f-3' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.includes('photo-1486006920555'))) {
+        return { ...feat, image: '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg' };
+      }
+      if (feat.id === 'f-4' && (!feat.image || feat.image.includes('unsplash.com'))) {
+        return { ...feat, image: '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg' };
+      }
+      return feat;
+    });
+  };
+
   // Dynamic states initialized from localStorage with robust fallbacks
   const [featuresList, setFeaturesList] = useState(() => {
     const stored = localStorage.getItem('saas_marketing_features_v1');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return migrateFeatures(parsed);
+        }
       } catch (e) {}
     }
     return DEFAULT_FEATURES;
@@ -331,7 +353,12 @@ export default function MarketingLandingPage({
     const handleStorageChange = () => {
       const storedFeatures = localStorage.getItem('saas_marketing_features_v1');
       if (storedFeatures) {
-        try { setFeaturesList(JSON.parse(storedFeatures)); } catch (e) {}
+        try { 
+          const parsed = JSON.parse(storedFeatures);
+          if (Array.isArray(parsed)) {
+            setFeaturesList(migrateFeatures(parsed));
+          }
+        } catch (e) {}
       }
       const storedClients = localStorage.getItem('saas_marketing_clients_v2');
       if (storedClients) {
@@ -358,13 +385,13 @@ export default function MarketingLandingPage({
 
   // Helper to resolve high-fidelity default images if none are supplied customly
   const getFeatureImage = (id: string, customImage?: string) => {
-    if (customImage) return customImage;
+    if (customImage && !customImage.includes('unsplash.com')) return customImage;
     switch (id) {
-      case 'f-1': return 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=80';
-      case 'f-2': return 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?w=600&auto=format&fit=crop&q=80';
-      case 'f-3': return 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?w=600&auto=format&fit=crop&q=80';
-      case 'f-4': return 'https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?w=600&auto=format&fit=crop&q=80';
-      default: return 'https://images.unsplash.com/photo-1501700493788-fa1a4fc9fe62?w=600&auto=format&fit=crop&q=80';
+      case 'f-1': return '/src/assets/images/highway_logistics_truck_1782935190395.jpg';
+      case 'f-2': return '/src/assets/images/driver_truck_inspection_1786784371761.jpg';
+      case 'f-3': return '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg';
+      case 'f-4': return '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg';
+      default: return '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg';
     }
   };
 
@@ -679,8 +706,12 @@ export default function MarketingLandingPage({
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#F8F9FC] to-white py-16 md:py-24 border-b border-[#E8EAF1]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section className="relative overflow-hidden bg-gradient-to-b from-purple-50/40 via-slate-50/40 to-white py-16 md:py-24 border-b border-purple-100/50">
+        {/* Ambient Purple Backdrop Glows */}
+        <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-purple-400/6 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
+        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-purple-300/8 rounded-full blur-3xl pointer-events-none translate-y-1/2" />
+
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           
           {/* Hero Left Info */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-right">
@@ -819,11 +850,14 @@ export default function MarketingLandingPage({
       </section>
 
       {/* Bento Grid Features Section */}
-      <section id="features" className="py-20 bg-white border-b border-[#E8EAF1]">
-        <div className="max-w-7xl mx-auto px-6 space-y-12">
+      <section id="features" className="py-20 bg-gradient-to-b from-slate-50/50 via-white to-purple-50/20 border-b border-slate-100 relative overflow-hidden">
+        {/* Ambient Purple Blur */}
+        <div className="absolute top-1/3 right-0 w-80 h-80 bg-purple-400/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 space-y-12 relative z-10">
           
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-700 bg-brand-blue-50 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-widest text-purple-700 bg-purple-50/70 border border-purple-100/60 px-3 py-1 rounded-full">
               {language === 'ar' ? 'القدرات الهندسية للمنصة' : 'Engineered for Performance'}
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
@@ -842,16 +876,19 @@ export default function MarketingLandingPage({
             {featuresList.map((feat) => (
               <div 
                 key={feat.id}
-                className="border border-[#E8EAF1] p-8 rounded-2xl hover:border-brand-blue-500/40 hover:shadow-md transition bg-slate-50/50 space-y-4 flex flex-col justify-between"
+                className="border border-slate-200/80 p-8 rounded-2xl hover:border-purple-200 hover:shadow-md transition-all duration-300 bg-white space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   {/* Feature Image */}
-                  <div className="h-48 w-full rounded-xl overflow-hidden mb-4 relative group">
+                  <div className="h-48 w-full rounded-xl overflow-hidden mb-4 relative group bg-slate-900 shadow-inner">
                     <img 
                       src={getFeatureImage(feat.id, feat.image)} 
                       alt={language === 'ar' ? feat.titleAr : feat.titleEn} 
                       className="w-full h-full object-cover transform hover:scale-105 transition-all duration-500"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg';
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent"></div>
                   </div>
@@ -865,7 +902,7 @@ export default function MarketingLandingPage({
                       {renderFeatureIcon(feat.icon)}
                     </div>
                     <div className="space-y-0.5">
-                      <span className="px-1.5 py-0.5 bg-brand-blue-50 text-brand-blue-700 text-[9px] font-black rounded uppercase">
+                      <span className="px-1.5 py-0.5 bg-purple-50/80 text-purple-700 text-[9px] font-black rounded uppercase border border-purple-100/60">
                         {language === 'ar' ? feat.badgeAr : feat.badgeEn}
                       </span>
                       <h3 className="font-extrabold text-base text-slate-900 leading-tight">
@@ -879,7 +916,7 @@ export default function MarketingLandingPage({
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-[#E8EAF1]/80 flex justify-between items-center">
+                <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
                   <span className="text-[11px] font-mono text-slate-500">
                     CODE: {feat.id.toUpperCase()}
                   </span>
@@ -893,7 +930,7 @@ export default function MarketingLandingPage({
                       setSelectedShowcaseTab(mappedTab);
                       setIsShowcaseOpen(true);
                     }}
-                    className="text-xs font-bold text-brand-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-bold text-purple-700 hover:text-purple-900 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <span>{language === 'ar' ? 'اقرأ المزيد' : 'Learn More'}</span>
                     <ChevronRight size={13} className={isRtl ? 'rotate-180' : ''} />
@@ -907,8 +944,11 @@ export default function MarketingLandingPage({
       </section>
 
       {/* Interactive Telemetry & Operations Sandbox Simulator */}
-      <section id="simulator" className="py-20 bg-[#F8F9FC] border-b border-[#E8EAF1]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section id="simulator" className="py-20 bg-gradient-to-b from-slate-50/40 via-white to-white border-b border-slate-100 relative overflow-hidden">
+        {/* Ambient Purple Backdrop */}
+        <div className="absolute top-1/2 left-0 w-96 h-96 bg-purple-400/6 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
+
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           
           {/* Simulator Left Intro */}
           <div className="lg:col-span-5 space-y-5">
@@ -1025,11 +1065,14 @@ export default function MarketingLandingPage({
       </section>
 
       {/* Enterprise Partners Section */}
-      <section id="clients" className="py-20 bg-gradient-to-b from-slate-50/70 via-slate-50 to-white border-b border-[#E8EAF1]">
-        <div className="max-w-7xl mx-auto px-6 space-y-12">
+      <section id="clients" className="py-20 bg-gradient-to-b from-slate-50/40 via-white to-white border-b border-slate-100 relative overflow-hidden">
+        {/* Ambient Purple Backdrop */}
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-purple-400/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 space-y-12 relative z-10">
           
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-700 bg-brand-blue-50 px-3 py-1.5 rounded-full select-none">
+            <span className="text-xs font-bold uppercase tracking-widest text-purple-700 bg-purple-50/80 border border-purple-100/60 px-3 py-1.5 rounded-full select-none">
               {language === 'ar' ? 'العملاء والشركاء المعتمدين' : 'Enterprise & Trust Network'}
             </span>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">
@@ -1126,12 +1169,15 @@ export default function MarketingLandingPage({
       </section>
 
       {/* ROI & Price Calculator Section */}
-      <section id="roi" className="py-20 bg-[#F8F9FC] border-b border-[#E8EAF1]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <section id="roi" className="py-20 bg-gradient-to-b from-slate-50/50 via-white to-white border-b border-slate-100 relative overflow-hidden">
+        {/* Ambient Purple Backdrop */}
+        <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-purple-400/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           
           {/* Calculator Left Description */}
           <div className="lg:col-span-5 space-y-5">
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-blue-500">
+            <span className="text-xs font-bold uppercase tracking-widest text-purple-700 bg-purple-50/80 border border-purple-100/60 px-2.5 py-1 rounded-full">
               {language === 'ar' ? 'تقدير العائد المالي' : 'ROI Estimation Calculator'}
             </span>
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
@@ -1145,10 +1191,10 @@ export default function MarketingLandingPage({
 
             {/* Slider Inputs */}
             <div className="space-y-4 pt-2">
-              <div className="space-y-2 bg-white p-4.5 rounded-xl border border-[#E8EAF1]">
+              <div className="space-y-2 bg-white p-4.5 rounded-xl border border-slate-200/80 shadow-2xs">
                 <div className="flex justify-between text-xs font-semibold">
                   <span>{language === 'ar' ? 'عدد مركبات الأسطول' : 'Total Vehicles'}</span>
-                  <span className="font-mono text-brand-blue-700 font-bold">{calcVehicles} {language === 'ar' ? 'مركبة' : 'Assets'}</span>
+                  <span className="font-mono text-purple-700 font-bold">{calcVehicles} {language === 'ar' ? 'مركبة' : 'Assets'}</span>
                 </div>
                 <input 
                   type="range" 
@@ -1156,14 +1202,14 @@ export default function MarketingLandingPage({
                   max="500" 
                   value={calcVehicles}
                   onChange={(e) => setCalcVehicles(Number(e.target.value))}
-                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-blue-500"
+                  className="w-full h-1.5 bg-purple-50 rounded-lg appearance-none cursor-pointer accent-purple-600"
                 />
               </div>
 
-              <div className="space-y-2 bg-white p-4.5 rounded-xl border border-[#E8EAF1]">
+              <div className="space-y-2 bg-white p-4.5 rounded-xl border border-slate-200/80 shadow-2xs">
                 <div className="flex justify-between text-xs font-semibold">
                   <span>{language === 'ar' ? 'متوسط تكلفة الصيانة شهرياً للمركبة' : 'Monthly Maintenance Cost / Asset'}</span>
-                  <span className="font-mono text-brand-blue-700 font-bold">${calcCostPerVehicle}</span>
+                  <span className="font-mono text-purple-700 font-bold">${calcCostPerVehicle}</span>
                 </div>
                 <input 
                   type="range" 
@@ -1172,7 +1218,7 @@ export default function MarketingLandingPage({
                   step="50"
                   value={calcCostPerVehicle}
                   onChange={(e) => setCalcCostPerVehicle(Number(e.target.value))}
-                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-blue-500"
+                  className="w-full h-1.5 bg-purple-50 rounded-lg appearance-none cursor-pointer accent-purple-600"
                 />
               </div>
             </div>
@@ -1180,27 +1226,27 @@ export default function MarketingLandingPage({
 
           {/* Calculator Right Visual Result */}
           <div className="lg:col-span-7">
-            <div className="bg-gradient-to-br from-slate-900 to-[#1e1b4b] text-white rounded-3xl p-8 shadow-xl border border-slate-800 space-y-6">
+            <div className="bg-gradient-to-br from-slate-950 via-[#1e0e33] to-[#110720] text-white rounded-3xl p-8 shadow-xl border border-purple-900/30 space-y-6">
               <div className="space-y-1 text-center lg:text-right">
-                <span className="text-[11px] font-mono uppercase tracking-widest" style={{ color: brandPrimaryColor }}>{language === 'ar' ? 'الوفورات المالية السنوية التقديرية' : 'Estimated Annual Financial Savings'}</span>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-purple-300/90">{language === 'ar' ? 'الوفورات المالية السنوية التقديرية' : 'Estimated Annual Financial Savings'}</span>
                 <h3 className="text-4xl md:text-5xl font-black text-white font-mono">
                   ${estimatedSavings.toLocaleString()}
                 </h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-purple-900/40">
                 <div className="text-center lg:text-right space-y-1">
-                  <span className="text-[10px] text-slate-400 block uppercase">{language === 'ar' ? 'معدل تقليص أيام التعطل' : 'Downtime Days Reduced'}</span>
+                  <span className="text-[10px] text-purple-200/70 block uppercase">{language === 'ar' ? 'معدل تقليص أيام التعطل' : 'Downtime Days Reduced'}</span>
                   <span className="text-xl font-bold font-mono text-emerald-400">-{calculatedDowntimeDays} {language === 'ar' ? 'يوم/سنة' : 'Days/Year'}</span>
                 </div>
                 <div className="text-center lg:text-right space-y-1">
-                  <span className="text-[10px] text-slate-400 block uppercase">{language === 'ar' ? 'معدل الكفاءة التشغيلية' : 'Expected ROI Efficiency Factor'}</span>
-                  <span className="text-xl font-bold font-mono text-brand-blue-300">28% Growth</span>
+                  <span className="text-[10px] text-purple-200/70 block uppercase">{language === 'ar' ? 'معدل الكفاءة التشغيلية' : 'Expected ROI Efficiency Factor'}</span>
+                  <span className="text-xl font-bold font-mono text-purple-300">28% Growth</span>
                 </div>
               </div>
 
-              <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-3 text-xs leading-relaxed text-slate-300">
-                <Info size={16} className="shrink-0 mt-0.5" style={{ color: brandPrimaryColor }} />
+              <div className="p-4 bg-white/5 border border-purple-400/15 rounded-2xl flex items-start gap-3 text-xs leading-relaxed text-purple-100/90">
+                <Info size={16} className="shrink-0 mt-0.5 text-purple-300" />
                 <p>
                   {language === 'ar'
                     ? 'يتم تقدير هذه الحسابات بناءً على معدلات الفحص الوقائي والباركود ومحرك تشخيص الأعطال لتفادي تلف المحركات المكلف.'
@@ -1210,7 +1256,7 @@ export default function MarketingLandingPage({
 
               <button
                 onClick={() => setShowSignupModal(true)}
-                className="w-full py-4 bg-white text-slate-950 hover:bg-[#F8F9FC] font-bold rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-4 bg-white text-slate-950 hover:bg-purple-50 font-bold rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>{language === 'ar' ? 'احجز عرضاً تجريبياً واحمِ أسطولك' : 'Lock In Your Free Evaluation'}</span>
                 <ArrowRight size={16} />
@@ -1222,11 +1268,14 @@ export default function MarketingLandingPage({
       </section>
 
       {/* Verified Reviews Section */}
-      <section id="reviews-section" className="py-20 bg-white border-b border-[#E8EAF1]">
-        <div className="max-w-5xl mx-auto px-6 space-y-10">
+      <section id="reviews-section" className="py-20 bg-white border-b border-slate-100 relative overflow-hidden">
+        {/* Ambient Purple Backdrop */}
+        <div className="absolute top-1/2 right-10 w-72 h-72 bg-purple-400/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto px-6 space-y-10 relative z-10">
           
           <div className="text-center space-y-3">
-            <span id="reviews-badge" className="text-xs font-bold uppercase tracking-widest text-brand-blue-500">
+            <span id="reviews-badge" className="text-xs font-bold uppercase tracking-widest text-purple-700 bg-purple-50/80 border border-purple-100/60 px-3 py-1 rounded-full">
               {language === 'ar' ? 'شهادات وقصص النجاح' : 'SaaS Customer Reviews'}
             </span>
             <h2 id="reviews-title" className="text-3xl font-bold text-slate-900 tracking-tight">
@@ -1236,7 +1285,7 @@ export default function MarketingLandingPage({
 
           <div 
             id="reviews-slider-card"
-            className="bg-[#F8F9FC] border border-[#E8EAF1] rounded-3xl p-8 relative space-y-6 transition-all duration-300 hover:shadow-xs group"
+            className="bg-slate-50/50 border border-slate-200/80 rounded-3xl p-8 relative space-y-6 transition-all duration-300 hover:shadow-md hover:border-purple-200 group"
             onMouseEnter={() => setIsReviewHovered(true)}
             onMouseLeave={() => setIsReviewHovered(false)}
           >

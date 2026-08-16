@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Award, Sparkles, BookOpen, ArrowUpRight, ArrowLeft, ArrowRight,
-  Mail, Phone as PhoneIcon, User, Building, MessageSquare, Send, CheckCircle2, AlertCircle, RefreshCw
+  Award, Sparkles, BookOpen, ArrowUpRight, ArrowLeft, ArrowRight, X, Check,
+  Mail, Phone as PhoneIcon, User, Building, MessageSquare, Headphones, Send, CheckCircle2, AlertCircle, RefreshCw,
+  TrendingUp, ShieldCheck, Clock, FileText, ChevronRight
 } from 'lucide-react';
 import { useLanguage } from '../services/LanguageContext';
 import { saveDocument } from '../services/firebase';
@@ -31,7 +32,7 @@ export const DEFAULT_SUCCESS_STORIES: SuccessStory[] = [
     contentEn: 'National Logistics successfully digitized its fleet of 450 heavy trucks and trailers using our platform. This resulted in a 38% reduction in highway engine failures and unlocked unprecedented annual preventative maintenance budget savings.',
     metricAr: 'تقليل نفقات الصيانة الوقائية بنسبة 25%',
     metricEn: '25% Savings in PM Expenditures',
-    imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&auto=format&fit=crop&q=80'
+    imageUrl: '/src/assets/images/enterprise_fleet_depot_1782935136613.jpg'
   },
   {
     id: 'story-2',
@@ -43,7 +44,7 @@ export const DEFAULT_SUCCESS_STORIES: SuccessStory[] = [
     contentEn: 'The division linked 230 municipal heavy loaders and equipment to our digital barcode system. This enabled automated preventative maintenance triggers and spare parts utilization audits, eliminating overstocking waste completely.',
     metricAr: 'انخفاض هدر مستودع القطع بنسبة 30%',
     metricEn: '30% Reduction in Parts Waste',
-    imageUrl: 'https://images.unsplash.com/photo-1579412695340-39aef37912c4?w=800&auto=format&fit=crop&q=80'
+    imageUrl: '/src/assets/images/municipal_workshop_parts_1786785099442.jpg'
   },
   {
     id: 'story-3',
@@ -55,7 +56,7 @@ export const DEFAULT_SUCCESS_STORIES: SuccessStory[] = [
     contentEn: 'Implementing our responsive driver portal with voice note capturing enabled road-drivers to report mechanical issues to the central desk under 15 seconds. This minimized workshop queue delays and preserved engine health.',
     metricAr: 'توفير 30 دقيقة يومياً لكل سائق فحص',
     metricEn: '30 Mins Saved Per Driver Checkup',
-    imageUrl: 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?w=800&auto=format&fit=crop&q=80'
+    imageUrl: '/src/assets/images/driver_truck_inspection_1786784371761.jpg'
   }
 ];
 
@@ -63,11 +64,29 @@ export default function CustomerSuccessStories() {
   const { language, dir } = useLanguage();
   const isRtl = dir === 'rtl';
 
+  const migrateStories = (storiesList: SuccessStory[]): SuccessStory[] => {
+    return storiesList.map((s: SuccessStory) => {
+      if (s.id === 'story-1' && (!s.imageUrl || s.imageUrl.includes('unsplash.com'))) {
+        return { ...s, imageUrl: '/src/assets/images/enterprise_fleet_depot_1782935136613.jpg' };
+      }
+      if (s.id === 'story-2' && (!s.imageUrl || s.imageUrl.includes('unsplash.com') || s.imageUrl.includes('photo-1579412695340'))) {
+        return { ...s, imageUrl: '/src/assets/images/municipal_workshop_parts_1786785099442.jpg' };
+      }
+      if (s.id === 'story-3' && (!s.imageUrl || s.imageUrl.includes('photo-1516574187841') || s.imageUrl.includes('unsplash.com'))) {
+        return { ...s, imageUrl: '/src/assets/images/driver_truck_inspection_1786784371761.jpg' };
+      }
+      return s;
+    });
+  };
+
   const [stories, setStories] = useState<SuccessStory[]>(() => {
     const stored = localStorage.getItem('saas_marketing_success_stories_v1');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return migrateStories(parsed);
+        }
       } catch (e) {}
     }
     return DEFAULT_SUCCESS_STORIES;
@@ -86,17 +105,21 @@ export default function CustomerSuccessStories() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [activeStory, setActiveStory] = useState<SuccessStory | null>(null);
 
   useEffect(() => {
     const handleStorageChange = () => {
       const stored = localStorage.getItem('saas_marketing_success_stories_v1');
       if (stored) {
         try {
-          setStories(JSON.parse(stored));
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setStories(migrateStories(parsed));
+            return;
+          }
         } catch (e) {}
-      } else {
-        setStories(DEFAULT_SUCCESS_STORIES);
       }
+      setStories(DEFAULT_SUCCESS_STORIES);
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -248,24 +271,24 @@ export default function CustomerSuccessStories() {
   return (
     <section 
       id="success-stories-section" 
-      className="bg-slate-900/60 dark:bg-slate-950/80 py-24 border-t border-slate-800/80 relative overflow-hidden"
+      className="bg-gradient-to-b from-slate-950 via-[#150a24] to-slate-950 py-24 border-t border-purple-900/30 relative overflow-hidden"
     >
       {/* Decorative Glow Elements */}
-      <div className="absolute top-1/4 left-1/12 w-80 h-80 bg-brand-blue-500/8 rounded-full blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/12 w-96 h-96 bg-indigo-500/8 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/12 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/12 w-96 h-96 bg-fuchsia-500/8 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         {/* Section Heading */}
         <div className="text-center space-y-4 mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-950/60 border border-indigo-500/20 text-indigo-400 text-[10px] font-black rounded-full uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-950/40 border border-purple-500/20 text-purple-300 text-[10px] font-black rounded-full uppercase tracking-wider">
             <Sparkles size={11} className="animate-pulse" />
             <span>{language === 'ar' ? 'شركاء المسار والنجاح' : 'Success Partnerships'}</span>
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">
             {language === 'ar' ? 'قصص النجاح ونموذج التواصل المباشر' : 'Success Stories & Direct Inquiry'}
           </h2>
-          <p className="text-xs md:text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs md:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">
             {language === 'ar' 
               ? 'تصفح دراسات الكفاءة الميدانية لعملائنا، أو أرسل استفسارك مباشرة ليتواصل معك خبير هندسة الأساطيل لدينا خلال دقائق معدودة.' 
               : 'Browse real fleet efficiency case studies, or submit an inquiry to speak directly with our diagnostics engineer.'}
@@ -277,7 +300,7 @@ export default function CustomerSuccessStories() {
           
           {/* Success Stories Grid (Col Span 8) */}
           <div className="lg:col-span-7 space-y-6 order-2 lg:order-1">
-            <h3 className={`text-md font-black text-indigo-300 mb-4 flex items-center gap-2 ${isRtl ? 'justify-start' : 'justify-start'}`}>
+            <h3 className={`text-md font-black text-purple-300 mb-4 flex items-center gap-2 ${isRtl ? 'justify-start' : 'justify-start'}`}>
               <Award size={18} />
               <span>{language === 'ar' ? 'قصص الكفاءة والأثر الرقمي' : 'Field Efficiency Records'}</span>
             </h3>
@@ -295,22 +318,26 @@ export default function CustomerSuccessStories() {
                   variants={cardVariants}
                   whileHover={{ 
                     y: -8, 
-                    boxShadow: "0 20px 40px -15px rgba(99, 102, 241, 0.12)" 
+                    boxShadow: "0 20px 40px -15px rgba(168, 85, 247, 0.12)" 
                   }}
-                  className="bg-slate-950/40 backdrop-blur-md border border-slate-800/60 hover:border-indigo-500/30 rounded-3xl overflow-hidden transition-all duration-300 flex flex-col justify-between group"
+                  onClick={() => setActiveStory(story)}
+                  className="bg-slate-950/40 backdrop-blur-md border border-slate-800/80 hover:border-purple-500/40 rounded-3xl overflow-hidden transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-md"
                 >
                   {/* Card Image and Metric Tag */}
-                  <div className="relative overflow-hidden aspect-video">
+                  <div className="relative overflow-hidden aspect-video bg-slate-900">
                     <img 
-                      src={story.imageUrl || 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800'} 
+                      src={story.imageUrl || '/src/assets/images/municipal_workshop_parts_1786785099442.jpg'} 
                       alt={language === 'ar' ? story.companyAr : story.companyEn}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/src/assets/images/municipal_workshop_parts_1786785099442.jpg';
+                      }}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                     
                     {/* Floating Metric Badge */}
-                    <div className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} bg-indigo-950/90 backdrop-blur-xs border border-indigo-500/20 p-2 py-1.5 rounded-xl flex items-center gap-1.5 shadow-md`}>
+                    <div className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} bg-indigo-950/90 backdrop-blur-xs border border-indigo-500/30 p-2 py-1.5 rounded-xl flex items-center gap-1.5 shadow-md`}>
                       <Award size={12} className="text-indigo-400 shrink-0" />
                       <span className="text-[9px] font-extrabold text-white">
                         {language === 'ar' ? story.metricAr : story.metricEn}
@@ -359,10 +386,11 @@ export default function CustomerSuccessStories() {
 
                     {/* Bottom Interactive Arrow Link */}
                     <div className={`pt-3 border-t border-slate-900/60 flex items-center ${isRtl ? 'justify-between' : 'justify-between flex-row-reverse'}`}>
-                      <span className="text-[9px] font-bold text-slate-500 group-hover:text-slate-400 transition-colors">
-                        {language === 'ar' ? 'دراسة حالة تفصلية' : 'Case Study Details'}
+                      <span className="text-[9px] font-bold text-indigo-400 group-hover:text-indigo-300 group-hover:underline flex items-center gap-1 transition-colors">
+                        <span>{language === 'ar' ? 'انقر لقراءة دراسة الحالة' : 'Click to Read Full Case Study'}</span>
+                        <ChevronRight size={11} className={isRtl ? 'rotate-180' : ''} />
                       </span>
-                      <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 text-slate-400 group-hover:text-white group-hover:bg-indigo-650 group-hover:border-indigo-500 flex items-center justify-center transition-all duration-300 shadow-md">
+                      <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-800 text-slate-400 group-hover:text-white group-hover:bg-indigo-600 group-hover:border-indigo-500 flex items-center justify-center transition-all duration-300 shadow-md">
                         <ArrowUpRight size={12} className="transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                       </div>
                     </div>
@@ -375,13 +403,13 @@ export default function CustomerSuccessStories() {
 
           {/* Contact Form Card (Col Span 5) */}
           <div className="lg:col-span-5 order-1 lg:order-2">
-            <h3 className={`text-md font-black text-indigo-300 mb-4 flex items-center gap-2 ${isRtl ? 'justify-start' : 'justify-start'}`}>
+            <h3 className={`text-md font-black text-purple-300/90 mb-4 flex items-center gap-2 ${isRtl ? 'justify-start' : 'justify-start'}`}>
               <Mail size={18} />
               <span>{language === 'ar' ? 'إرسال استفسار مباشر' : 'Quick Consulting Inquiry'}</span>
             </h3>
 
-            <div className="bg-slate-950/50 backdrop-blur-md border border-slate-800/80 p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden text-right">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="bg-slate-950/50 backdrop-blur-md border border-slate-800/80 p-6 md:p-8 rounded-3xl shadow-xl relative overflow-hidden text-right">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
               
               <AnimatePresence mode="wait">
                 {!submitSuccess ? (
@@ -404,7 +432,7 @@ export default function CustomerSuccessStories() {
                     {/* Full Name */}
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5">
-                        <User size={12} className="text-indigo-400" />
+                        <User size={12} className="text-purple-400" />
                         <span>{language === 'ar' ? 'الاسم الثلاثي للاتصال' : 'Full Name'}</span>
                       </label>
                       <div className="relative">
@@ -413,7 +441,7 @@ export default function CustomerSuccessStories() {
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           placeholder={language === 'ar' ? 'مثال: م. فهد العتيبي' : 'e.g., Fahad Al-Otaibi'}
-                          className={`w-full bg-slate-900/60 border ${errors.name ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-indigo-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none`}
+                          className={`w-full bg-slate-900/60 border ${errors.name ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none`}
                         />
                       </div>
                       {errors.name && (
@@ -427,7 +455,7 @@ export default function CustomerSuccessStories() {
                     {/* Company / Workshop Name */}
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5">
-                        <Building size={12} className="text-indigo-400" />
+                        <Building size={12} className="text-purple-400" />
                         <span>{language === 'ar' ? 'اسم المنشأة / الورشة' : 'Company / Workshop Name'}</span>
                       </label>
                       <div className="relative">
@@ -436,7 +464,7 @@ export default function CustomerSuccessStories() {
                           value={formData.company}
                           onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                           placeholder={language === 'ar' ? 'مثال: شركة المسار المتميز للنقل' : 'e.g., Al-Masar Logistics LLC'}
-                          className={`w-full bg-slate-900/60 border ${errors.company ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-indigo-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none`}
+                          className={`w-full bg-slate-900/60 border ${errors.company ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none`}
                         />
                       </div>
                       {errors.company && (
@@ -452,7 +480,7 @@ export default function CustomerSuccessStories() {
                       {/* Email */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5">
-                          <Mail size={12} className="text-indigo-400" />
+                          <Mail size={12} className="text-purple-400" />
                           <span>{language === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}</span>
                         </label>
                         <input 
@@ -460,7 +488,7 @@ export default function CustomerSuccessStories() {
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           placeholder="name@company.com"
-                          className={`w-full bg-slate-900/60 border ${errors.email ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-indigo-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none`}
+                          className={`w-full bg-slate-900/60 border ${errors.email ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none`}
                         />
                         {errors.email && (
                           <p className="text-[9px] text-rose-400 flex items-center gap-1 mt-0.5">
@@ -473,7 +501,7 @@ export default function CustomerSuccessStories() {
                       {/* Phone Number */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5">
-                          <PhoneIcon size={12} className="text-indigo-400" />
+                          <PhoneIcon size={12} className="text-purple-400" />
                           <span>{language === 'ar' ? 'رقم الجوال' : 'Phone Number'}</span>
                         </label>
                         <input 
@@ -481,7 +509,7 @@ export default function CustomerSuccessStories() {
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           placeholder="e.g., 0500000000"
-                          className={`w-full bg-slate-900/60 border ${errors.phone ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-indigo-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none`}
+                          className={`w-full bg-slate-900/60 border ${errors.phone ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none`}
                         />
                         {errors.phone && (
                           <p className="text-[9px] text-rose-400 flex items-center gap-1 mt-0.5">
@@ -495,13 +523,13 @@ export default function CustomerSuccessStories() {
                     {/* Fleet Size Selection */}
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5">
-                        <Award size={12} className="text-indigo-400" />
+                        <Award size={12} className="text-purple-400" />
                         <span>{language === 'ar' ? 'حجم الأسطول التقريبي (شاحنة/معدة)' : 'Estimated Fleet Size'}</span>
                       </label>
                       <select 
                         value={formData.fleetSize}
                         onChange={(e) => setFormData({ ...formData, fleetSize: e.target.value })}
-                        className="w-full bg-slate-900/60 border border-slate-800 focus:border-indigo-500 text-slate-200 rounded-xl py-2 px-3 text-[11px] focus:outline-none cursor-pointer"
+                        className="w-full bg-slate-900/60 border border-slate-800 focus:border-purple-500 text-slate-200 rounded-xl py-2 px-3 text-[11px] focus:outline-none cursor-pointer"
                       >
                         <option value="5">1 - 10 {language === 'ar' ? 'مركبات' : 'vehicles'}</option>
                         <option value="25">11 - 50 {language === 'ar' ? 'مركبات' : 'vehicles'}</option>
@@ -513,7 +541,7 @@ export default function CustomerSuccessStories() {
                     {/* Detailed Message */}
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5">
-                        <MessageSquare size={12} className="text-indigo-400" />
+                        <MessageSquare size={12} className="text-purple-400" />
                         <span>{language === 'ar' ? 'تفاصيل الاستفسار / طلب التجربة' : 'Inquiry details / Demo request'}</span>
                       </label>
                       <textarea 
@@ -521,7 +549,7 @@ export default function CustomerSuccessStories() {
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         placeholder={language === 'ar' ? 'يرجى توضيح التحدي التشغيلي الحالي أو ما تأملون تحقيقه عبر النظام...' : 'Please specify current fleet pain-points or objectives...'}
-                        className={`w-full bg-slate-900/60 border ${errors.message ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-indigo-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none resize-none`}
+                        className={`w-full bg-slate-900/60 border ${errors.message ? 'border-rose-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2 px-3 text-[11px] transition-colors focus:outline-none resize-none`}
                       />
                       {errors.message && (
                         <p className="text-[9px] text-rose-400 flex items-center gap-1 mt-0.5">
@@ -533,9 +561,10 @@ export default function CustomerSuccessStories() {
 
                     {/* Submit Button */}
                     <button
+                      id="btn-contact-sales"
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 disabled:bg-indigo-950 disabled:text-slate-500 text-white py-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg active:scale-98 mt-2"
+                      className="w-full bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 hover:opacity-90 disabled:opacity-50 text-white py-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg active:scale-98 mt-2"
                     >
                       {isSubmitting ? (
                         <>
@@ -544,8 +573,11 @@ export default function CustomerSuccessStories() {
                         </>
                       ) : (
                         <>
-                          <Send size={13} />
-                          <span>{language === 'ar' ? 'إرسال الاستفسار والربط بالـ CRM' : 'Send Inquiry & Link with CRM'}</span>
+                          <div className="flex items-center gap-1">
+                            <Headphones size={13} className="text-purple-300" />
+                            <MessageSquare size={13} className="text-indigo-300" />
+                          </div>
+                          <span>{language === 'ar' ? 'إرسال الاستفسار والتواصل مع المبيعات' : 'Send Inquiry & Contact Sales'}</span>
                         </>
                       )}
                     </button>
@@ -589,6 +621,145 @@ export default function CustomerSuccessStories() {
         </div>
 
       </div>
+
+      {/* Full Case Study Reader Modal */}
+      <AnimatePresence>
+        {activeStory && (
+          <div 
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            onClick={() => setActiveStory(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-950 border border-purple-800/40 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl my-8 relative flex flex-col text-slate-100"
+              dir={isRtl ? 'rtl' : 'ltr'}
+            >
+              {/* Modal Header Image Banner */}
+              <div className="relative aspect-video max-h-72 w-full overflow-hidden bg-slate-900">
+                <img 
+                  src={activeStory.imageUrl || '/src/assets/images/municipal_workshop_parts_1786785099442.jpg'} 
+                  alt={language === 'ar' ? activeStory.titleAr : activeStory.titleEn}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/src/assets/images/municipal_workshop_parts_1786785099442.jpg';
+                  }}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                
+                {/* Close Button */}
+                <button 
+                  onClick={() => setActiveStory(null)}
+                  className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} w-9 h-9 rounded-full bg-slate-950/80 hover:bg-slate-900 border border-purple-500/30 text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition shadow-lg z-20`}
+                >
+                  <X size={18} />
+                </button>
+
+                {/* Company & Impact Pill */}
+                <div className="absolute bottom-4 left-6 right-6 flex flex-wrap items-center justify-between gap-2">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-950/90 border border-purple-500/40 rounded-full text-purple-300 text-xs font-black shadow-md">
+                    <Building size={13} />
+                    <span>{language === 'ar' ? activeStory.companyAr : activeStory.companyEn}</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-950/90 border border-emerald-500/40 rounded-full text-emerald-300 text-xs font-black shadow-md">
+                    <Award size={13} />
+                    <span>{language === 'ar' ? activeStory.metricAr : activeStory.metricEn}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Body Content */}
+              <div className="p-6 md:p-8 space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
+                    <FileText size={14} />
+                    <span>{language === 'ar' ? 'دراسة حالة تفصيلية موثقة' : 'Verified Case Study Document'}</span>
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-black text-white leading-snug">
+                    {language === 'ar' ? activeStory.titleAr : activeStory.titleEn}
+                  </h3>
+                </div>
+
+                {/* Main Story Narrative */}
+                <div className="p-4.5 bg-slate-900/60 border border-slate-800/80 rounded-2xl space-y-3">
+                  <span className="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">
+                    {language === 'ar' ? 'التحدي والحل الهندسي المطبق:' : 'Operational Challenge & Deployed Solution:'}
+                  </span>
+                  <p className="text-sm text-slate-200 leading-relaxed font-sans">
+                    {language === 'ar' ? activeStory.contentAr : activeStory.contentEn}
+                  </p>
+                </div>
+
+                {/* Key Metrics / Highlights Bento */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3.5 bg-purple-950/30 border border-purple-800/30 rounded-xl space-y-1">
+                    <div className="flex items-center gap-1.5 text-purple-400 text-[11px] font-bold">
+                      <TrendingUp size={14} />
+                      <span>{language === 'ar' ? 'مؤشر الكفاءة' : 'Efficiency ROI'}</span>
+                    </div>
+                    <p className="text-xs font-bold text-white">
+                      {language === 'ar' ? activeStory.metricAr : activeStory.metricEn}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 bg-purple-950/30 border border-purple-800/30 rounded-xl space-y-1">
+                    <div className="flex items-center gap-1.5 text-indigo-400 text-[11px] font-bold">
+                      <Clock size={14} />
+                      <span>{language === 'ar' ? 'سرعة الاستجابة' : 'Response Speed'}</span>
+                    </div>
+                    <p className="text-xs font-bold text-white">
+                      {language === 'ar' ? 'أقل من 15 ثانية للبلاغ' : '< 15s Per Issue Report'}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 bg-purple-950/30 border border-purple-800/30 rounded-xl space-y-1">
+                    <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-bold">
+                      <ShieldCheck size={14} />
+                      <span>{language === 'ar' ? 'حالة الاعتماد' : 'Verification'}</span>
+                    </div>
+                    <p className="text-xs font-bold text-emerald-300">
+                      {language === 'ar' ? 'عمليات ميدانية نشطة' : 'Active Production'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action CTA */}
+                <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => {
+                      const msg = language === 'ar' 
+                        ? `أرغب بالاستفسار عن تطبيق حل مشابه لدراسة حالة: ${activeStory.titleAr} (${activeStory.companyAr})`
+                        : `I would like to inquire about implementing a solution similar to: ${activeStory.titleEn} (${activeStory.companyEn})`;
+                      setFormData(prev => ({ ...prev, message: msg }));
+                      setActiveStory(null);
+                      // Scroll to contact form smoothly
+                      const contactEl = document.getElementById('success-stories-section');
+                      if (contactEl) {
+                        contactEl.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="flex-1 py-3.5 px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:opacity-90 text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <span>{language === 'ar' ? 'طلب استشارة مخصصة لنفس الحالة' : 'Request Similar Solution Demo'}</span>
+                    <ArrowRight size={14} className={isRtl ? 'rotate-180' : ''} />
+                  </button>
+                  <button
+                    onClick={() => setActiveStory(null)}
+                    className="py-3.5 px-5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    {language === 'ar' ? 'إغلاق النافذة' : 'Close'}
+                  </button>
+                </div>
+
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

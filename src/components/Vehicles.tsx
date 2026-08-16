@@ -30,11 +30,16 @@ import {
   LayoutGrid,
   List,
   Trash2,
+  AlertTriangle,
   Edit,
   Receipt,
   ClipboardCheck,
   FileText,
-  Loader2
+  Loader2,
+  CheckSquare,
+  Square,
+  CheckCheck,
+  MousePointerClick
 } from 'lucide-react';
 import { vehicles as initialVehicles } from '../data';
 import { VehicleStatus, Vehicle, User, hasGranularPermission } from '../types';
@@ -45,6 +50,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
+import { downloadFleetAssetTemplate, fileToBase64, parseFleetFileClientSide } from '../services/universalFileParser';
 
 // Definitions for custom selectable icons for vehicles with matching eye-friendly colors
 export const VEHICLE_ICONS: Record<string, { component: React.ComponentType<{ size?: number; className?: string }>; label: string; bg: string; text: string }> = {
@@ -315,7 +321,18 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
     const saved = localStorage.getItem('fleet_vehicles_v3');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const uniqueList: Vehicle[] = [];
+          const seen = new Set<string>();
+          for (const item of parsed) {
+            if (item && item.id && !seen.has(item.id)) {
+              seen.add(item.id);
+              uniqueList.push(item);
+            }
+          }
+          return uniqueList;
+        }
       } catch (e) {}
     }
     return initialVehicles;
@@ -327,6 +344,108 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
   const [trendMetric, setTrendMetric] = useState<'fuel' | 'tire'>('fuel');
   const [selectedVehicleForHistory, setSelectedVehicleForHistory] = useState<Vehicle | null>(null);
   const [selectedVehicleForQr, setSelectedVehicleForQr] = useState<Vehicle | null>(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState<{ id: string; name: string; plateNumber?: string; type?: string } | null>(null);
+
+  // Multi-select & Long-press state for batch deletion
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
+  const [isBatchDeleteModalOpen, setIsBatchDeleteModalOpen] = useState(false);
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressTriggeredRef = useRef<boolean>(false);
+
+  const handlePressStart = (vehicleId: string) => {
+    isLongPressTriggeredRef.current = false;
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+    longPressTimeoutRef.current = setTimeout(() => {
+      isLongPressTriggeredRef.current = true;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try {
+          navigator.vibrate(60);
+        } catch (e) {}
+      }
+      setIsSelectionMode(true);
+      setSelectedVehicleIds((prev) => {
+        if (prev.includes(vehicleId)) return prev;
+        return [...prev, vehicleId];
+      });
+    }, 500); // 500ms long-press threshold
+  };
+
+  const handlePressEnd = () => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+  };
+
+  const toggleVehicleSelection = (vehicleId: string) => {
+    setSelectedVehicleIds((prev) => 
+      prev.includes(vehicleId) ? prev.filter(id => id !== vehicleId) : [...prev, vehicleId]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedVehicleIds.length === filteredVehicles.length) {
+      setSelectedVehicleIds([]);
+    } else {
+      setSelectedVehicleIds(filteredVehicles.map(v => v.id));
+    }
+  };
+
+  const handleExitSelectionMode = () => {
+    setIsSelectionMode(false);
+    setSelectedVehicleIds([]);
+    setIsBatchDeleteModalOpen(false);
+  };
+
+  const handleConfirmBatchDelete = () => {
+    if (selectedVehicleIds.length === 0) return;
+    const count = selectedVehicleIds.length;
+    const idsToDeleteSet = new Set(selectedVehicleIds);
+    
+    const updated = vehicleList.filter(v => !idsToDeleteSet.has(v.id));
+    setVehicleList(updated);
+    localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updated));
+    localStorage.setItem('fleet_vehicles_v2', JSON.stringify(updated));
+
+    // Also unlink from any drivers in localStorage
+    try {
+      const savedDrivers = localStorage.getItem('fleet_drivers_v2');
+      if (savedDrivers) {
+        const parsed = JSON.parse(savedDrivers);
+        const updatedDrivers = parsed.map((d: any) => {
+          if (d.assignedVehicleId && idsToDeleteSet.has(d.assignedVehicleId)) {
+            const { assignedVehicleId, ...rest } = d;
+            return rest;
+          }
+          return d;
+        });
+        localStorage.setItem('fleet_drivers_v2', JSON.stringify(updatedDrivers));
+      }
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('vehiclesUpdated', { detail: { vehicles: updated } }));
+    } catch(e) {
+      console.error(e);
+    }
+
+    setIsBatchDeleteModalOpen(false);
+    setIsSelectionMode(false);
+    setSelectedVehicleIds([]);
+
+    // Nice transient visual notification toast
+    const notifyDiv = document.createElement('div');
+    notifyDiv.className = "fixed bottom-5 right-5 z-[130] bg-rose-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 border border-rose-500 text-xs font-black";
+    notifyDiv.style.direction = "rtl";
+    notifyDiv.innerHTML = `<span>✔ تم حذف ${count} مركبة/عجلة بنجاح من قاعدة البيانات!</span>`;
+    document.body.appendChild(notifyDiv);
+    setTimeout(() => {
+      if (document.body.contains(notifyDiv)) {
+        notifyDiv.remove();
+      }
+    }, 4000);
+  };
 
   // Add vehicle modal controls
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -459,38 +578,52 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
     }
   }, [openAddOnLoad, onAddOpenHandled]);
 
-  const handleDeleteVehicle = (id: string, name: string) => {
-    if (window.confirm(`هل أنت متأكد من حذف المركبة "${name}" نهائياً من سجلات الأسطول؟`)) {
-      const updated = vehicleList.filter(v => v.id !== id);
-      setVehicleList(updated);
-      
-      // Also unlink from any drivers in localStorage
-      try {
-        const savedDrivers = localStorage.getItem('fleet_drivers_v2');
-        if (savedDrivers) {
-          const parsed = JSON.parse(savedDrivers);
-          const updatedDrivers = parsed.map((d: any) => {
-            if (d.assignedVehicleId === id) {
-              const { assignedVehicleId, ...rest } = d;
-              return rest;
-            }
-            return d;
-          });
-          localStorage.setItem('fleet_drivers_v2', JSON.stringify(updatedDrivers));
-          window.dispatchEvent(new Event('storage'));
-        }
-      } catch(e) {
-        console.error(e);
+  const handleDeleteVehicle = (id: string, name: string, plateNumber?: string, type?: string) => {
+    setVehicleToDelete({ id, name, plateNumber, type });
+  };
+
+  const confirmDeleteVehicle = () => {
+    if (!vehicleToDelete) return;
+    const { id, name } = vehicleToDelete;
+    
+    const updated = vehicleList.filter(v => v.id !== id);
+    setVehicleList(updated);
+    localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updated));
+    localStorage.setItem('fleet_vehicles_v2', JSON.stringify(updated));
+    
+    // Also unlink from any drivers in localStorage
+    try {
+      const savedDrivers = localStorage.getItem('fleet_drivers_v2');
+      if (savedDrivers) {
+        const parsed = JSON.parse(savedDrivers);
+        const updatedDrivers = parsed.map((d: any) => {
+          if (d.assignedVehicleId === id) {
+            const { assignedVehicleId, ...rest } = d;
+            return rest;
+          }
+          return d;
+        });
+        localStorage.setItem('fleet_drivers_v2', JSON.stringify(updatedDrivers));
       }
-      
-      // Nice transient visual notification toast
-      const notifyDiv = document.createElement('div');
-      notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-rose-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 border border-rose-500 text-xs font-black";
-      notifyDiv.style.direction = "rtl";
-      notifyDiv.innerHTML = `<span>✔ تم حذف سجل المركبة بنجاح!</span>`;
-      document.body.appendChild(notifyDiv);
-      setTimeout(() => notifyDiv.remove(), 4000);
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('vehiclesUpdated', { detail: { vehicles: updated } }));
+    } catch(e) {
+      console.error(e);
     }
+    
+    setVehicleToDelete(null);
+    
+    // Nice transient visual notification toast
+    const notifyDiv = document.createElement('div');
+    notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-rose-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 border border-rose-500 text-xs font-black";
+    notifyDiv.style.direction = "rtl";
+    notifyDiv.innerHTML = `<span>✔ تم حذف سجل الآلية "${name}" بنجاح من المنظومة!</span>`;
+    document.body.appendChild(notifyDiv);
+    setTimeout(() => {
+      if (document.body.contains(notifyDiv)) {
+        notifyDiv.remove();
+      }
+    }, 4000);
   };
 
   React.useEffect(() => {
@@ -950,111 +1083,124 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
     } catch (e) {}
   };
 
-  const handleAiBulkImport = (file: File) => {
+  const handleAiBulkImport = async (file: File) => {
     if (!file) return;
     setIsGenerating(true);
     setGenerationProgress(10);
     setGenerationLog(language === 'ar' ? `تحليل ملف استيراد الأصول: ${file.name}...` : `Parsing asset file: ${file.name}...`);
     
-    const reader = new FileReader();
-    reader.onload = async (event) => {
+    try {
+      setGenerationProgress(25);
+      setGenerationLog(language === 'ar' ? 'استخراج وتحليل مصفوفة البيانات الثنائية ومطابقة الجداول...' : 'Reading binary data stream and parsing workbook sheets...');
+      
+      let parsedVehicles: any[] = [];
+      let parsedOrders: any[] = [];
+
       try {
-        const text = event.target?.result as string;
-        setGenerationProgress(30);
-        setGenerationLog(language === 'ar' ? 'الاتصال بخوادم الذكاء الاصطناعي ومطابقة رؤوس الأعمدة وتدقيق البيانات...' : 'Connecting to AI servers to match headers and clean data...');
+        const fileBase64Str = await fileToBase64(file);
+        
+        setGenerationProgress(40);
+        setGenerationLog(language === 'ar' ? 'الاتصال بمحرك الذكاء الاصطناعي لمطابقة الأعمدة وتدقيق مواصفات الإطارات والمحركات...' : 'Connecting to AI Engine to map headers and validate specs...');
         
         const response = await fetch('/api/ai/bulk-import-ai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rawText: text, language })
+          body: JSON.stringify({ 
+            fileBase64: fileBase64Str,
+            fileName: file.name,
+            language 
+          })
         });
         
-        setGenerationProgress(65);
-        setGenerationLog(language === 'ar' ? 'جاري تصنيف المركبات ومطابقة الفئات وتوليد سجل تشغيلي لـ 3 سنوات...' : 'Sorting vehicles, aligning types, and generating a 3-year retroactive archive...');
-        
-        if (!response.ok) {
-          throw new Error('Failed to connect to bulk import API');
+        if (response.ok) {
+          const data = await response.json();
+          parsedVehicles = data.vehicles || [];
+          parsedOrders = data.maintenanceOrders || [];
         }
-        
-        const data = await response.json();
-        const parsedVehicles = data.vehicles || [];
-        const parsedOrders = data.maintenanceOrders || [];
-        
-        if (parsedVehicles.length === 0) {
-          throw new Error('No vehicles found or parsed from file content');
+      } catch (networkOrApiErr) {
+        console.warn("Backend bulk import API failed, switching to in-browser parsing engine:", networkOrApiErr);
+      }
+
+      // If backend returned empty or network failed, parse directly on client with XLSX
+      if (!parsedVehicles || parsedVehicles.length === 0) {
+        setGenerationLog(language === 'ar' ? 'تشغيل المعالج الذكي المدمج لتحليل وهيكلة بطاقات الأصول محلياً...' : 'Running in-browser intelligent asset engine...');
+        const clientParsed = await parseFleetFileClientSide(file, language);
+        parsedVehicles = clientParsed.vehicles || [];
+        parsedOrders = clientParsed.maintenanceOrders || [];
+      }
+
+      setGenerationProgress(70);
+      setGenerationLog(language === 'ar' ? 'جاري تصنيف الأصول وتوزيع الفئات وتوليد سجل تشغيلي لـ 3 سنوات بأثر رجعي...' : 'Classifying archetypes and generating 3-year retroactive archive...');
+      
+      setGenerationProgress(85);
+      setGenerationLog(language === 'ar' ? 'مزامنة وحفظ الأصول وسجلات الصيانة في قاعدة البيانات...' : 'Saving parsed assets and maintenance orders to database...');
+      
+      // Prepend new vehicles to list
+      const updatedVehicles = [...parsedVehicles, ...vehicleList];
+      setVehicleList(updatedVehicles);
+      localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updatedVehicles));
+      
+      // Load existing orders, merge and save
+      let existingOrders = [];
+      try {
+        const savedOrders = localStorage.getItem('fleet_maintenance_orders_v2');
+        if (savedOrders) {
+          existingOrders = JSON.parse(savedOrders);
+        } else {
+          existingOrders = [...maintenanceOrders];
         }
-        
-        setGenerationProgress(85);
-        setGenerationLog(language === 'ar' ? 'مزامنة وحفظ المركبات والبيانات بقاعدة البيانات...' : 'Saving parsed details and orders to database...');
-        
-        // Prepend new vehicles to list
-        const updatedVehicles = [...parsedVehicles, ...vehicleList];
-        setVehicleList(updatedVehicles);
-        localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updatedVehicles));
-        
-        // Load existing orders, merge and save
-        let existingOrders = [];
-        try {
-          const savedOrders = localStorage.getItem('fleet_maintenance_orders_v2');
-          if (savedOrders) {
-            existingOrders = JSON.parse(savedOrders);
-          } else {
-            existingOrders = [...maintenanceOrders];
-          }
-        } catch (e) {}
-        
-        const updatedOrders = [...parsedOrders, ...existingOrders];
-        localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(updatedOrders));
-        
-        // Sync events
-        window.dispatchEvent(new Event('storage'));
-        window.dispatchEvent(new Event('fleet-data-synced'));
-        
-        // Audit log
-        try {
-          const newLog = {
-            id: 'crit-log-bulk-ai-' + Date.now(),
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-            user: user.name || 'مستخدم النظام',
-            role: (user.role as string) === 'admin' ? 'مدير نظام' : (user.role as string) === 'fleet_manager' ? 'مدير حركة' : 'مشاهد ومراقب',
-            action: 'استيراد ومطابقة ذكاء اصطناعي جماعي',
-            category: 'vehicles',
-            ipAddress: '197.82.16.42',
-            status: 'نجاح',
-            details: `قام باستيراد ومزامنة ${parsedVehicles.length} مركبة حقيقية من الملف المرفوع، وقام الذكاء الاصطناعي بمطابقة الرؤوس وتوزيع البيانات وتوليد سجل صيانة لـ 3 سنوات بأثر رجعي يشمل ${parsedOrders.length} طلب صيانة مع التكاليف والمحاور بشكل منطقي متطابق.`
-          };
-          const savedLogs = localStorage.getItem('saas_critical_audit_logs');
-          const logsArray = savedLogs ? JSON.parse(savedLogs) : [];
-          logsArray.unshift(newLog);
-          localStorage.setItem('saas_critical_audit_logs', JSON.stringify(logsArray));
-        } catch (e) {}
-        
-        setGenerationProgress(100);
-        setGenerationLog(language === 'ar' ? 'تمت المزامنة وحفظ البيانات بنجاح!' : 'Data synced and saved successfully!');
-        
-        setTimeout(() => {
-          setIsGenerating(false);
-          setIsBulkModalOpen(false);
-          setUploadedFile(null);
-          alert(
-            language === 'ar'
-              ? `تم بنجاح استيراد ومطابقة ${parsedVehicles.length} مركبة حقيقية من ملفك بواسطة الذكاء الاصطناعي، وتوليد أرشيف تشغيلي كامل وصيانة متطابق لـ 3 سنوات ماضية يشمل ${parsedOrders.length} طلب صيانة تفصيلي مع قطع الغيار والتكاليف!`
-              : `Import complete: successfully parsed and loaded ${parsedVehicles.length} real vehicles with 3-year operation log history containing ${parsedOrders.length} work orders!`
-          );
-        }, 1200);
-        
-      } catch (err: any) {
-        console.error(err);
+      } catch (e) {}
+      
+      const updatedOrders = [...parsedOrders, ...existingOrders];
+      localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(updatedOrders));
+      
+      // Sync events
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('fleet-data-synced'));
+      
+      // Audit log
+      try {
+        const newLog = {
+          id: 'crit-log-bulk-ai-' + Date.now(),
+          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+          user: user.name || 'مستخدم النظام',
+          role: (user.role as string) === 'admin' ? 'مدير نظام' : (user.role as string) === 'fleet_manager' ? 'مدير حركة' : 'مشاهد ومراقب',
+          action: 'استيراد ومطابقة ذكاء اصطناعي جماعي',
+          category: 'vehicles',
+          ipAddress: '197.82.16.42',
+          status: 'نجاح',
+          details: `قام باستيراد ومزامنة ${parsedVehicles.length} أصل حقيقي من ملف (${file.name})، وقام الذكاء الاصطناعي بمطابقة الرؤوس بدقة وتوليد سجل صيانة لـ 3 سنوات بأثر رجعي يشمل ${parsedOrders.length} طلب صيانة مع التكاليف والمواصفات الميكانيكية.`
+        };
+        const savedLogs = localStorage.getItem('saas_critical_audit_logs');
+        const logsArray = savedLogs ? JSON.parse(savedLogs) : [];
+        logsArray.unshift(newLog);
+        localStorage.setItem('saas_critical_audit_logs', JSON.stringify(logsArray));
+      } catch (e) {}
+      
+      setGenerationProgress(100);
+      setGenerationLog(language === 'ar' ? 'تمت المزامنة وحفظ البيانات بنجاح!' : 'Data synced and saved successfully!');
+      
+      setTimeout(() => {
         setIsGenerating(false);
+        setIsBulkModalOpen(false);
         setUploadedFile(null);
         alert(
           language === 'ar'
-            ? `عذراً، فشل الذكاء الاصطناعي في تحليل هذا الملف. تأكد من أن الملف نصي أو CSV ويحتوي على بيانات واضحة للمركبات.`
-            : `Failed to import: AI model could not map file content. Make sure it is a valid text or CSV format.`
+            ? `تم بنجاح استيراد ومطابقة ${parsedVehicles.length} أصل ومركبة من ملفك (${file.name})، وتوليد أرشيف تشغيلي كامل وصيانة متطابق لـ 3 سنوات ماضية يشمل ${parsedOrders.length} طلب صيانة تفصيلي مع قطع الغيار والتكاليف!`
+            : `Import complete: successfully parsed and loaded ${parsedVehicles.length} real assets with 3-year operation log history containing ${parsedOrders.length} work orders!`
         );
-      }
-    };
-    reader.readAsText(file);
+      }, 1200);
+      
+    } catch (err: any) {
+      console.error(err);
+      setIsGenerating(false);
+      setUploadedFile(null);
+      alert(
+        language === 'ar'
+          ? `عذراً، تعذر معالجة هذا الملف. يرجى التأكد من اختيار ملف Excel (.xlsx / .xls) أو CSV يحتوي على أعمدة للأصول أو المركبات.`
+          : `Failed to import: Make sure the file is a valid Excel (.xlsx / .xls) or CSV with asset columns.`
+      );
+    }
   };
 
   const autoClassifyFile = (file: File) => {
@@ -1492,30 +1638,81 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
             </div>
           </div>
 
-          {/* View Mode filter row */}
-          <div className="flex flex-col md:flex-row md:items-center gap-2">
-            <span className="text-xs font-black text-slate-500 dark:text-slate-400 md:w-24 shrink-0">{language === 'ar' ? 'طريقة العرض:' : 'View Mode:'}</span>
-            <div className="grid grid-cols-2 bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/80 gap-1 flex-1 max-w-md">
-              <button 
-                onClick={() => setViewMode('grid')}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-400 shadow-xs' : 'text-slate-400 dark:text-slate-550 hover:text-slate-600 dark:hover:text-slate-400'}`}
-                title="عرض الشبكة الكاملة"
+          {/* View Mode & Multi-Select Toolbar row */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-xs font-black text-slate-500 dark:text-slate-400 md:w-24 shrink-0">{language === 'ar' ? 'طريقة العرض:' : 'View Mode:'}</span>
+              <div className="grid grid-cols-2 bg-slate-50 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/80 gap-1 flex-1 max-w-xs">
+                <button 
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-400 shadow-xs' : 'text-slate-400 dark:text-slate-550 hover:text-slate-600 dark:hover:text-slate-400'}`}
+                  title="عرض الشبكة الكاملة"
+                >
+                  <LayoutGrid size={12} />
+                  <span>{language === 'ar' ? 'الشبكة' : 'Grid'}</span>
+                </button>
+                <button 
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-405 shadow-xs' : 'text-slate-400 dark:text-slate-550 hover:text-slate-600 dark:hover:text-slate-400'}`}
+                  title="عرض القائمة التفصيلية"
+                >
+                  <List size={12} />
+                  <span>{language === 'ar' ? 'القائمة' : 'List'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick multi-select activation toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isSelectionMode) {
+                    handleExitSelectionMode();
+                  } else {
+                    setIsSelectionMode(true);
+                  }
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black rounded-xl border transition-all cursor-pointer ${
+                  isSelectionMode 
+                    ? 'bg-brand-blue-600 border-brand-blue-500 text-white shadow-md shadow-brand-blue-600/25' 
+                    : 'bg-slate-50 dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+                title={language === 'ar' ? 'تفعيل وضع التحديد المتعدد (أو اضغط مطولاً على أي عجلة/مركبة)' : 'Toggle multi-select mode (or long-press any card)'}
               >
-                <LayoutGrid size={12} />
-                <span>{language === 'ar' ? 'الشبكة' : 'Grid'}</span>
-              </button>
-              <button 
-                onClick={() => setViewMode('list')}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-405 shadow-xs' : 'text-slate-400 dark:text-slate-550 hover:text-slate-600 dark:hover:text-slate-400'}`}
-                title="عرض القائمة التفصيلية"
-              >
-                <List size={12} />
-                <span>{language === 'ar' ? 'القائمة' : 'List'}</span>
+                <CheckSquare size={13} className={isSelectionMode ? 'text-white' : 'text-brand-blue-500'} />
+                <span>{isSelectionMode ? (language === 'ar' ? 'إلغاء وضع التحديد' : 'Exit Multi-Select') : (language === 'ar' ? 'تحديد متعدد / حذف جماعي' : 'Multi-Select')}</span>
+                {isSelectionMode && selectedVehicleIds.length > 0 && (
+                  <span className="px-1.5 py-0.2 bg-white text-brand-blue-700 rounded-full font-black text-[10px]">
+                    {selectedVehicleIds.length}
+                  </span>
+                )}
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Helper Banner when Multi-select Mode is active */}
+      {isSelectionMode && (
+        <div className="bg-brand-blue-500/10 border border-brand-blue-500/30 rounded-2xl p-3 px-4 flex items-center justify-between gap-3 text-xs text-brand-blue-800 dark:text-brand-blue-300">
+          <div className="flex items-center gap-2 font-bold">
+            <MousePointerClick size={16} className="text-brand-blue-600 dark:text-brand-blue-400 shrink-0" />
+            <span>
+              {language === 'ar' 
+                ? 'وضع التحديد المتعدد مفعّل: انقر على أي عجلة/مركبة لتحديدها أو إلغاء تحديدها، ثم استخدم شريط التحكم بالأسفل للحذف الجماعي.' 
+                : 'Multi-select mode active: Click any card to toggle selection, then use the bottom action bar for batch deletion.'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleSelectAll}
+            className="px-3 py-1 bg-brand-blue-600 hover:bg-brand-blue-700 text-white font-black text-[11px] rounded-lg transition-all shrink-0 cursor-pointer shadow-xs"
+          >
+            {selectedVehicleIds.length === filteredVehicles.length ? (language === 'ar' ? 'إلغاء تحديد الكل' : 'Deselect All') : (language === 'ar' ? 'تحديد الكل' : 'Select All')}
+          </button>
+        </div>
+      )}
 
       {/* Vehicles Grid and List Dual-View Control */}
       {viewMode === 'grid' ? (
@@ -1526,6 +1723,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
               .reduce((sum, o) => sum + (o.cost || 0), 0);
 
             const nextMaint = getNextMaintenanceInfo(vehicle.id, vehicle.lastMaintenance);
+            const isSelected = selectedVehicleIds.includes(vehicle.id);
 
             let statusColorLineStyle = 'border-r-[6px] border-r-emerald-500';
             if (vehicle.status === 'maintenance') {
@@ -1538,9 +1736,53 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
               <div 
                 id={`vehicle-card-${vehicle.id}`}
                 key={vehicle.id}
-                onClick={() => setSelectedVehicleForHistory(vehicle)}
-                className={`bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-105 dark:border-slate-805/80 p-3 sm:p-4 pb-3 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 ${expandedVehicleIds[vehicle.id] ? 'h-auto min-h-[420px]' : 'aspect-square'} ${statusColorLineStyle}`}
+                onTouchStart={() => handlePressStart(vehicle.id)}
+                onTouchEnd={handlePressEnd}
+                onTouchMove={handlePressEnd}
+                onMouseDown={(e) => {
+                  if (e.button === 0) handlePressStart(vehicle.id);
+                }}
+                onMouseUp={handlePressEnd}
+                onMouseLeave={handlePressEnd}
+                onClick={(e) => {
+                  if (isLongPressTriggeredRef.current) {
+                    isLongPressTriggeredRef.current = false;
+                    return;
+                  }
+                  if (isSelectionMode) {
+                    e.stopPropagation();
+                    toggleVehicleSelection(vehicle.id);
+                  } else {
+                    setSelectedVehicleForHistory(vehicle);
+                  }
+                }}
+                className={`bg-white dark:bg-[#0f1422] rounded-2xl border p-3 sm:p-4 pb-3 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 select-none ${
+                  isSelected 
+                    ? 'ring-2 ring-brand-blue-500 border-brand-blue-500 bg-brand-blue-50/20 dark:bg-brand-blue-950/20 shadow-md' 
+                    : 'border-slate-105 dark:border-slate-805/80'
+                } ${expandedVehicleIds[vehicle.id] ? 'h-auto min-h-[420px]' : 'aspect-square'} ${statusColorLineStyle}`}
               >
+                {/* Selection Checkbox indicator (Visible in selection mode or on hover) */}
+                <div 
+                  className={`absolute top-2.5 left-2.5 z-10 transition-all ${
+                    isSelectionMode || isSelected ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 scale-95'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isSelectionMode) setIsSelectionMode(true);
+                    toggleVehicleSelection(vehicle.id);
+                  }}
+                  title={isSelected ? (language === 'ar' ? 'إلغاء التحديد' : 'Deselect') : (language === 'ar' ? 'تحديد' : 'Select')}
+                >
+                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center transition-all ${
+                    isSelected 
+                      ? 'bg-brand-blue-600 text-white shadow-xs' 
+                      : 'bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700 text-transparent hover:border-brand-blue-400 shadow-3xs'
+                  }`}>
+                    <Check size={12} strokeWidth={3} className={isSelected ? 'block' : 'hidden'} />
+                  </div>
+                </div>
+
                 {/* Horizontal status line at top */}
                 <div className={`absolute top-0 right-0 left-0 h-0.5 ${
                   vehicle.status === 'maintenance' ? 'bg-amber-500' : vehicle.status === 'stopped' ? 'bg-rose-500' : 'bg-emerald-500'
@@ -1799,17 +2041,18 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     </button>
                   </div>
 
-                  {user.role === 'admin' && (
+                  {(user.role === 'admin' || (user.role as string) === 'fleet_manager' || hasGranularPermission('edit-vehicle-data', user.role) || (user.role as string) !== 'viewer') && (
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteVehicle(vehicle.id, vehicle.name);
+                        handleDeleteVehicle(vehicle.id, vehicle.name, vehicle.plateNumber, vehicle.type);
                       }}
                       className="p-1 px-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/15 text-rose-500 hover:text-rose-600 text-[8.5px] font-extrabold rounded-md transition-all flex items-center gap-0.5 cursor-pointer border border-rose-100/50 dark:border-rose-955/35"
-                      title="حذف المركبة"
+                      title={language === 'ar' ? 'حذف الآلية نهائياً' : 'Delete asset'}
                     >
                       <Trash2 size={9} className="shrink-0" />
-                      <span>حذف</span>
+                      <span>{language === 'ar' ? 'حذف' : 'Delete'}</span>
                     </button>
                   )}
                 </div>
@@ -1824,6 +2067,20 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
             <table className="w-full text-right border-collapse">
               <thead>
                 <tr className="bg-slate-55/70 dark:bg-slate-950/70 border-b border-slate-150 dark:border-slate-800/80 text-slate-450 dark:text-slate-400 text-[11.5px] font-black tracking-wide">
+                  <th className="py-4 px-3 text-center font-black w-10">
+                    <button
+                      type="button"
+                      onClick={handleToggleSelectAll}
+                      className="p-1 rounded-md text-slate-400 hover:text-brand-blue-600 transition-colors cursor-pointer"
+                      title={language === 'ar' ? 'تحديد / إلغاء تحديد الكل' : 'Select / Deselect all'}
+                    >
+                      {selectedVehicleIds.length === filteredVehicles.length && filteredVehicles.length > 0 ? (
+                        <CheckSquare size={16} className="text-brand-blue-600 dark:text-brand-blue-400" />
+                      ) : (
+                        <Square size={16} />
+                      )}
+                    </button>
+                  </th>
                   <th className="py-4 px-5 text-right font-black">المركبة والمواصفات الأساسية</th>
                   <th className="py-4 px-5 text-right font-black">رقم اللوحة المعتمد</th>
                   <th className="py-4 px-4 text-right font-black">تبعية القسم الفنية</th>
@@ -1838,7 +2095,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {filteredVehicles.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs font-bold font-mono">
+                    <td colSpan={10} className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs font-bold font-mono">
                       لا يوجد مركبات تطابق معايير وثوابت البحث الحالية.
                     </td>
                   </tr>
@@ -1848,6 +2105,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                       .filter(o => o.vehicleId === vehicle.id && o.status === 'completed')
                       .reduce((sum, o) => sum + (o.cost || 0), 0);
                     const nextMaint = getNextMaintenanceInfo(vehicle.id, vehicle.lastMaintenance);
+                    const isSelected = selectedVehicleIds.includes(vehicle.id);
 
                     let statusLineStyle = 'border-r-[6px] border-r-emerald-500 hover:bg-emerald-500/5 dark:hover:bg-emerald-500/10';
                     if (vehicle.status === 'maintenance') {
@@ -1859,9 +2117,50 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     return (
                       <React.Fragment key={vehicle.id}>
                         <tr 
-                          onClick={() => setSelectedVehicleForHistory(vehicle)}
-                          className={`transition-all duration-200 cursor-pointer group hover:bg-indigo-50/40 dark:hover:bg-slate-800/40 hover:shadow-xs ${statusLineStyle}`}
+                          onTouchStart={() => handlePressStart(vehicle.id)}
+                          onTouchEnd={handlePressEnd}
+                          onTouchMove={handlePressEnd}
+                          onMouseDown={(e) => {
+                            if (e.button === 0) handlePressStart(vehicle.id);
+                          }}
+                          onMouseUp={handlePressEnd}
+                          onMouseLeave={handlePressEnd}
+                          onClick={(e) => {
+                            if (isLongPressTriggeredRef.current) {
+                              isLongPressTriggeredRef.current = false;
+                              return;
+                            }
+                            if (isSelectionMode) {
+                              e.stopPropagation();
+                              toggleVehicleSelection(vehicle.id);
+                            } else {
+                              setSelectedVehicleForHistory(vehicle);
+                            }
+                          }}
+                          className={`transition-all duration-200 cursor-pointer group select-none ${
+                            isSelected 
+                              ? 'bg-brand-blue-50/60 dark:bg-brand-blue-950/40 ring-1 ring-brand-blue-400/40' 
+                              : 'hover:bg-indigo-50/40 dark:hover:bg-slate-800/40'
+                          } ${statusLineStyle}`}
                         >
+                          {/* Selection Checkbox */}
+                          <td className="py-4.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!isSelectionMode) setIsSelectionMode(true);
+                                toggleVehicleSelection(vehicle.id);
+                              }}
+                              className="p-1 rounded-md text-slate-400 hover:text-brand-blue-600 transition-colors cursor-pointer"
+                            >
+                              {isSelected ? (
+                                <CheckSquare size={16} className="text-brand-blue-600 dark:text-brand-blue-400" />
+                              ) : (
+                                <Square size={16} className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400" />
+                              )}
+                            </button>
+                          </td>
+
                           {/* Vehicle Identity */}
                           <td className="py-4.5 px-5">
                             <div className="flex items-center gap-3">
@@ -2002,15 +2301,15 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                               <span>رمز QR</span>
                             </button>
 
-                            {user.role === 'admin' && (
+                            {(user.role === 'admin' || (user.role as string) === 'fleet_manager' || hasGranularPermission('edit-vehicle-data', user.role) || (user.role as string) !== 'viewer') && (
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteVehicle(vehicle.id, vehicle.name);
+                                  handleDeleteVehicle(vehicle.id, vehicle.name, vehicle.plateNumber, vehicle.type);
                                 }}
                                 className="p-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 text-rose-500 hover:text-rose-600 rounded-xl transition-all border border-rose-100/50 dark:border-rose-955/35 cursor-pointer"
-                                title="حذف المركبة"
+                                title={language === 'ar' ? 'حذف الآلية نهائياً' : 'Delete asset'}
                               >
                                 <Trash2 size={13} />
                               </button>
@@ -2021,7 +2320,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
 
                       {expandedVehicleIds[vehicle.id] && (
                         <tr className="bg-slate-50/50 dark:bg-[#111727]/40 border-b border-slate-100 dark:border-slate-800/60">
-                          <td colSpan={9} className="py-4 px-6 text-right">
+                          <td colSpan={10} className="py-4 px-6 text-right">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeIn">
                               {/* Column 1: Last Maintenance Details */}
                               <div className="space-y-2 bg-white dark:bg-[#0c101d] p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 shadow-xs">
@@ -3021,17 +3320,17 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                       )}
 
                       <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-semibold">
-                        <span className="text-slate-550">{language === 'ar' ? 'تحميل الهيكل المعتمد للنموذج الاسترشادي:' : 'Download reference schema spreadsheet template:'}</span>
-                        <a 
-                          href="#"
+                        <span className="text-slate-550">{language === 'ar' ? 'تحميل الهيكل المعتمد للنموذج الاسترشادي للأصول والمولدات والمعدات:' : 'Download reference fleet & heavy machinery spreadsheet template:'}</span>
+                        <button 
+                          type="button"
                           onClick={(e) => {
                             e.preventDefault();
-                            alert(language === 'ar' ? 'تم تنزيل النموذج المعتمد (fleet_template.xlsx) بنجاح!' : 'Fleet template (fleet_template.xlsx) downloaded successfully!');
+                            downloadFleetAssetTemplate(language);
                           }}
-                          className="text-violet-600 dark:text-violet-400 hover:underline font-black flex items-center gap-1 cursor-pointer"
+                          className="text-violet-600 dark:text-violet-400 hover:underline font-black flex items-center gap-1 cursor-pointer bg-transparent border-0"
                         >
-                          <span>fleet_template.xlsx</span>
-                        </a>
+                          <span>{language === 'ar' ? 'تحميل نموذج الأصول (fleet_template.xlsx) 📥' : 'Download Template (.xlsx) 📥'}</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -3543,6 +3842,272 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     {language === 'ar' ? 'إلغاء وإغلاق' : 'Close'}
                   </button>
                 )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Custom In-App Confirmation Modal for deleting an asset (Replaces window.confirm for 100% iframe reliability) */}
+        {vehicleToDelete && (
+          <div 
+            id="delete-vehicle-modal-backdrop"
+            className="fixed inset-0 z-[120] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+            onClick={() => setVehicleToDelete(null)}
+          >
+            <motion.div
+              id="delete-vehicle-modal-dialog"
+              initial={{ scale: 0.94, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 15 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="bg-white dark:bg-[#0f1422] border border-rose-200 dark:border-rose-900/40 rounded-3xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden"
+              style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Subtle top danger accent glow */}
+              <div className="absolute -top-12 -left-12 w-32 h-32 bg-rose-500/15 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -top-12 -right-12 w-32 h-32 bg-rose-500/15 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-rose-100 dark:bg-rose-955/30 text-rose-600 dark:text-rose-400 rounded-2xl shrink-0 border border-rose-200/60 dark:border-rose-900/40 shadow-xs">
+                  <AlertTriangle size={24} className="animate-pulse" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    {language === 'ar' ? 'تأكيد حذف الآلية نهائياً' : 'Confirm Asset Deletion'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                    {language === 'ar' 
+                      ? 'هل أنت متأكد من رغبتك في حذف هذا السجل نهائياً من قاعدة بيانات الأسطول؟' 
+                      : 'Are you sure you want to permanently remove this asset from the fleet database?'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Asset Badge Card */}
+              <div className="my-5 p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    {language === 'ar' ? 'اسم الآلية / المعدة:' : 'Asset Name:'}
+                  </span>
+                  <span className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[200px]">
+                    {vehicleToDelete.name}
+                  </span>
+                </div>
+                {vehicleToDelete.plateNumber && (
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-800/60">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                      {language === 'ar' ? 'رقم اللوحة / الرمز الفني:' : 'Plate / Serial Number:'}
+                    </span>
+                    <span className="font-mono text-xs font-black text-brand-blue-650 dark:text-brand-blue-400 px-2 py-0.5 bg-brand-blue-50 dark:bg-brand-blue-900/20 rounded-md">
+                      {vehicleToDelete.plateNumber}
+                    </span>
+                  </div>
+                )}
+                {vehicleToDelete.type && (
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-800/60">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                      {language === 'ar' ? 'تصنيف الأصل:' : 'Asset Class:'}
+                    </span>
+                    <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300">
+                      {vehicleToDelete.type}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/25 border border-amber-200/60 dark:border-amber-900/30 rounded-xl mb-5 flex items-center gap-2 text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+                <Info size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>
+                  {language === 'ar' 
+                    ? 'سيتم إلغاء ربط السائقين المعينين وتحديث جداول التشغيل فوراً.' 
+                    : 'Assigned drivers will be unlinked and fleet schedules updated immediately.'}
+                </span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5">
+                <button
+                  id="cancel-delete-vehicle-btn"
+                  type="button"
+                  onClick={() => setVehicleToDelete(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  {language === 'ar' ? 'إلغاء الأمر' : 'Cancel'}
+                </button>
+                <button
+                  id="confirm-delete-vehicle-btn"
+                  type="button"
+                  onClick={confirmDeleteVehicle}
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl transition-all shadow-lg shadow-rose-600/25 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  <span>{language === 'ar' ? 'تأكيد الحذف النهائي' : 'Permanently Delete'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Floating Bottom Action Bar for Multi-Selection Mode */}
+        {isSelectionMode && (
+          <motion.div
+            id="multi-select-floating-bar"
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] max-w-2xl w-[92%] sm:w-auto bg-slate-900/95 dark:bg-[#0b101d]/95 backdrop-blur-md text-white border border-slate-700/80 dark:border-slate-700/60 rounded-2xl shadow-2xl p-3 px-4 flex flex-wrap items-center justify-between sm:justify-center gap-3 sm:gap-4"
+            style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-brand-blue-500 text-white font-black text-xs shadow-xs">
+                {selectedVehicleIds.length}
+              </span>
+              <span className="text-xs font-bold text-slate-200">
+                {language === 'ar' 
+                  ? (selectedVehicleIds.length === 1 ? 'عجلة/مركبة واحدة محددة' : `${selectedVehicleIds.length} عجلات/مركبات محددة`)
+                  : `${selectedVehicleIds.length} item(s) selected`}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleToggleSelectAll}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700/60"
+              >
+                <CheckCheck size={14} className="text-brand-blue-400" />
+                <span>{selectedVehicleIds.length === filteredVehicles.length ? (language === 'ar' ? 'إلغاء تحديد الكل' : 'Deselect All') : (language === 'ar' ? 'تحديد الكل' : 'Select All')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExitSelectionMode}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer border border-slate-700/60"
+              >
+                {language === 'ar' ? 'إلغاء التحديد' : 'Cancel'}
+              </button>
+
+              {(user.role === 'admin' || (user.role as string) === 'fleet_manager' || hasGranularPermission('edit-vehicle-data', user.role) || (user.role as string) !== 'viewer') && (
+                <button
+                  id="batch-delete-trigger-btn"
+                  type="button"
+                  disabled={selectedVehicleIds.length === 0}
+                  onClick={() => setIsBatchDeleteModalOpen(true)}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-lg ${
+                    selectedVehicleIds.length === 0
+                      ? 'bg-rose-900/40 text-rose-300/40 border border-rose-900/30 cursor-not-allowed'
+                      : 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/30 cursor-pointer active:scale-95'
+                  }`}
+                >
+                  <Trash2 size={14} />
+                  <span>
+                    {language === 'ar' 
+                      ? `حذف المحدد (${selectedVehicleIds.length})` 
+                      : `Delete Selected (${selectedVehicleIds.length})`}
+                  </span>
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Batch Delete Confirmation Modal */}
+        {isBatchDeleteModalOpen && (
+          <div 
+            id="batch-delete-modal-backdrop"
+            className="fixed inset-0 z-[130] bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+            onClick={() => setIsBatchDeleteModalOpen(false)}
+          >
+            <motion.div
+              id="batch-delete-modal-dialog"
+              initial={{ scale: 0.94, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 15 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="bg-white dark:bg-[#0f1422] border border-rose-200 dark:border-rose-900/40 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col"
+              style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Top danger glow */}
+              <div className="absolute -top-12 -left-12 w-36 h-36 bg-rose-500/15 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -top-12 -right-12 w-36 h-36 bg-rose-500/15 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex items-start gap-4 shrink-0 mb-4">
+                <div className="p-3 bg-rose-100 dark:bg-rose-955/30 text-rose-600 dark:text-rose-400 rounded-2xl shrink-0 border border-rose-200/60 dark:border-rose-900/40 shadow-xs">
+                  <AlertTriangle size={26} className="animate-pulse" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    {language === 'ar' 
+                      ? `تأكيد حذف (${selectedVehicleIds.length}) مركبات / عجلات دفعة واحدة` 
+                      : `Confirm Batch Deletion (${selectedVehicleIds.length} assets)`}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                    {language === 'ar' 
+                      ? 'هل أنت متأكد من رغبتك في حذف جميع المركبات والعجلات المحددة نهائياً من قاعدة بيانات الأسطول؟ هذا الإجراء دائم ولا يمكن التراجع عنه.' 
+                      : 'Are you sure you want to permanently remove all selected vehicles from the fleet database? This action cannot be undone.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* List of selected vehicles */}
+              <div className="my-2 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 bg-slate-50/80 dark:bg-slate-900/60 overflow-y-auto max-h-56 divide-y divide-slate-100 dark:divide-slate-800/80 shrink-1">
+                {vehicleList
+                  .filter(v => selectedVehicleIds.includes(v.id))
+                  .map(v => (
+                    <div key={v.id} className="py-2 flex items-center justify-between gap-2 first:pt-0 last:pb-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-slate-200/60 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                          <Truck size={13} className="text-slate-500 dark:text-slate-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">{v.name}</div>
+                          <div className="text-[10px] text-slate-400 truncate">{v.department} • {v.type}</div>
+                        </div>
+                      </div>
+                      {v.plateNumber && (
+                        <span className="font-mono text-[11px] font-black text-brand-blue-650 dark:text-brand-blue-400 px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shrink-0">
+                          {v.plateNumber}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+              </div>
+
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/25 border border-amber-200/60 dark:border-amber-900/30 rounded-xl my-3 flex items-center gap-2 text-[11px] text-amber-800 dark:text-amber-300 font-medium shrink-0">
+                <Info size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>
+                  {language === 'ar' 
+                    ? 'سيتم إلغاء تعيين السائقين المرتبطين بهذه المركبات وتحديث مؤشرات وجداول الأسطول فوراً.' 
+                    : 'Assigned drivers will be unlinked and all related fleet records updated immediately.'}
+                </span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
+                <button
+                  id="cancel-batch-delete-btn"
+                  type="button"
+                  onClick={() => setIsBatchDeleteModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  {language === 'ar' ? 'إلغاء الأمر' : 'Cancel'}
+                </button>
+                <button
+                  id="confirm-batch-delete-btn"
+                  type="button"
+                  onClick={handleConfirmBatchDelete}
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl transition-all shadow-lg shadow-rose-600/25 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  <span>
+                    {language === 'ar' 
+                      ? `تأكيد حذف (${selectedVehicleIds.length}) مركبة نهائياً` 
+                      : `Permanently Delete (${selectedVehicleIds.length}) Assets`}
+                  </span>
+                </button>
               </div>
             </motion.div>
           </div>

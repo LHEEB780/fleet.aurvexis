@@ -23,7 +23,7 @@ import Projects from './components/Projects';
 import { User, UserRole } from './types';
 import { MENU_ITEMS } from './constants';
 import { useLanguage } from './services/LanguageContext';
-import { Shield, Key, Eye, EyeOff, Wrench, Languages, Fingerprint, Layers, WifiOff, Globe, Check, AlertTriangle, RotateCcw, Loader2, Building2, CreditCard, Printer, Sparkles, ShieldAlert, UserCheck, ShieldCheck, X, Timer, Calendar, Clock, Headphones, MessageSquare, Send, CheckCircle2, Phone, Mail, HelpCircle, FileText, ChevronRight, ArrowRight, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
+import { Shield, Key, Eye, EyeOff, Wrench, Languages, Fingerprint, Layers, WifiOff, Globe, Check, AlertTriangle, RotateCcw, Loader2, Building2, CreditCard, Printer, Sparkles, ShieldAlert, UserCheck, ShieldCheck, X, Timer, Calendar, Clock, Headphones, MessageSquare, Send, CheckCircle2, Phone, Mail, HelpCircle, FileText, ChevronRight, ArrowRight, ShieldCheck as ShieldCheckIcon, ChevronDown, ChevronUp, Zap, ArrowUpRight, Truck, QrCode, Package, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import MarketingLandingPage from './components/MarketingLandingPage';
 import { MarketingAdmin } from './components/MarketingAdmin';
@@ -293,6 +293,7 @@ export default function App() {
   const [regError, setRegError] = useState('');
   const [isSubmittingReg, setIsSubmittingReg] = useState(false);
   const [regSuccessData, setRegSuccessData] = useState<any>(null);
+  const [isInvoiceFeaturesExpanded, setIsInvoiceFeaturesExpanded] = useState(false);
 
   // Sales & Subscription Support Modal State
   const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
@@ -1560,6 +1561,187 @@ export default function App() {
                         );
                       })()}
 
+                      {/* Expandable Features List & Tier Comparison */}
+                      <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+                        <button
+                          id="btn-toggle-plan-features"
+                          type="button"
+                          onClick={() => setIsInvoiceFeaturesExpanded(!isInvoiceFeaturesExpanded)}
+                          className="w-full py-2 px-3 bg-slate-100/90 dark:bg-slate-800/90 hover:bg-slate-200/80 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-150 border border-slate-200/80 dark:border-slate-700/80 rounded-xl text-xs font-black transition-all flex items-center justify-between cursor-pointer shadow-3xs group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="p-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
+                              <Zap size={13} />
+                            </div>
+                            <span className="font-bold">
+                              {language === 'ar' ? 'مميزات الباقة ومقارنة الترقية (Tier Comparison)' : 'Plan Features & Next Tier Comparison'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                            <span>{isInvoiceFeaturesExpanded ? (language === 'ar' ? 'إخفاء' : 'Collapse') : (language === 'ar' ? 'عرض التفاصيل' : 'Expand')}</span>
+                            {isInvoiceFeaturesExpanded ? <ChevronUp size={14} className="text-indigo-500" /> : <ChevronDown size={14} className="text-indigo-500" />}
+                          </div>
+                        </button>
+
+                        <AnimatePresence>
+                          {isInvoiceFeaturesExpanded && (() => {
+                            const currentPlanKey = regSuccessData.plan || 'basic';
+                            const nextTierKey = currentPlanKey === 'basic' ? 'pro' : currentPlanKey === 'pro' ? 'enterprise' : 'custom_enterprise';
+                            
+                            const planNames: Record<string, { ar: string; en: string; badgeColor: string }> = {
+                              basic: { ar: 'الأساسية', en: 'Basic', badgeColor: 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200' },
+                              pro: { ar: 'المهنية Pro', en: 'Professional Pro', badgeColor: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300' },
+                              enterprise: { ar: 'المؤسسات Enterprise', en: 'Enterprise', badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300' },
+                              custom_enterprise: { ar: 'المؤسسات المخصصة +VIP', en: 'Custom Dedicated', badgeColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300' },
+                            };
+
+                            const featureMatrix = [
+                              {
+                                icon: Truck,
+                                iconColor: 'text-blue-600 dark:text-blue-400',
+                                iconBg: 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800/60',
+                                labelAr: 'سعة الأسطول والحد الأقصى للمركبات',
+                                labelEn: 'Fleet Limit & Vehicle Capacity',
+                                currentVal: currentPlanKey === 'basic' ? `${regSuccessData.fleetSize || 20} مركبة` : currentPlanKey === 'pro' ? `${regSuccessData.fleetSize || 100} مركبة` : 'أسطول غير محدود',
+                                nextVal: currentPlanKey === 'basic' ? 'حتى 100 مركبة (+80)' : currentPlanKey === 'pro' ? 'أسطول غير محدود Unlimited' : 'خوادم مخصصة ومركبات غير محدودة',
+                                isHighlight: true,
+                              },
+                              {
+                                icon: Wrench,
+                                iconColor: 'text-amber-600 dark:text-amber-400',
+                                iconBg: 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800/60',
+                                labelAr: 'جدولة الصيانة الوقائية والتنبيهات',
+                                labelEn: 'Preventative Maintenance & PM Alerts',
+                                currentVal: 'مجدولة دورية قياسية',
+                                nextVal: currentPlanKey === 'basic' ? 'خوارزميات تنبؤية ذكية AI' : 'أنظمة تنبؤية متقدمة مع حساسات IoT',
+                                isHighlight: false,
+                              },
+                              {
+                                icon: QrCode,
+                                iconColor: 'text-emerald-600 dark:text-emerald-400',
+                                iconBg: 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800/60',
+                                labelAr: 'فحوصات السائقين اليومية ورموز QR',
+                                labelEn: 'Driver Daily Inspections & QR Codes',
+                                currentVal: 'فحص رقمي مع QR كود',
+                                nextVal: 'فحص متقدم مع صور وتوقيع إلكتروني وتوثيق سحابي',
+                                isHighlight: false,
+                              },
+                              {
+                                icon: Package,
+                                iconColor: 'text-purple-600 dark:text-purple-400',
+                                iconBg: 'bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800/60',
+                                labelAr: 'إدارة المستودع وقطع الغيار والتكاليف',
+                                labelEn: 'Spare Parts & Inventory Analytics',
+                                currentVal: currentPlanKey === 'basic' ? 'جرد أساسي للقطع' : 'تتبع تلقائي للقطع مع باركود ونقاط إعادة الطلب',
+                                nextVal: currentPlanKey === 'basic' ? 'أتمتة أوامر الشراء ونقاط إعادة الطلب' : 'تكامل مالي ERP ومستودعات متعددة الفروع',
+                                isHighlight: currentPlanKey === 'basic',
+                              },
+                              {
+                                icon: TrendingUp,
+                                iconColor: 'text-rose-600 dark:text-rose-400',
+                                iconBg: 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800/60',
+                                labelAr: 'تحليلات تكلفة التشغيل لكل كم/ساعة',
+                                labelEn: 'Cost Per KM/Hour Fleet Analytics',
+                                currentVal: currentPlanKey === 'basic' ? 'تقارير مبسطة' : 'لوحات بيانات تفاعلية وتفصيل التكلفة',
+                                nextVal: currentPlanKey === 'basic' ? 'تحليل عميق وتصدير PDF/Excel' : 'تقارير مالية وتنبؤات الميزانية بالذكاء الاصطناعي',
+                                isHighlight: false,
+                              },
+                              {
+                                icon: Headphones,
+                                iconColor: 'text-sky-600 dark:text-sky-400',
+                                iconBg: 'bg-sky-50 dark:bg-sky-950/60 border-sky-200 dark:border-sky-800/60',
+                                labelAr: 'مستوى الدعم الفني وتعيين مدير حساب',
+                                labelEn: 'Support SLA & Dedicated Account Mgr',
+                                currentVal: currentPlanKey === 'basic' ? 'دعم عبر البريد (خلال 24 س)' : 'دعم ذو أولوية عبر الشات والهاتف',
+                                nextVal: currentPlanKey === 'basic' ? 'دعم ذو أولوية مع هاتف مباشر' : 'مدير حساب مخصص 24/7 مع SLA 99.99%',
+                                isHighlight: true,
+                              },
+                            ];
+
+                            const currentInfo = planNames[currentPlanKey] || planNames.basic;
+                            const nextInfo = planNames[nextTierKey] || planNames.enterprise;
+
+                            return (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className="mt-2.5 overflow-hidden"
+                              >
+                                <div className="p-3 bg-white dark:bg-slate-950/70 rounded-2xl border border-slate-200/90 dark:border-slate-805 space-y-2.5 shadow-2xs">
+                                  {/* Table Header */}
+                                  <div className="grid grid-cols-12 gap-2 text-[9.5px] font-black pb-2 border-b border-slate-100 dark:border-slate-800/80 items-center">
+                                    <div className="col-span-5 text-slate-500 dark:text-slate-400">
+                                      {language === 'ar' ? 'الميزة / الخاصية التشغيلية' : 'Feature / Capability'}
+                                    </div>
+                                    <div className="col-span-3 text-center">
+                                      <span className={`inline-block px-2 py-0.5 rounded-md font-extrabold ${currentInfo.badgeColor}`}>
+                                        {language === 'ar' ? currentInfo.ar : currentInfo.en}
+                                      </span>
+                                    </div>
+                                    <div className="col-span-4 text-center">
+                                      <span className={`inline-block px-2 py-0.5 rounded-md font-extrabold ${nextInfo.badgeColor} flex items-center justify-center gap-1 mx-auto`}>
+                                        <ArrowUpRight size={10} />
+                                        <span>{language === 'ar' ? nextInfo.ar : nextInfo.en}</span>
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Feature Rows */}
+                                  <div className="space-y-1.5 divide-y divide-slate-100/70 dark:divide-slate-800/50">
+                                    {featureMatrix.map((item, idx) => {
+                                      const IconComp = item.icon;
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`grid grid-cols-12 gap-2 text-[9px] pt-1.5 items-center leading-tight transition-colors ${
+                                            item.isHighlight ? 'bg-indigo-50/50 dark:bg-indigo-950/30 p-1.5 rounded-xl border border-indigo-100/60 dark:border-indigo-900/40' : ''
+                                          }`}
+                                        >
+                                          <div className="col-span-5 font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 min-w-0">
+                                            <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border ${item.iconBg} ${item.iconColor} shadow-3xs`}>
+                                              <IconComp size={11} className="shrink-0" />
+                                            </div>
+                                            <span className="truncate">{language === 'ar' ? item.labelAr : item.labelEn}</span>
+                                          </div>
+                                          <div className="col-span-3 text-center font-semibold text-slate-600 dark:text-slate-400">
+                                            {item.currentVal}
+                                          </div>
+                                          <div className="col-span-4 text-center font-extrabold text-indigo-600 dark:text-indigo-400">
+                                            {item.nextVal}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* Upgrade Opportunity Footer Box */}
+                                  <div className="p-2 bg-gradient-to-r from-purple-50 dark:from-purple-950/30 to-indigo-50 dark:to-indigo-950/30 rounded-xl border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between gap-2 text-[9.5px]">
+                                    <span className="text-purple-800 dark:text-purple-300 font-bold">
+                                      {language === 'ar'
+                                        ? 'هل ترغب في ترقية اشتراكك قبل تفعيل موعد نوفمبر ٢٠٢٦؟'
+                                        : 'Would you like to upgrade before your Nov 2026 activation?'}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSalesInquiryCategory('plan_upgrade');
+                                        openSalesModalWithPreFill(regSuccessData);
+                                      }}
+                                      className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-black transition-all cursor-pointer shadow-3xs shrink-0 flex items-center gap-1"
+                                    >
+                                      <Zap size={11} />
+                                      <span>{language === 'ar' ? 'طلب ترقية' : 'Request Upgrade'}</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          })()}
+                        </AnimatePresence>
+                      </div>
+
                       {/* Contact Sales & Inquiries Button inside Invoice Card */}
                       <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
                         <button
@@ -1568,7 +1750,10 @@ export default function App() {
                           onClick={() => openSalesModalWithPreFill(regSuccessData)}
                           className="w-full py-2 px-3 bg-gradient-to-r from-indigo-50 dark:from-indigo-950/40 via-purple-50 dark:via-purple-950/30 to-brand-blue-50 dark:to-brand-blue-950/40 hover:from-indigo-100 hover:via-purple-100 hover:to-brand-blue-100 dark:hover:from-indigo-900/50 dark:hover:via-purple-900/40 dark:hover:to-brand-blue-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/70 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
                         >
-                          <Headphones size={14} className="text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Headphones size={14} className="text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+                            <MessageSquare size={13} className="text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
+                          </div>
                           <span>{language === 'ar' ? 'التواصل مع المبيعات والدعم الفني' : 'Contact Sales & Inquiries'}</span>
                           <span className="text-[9.5px] bg-indigo-500/10 dark:bg-indigo-400/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-md font-bold">
                             {language === 'ar' ? 'استفسار فوري' : 'Direct Support'}
@@ -2472,8 +2657,9 @@ export default function App() {
                 {/* Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0">
-                      <Headphones size={20} />
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0 gap-0.5">
+                      <Headphones size={16} />
+                      <MessageSquare size={14} className="opacity-95" />
                     </div>
                     <div>
                       <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">

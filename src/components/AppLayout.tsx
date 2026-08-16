@@ -1748,9 +1748,9 @@ export default function AppLayout({
                 )}
                 {(!collapsed && expandedGroups[group]) && (
                   <div className="space-y-0.5">
-                    {itemsInGroup.map((item) => (
+                    {itemsInGroup.map((item, itemIdx) => (
                       <SidebarItem
-                        key={item.id}
+                        key={`sidebar-exp-${item.id}-${groupIdx}-${itemIdx}`}
                         icon={item.icon}
                         label={t(`menu.${item.id}`)}
                         active={activeTab === item.id}
@@ -1762,9 +1762,9 @@ export default function AppLayout({
                 )}
                 {collapsed && (
                   <div className="space-y-0.5">
-                    {itemsInGroup.map((item) => (
+                    {itemsInGroup.map((item, itemIdx) => (
                       <SidebarItem
-                        key={item.id}
+                        key={`sidebar-col-${item.id}-${groupIdx}-${itemIdx}`}
                         icon={item.icon}
                         label={t(`menu.${item.id}`)}
                         active={activeTab === item.id}
@@ -2191,9 +2191,9 @@ export default function AppLayout({
                             </button>
                           </div>
                         ) : (
-                          filteredNotifications.map((n) => (
+                          filteredNotifications.map((n, notifIdx) => (
                             <div 
-                              key={n.id}
+                              key={`notif-item-${n.id || notifIdx}-${notifIdx}`}
                               onClick={() => handleNotificationClick(n)}
                               className={`p-3.5 transition-colors cursor-pointer flex gap-3 items-start relative hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
                                 !n.read ? 'bg-indigo-50/10 dark:bg-indigo-950/10' : ''

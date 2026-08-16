@@ -1943,34 +1943,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
     visible: boolean;
     order: number;
   }>>(() => {
-    const saved = localStorage.getItem('fleet_dashboard_widget_configurations_v2');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const ids = parsed.map((item: any) => item.id);
-          const defaultItems = [
-            { id: 'stats', titleAr: 'مؤشرات الأداء وإحصائيات السريعة', titleEn: 'Quick Stats & KPIs', visible: true, order: 0 },
-            { id: 'gps_map', titleAr: 'الخريطة الحية وتتبع الأسطول الميداني', titleEn: 'Live GPS Fleet Map Tracker', visible: true, order: 1 },
-            { id: 'calendar', titleAr: 'تقويم ومواعيد الصيانة المجهّزة', titleEn: 'Scheduled Maintenance Calendar', visible: true, order: 2 },
-            { id: 'analytics', titleAr: 'التحليل والمقارنة الشهرية للصيانة', titleEn: 'Monthly Maintenance Analytics', visible: true, order: 3 },
-            { id: 'spare_parts', titleAr: 'معدل استهلاك قطع الغيار والمخزون الحرج', titleEn: 'Spare Parts Consumption & Critical Stock', visible: true, order: 4 },
-            { id: 'departments', titleAr: 'الأقسام والشعب الفنية للتشغيل', titleEn: 'Fleet & Operational Divisions', visible: true, order: 5 },
-            { id: 'critical_status', titleAr: 'المركبات الحرجة وحالات التوقف العاجل', titleEn: 'Critical Vehicles & Downtime Status', visible: true, order: 6 },
-            { id: 'tech_report', titleAr: 'تقرير الأداء الفني وتوزيع الأعطال', titleEn: 'Technical Performance Report', visible: true, order: 7 },
-          ];
-          const missing = defaultItems.filter(item => !ids.includes(item.id));
-          if (missing.length > 0) {
-            const combined = [...parsed, ...missing.map((item, idx) => ({ ...item, order: parsed.length + idx }))];
-            return combined.sort((a, b) => a.order - b.order);
-          }
-          return parsed.sort((a, b) => a.order - b.order);
-        }
-      } catch (e) {
-        console.warn('Error reading dashboard widget config:', e);
-      }
-    }
-    return [
+    const defaultItems = [
       { id: 'stats', titleAr: 'مؤشرات الأداء وإحصائيات السريعة', titleEn: 'Quick Stats & KPIs', visible: true, order: 0 },
       { id: 'gps_map', titleAr: 'الخريطة الحية وتتبع الأسطول الميداني', titleEn: 'Live GPS Fleet Map Tracker', visible: true, order: 1 },
       { id: 'calendar', titleAr: 'تقويم ومواعيد الصيانة المجهّزة', titleEn: 'Scheduled Maintenance Calendar', visible: true, order: 2 },
@@ -1980,6 +1953,32 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
       { id: 'critical_status', titleAr: 'المركبات الحرجة وحالات التوقف العاجل', titleEn: 'Critical Vehicles & Downtime Status', visible: true, order: 6 },
       { id: 'tech_report', titleAr: 'تقرير الأداء الفني وتوزيع الأعطال', titleEn: 'Technical Performance Report', visible: true, order: 7 },
     ];
+    const saved = localStorage.getItem('fleet_dashboard_widget_configurations_v2');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const uniqueParsed: typeof defaultItems = [];
+          const seen = new Set<string>();
+          for (const item of parsed) {
+            if (item && item.id && !seen.has(item.id)) {
+              seen.add(item.id);
+              uniqueParsed.push(item);
+            }
+          }
+          for (const item of defaultItems) {
+            if (!seen.has(item.id)) {
+              seen.add(item.id);
+              uniqueParsed.push({ ...item, order: uniqueParsed.length });
+            }
+          }
+          return uniqueParsed.sort((a, b) => a.order - b.order);
+        }
+      } catch (e) {
+        console.warn('Error reading dashboard widget config:', e);
+      }
+    }
+    return defaultItems;
   });
 
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
@@ -5760,11 +5759,11 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
       <div className="space-y-8">
         {widgetConfigs
           .filter(widget => widget.visible)
-          .map((widget) => {
+          .map((widget, widgetIndex) => {
             switch (widget.id) {
               case 'stats':
                 return (
-                  <div key={widget.id} className="animate-fadeIn">
+                  <div key={`widget-stats-${widget.id}-${widgetIndex}`} className="animate-fadeIn">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <StatCard 
                         label={t('dashboard.totalVehicles')} 
@@ -5869,7 +5868,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                 );
               case 'departments':
                 return (
-                  <div key={widget.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-blue-500/15 animate-fadeIn">
+                  <div key={`widget-dept-${widget.id}-${widgetIndex}`} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-blue-500/15 animate-fadeIn">
                     <h2 className="text-base font-black text-slate-900 dark:text-white mb-4">
                       {language === 'ar' ? 'الأقسام والشعب الهندسية والفنية' : 'Technical & Operational Divisions'}
                     </h2>
@@ -5913,7 +5912,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                 );
               case 'critical_status':
                 return (
-                  <div key={widget.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-blue-500/15 animate-fadeIn">
+                  <div key={`widget-crit-${widget.id}-${widgetIndex}`} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-soft transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-blue-500/15 animate-fadeIn">
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="font-black text-base text-slate-900 dark:text-white">
                         {language === 'ar' ? 'حالات المركبات العاجلة والحرجة' : 'Critical Vehicles Status'}
@@ -5927,8 +5926,8 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {vehicles.filter(v => v.status !== 'active').slice(0, 4).map((vehicle) => (
-                        <div key={vehicle.id} className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/65 dark:bg-[#0c101c] dark:hover:bg-[#101524] border border-slate-100 dark:border-slate-850 transition-colors cursor-pointer">
+                      {vehicles.filter(v => v.status !== 'active').slice(0, 4).map((vehicle, vIdx) => (
+                        <div key={`crit-veh-${vehicle.id || vIdx}-${vIdx}`} className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/65 dark:bg-[#0c101c] dark:hover:bg-[#101524] border border-slate-100 dark:border-slate-850 transition-colors cursor-pointer">
                           <div className={`w-2.5 h-10 rounded-full shrink-0 ${
                             vehicle.status === 'maintenance' ? 'bg-orange-500' : 'bg-rose-500'
                           }`} />
@@ -5952,7 +5951,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                 );
               case 'tech_report':
                 return (
-                  <div key={widget.id} className="animate-fadeIn">
+                  <div key={`widget-tech-${widget.id}-${widgetIndex}`} className="animate-fadeIn">
                     <TechnicalPerformanceReport 
                       orders={orders}
                       language={language}
@@ -6023,7 +6022,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                     const title = language === 'ar' ? widget.titleAr : widget.titleEn;
                     return (
                       <div 
-                        key={widget.id}
+                        key={`customizer-widget-${widget.id}-${index}`}
                         className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
                           widget.visible 
                             ? 'bg-white dark:bg-[#101524] border-slate-150/70 dark:border-slate-800 shadow-xs' 

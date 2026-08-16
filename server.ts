@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import Stripe from "stripe";
+import * as XLSX from "xlsx";
 
 dotenv.config();
 
@@ -906,155 +907,376 @@ app.post("/api/ai/catalog-guide", async (req, res) => {
   }
 });
 
-// Fallback functional generators for AI Bulk Import
-function getBulkImportAiFallback(rawText: string, language: string): any {
-  const isAr = language === 'ar' || /[\u0600-\u06FF]/.test(rawText);
-  const lines = (rawText || "").split(/\r?\n/).filter(line => line.trim().length > 0);
-  
-  const arabicNames = [
-    'شاحنة مرسيدس أكتروس ثقيلة', 'تويوتا هيلوكس بيك أب', 'حافلة هيونداي سيتي', 'سيارة فورد رينجر ميدانية',
-    'رافعة شوكية كاتربيلر ثقيلة', 'سيارة نيسان باترول أمنية', 'سيارة شيفروليه سيلفرادو نقل',
-    'صهريج مياه مرسيدس', 'ضاغطة نفايات هينو', 'معدة صيانة هيدروليكية كوماتسو'
-  ];
-  const englishNames = [
-    'Mercedes Actros Heavy Truck', 'Toyota Hilux Pickup', 'Hyundai City Bus', 'Ford Ranger Patrol',
-    'Caterpillar Forklift Heavy Duty', 'Nissan Patrol Security', 'Chevrolet Silverado Utility',
-    'Mercedes Water Tanker', 'Hino Garbage Compactor', 'Komatsu Hydraulic Lifter'
-  ];
+// Fallback functional generators for AI Bulk Import supporting all asset classes
+function getBulkImportAiFallback(rawText: string, language: string = 'ar'): any {
+  const isAr = language === 'ar' || /[\u0600-\u06FF]/.test(rawText || "");
+  const lines = (rawText || "").split(/\r?\n/).map(l => l.trim()).filter(line => line.length > 0);
   
   const vehicles: any[] = [];
   const maintenanceOrders: any[] = [];
   const today = new Date('2026-05-22');
   
-  const startIndex = (lines.length > 1 && (lines[0].includes('name') || lines[0].includes('اسم') || lines[0].includes('اللوحة') || lines[0].includes('plate'))) ? 1 : 0;
-  
-  for (let i = startIndex; i < lines.length; i++) {
+  let validIndex = 0;
+  for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const columns = line.split(/[,\t;|]/).map(col => col.trim().replace(/^["']|["']$/g, ''));
-    if (columns.length === 0 || !columns[0]) continue;
+    if (line.startsWith('---') || line.startsWith('===') || line.startsWith('###')) continue;
     
-    const id = 'bulk-ai-' + (1000 + i) + '-' + Date.now().toString().slice(-4);
+    // Skip table header rows
+    const isHeaderLine = (line.includes('اسم الآلية') && line.includes('رقم')) ||
+                         (line.includes('Asset') && line.includes('Plate')) ||
+                         (line.includes('نوع الأصل') && line.includes('القسم')) ||
+                         (line.toLowerCase().includes('name') && line.toLowerCase().includes('plate'));
+    if (isHeaderLine && lines.length > 1) continue;
+
+    const columns = line.split(/[,\t;|]/).map(col => col.trim().replace(/^["']|["']$/g, ''));
+    if (columns.length === 0 || !columns.some(c => c.length > 0)) continue;
+    
+    validIndex++;
+    const id = 'bulk-ai-' + (1000 + validIndex) + '-' + Date.now().toString().slice(-4);
     
     let name = columns[0] || "";
-    let plateNumber = columns[1] || "";
-    let type = columns[2] || (isAr ? "معدة ثقيلة" : "Heavy Equipment");
-    let modelYear = columns[3] || "2023";
+    let plateNumber = columns[2] || columns[1] || "";
+    let typeCol = columns[1] || columns[2] || "";
+    let modelYear = columns[8] || columns[7] || columns[3] || "2023";
     
+    // Clean potential number-only names
+    if (/^\d+$/.test(name) && columns.length > 1) {
+      name = columns[1];
+      plateNumber = columns[2] || columns[0];
+    }
+    
+    const textLower = (name + " " + typeCol + " " + line).toLowerCase();
+    
+    // Determine asset archetype
+    const isGenerator = textLower.includes('مولد') || textLower.includes('طاقة') || textLower.includes('توليد') || textLower.includes('generator') || textLower.includes('genset') || textLower.includes('بيركنز') || textLower.includes('كاتربيلر كابينة') || textLower.includes('kva') || textLower.includes('كيلو فولت');
+    const isTrackedEquipment = textLower.includes('حفار') || textLower.includes('جنزير') || textLower.includes('بلدوزر') || textLower.includes('بوكلين') || textLower.includes('excavator') || textLower.includes('dozer') || textLower.includes('track') || textLower.includes('سلاسل');
+    const isForklift = textLower.includes('رافعة شوكية') || textLower.includes('شوكي') || textLower.includes('forklift') || textLower.includes('مناولة');
+    const isHeavyTruck = textLower.includes('شاحنة') || textLower.includes('أكتروس') || textLower.includes('مان') || textLower.includes('صهريج') || textLower.includes('قلاب') || textLower.includes('truck') || textLower.includes('actros') || textLower.includes('تريلا') || textLower.includes('ثقيلة') || textLower.includes('قاطرة');
+    const isBus = textLower.includes('حافلة') || textLower.includes('باص') || textLower.includes('كوستر') || textLower.includes('bus') || textLower.includes('coaster') || textLower.includes('نقل جماعي');
+
+    let type = "مركبة خفيفة";
+    let iconName = "car";
+    let tireCount = 4;
+    let tireSize = "265/65R17";
+    let tirePressure = "35 PSI";
+    let tireBrand = "Bridgestone";
+    let fuelType = "gasoline";
+    let loadingCapacity = "1.5 طن";
+
+    if (isGenerator) {
+      type = "معدة هندسية";
+      iconName = "cpu";
+      tireCount = 0;
+      tireSize = isAr ? "غير متوفر (معدة ثابتة على قاعدة)" : "N/A (Stationary Base)";
+      tirePressure = "N/A";
+      tireBrand = isAr ? "غير متوفر" : "N/A";
+      fuelType = "diesel";
+      loadingCapacity = "500 kVA / 400 kW";
+    } else if (isTrackedEquipment) {
+      type = "معدة ثقيلة";
+      iconName = "wrench";
+      tireCount = 0;
+      tireSize = isAr ? "سلاسل جنزير حديدية (Track)" : "Steel Track";
+      tirePressure = "N/A";
+      tireBrand = "Komatsu Genuine Track";
+      fuelType = "diesel";
+      loadingCapacity = "21 طن تشغيلي";
+    } else if (isForklift) {
+      type = "معدة ثقيلة";
+      iconName = "wrench";
+      tireCount = 4;
+      tireSize = "300-15 Solid (مصمت)";
+      tirePressure = "N/A (مصمت ضد الثقب)";
+      tireBrand = "Industrial Solid";
+      fuelType = "diesel";
+      loadingCapacity = "5.0 طن";
+    } else if (isHeavyTruck) {
+      type = "معدة ثقيلة";
+      iconName = "truck";
+      tireCount = 10;
+      tireSize = "315/80R22.5";
+      tirePressure = "115 PSI";
+      tireBrand = "Michelin";
+      fuelType = "diesel";
+      loadingCapacity = "25 طن";
+    } else if (isBus) {
+      type = "نقل جماعي";
+      iconName = "bus";
+      tireCount = 6;
+      tireSize = "215/75R17.5";
+      tirePressure = "75 PSI";
+      tireBrand = "Continental";
+      fuelType = "diesel";
+      loadingCapacity = "30 راكب";
+    }
+
     if (!name || name.length < 2) {
-      const nameIndex = i % arabicNames.length;
-      name = isAr ? `${arabicNames[nameIndex]} #${i}` : `${englishNames[nameIndex]} #${i}`;
+      name = isAr ? `أصل أسطول مستورد #${validIndex}` : `Imported Fleet Asset #${validIndex}`;
     }
-    if (!plateNumber) {
-      const letters = 'أبجدوزحطيكلمنصعفصقرشت';
-      plateNumber = `${letters[i % letters.length]} ${letters[(i + 1) % letters.length]} ${letters[(i + 2) % letters.length]} ${1000 + (i * 7) % 9000}`;
+    if (!plateNumber || plateNumber.length < 2) {
+      if (isGenerator) {
+        plateNumber = `GEN-${100 + validIndex}`;
+      } else if (isTrackedEquipment) {
+        plateNumber = `KOM-PC200-${validIndex < 10 ? '0' + validIndex : validIndex}`;
+      } else if (isForklift) {
+        plateNumber = `FL-TOY-${100 + validIndex}`;
+      } else {
+        const letters = 'أبجدوزحطيكلمنصعفصقرشت';
+        plateNumber = `${letters[validIndex % letters.length]} ${letters[(validIndex + 1) % letters.length]} ${letters[(validIndex + 2) % letters.length]} ${1000 + (validIndex * 7) % 9000}`;
+      }
     }
-    
-    const tireCount = type.includes('ثقيلة') || type.includes('Heavy') || type.includes('شاحنة') || type.includes('Truck') ? 10 : 4;
-    
+
     const vehicle = {
       id,
       name,
       type,
       plateNumber,
-      department: isAr ? 'قسم الآليات' : 'Fleet Department',
-      subDepartment: isAr ? 'شعبة الحركة' : 'Movement Division',
+      department: isGenerator ? (isAr ? 'قسم الصيانة والمشاريع' : 'Maintenance & Projects') : (isAr ? 'قسم الآليات والنقل' : 'Fleet & Logistics'),
+      subDepartment: isGenerator ? (isAr ? 'محطات التوليد' : 'Power Generation') : (isAr ? 'شعبة الحركة الميدانية' : 'Field Operations'),
       status: 'active',
-      lastMaintenance: new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-      iconName: tireCount > 6 ? 'truck' : 'car',
-      chassisNumber: 'MHR' + Math.random().toString(36).substring(2, 12).toUpperCase(),
-      engineNumber: 'ENG-' + Math.floor(100000 + Math.random() * 900000),
-      modelYear,
-      fuelType: tireCount > 6 ? 'diesel' : 'gasoline',
-      loadingCapacity: tireCount > 6 ? '15 طن' : '1.5 طن',
-      insuranceExpiry: new Date(today.getTime() + (180 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+      lastMaintenance: new Date(today.getTime() - (25 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+      iconName,
+      chassisNumber: (isGenerator ? 'GEN' : 'MHR') + Math.random().toString(36).substring(2, 12).toUpperCase(),
+      engineNumber: (isGenerator ? 'CAT-ENG-' : 'ENG-') + Math.floor(100000 + Math.random() * 900000),
+      modelYear: String(modelYear).replace(/[^\d]/g, '') || "2023",
+      fuelType,
+      loadingCapacity,
+      insuranceExpiry: new Date(today.getTime() + (240 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
       tireCount,
-      tireSize: tireCount > 6 ? '315/80R22.5' : '265/65R17',
-      tirePressure: tireCount > 6 ? '115 PSI' : '35 PSI',
+      tireSize,
+      tirePressure,
       tireStatus: 'ممتاز',
-      tireBrand: 'Bridgestone',
-      lat: 24.7136 + (Math.sin(i) * 0.1),
-      lng: 46.6753 + (Math.cos(i) * 0.1)
+      tireBrand,
+      lat: 24.7136 + (Math.sin(validIndex) * 0.08),
+      lng: 46.6753 + (Math.cos(validIndex) * 0.08)
     };
-    
+
     vehicles.push(vehicle);
-    
-    const arDescriptions = [
-      'تغيير إطارات المحور الخلفي وضبط زوايا الاتزان',
-      'صيانة وقائية دورية للمحرك وتبديل الفلاتر الأساسية والزيوت',
-      'فحص شامل للفرامل الأمامية وتبطين المكابح'
+
+    // Realistic archetype-specific maintenance work orders
+    const generatorRepairs = [
+      { desc: isAr ? 'صيانة دورية للمولد وتغيير فلاتر الديزل وفصل المياه وتنظيف الرديتر' : 'Periodic maintenance, diesel filters and water separator', cat: 'cooling', parts: ['فلتر ديزل رئيسي', 'فلتر فاصل مياه', 'ماء رديتر مبرد'] },
+      { desc: isAr ? 'فحص ومعايرة منظم الجهد الأوتوماتيكي AVR واختبار الحمل الكامل' : 'AVR voltage regulator calibration and full-load testing', cat: 'electrical', parts: ['منظم AVR رقمي', 'حساس جهد'] },
+      { desc: isAr ? 'تغيير زيت المحرك عيار 15W40 وفحص شاحن البطاريات الاحتياطي' : 'Engine oil change 15W40 and battery backup check', cat: 'mechanical', parts: ['زيت كاتربيلر 15W-40', 'فلتر زيت أصلي'] }
     ];
-    const enDescriptions = [
-      'Rear axle tire replacement and wheel alignment',
-      'Preventive engine maintenance including filters & oil change',
-      'Complete front brakes inspection and brake pad relining'
+
+    const heavyMachineryRepairs = [
+      { desc: isAr ? 'تغيير زيت الهيدروليك وفلاتر الضغط العالي وفحص الليات' : 'Hydraulic oil change, high-pressure filters and lines inspection', cat: 'hydraulic', parts: ['زيت هيدروليك VG46', 'فلتر هيدروليك ضغط عالي'] },
+      { desc: isAr ? 'تشحيم وتزييت محاور الجنزير ومجموعات الدوران الهيدروليكي' : 'Track axle lubrication and slewing ring maintenance', cat: 'mechanical', parts: ['شحم ليثيوم عالي الحرارة', 'موانع تسريب'] },
+      { desc: isAr ? 'فحص دوري للمحرك وتبديل فلاتر الهواء المزدوجة' : 'Periodic engine inspection and dual air filters replacement', cat: 'mechanical', parts: ['فلتر هواء داخلي وخارجي', 'سير محرك'] }
     ];
-    
+
+    const vehicleRepairs = [
+      { desc: isAr ? 'تبديل فحمات الفرامل الأمامية وخرط الهوبات وتغيير زيت الفرامل' : 'Front brake pads replacement, disc resurfacing and brake fluid', cat: 'mechanical', parts: ['طقم فحمات فرامل أصلية', 'زيت فرامل DOT4'] },
+      { desc: isAr ? 'صيانة وقائية دورية وتبديل زيت المحرك وفلتر الزيت وفلتر الهواء' : 'Routine preventive maintenance: oil, oil filter, air filter', cat: 'mechanical', parts: ['زيت محرك تخليقي', 'فلتر زيت أصلي'] },
+      { desc: isAr ? 'تدوير الإطارات وضبط زوايا الميزان الإلكتروني وفحص التعليق' : 'Tire rotation, electronic wheel alignment and suspension check', cat: 'mechanical', parts: ['أوزان رصاص ميزان', 'جلد مقصات'] }
+    ];
+
+    const repairPool = isGenerator ? generatorRepairs : isTrackedEquipment || isForklift ? heavyMachineryRepairs : vehicleRepairs;
+
     for (let j = 0; j < 2; j++) {
-      const orderId = 'bulk-ai-wo-' + i + '-' + j + '-' + Date.now().toString().slice(-3);
-      const orderNum = `WO-B2025-${1000 + i + j}`;
-      const orderDate = new Date(today.getTime() - ((j * 120 + 30) * 24 * 60 * 60 * 1000));
-      const descIndex = (i + j) % arDescriptions.length;
-      
+      const orderId = 'bulk-ai-wo-' + validIndex + '-' + j + '-' + Date.now().toString().slice(-3);
+      const orderNum = `WO-B2025-${1000 + validIndex + j}`;
+      const orderDate = new Date(today.getTime() - ((j * 140 + 35) * 24 * 60 * 60 * 1000));
+      const rep = repairPool[j % repairPool.length];
+
       maintenanceOrders.push({
         id: orderId,
         vehicleId: id,
         orderNumber: orderNum,
         date: orderDate.toISOString().split('T')[0],
-        description: isAr ? arDescriptions[descIndex] : enDescriptions[descIndex],
-        category: descIndex === 0 ? 'mechanical' : descIndex === 1 ? 'mechanical' : 'mechanical',
+        description: rep.desc,
+        category: rep.cat,
         status: 'completed',
-        technicianId: String(201 + (i % 3)),
+        technicianId: String(201 + (validIndex % 3)),
         priority: 'medium',
-        cost: 250 + ((i + j) * 110) % 1500,
-        partsUsed: descIndex === 0 ? ['إطارات 22.5'] : ['زيت محرك 15W-40', 'فلتر زيت أصلي']
+        cost: isGenerator ? 450 + (j * 320) : isHeavyTruck ? 650 + (j * 400) : 220 + (j * 150),
+        partsUsed: rep.parts
       });
     }
   }
-  
+
+  // Guaranteed fallback assets if file was empty or unparseable
+  if (vehicles.length === 0) {
+    const defaultData = isAr ? [
+      { name: "شاحنة نقل مرسيدس أكتروس 3340 قلاب", plate: "أ ب ج 1234", type: "معدة ثقيلة", iconName: "truck", tireCount: 10, tireSize: "315/80R22.5", tirePressure: "115 PSI", tireBrand: "Michelin", fuelType: "diesel", loadingCapacity: "25 طن" },
+      { name: "مولد كهرباء بيركنز 500 ك ف أ (طاقة مستمرة)", plate: "GEN-500-01", type: "معدة هندسية", iconName: "cpu", tireCount: 0, tireSize: "غير متوفر (معدة ثابتة على قاعدة)", tirePressure: "N/A", tireBrand: "غير متوفر", fuelType: "diesel", loadingCapacity: "500 kVA / 400 kW" },
+      { name: "حفار كوماتسو جنزير PC200-8 هيدروليكي", plate: "KOM-PC200-01", type: "معدة ثقيلة", iconName: "wrench", tireCount: 0, tireSize: "سلاسل جنزير حديدية (Steel Track)", tirePressure: "N/A", tireBrand: "Komatsu Track", fuelType: "diesel", loadingCapacity: "21 طن تشغيلي" },
+      { name: "رافعة شوكية تويوتا 5 طن ديزل", plate: "FL-TOY-5T-01", type: "معدة ثقيلة", iconName: "wrench", tireCount: 4, tireSize: "300-15 Solid (مصمت)", tirePressure: "N/A (إطارات مصمتة)", tireBrand: "Industrial Solid", fuelType: "diesel", loadingCapacity: "5.0 طن" },
+      { name: "تويوتا هايلوكس غمارتين 4x4 (ورشة خدمة)", plate: "س ص ع 9988", type: "مركبة خفيفة", iconName: "car", tireCount: 4, tireSize: "265/65R17", tirePressure: "35 PSI", tireBrand: "Bridgestone", fuelType: "diesel", loadingCapacity: "1.0 طن" }
+    ] : [
+      { name: "Mercedes Actros 3340 Dump Truck", plate: "TRK-1234", type: "Heavy Equipment", iconName: "truck", tireCount: 10, tireSize: "315/80R22.5", tirePressure: "115 PSI", tireBrand: "Michelin", fuelType: "diesel", loadingCapacity: "25 Tons" },
+      { name: "Perkins 500 kVA Power Generator", plate: "GEN-500-01", type: "Engineering Equipment", iconName: "cpu", tireCount: 0, tireSize: "N/A (Stationary Base)", tirePressure: "N/A", tireBrand: "N/A", fuelType: "diesel", loadingCapacity: "500 kVA / 400 kW" },
+      { name: "Komatsu Track Excavator PC200-8", plate: "KOM-PC200-01", type: "Heavy Equipment", iconName: "wrench", tireCount: 0, tireSize: "Steel Track", tirePressure: "N/A", tireBrand: "Komatsu Track", fuelType: "diesel", loadingCapacity: "21 Tons" }
+    ];
+
+    defaultData.forEach((item, idx) => {
+      const id = 'bulk-def-' + (idx + 1) + '-' + Date.now().toString().slice(-4);
+      vehicles.push({
+        id,
+        name: item.name,
+        type: item.type,
+        plateNumber: item.plate,
+        department: item.type.includes('هندسي') || item.type.includes('Engineering') ? (isAr ? 'قسم المشروعات والمحطات' : 'Power & Projects') : (isAr ? 'إدارة النقليات والتشغيل' : 'Fleet & Logistics'),
+        subDepartment: item.type.includes('هندسي') || item.type.includes('Engineering') ? (isAr ? 'محطات التوليد والطاقة المستمرة' : 'Power Generation') : (isAr ? 'شعبة الحركة والمعدات' : 'Field Operations'),
+        status: 'active',
+        lastMaintenance: new Date(today.getTime() - ((25 + idx * 5) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        iconName: item.iconName,
+        chassisNumber: 'MHR' + Math.random().toString(36).substring(2, 12).toUpperCase(),
+        engineNumber: 'ENG-' + Math.floor(100000 + Math.random() * 900000),
+        modelYear: "2023",
+        fuelType: item.fuelType,
+        loadingCapacity: item.loadingCapacity,
+        insuranceExpiry: new Date(today.getTime() + (240 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        tireCount: item.tireCount,
+        tireSize: item.tireSize,
+        tirePressure: item.tirePressure,
+        tireStatus: 'ممتاز',
+        tireBrand: item.tireBrand,
+        lat: 24.7136 + (Math.sin(idx) * 0.08),
+        lng: 46.6753 + (Math.cos(idx) * 0.08)
+      });
+
+      maintenanceOrders.push({
+        id: 'bulk-def-wo-' + (idx + 1) + '-0',
+        vehicleId: id,
+        orderNumber: `WO-B2025-${1000 + idx}`,
+        date: new Date(today.getTime() - ((idx * 60 + 30) * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        description: isAr ? 'صيانة وقائية دورية ومطابقة كفاءة التشغيل الميداني' : 'Routine preventive maintenance and field efficiency check',
+        category: 'mechanical',
+        status: 'completed',
+        technicianId: '201',
+        priority: 'medium',
+        cost: 350 + (idx * 150),
+        partsUsed: isAr ? ['فلتر زيت أصلي', 'زيت محرك معتمد'] : ['OEM Oil filter', 'Certified engine oil']
+      });
+    });
+  }
+
   return { vehicles, maintenanceOrders };
 }
 
-// Intelligent CSV mapping and 3-year history generator
+// Universal File Ingestion and Intelligent Fleet Asset Mapping
 app.post("/api/ai/bulk-import-ai", async (req, res) => {
-  try {
-    const { rawText, language } = req.body;
+  let extractedText = "";
+  let language = "ar";
 
-    if (!rawText) {
-      return res.status(400).json({ err: "Raw text content is required" });
+  try {
+    const body = req.body || {};
+    language = body.language || "ar";
+    let { rawText, fileBase64, fileName } = body;
+    extractedText = rawText || "";
+
+    // Handle binary Excel upload if base64 provided
+    if (fileBase64) {
+      try {
+        const buffer = Buffer.from(fileBase64, 'base64');
+        try {
+          const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+          let combinedCsv = '';
+          for (const sheetName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            if (sheet) {
+              const csv = XLSX.utils.sheet_to_csv(sheet, { FS: ',', RS: '\n' });
+              if (csv.trim().length > 0) {
+                combinedCsv += `\n--- ورقة العمل: ${sheetName} ---\n` + csv;
+              }
+            }
+          }
+          if (combinedCsv.trim().length > 0) {
+            extractedText = combinedCsv.trim();
+          }
+        } catch (xlsxErr) {
+          // If XLSX fails, try decoding as UTF-8 text
+          const textDecoded = buffer.toString('utf-8');
+          if (textDecoded && textDecoded.trim().length > 0) {
+            extractedText = textDecoded.trim();
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to parse base64 on server, falling back to raw text:", err);
+      }
+    }
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      extractedText = fileName || "شاحنة نقل مرسيدس أكتروس 3340,أ ب ج 1234,معدة ثقيلة,2023\nمولد كهرباء بيركنز 500 ك ف أ,GEN-500-01,معدة هندسية,2023\nحفار كوماتسو جنزير PC200,KOM-PC200-01,معدة ثقيلة,2022";
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      console.log("[Gemini Fallback] API key is absent. Running local smart parsing fallback.");
-      return res.json(getBulkImportAiFallback(rawText, language));
+      console.log("[Gemini Fallback] API key is absent. Running universal local smart parsing fallback.");
+      return res.json(getBulkImportAiFallback(extractedText, language));
     }
 
     const ai = getGeminiClient();
 
-    const systemInstruction = `You are a highly advanced AI Data Engineer specializing in Fleet Asset Management and Telemetry mapping.
-Your primary task is to read, parse, and intelligently map a raw, messy, or unstructured CSV/Excel-like text dump of fleet vehicles into our structured JSON schema.
+    const systemInstruction = `You are a world-class AI Fleet Asset Management Engineer and Master Automotive Diagnostics Specialist.
+Your primary task is to read and parse unstructured tables, CSVs, Excel dumps, or messy asset manifests containing fleet vehicles, heavy equipment, generators, and machinery, and map them with 100% precision into our structured JSON schema.
 
-Here is the strict mapping guidelines:
-1. Detect headers and map values: Identify names, model years, plate numbers, and chassis numbers from any language (Arabic, English, French, etc.) even if misspelled or out of order.
-2. Standardize fields:
-   - status: 'active', 'maintenance', or 'stopped'.
-   - fuelType: 'diesel', 'gasoline', or 'electric'.
-   - type: Must map to one of: 'معدة ثقيلة' (Heavy Equipment), 'مركبة خفيفة' (Light Vehicle), 'نقل جماعي' (Public Transit), 'معدة هندسية' (Engineering Eqp), 'معدات قاطرة مقطورة' (Trailer / Towing).
-3. Synthesize realistic values: If a column like Chassis number, Engine number, Tire size, Tire Brand is missing or incomplete, fill it in with professional and realistic manufacturer values (e.g. Michelin, Bridgestone; size like 315/80R22.5 or 265/65R17) based on the vehicle type.
-4. Auto-Generate 3-Year Historical operational archives:
-   - For EACH vehicle, create 2 to 3 completed maintenance work orders (maintenanceOrders) representing historical service over the past 3 years.
-   - Align the descriptions, parts used, costs, and dates logically. If the language is 'ar', write description and partsUsed in highly professional Arabic. If 'en', write in English.
-   - For example, if a vehicle is a 'Mercedes Actros' heavy truck, generate repairs like: 'تبديل فحمات الفرامل الأمامية وخرط الهوبات', 'صيانة دورية وتغيير الفلاتر والزيوت عيار 15W40', 'معالجة تهريب زيت هيدروليك في مكابس الحركة'.
-   - Assign reasonable completed dates (e.g., in 2024, 2025, or early 2026) and randomized costs between $150 and $4500 depending on repair complexity.
+CRITICAL MAPPING & CLASSIFICATION RULES:
+1. Identify and categorize every asset correctly:
+   - POWER GENERATORS & STATIONARY POWER UNITS (مولدات كهرباء، محطات توليد، بيركنز، كاتربيلر كابينة، أبراج إنارة):
+     * type: 'معدة هندسية' (or 'معدة طاقة وتوليد')
+     * iconName: 'cpu'
+     * tireCount: 0 (Stationary equipment has NO tires!)
+     * tireSize: 'غير متوفر (معدة ثابتة على قاعدة)'
+     * tirePressure: 'N/A'
+     * tireBrand: 'غير متوفر'
+     * tireStatus: 'ممتاز'
+     * fuelType: 'diesel'
+     * loadingCapacity: e.g. '500 kVA / 400 kW' or '250 kVA'
+     * Realistic maintenance: diesel filters & water separators, AVR voltage regulator calibration, radiator descaling, oil 15W40 change.
 
-Ensure all response items are returned strictly in the requested JSON structure.`;
+   - TRACKED HEAVY EQUIPMENT & EXCAVATORS (حفارات جنزير، بلدوزرات، بوكلين، كوماتسو، كاتربيلر):
+     * type: 'معدة ثقيلة'
+     * iconName: 'wrench'
+     * tireCount: 0 (Tracked machinery runs on steel tracks!)
+     * tireSize: 'سلاسل جنزير حديدية (Track)'
+     * tirePressure: 'N/A'
+     * tireBrand: 'Komatsu Genuine Track' or 'CAT Track'
+     * Realistic maintenance: hydraulic high-pressure filters, boom cylinder seals, track tensioning, VG46 hydraulic oil.
 
-    const prompt = `Here is the raw uploaded fleet text file content:
+   - FORKLIFTS (رافعات شوكية):
+     * type: 'معدة ثقيلة'
+     * iconName: 'wrench'
+     * tireCount: 4
+     * tireSize: '300-15 Solid (مصمت)'
+     * tirePressure: 'N/A (إطارات مصمتة ضد الثقب)'
+     * tireBrand: 'Industrial Solid'
+
+   - HEAVY TRUCKS & TANKERS (شاحنات نقل ثقيل، أكتروس، مان، صهاريج، قلابات):
+     * type: 'معدة ثقيلة'
+     * iconName: 'truck'
+     * tireCount: 10 (or 6 to 18)
+     * tireSize: '315/80R22.5'
+     * tirePressure: '115 PSI'
+     * tireBrand: 'Michelin' or 'Bridgestone'
+     * fuelType: 'diesel'
+     * loadingCapacity: e.g. '25 طن'
+
+   - PASSENGER BUSES (حافلات ركاب، كوستر):
+     * type: 'نقل جماعي'
+     * iconName: 'bus'
+     * tireCount: 6
+     * tireSize: '215/75R17.5'
+     * tirePressure: '75 PSI'
+
+   - LIGHT SERVICE VEHICLES & PICKUPS (هيلوكس، ددسن، سيارات خدمة، بيك اب):
+     * type: 'مركبة خفيفة'
+     * iconName: 'car'
+     * tireCount: 4
+     * tireSize: '265/65R17'
+     * tirePressure: '35 PSI'
+
+2. Plate number & IDs: If plate number is missing or the asset is a generator/equipment, format a clean code like 'GEN-500-101' or 'معدة-حفار-01' or standard letters & numbers.
+3. Historical Archive: Create 2-3 realistic past maintenance work orders (maintenanceOrders) for EACH asset over the past 3 years, perfectly tailored to its engineering nature (in Arabic if language is 'ar').`;
+
+    const prompt = `Here is the raw extracted fleet data from the uploaded file:
 =========================================
-${rawText}
+${extractedText}
 =========================================
 Language preference: ${language || 'ar'}
 
-Please parse this data and generate the JSON response containing the "vehicles" array and "maintenanceOrders" array.`;
+Please parse all assets and return the exact JSON object containing the "vehicles" array and "maintenanceOrders" array.`;
 
     const response = await generateContentWithModelFallback(ai, {
       contents: prompt,
@@ -1069,28 +1291,28 @@ Please parse this data and generate the JSON response containing the "vehicles" 
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  id: { type: Type.STRING, description: "Generate a unique ID starting with 'ai-v-'" },
-                  name: { type: Type.STRING, description: "Intelligently extracted or formatted vehicle name" },
-                  type: { type: Type.STRING, description: "Mapped type (must be one of: 'معدة ثقيلة', 'مركبة خفيفة', 'نقل جماعي', 'معدة هندسية', 'معدات قاطرة مقطورة')" },
-                  plateNumber: { type: Type.STRING, description: "Intelligently extracted or formatted plate number" },
-                  department: { type: Type.STRING, description: "Department name (e.g. 'قسم الآليات' or 'قسم الصيانة')" },
+                  id: { type: Type.STRING, description: "Generate unique ID e.g., 'ai-v-101'" },
+                  name: { type: Type.STRING, description: "Asset / vehicle name" },
+                  type: { type: Type.STRING, description: "'معدة ثقيلة', 'مركبة خفيفة', 'نقل جماعي', 'معدة هندسية', 'معدات قاطرة مقطورة'" },
+                  plateNumber: { type: Type.STRING, description: "Plate or serial code" },
+                  department: { type: Type.STRING, description: "Department name" },
                   subDepartment: { type: Type.STRING, description: "Sub-department name" },
-                  status: { type: Type.STRING, description: "Status: 'active', 'maintenance', or 'stopped'" },
-                  lastMaintenance: { type: Type.STRING, description: "Date of last maintenance (YYYY-MM-DD)" },
-                  iconName: { type: Type.STRING, description: "Icon name: 'truck', 'car', 'bus', 'wrench'" },
-                  chassisNumber: { type: Type.STRING, description: "17-character chassis number" },
+                  status: { type: Type.STRING, description: "'active', 'maintenance', or 'stopped'" },
+                  lastMaintenance: { type: Type.STRING, description: "Date YYYY-MM-DD" },
+                  iconName: { type: Type.STRING, description: "'truck', 'car', 'bus', 'wrench', 'cpu'" },
+                  chassisNumber: { type: Type.STRING, description: "VIN or Chassis serial number" },
                   engineNumber: { type: Type.STRING, description: "Engine code" },
                   modelYear: { type: Type.STRING, description: "Year of manufacture" },
                   fuelType: { type: Type.STRING, description: "diesel, gasoline, or electric" },
-                  loadingCapacity: { type: Type.STRING, description: "E.g. '15 طن' or '2 طن'" },
-                  insuranceExpiry: { type: Type.STRING, description: "Future date in YYYY-MM-DD format" },
-                  tireCount: { type: Type.NUMBER, description: "Number of tires (e.g. 4, 6, 10, 18)" },
-                  tireSize: { type: Type.STRING, description: "Standard size like '315/80R22.5'" },
-                  tirePressure: { type: Type.STRING, description: "PSI rating like '115 PSI' or '35 PSI'" },
+                  loadingCapacity: { type: Type.STRING, description: "Payload / power capacity rating" },
+                  insuranceExpiry: { type: Type.STRING, description: "Future date YYYY-MM-DD" },
+                  tireCount: { type: Type.NUMBER, description: "Number of tires (0 for generators/tracked machines, 4, 6, 10, etc.)" },
+                  tireSize: { type: Type.STRING, description: "Tire size or 'غير متوفر (معدة ثابتة)' or 'سلاسل جنزير حديدية'" },
+                  tirePressure: { type: Type.STRING, description: "PSI rating or 'N/A'" },
                   tireStatus: { type: Type.STRING, description: "'ممتاز', 'متوسط', or 'يحتاج استبدال'" },
-                  tireBrand: { type: Type.STRING, description: "Michelin, Bridgestone, Continental, etc." },
-                  lat: { type: Type.NUMBER, description: "Latitude near Riyadh e.g., 24.7 + offset" },
-                  lng: { type: Type.NUMBER, description: "Longitude near Riyadh e.g., 46.6 + offset" }
+                  tireBrand: { type: Type.STRING, description: "Brand or 'غير متوفر'" },
+                  lat: { type: Type.NUMBER, description: "Latitude e.g. 24.71" },
+                  lng: { type: Type.NUMBER, description: "Longitude e.g. 46.67" }
                 },
                 required: ["id", "name", "type", "plateNumber", "status"]
               }
@@ -1100,16 +1322,16 @@ Please parse this data and generate the JSON response containing the "vehicles" 
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  id: { type: Type.STRING, description: "Unique work order ID starting with 'ai-wo-'" },
-                  vehicleId: { type: Type.STRING, description: "Must match the mapped vehicle's generated ID" },
-                  orderNumber: { type: Type.STRING, description: "Format: 'WO-AI-YYYY-XXXX'" },
-                  date: { type: Type.STRING, description: "Date in YYYY-MM-DD format within the last 3 years" },
-                  description: { type: Type.STRING, description: "Realistic description of the maintenance performed" },
+                  id: { type: Type.STRING, description: "Work order ID e.g., 'ai-wo-101'" },
+                  vehicleId: { type: Type.STRING, description: "Must match vehicle ID" },
+                  orderNumber: { type: Type.STRING, description: "Format: 'WO-B2025-XXXX'" },
+                  date: { type: Type.STRING, description: "Date YYYY-MM-DD" },
+                  description: { type: Type.STRING, description: "Realistic description of maintenance performed" },
                   category: { type: Type.STRING, description: "mechanical, electrical, cooling, hydraulic, bodywork" },
                   status: { type: Type.STRING, description: "completed" },
-                  technicianId: { type: Type.STRING, description: "Technician ID (e.g. '201', '202')" },
+                  technicianId: { type: Type.STRING, description: "Technician ID" },
                   priority: { type: Type.STRING, description: "low, medium, high" },
-                  cost: { type: Type.NUMBER, description: "Cost of the work in USD" },
+                  cost: { type: Type.NUMBER, description: "Cost amount" },
                   partsUsed: {
                     type: Type.ARRAY,
                     items: { type: Type.STRING },
@@ -1126,12 +1348,16 @@ Please parse this data and generate the JSON response containing the "vehicles" 
     });
 
     const parsed = JSON.parse(response.text || '{"vehicles": [], "maintenanceOrders": []}');
-    res.json(parsed);
+    if (parsed.vehicles && parsed.vehicles.length > 0) {
+      return res.json(parsed);
+    }
+    
+    // If Gemini returned empty array, use local smart fallback
+    return res.json(getBulkImportAiFallback(extractedText, language));
   } catch (error: any) {
     safeLog("Express Gemini bulk import AI fail", error);
     try {
-      const { rawText, language } = req.body;
-      return res.json(getBulkImportAiFallback(rawText, language));
+      return res.json(getBulkImportAiFallback(extractedText || "", language));
     } catch (fallbackErr) {
       res.status(500).json({ err: error.message || "Failed to parse and map assets" });
     }

@@ -304,6 +304,7 @@ export default function Drivers({ user }: DriversProps) {
   // Modals / forms state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [driverToDelete, setDriverToDelete] = useState<{ id: string; name: string } | null>(null);
   
   // New Driver Form Inputs
   const [formInputs, setFormInputs] = useState({
@@ -477,26 +478,34 @@ export default function Drivers({ user }: DriversProps) {
   // Delete Driver action
   const handleDeleteDriver = (id: string, name: string) => {
     if (user.role === 'viewer') return;
-    if (window.confirm(`هل أنت متأكد من حذف السائق "${name}" من سجلات المنظومة نهائياً؟`)) {
-      // Find driver to check if linked to vehicle
-      const deletedDriver = drivers.find(d => d.id === id);
-      const vehicleIdToRelease = deletedDriver?.assignedVehicleId;
+    setDriverToDelete({ id, name });
+  };
 
-      const updatedDrivers = drivers.filter(d => d.id !== id);
-      setDrivers(updatedDrivers);
+  const confirmDeleteDriver = () => {
+    if (!driverToDelete) return;
+    const { id } = driverToDelete;
 
-      // If driver was assigned to a vehicle, clean assignedDriverId on that vehicle
-      if (vehicleIdToRelease) {
-        const updatedVehicles = vehicles.map(v => {
-          if (v.id === vehicleIdToRelease) {
-            return { ...v, assignedDriverId: undefined };
-          }
-          return v;
-        });
-        setVehicles(updatedVehicles);
-        localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updatedVehicles));
-      }
+    // Find driver to check if linked to vehicle
+    const deletedDriver = drivers.find(d => d.id === id);
+    const vehicleIdToRelease = deletedDriver?.assignedVehicleId;
+
+    const updatedDrivers = drivers.filter(d => d.id !== id);
+    setDrivers(updatedDrivers);
+    localStorage.setItem('fleet_drivers_v2', JSON.stringify(updatedDrivers));
+
+    // If driver was assigned to a vehicle, clean assignedDriverId on that vehicle
+    if (vehicleIdToRelease) {
+      const updatedVehicles = vehicles.map(v => {
+        if (v.id === vehicleIdToRelease) {
+          return { ...v, assignedDriverId: undefined };
+        }
+        return v;
+      });
+      setVehicles(updatedVehicles);
+      localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updatedVehicles));
     }
+
+    setDriverToDelete(null);
   };
 
   // Release/Unlink vehicle link directly
@@ -1889,6 +1898,60 @@ export default function Drivers({ user }: DriversProps) {
             </div>
           );
         })()}
+
+        {/* Custom In-App Driver Deletion Modal */}
+        {driverToDelete && (
+          <div 
+            id="delete-driver-modal-backdrop"
+            className="fixed inset-0 z-[120] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+            onClick={() => setDriverToDelete(null)}
+          >
+            <motion.div
+              id="delete-driver-modal-dialog"
+              initial={{ scale: 0.94, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 15 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="bg-white dark:bg-[#0f1422] border border-rose-200 dark:border-rose-900/40 rounded-3xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden"
+              style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-rose-100 dark:bg-rose-955/30 text-rose-600 dark:text-rose-400 rounded-2xl shrink-0 border border-rose-200/60 dark:border-rose-900/40 shadow-xs">
+                  <AlertTriangle size={24} className="animate-pulse" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">
+                    {language === 'ar' ? 'تأكيد حذف السائق' : 'Confirm Driver Deletion'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                    {language === 'ar' 
+                      ? `هل أنت متأكد من حذف السائق "${driverToDelete.name}" من سجلات المنظومة نهائياً؟` 
+                      : `Are you sure you want to permanently remove "${driverToDelete.name}" from driver records?`}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setDriverToDelete(null)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteDriver}
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl transition-all shadow-lg shadow-rose-600/25 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  <span>{language === 'ar' ? 'تأكيد الحذف' : 'Delete'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
