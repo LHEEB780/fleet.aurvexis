@@ -32,6 +32,12 @@ import { Vehicle, InventoryItem, User } from '../types';
 import { vehicles as staticVehicles, inventory as staticInventory } from '../data';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
+import {
+  sendBrowserNotification,
+  requestNotificationPermission,
+  getNotificationPermission,
+  playNotificationSound
+} from '../services/browserNotifications';
 
 export interface PeriodicSchedule {
   id: string;
@@ -177,16 +183,16 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
   };
 
   const triggerBrowserNotification = (title: string, body: string) => {
-    if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification(title, {
-          body,
-          icon: '/favicon.ico',
-          dir: 'rtl'
-        });
-      } catch (err) {
-        console.warn('Native notification failed, falling back', err);
-      }
+    if (notificationsEnabled) {
+      sendBrowserNotification({
+        titleAr: title,
+        titleEn: title,
+        bodyAr: body,
+        bodyEn: body,
+        category: 'periodic_due',
+        priority: 'high',
+        sound: 'alert'
+      }).catch(err => console.log('Periodic push error:', err));
     }
   };
 
@@ -196,35 +202,26 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
       localStorage.setItem('notify_enabled_periodic', 'false');
       showToast('تم إيقاف إشعارات المتصفح بنجاح', 'info');
     } else {
-      if (!('Notification' in window)) {
-        showToast('متصفحك الحالي لا يدعم إشعارات سطح المكتب المتقدمة', 'warning');
-        return;
-      }
-      
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          setNotificationsEnabled(true);
-          localStorage.setItem('notify_enabled_periodic', 'true');
-          showToast('🔔 تم تفعيل إشعارات المتصفح بنجاح!', 'success');
-          
-          try {
-            new Notification('لوحة الصيانة الدورية الوقائية', {
-              body: 'لقد قمت بتفعيل الإشعارات بنجاح. ستتلقى تنبيهات دورية عند استحقاق الفحوصات.',
-              dir: 'rtl'
-            });
-          } catch (e) {
-            console.log(e);
-          }
-        } else {
-          showToast('تم رفض إذن الإشعارات من قبل المتصفح. يرجى تفعيله من شريط العنوان.', 'warning');
-        }
-      } catch (err) {
-        console.error('Error requesting notification permission', err);
-        // Fallback simulation
+      const result = await requestNotificationPermission();
+      if (result.granted) {
         setNotificationsEnabled(true);
         localStorage.setItem('notify_enabled_periodic', 'true');
-        showToast('🔔 تم تفعيل الإشعارات بنجاح (وضع المحاكاة)', 'success');
+        showToast('🔔 تم تفعيل إشعارات المتصفح الفورية بنجاح!', 'success');
+        playNotificationSound('success');
+        
+        sendBrowserNotification({
+          titleAr: '🔔 لوحة الصيانة الدورية الوقائية',
+          titleEn: '🔔 Preventive Periodic Maintenance',
+          bodyAr: 'تم تفعيل إشعارات المتصفح الفورية بنجاح. ستتلقى تنبيهات دورية عند استحقاق الفحوصات.',
+          bodyEn: 'Browser push notifications successfully active. You will receive real-time alerts for scheduled services.',
+          category: 'system',
+          priority: 'normal',
+          sound: 'success'
+        }).catch(e => console.log(e));
+      } else if (result.status === 'unsupported') {
+        showToast('متصفحك الحالي لا يدعم إشعارات سطح المكتب المتقدمة', 'warning');
+      } else {
+        showToast('تم رفض إذن الإشعارات من قبل المتصفح. يرجى تفعيله من شريط العنوان.', 'warning');
       }
     }
   };

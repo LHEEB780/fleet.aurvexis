@@ -46,7 +46,8 @@ import {
   LifeBuoy,
   Globe,
   Wifi,
-  WifiOff
+  WifiOff,
+  Type
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, UserRole } from '../types';
@@ -59,6 +60,16 @@ import { SupportTickets } from './SupportTickets';
 import OnboardingTour from './OnboardingTour';
 import Breadcrumbs, { TAB_LABELS } from './Breadcrumbs';
 import { vehicles as staticVehicles } from '../data';
+import { 
+  sendBrowserNotification, 
+  notifyPeriodicMaintenanceDue, 
+  notifyOrderStatusChanged, 
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+  getNotificationSettings
+} from '../services/browserNotifications';
+import { BrowserNotificationModal } from './BrowserNotificationModal';
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -284,7 +295,29 @@ export default function AppLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [fontSizeDropdownOpen, setFontSizeDropdownOpen] = useState(false);
+  const [fontSizeMode, setFontSizeMode] = useState<'normal' | 'large' | 'xlarge' | 'huge'>(() => {
+    return (localStorage.getItem('fleet_font_size') as 'normal' | 'large' | 'xlarge' | 'huge') || 'large';
+  });
   const [overdueMaintenanceCount, setOverdueMaintenanceCount] = useState(() => calculateOverdueCount());
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-font-size', fontSizeMode);
+    document.body.setAttribute('data-font-size', fontSizeMode);
+    
+    // Explicit inline fallback to guarantee immediate visual scaling on all browsers
+    if (fontSizeMode === 'normal') {
+      document.documentElement.style.fontSize = '15px';
+    } else if (fontSizeMode === 'large') {
+      document.documentElement.style.fontSize = '17.5px';
+    } else if (fontSizeMode === 'xlarge') {
+      document.documentElement.style.fontSize = '20px';
+    } else if (fontSizeMode === 'huge') {
+      document.documentElement.style.fontSize = '23px';
+    }
+    
+    localStorage.setItem('fleet_font_size', fontSizeMode);
+  }, [fontSizeMode]);
   
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -868,6 +901,7 @@ export default function AppLayout({
   const [supportTicketId, setSupportTicketId] = useState<string | null>(null);
 
   // Notifications State
+  const [isBrowserNotifModalOpen, setIsBrowserNotifModalOpen] = useState(false);
   const [activeSmartAlert, setActiveSmartAlert] = useState<{
     id: string;
     orderId: string;
@@ -1036,7 +1070,7 @@ export default function AppLayout({
       updateInspectionStats();
     };
     const handleAddNotification = (e: CustomEvent) => {
-      const { type, titleAr, titleEn, msgAr, msgEn } = e.detail || {};
+      const { type, titleAr, titleEn, msgAr, msgEn, category, priority, sound } = e.detail || {};
       if (!titleAr || !titleEn) return;
       const now = new Date();
       const year = now.getFullYear();
@@ -1064,6 +1098,17 @@ export default function AppLayout({
       };
       setNotifications(prev => [newNotif, ...prev]);
       updateInspectionStats();
+
+      // Trigger native browser push notification
+      sendBrowserNotification({
+        titleAr,
+        titleEn,
+        bodyAr: msgAr || '',
+        bodyEn: msgEn || '',
+        category: category || (type === 'danger' ? 'defects' : 'system'),
+        priority: priority || (type === 'danger' ? 'urgent' : type === 'warning' ? 'high' : 'normal'),
+        sound: sound || (type === 'danger' ? 'urgent' : type === 'success' ? 'success' : 'chime')
+      }).catch(err => console.log('Push alert skipped:', err));
     };
 
     window.addEventListener('storage', handleStorageChangeNotif);
@@ -1107,9 +1152,20 @@ export default function AppLayout({
           titleAr,
           titleEn,
           msgAr,
-          msgEn
+          msgEn,
+          category: 'status_change',
+          priority: newStatus === 'completed' ? 'normal' : 'high'
         }
       }));
+
+      // Trigger dedicated native browser push notification for status update
+      notifyOrderStatusChanged({
+        orderId: orderId || 'N/A',
+        vehicleName: vehicleName || 'مجهولة',
+        oldStatus: oldStatus || 'pending',
+        newStatus: newStatus || 'in-progress',
+        technicianName: technicianName || 'الفني المناوب'
+      }).catch(err => console.log('Status change push skipped:', err));
 
       // 2. Set active smart alert overlay state to show on the screen
       setActiveSmartAlert({
@@ -1213,6 +1269,14 @@ export default function AppLayout({
 
           newNotifsToAppend.push(newNotif);
           newNotificationsAdded = true;
+
+          // Trigger native browser push notification for 48h approaching periodic maintenance
+          notifyPeriodicMaintenanceDue({
+            vehicleName: vName + vPlate,
+            serviceTitle: sched.title,
+            dueDate: sched.dueDate,
+            daysLeft: Math.ceil(diffHours / 24)
+          }).catch(err => console.log('Periodic due push skipped:', err));
         }
       });
 
@@ -1902,6 +1966,73 @@ export default function AppLayout({
               </span>
             </button>
 
+            {/* Quick Font Size Switcher Button */}
+            <div className="relative">
+              <button 
+                onClick={() => setFontSizeDropdownOpen(!fontSizeDropdownOpen)}
+                className="h-10 px-2.5 text-purple-600 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200/50 dark:border-purple-800/40 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0 hover:-translate-y-0.5"
+                title={language === 'ar' ? 'مقياس حجم الخط (عادي / كبير / كبير جداً / فائق)' : 'Font Size Scale (Normal / Large / X-Large / Huge)'}
+              >
+                <Type size={15} className="text-purple-600 dark:text-purple-400" />
+                <span className="text-[11px] font-black leading-none flex items-center gap-1">
+                  <span>
+                    {fontSizeMode === 'normal' ? 'A' : fontSizeMode === 'large' ? 'A+' : fontSizeMode === 'xlarge' ? 'A++' : 'A+++'}
+                  </span>
+                  <span className="hidden xl:inline-block text-[10px]">
+                    ({fontSizeMode === 'normal' ? (language === 'ar' ? 'عادي' : 'Normal') : fontSizeMode === 'large' ? (language === 'ar' ? 'كبير' : 'Large') : fontSizeMode === 'xlarge' ? (language === 'ar' ? 'كبير جداً' : 'X-Large') : (language === 'ar' ? 'فائق' : 'Huge')})
+                  </span>
+                </span>
+                <ChevronDown size={11} className={`text-purple-400 transition-transform ${fontSizeDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {fontSizeDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setFontSizeDropdownOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className={`absolute top-12 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-1.5 overflow-hidden ${
+                        dir === 'rtl' ? 'left-0' : 'right-0'
+                      }`}
+                    >
+                      <p className={`px-2.5 py-1.5 text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 ${
+                        dir === 'rtl' ? 'text-right' : 'text-left'
+                      }`}>
+                        {language === 'ar' ? 'مقياس حجم الخط والتكبير' : 'Text Size & Scaling'}
+                      </p>
+                      {[
+                        { id: 'normal', label: language === 'ar' ? 'A عادي (100%)' : 'A Normal (100%)' },
+                        { id: 'large', label: language === 'ar' ? 'A+ كبير (118%)' : 'A+ Large (118%)' },
+                        { id: 'xlarge', label: language === 'ar' ? 'A++ كبير جداً (135%)' : 'A++ Extra Large (135%)' },
+                        { id: 'huge', label: language === 'ar' ? 'A+++ فائق الوضوح (155%)' : 'A+++ Maximum (155%)' },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setFontSizeMode(item.id as 'normal' | 'large' | 'xlarge' | 'huge');
+                            setFontSizeDropdownOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 text-xs font-bold rounded-xl transition-colors flex items-center justify-between cursor-pointer ${
+                            dir === 'rtl' ? 'text-right' : 'text-left'
+                          } ${
+                            fontSizeMode === item.id 
+                              ? 'bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-black' 
+                              : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          {fontSizeMode === item.id && <Check size={13} className="text-purple-600 shrink-0" />}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Quick Access / Mode Changer (Demo Only) */}
             <div className="relative">
               <button 
@@ -2062,14 +2193,51 @@ export default function AppLayout({
                             {language === 'ar' ? 'الإشعارات الميدانية والتنبيهات' : 'Field Notifications & Alerts'}
                           </h4>
                         </div>
-                        {unreadCount > 0 && (
-                          <button 
-                            onClick={markAllAsRead}
-                            className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsBrowserNotifModalOpen(true)}
+                            className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 transition-colors cursor-pointer"
+                            title={language === 'ar' ? 'إعدادات إشعارات المتصفح الفورية' : 'Browser Push Notification Settings'}
                           >
-                            {language === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all as read'}
+                            <Settings size={14} />
                           </button>
-                        )}
+                          {unreadCount > 0 && (
+                            <button 
+                              onClick={markAllAsRead}
+                              className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                            >
+                              {language === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all as read'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Browser Push Fast Status Banner */}
+                      <div className="px-3.5 py-2 bg-gradient-to-r from-indigo-50/80 to-sky-50/80 dark:from-indigo-950/30 dark:to-sky-950/30 border-b border-indigo-100/60 dark:border-indigo-900/40 flex items-center justify-between gap-2 select-none">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${
+                            getNotificationPermission() === 'granted' 
+                              ? 'bg-emerald-500 animate-pulse' 
+                              : getNotificationPermission() === 'denied' 
+                              ? 'bg-rose-500' 
+                              : 'bg-amber-500'
+                          }`} />
+                          <span className="text-[10px] font-black text-slate-700 dark:text-slate-200 truncate">
+                            {getNotificationPermission() === 'granted' 
+                              ? (language === 'ar' ? 'إشعارات المتصفح نشطة ومفعلة 🔔' : 'Push notifications active 🔔')
+                              : (language === 'ar' ? 'تفعيل إشعارات المتصفح الفورية' : 'Enable browser push alerts')}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsBrowserNotifModalOpen(true)}
+                          className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[9px] font-extrabold cursor-pointer transition-all shrink-0"
+                        >
+                          {getNotificationPermission() === 'granted'
+                            ? (language === 'ar' ? 'تخصيص' : 'Settings')
+                            : (language === 'ar' ? 'تفعيل الآن' : 'Enable')}
+                        </button>
                       </div>
 
                       {/* Inspection Stages Mini Dashboard */}
@@ -5483,6 +5651,12 @@ export default function AppLayout({
         isAiEnabled={isAiEnabled}
         setIsAiEnabled={setIsAiEnabled}
         language={language}
+      />
+
+      {/* Browser Push Notifications Management Modal */}
+      <BrowserNotificationModal
+        isOpen={isBrowserNotifModalOpen}
+        onClose={() => setIsBrowserNotifModalOpen(false)}
       />
     </div>
   );

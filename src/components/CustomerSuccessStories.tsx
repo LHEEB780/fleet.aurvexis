@@ -8,6 +8,11 @@ import {
 import { useLanguage } from '../services/LanguageContext';
 import { saveDocument } from '../services/firebase';
 
+import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
+import municipalWorkshopParts from '../assets/images/municipal_workshop_parts_1786785099442.jpg';
+import driverTruckInspection from '../assets/images/driver_truck_inspection_1786784371761.jpg';
+import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
+
 export interface SuccessStory {
   id: string;
   titleAr: string;
@@ -32,7 +37,7 @@ export const DEFAULT_SUCCESS_STORIES: SuccessStory[] = [
     contentEn: 'National Logistics successfully digitized its fleet of 450 heavy trucks and trailers using our platform. This resulted in a 38% reduction in highway engine failures and unlocked unprecedented annual preventative maintenance budget savings.',
     metricAr: 'تقليل نفقات الصيانة الوقائية بنسبة 25%',
     metricEn: '25% Savings in PM Expenditures',
-    imageUrl: '/src/assets/images/enterprise_fleet_depot_1782935136613.jpg'
+    imageUrl: enterpriseFleetDepot
   },
   {
     id: 'story-2',
@@ -44,7 +49,7 @@ export const DEFAULT_SUCCESS_STORIES: SuccessStory[] = [
     contentEn: 'The division linked 230 municipal heavy loaders and equipment to our digital barcode system. This enabled automated preventative maintenance triggers and spare parts utilization audits, eliminating overstocking waste completely.',
     metricAr: 'انخفاض هدر مستودع القطع بنسبة 30%',
     metricEn: '30% Reduction in Parts Waste',
-    imageUrl: '/src/assets/images/municipal_workshop_parts_1786785099442.jpg'
+    imageUrl: municipalWorkshopParts
   },
   {
     id: 'story-3',
@@ -56,7 +61,7 @@ export const DEFAULT_SUCCESS_STORIES: SuccessStory[] = [
     contentEn: 'Implementing our responsive driver portal with voice note capturing enabled road-drivers to report mechanical issues to the central desk under 15 seconds. This minimized workshop queue delays and preserved engine health.',
     metricAr: 'توفير 30 دقيقة يومياً لكل سائق فحص',
     metricEn: '30 Mins Saved Per Driver Checkup',
-    imageUrl: '/src/assets/images/driver_truck_inspection_1786784371761.jpg'
+    imageUrl: driverTruckInspection
   }
 ];
 
@@ -66,14 +71,14 @@ export default function CustomerSuccessStories() {
 
   const migrateStories = (storiesList: SuccessStory[]): SuccessStory[] => {
     return storiesList.map((s: SuccessStory) => {
-      if (s.id === 'story-1' && (!s.imageUrl || s.imageUrl.includes('unsplash.com'))) {
-        return { ...s, imageUrl: '/src/assets/images/enterprise_fleet_depot_1782935136613.jpg' };
+      if (s.id === 'story-1' && (!s.imageUrl || s.imageUrl.includes('unsplash.com') || s.imageUrl.startsWith('/src/'))) {
+        return { ...s, imageUrl: enterpriseFleetDepot };
       }
-      if (s.id === 'story-2' && (!s.imageUrl || s.imageUrl.includes('unsplash.com') || s.imageUrl.includes('photo-1579412695340'))) {
-        return { ...s, imageUrl: '/src/assets/images/municipal_workshop_parts_1786785099442.jpg' };
+      if (s.id === 'story-2' && (!s.imageUrl || s.imageUrl.includes('unsplash.com') || s.imageUrl.includes('photo-1579412695340') || s.imageUrl.startsWith('/src/'))) {
+        return { ...s, imageUrl: municipalWorkshopParts };
       }
-      if (s.id === 'story-3' && (!s.imageUrl || s.imageUrl.includes('photo-1516574187841') || s.imageUrl.includes('unsplash.com'))) {
-        return { ...s, imageUrl: '/src/assets/images/driver_truck_inspection_1786784371761.jpg' };
+      if (s.id === 'story-3' && (!s.imageUrl || s.imageUrl.includes('photo-1516574187841') || s.imageUrl.includes('unsplash.com') || s.imageUrl.startsWith('/src/'))) {
+        return { ...s, imageUrl: driverTruckInspection };
       }
       return s;
     });
@@ -326,11 +331,11 @@ export default function CustomerSuccessStories() {
                   {/* Card Image and Metric Tag */}
                   <div className="relative overflow-hidden aspect-video bg-slate-900">
                     <img 
-                      src={story.imageUrl || '/src/assets/images/municipal_workshop_parts_1786785099442.jpg'} 
+                      src={story.imageUrl || municipalWorkshopParts} 
                       alt={language === 'ar' ? story.companyAr : story.companyEn}
                       referrerPolicy="no-referrer"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/src/assets/images/municipal_workshop_parts_1786785099442.jpg';
+                        (e.target as HTMLImageElement).src = municipalWorkshopParts;
                       }}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
@@ -641,11 +646,11 @@ export default function CustomerSuccessStories() {
               {/* Modal Header Image Banner */}
               <div className="relative aspect-video max-h-72 w-full overflow-hidden bg-slate-900">
                 <img 
-                  src={activeStory.imageUrl || '/src/assets/images/municipal_workshop_parts_1786785099442.jpg'} 
+                  src={activeStory.imageUrl || municipalWorkshopParts} 
                   alt={language === 'ar' ? activeStory.titleAr : activeStory.titleEn}
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/src/assets/images/municipal_workshop_parts_1786785099442.jpg';
+                    (e.target as HTMLImageElement).src = municipalWorkshopParts;
                   }}
                   className="w-full h-full object-cover"
                 />

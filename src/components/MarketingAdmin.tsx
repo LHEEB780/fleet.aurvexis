@@ -64,6 +64,12 @@ import {
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { DEFAULT_SUCCESS_STORIES, SuccessStory } from './CustomerSuccessStories';
 
+import heavyMachineryRepair from '../assets/images/heavy_machinery_repair_1783750018560.jpg';
+import dieselMaintenance from '../assets/images/diesel_maintenance_1783750031121.jpg';
+import hydraulicServicing from '../assets/images/hydraulic_servicing_1783750041949.jpg';
+import constructionHeavyMachinery from '../assets/images/construction_heavy_machinery_1782935156246.jpg';
+import mechanicTruckWorkshop from '../assets/images/mechanic_truck_workshop_1782935168167.jpg';
+
 interface MarketingAdminProps {
   brandPrimaryColor: string;
   setBrandPrimaryColor: (color: string) => void;
@@ -240,7 +246,7 @@ const DEFAULT_REVIEWS = [
 export const DEFAULT_GALLERY_IMAGES = [
   {
     id: 'img-1',
-    url: '/src/assets/images/heavy_machinery_repair_1783750018560.jpg',
+    url: heavyMachineryRepair,
     titleAr: 'صيانة محرك حفار هيدروليكي',
     titleEn: 'Excavator Hydraulic Engine Repair',
     descAr: 'فحص ميكانيكي دقيق وتفكيك المحرك الهيدروليكي لحفار ثقيل في الورشة الرئيسية.',
@@ -250,7 +256,7 @@ export const DEFAULT_GALLERY_IMAGES = [
   },
   {
     id: 'img-2',
-    url: '/src/assets/images/diesel_maintenance_1783750031121.jpg',
+    url: dieselMaintenance,
     titleAr: 'ورشة صيانة الشاحنات الثقيلة والمعدات',
     titleEn: 'Heavy Duty Fleet & Truck Workshop',
     descAr: 'تجهيز وصيانة دورية لشاحنات نقل ومعدات لوجستية عملاقة لضمان الجاهزية التامة.',
@@ -260,7 +266,7 @@ export const DEFAULT_GALLERY_IMAGES = [
   },
   {
     id: 'img-3',
-    url: '/src/assets/images/hydraulic_servicing_1783750041949.jpg',
+    url: hydraulicServicing,
     titleAr: 'معايرة الأنظمة الهيدروليكية',
     titleEn: 'Hydraulic Pressure Calibration',
     descAr: 'صيانة شاملة لخراطيم وصمامات الضغط الهيدروليكي العالي للرافعات والمعدات الثقيلة.',
@@ -270,7 +276,7 @@ export const DEFAULT_GALLERY_IMAGES = [
   },
   {
     id: 'img-4',
-    url: '/src/assets/images/construction_heavy_machinery_1782935156246.jpg',
+    url: constructionHeavyMachinery,
     titleAr: 'معدات الإنشاءات الثقيلة في الميدان',
     titleEn: 'Construction Fleet Support',
     descAr: 'إدارة وتتبع دورة الصيانة الميدانية للمعدات الثقيلة في مواقع البناء والتشييد.',
@@ -280,7 +286,7 @@ export const DEFAULT_GALLERY_IMAGES = [
   },
   {
     id: 'img-5',
-    url: '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg',
+    url: mechanicTruckWorkshop,
     titleAr: 'فحص ميكانيكي للشاحنات العملاقة',
     titleEn: 'Heavy Truck Diagnostic Scan',
     descAr: 'استخدام أجهزة الفحص المتطورة لقراءة أكواد أعطال المحركات والفرامل الهوائية للشاحنات.',
@@ -5265,11 +5271,11 @@ export function MarketingAdmin({
                     
                     setTimeout(() => {
                       const urls = [
-                        '/src/assets/images/heavy_machinery_repair_1783750018560.jpg',
-                        '/src/assets/images/diesel_maintenance_1783750031121.jpg',
-                        '/src/assets/images/hydraulic_servicing_1783750041949.jpg',
-                        '/src/assets/images/construction_heavy_machinery_1782935156246.jpg',
-                        '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg'
+                        heavyMachineryRepair,
+                        dieselMaintenance,
+                        hydraulicServicing,
+                        constructionHeavyMachinery,
+                        mechanicTruckWorkshop
                       ];
                       const randomUrl = urls[Math.floor(Math.random() * urls.length)];
                       

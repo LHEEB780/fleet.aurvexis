@@ -45,6 +45,12 @@ import { saveDocument } from '../services/firebase';
 import FleetManagersShowcaseModal from './FleetManagersShowcaseModal';
 import CustomerSuccessStories from './CustomerSuccessStories';
 
+import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
+import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
+import driverTruckInspection from '../assets/images/driver_truck_inspection_1786784371761.jpg';
+import aiFleetDiagnostics from '../assets/images/ai_fleet_diagnostics_1786785439472.jpg';
+import mechanicTruckWorkshop from '../assets/images/mechanic_truck_workshop_1782935168167.jpg';
+
 interface MarketingLandingPageProps {
   onNavigateToCRM?: () => void;
   onNavigateToSaaS: (autoLogin?: boolean) => void;
@@ -67,7 +73,7 @@ const DEFAULT_FEATURES = [
     descEn: 'Log technical properties, active drivers, and safety validation statuses cleanly across any layout.',
     badgeAr: 'أساسي',
     badgeEn: 'Core',
-    image: '/src/assets/images/highway_logistics_truck_1782935190395.jpg'
+    image: highwayLogisticsTruck
   },
   {
     id: 'f-2',
@@ -78,7 +84,7 @@ const DEFAULT_FEATURES = [
     descEn: 'Instant reporting desk that allows drivers to submit issues, including fast voice note capture.',
     badgeAr: 'تفاعلي',
     badgeEn: 'Interactive',
-    image: '/src/assets/images/driver_truck_inspection_1786784371761.jpg'
+    image: driverTruckInspection
   },
   {
     id: 'f-3',
@@ -89,7 +95,7 @@ const DEFAULT_FEATURES = [
     descEn: 'Instantly query diagnostic codes and parse engine troubleshooting scripts natively using model integrations.',
     badgeAr: 'حصري',
     badgeEn: 'AI Powered',
-    image: '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg'
+    image: aiFleetDiagnostics
   },
   {
     id: 'f-4',
@@ -100,7 +106,7 @@ const DEFAULT_FEATURES = [
     descEn: 'Schedule service plans, dispatch workorders, and optimize technician workbench allocations dynamically.',
     badgeAr: 'جديد',
     badgeEn: 'New Update',
-    image: '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg'
+    image: mechanicTruckWorkshop
   }
 ];
 
@@ -288,17 +294,17 @@ export default function MarketingLandingPage({
   // Helper to migrate legacy/broken feature image URLs to reliable local assets
   const migrateFeatures = (features: typeof DEFAULT_FEATURES) => {
     return features.map((feat) => {
-      if (feat.id === 'f-1' && (!feat.image || feat.image.includes('unsplash.com'))) {
-        return { ...feat, image: '/src/assets/images/highway_logistics_truck_1782935190395.jpg' };
+      if (feat.id === 'f-1' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.startsWith('/src/'))) {
+        return { ...feat, image: highwayLogisticsTruck };
       }
-      if (feat.id === 'f-2' && (!feat.image || feat.image.includes('unsplash.com'))) {
-        return { ...feat, image: '/src/assets/images/driver_truck_inspection_1786784371761.jpg' };
+      if (feat.id === 'f-2' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.startsWith('/src/'))) {
+        return { ...feat, image: driverTruckInspection };
       }
-      if (feat.id === 'f-3' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.includes('photo-1486006920555'))) {
-        return { ...feat, image: '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg' };
+      if (feat.id === 'f-3' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.includes('photo-1486006920555') || feat.image.startsWith('/src/'))) {
+        return { ...feat, image: aiFleetDiagnostics };
       }
-      if (feat.id === 'f-4' && (!feat.image || feat.image.includes('unsplash.com'))) {
-        return { ...feat, image: '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg' };
+      if (feat.id === 'f-4' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.startsWith('/src/'))) {
+        return { ...feat, image: mechanicTruckWorkshop };
       }
       return feat;
     });
@@ -385,13 +391,13 @@ export default function MarketingLandingPage({
 
   // Helper to resolve high-fidelity default images if none are supplied customly
   const getFeatureImage = (id: string, customImage?: string) => {
-    if (customImage && !customImage.includes('unsplash.com')) return customImage;
+    if (customImage && !customImage.includes('unsplash.com') && !customImage.startsWith('/src/')) return customImage;
     switch (id) {
-      case 'f-1': return '/src/assets/images/highway_logistics_truck_1782935190395.jpg';
-      case 'f-2': return '/src/assets/images/driver_truck_inspection_1786784371761.jpg';
-      case 'f-3': return '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg';
-      case 'f-4': return '/src/assets/images/mechanic_truck_workshop_1782935168167.jpg';
-      default: return '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg';
+      case 'f-1': return highwayLogisticsTruck;
+      case 'f-2': return driverTruckInspection;
+      case 'f-3': return aiFleetDiagnostics;
+      case 'f-4': return mechanicTruckWorkshop;
+      default: return aiFleetDiagnostics;
     }
   };
 
@@ -887,7 +893,7 @@ export default function MarketingLandingPage({
                       className="w-full h-full object-cover transform hover:scale-105 transition-all duration-500"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/src/assets/images/ai_fleet_diagnostics_1786785439472.jpg';
+                        (e.target as HTMLImageElement).src = aiFleetDiagnostics;
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent"></div>

@@ -36,6 +36,7 @@ import { PieChart, Pie, Cell } from 'recharts';
 import { getRealAvatarByName } from './Drivers';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
+import { TechnicianQuickTasks } from './TechnicianQuickTasks';
 
 const SEED_PHOTO_MAP: Record<string, string> = {
   Aiden: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200&h=200',
@@ -495,6 +496,9 @@ export default function Technicians({ user }: { user?: User }) {
           </button>
         </div>
       </div>
+
+      {/* Technician Quick Task List & Field Notes component */}
+      <TechnicianQuickTasks technicians={techList} />
 
       {/* Table vs Grid Display Containers */}
       {viewMode === 'table' ? (
@@ -1523,6 +1527,15 @@ export default function Technicians({ user }: { user?: User }) {
                         <span className="text-sm font-black text-brand-green-500">{comp.length || 4}</span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Technician Specific Quick Tasks & Notes */}
+                  <div className="pt-1">
+                    <TechnicianQuickTasks 
+                      technicians={techList} 
+                      focusedTechId={selectedTech.id} 
+                      inDrawerMode={true} 
+                    />
                   </div>
 
                   {/* WORK LOGS / TIMESHEET SYSTEM SECTION */}

@@ -7,11 +7,21 @@ import {
   Building2, Calendar, ClipboardList, IdCard, 
   ShieldAlert, Box, Users, BarChart3, Truck, 
   Warehouse, Handshake, AlertCircle, Briefcase,
-  Palette, Coins
+  Palette, Coins, Bell, Volume2, VolumeX, Smartphone,
+  Zap, Send, CheckCircle2
 } from 'lucide-react';
 import { MENU_ITEMS, MenuItem } from '../constants';
 import { useLanguage } from '../services/LanguageContext';
 import { safeLocalStorage } from '../services/safeStorage';
+import {
+  getNotificationSettings,
+  saveNotificationSettings,
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+  playNotificationSound,
+  BrowserNotificationSettings
+} from '../services/browserNotifications';
 
 export interface SystemSettingsProps {
   onModuleChange?: (enabledModules: string[]) => void;
@@ -170,20 +180,81 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
     }, 450);
   };
 
+  // --- BROWSER PUSH NOTIFICATION SETTINGS ---
+  const [notifSettings, setNotifSettings] = useState<BrowserNotificationSettings>(getNotificationSettings);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>(getNotificationPermission);
+  const [isNotifTesting, setIsNotifTesting] = useState(false);
+  const [testNotifResult, setTestNotifResult] = useState<boolean | null>(null);
+  const [isRequestingPerm, setIsRequestingPerm] = useState(false);
+
+  const handleNotifToggle = (key: keyof BrowserNotificationSettings) => {
+    setAutosaveStatus('saving');
+    const updated = { ...notifSettings, [key]: !notifSettings[key] };
+    setNotifSettings(updated);
+    saveNotificationSettings(updated);
+    setTimeout(() => setAutosaveStatus('saved'), 350);
+  };
+
+  const handlePriorityFilterChange = (val: 'all' | 'high_only') => {
+    setAutosaveStatus('saving');
+    const updated = { ...notifSettings, minPriority: val };
+    setNotifSettings(updated);
+    saveNotificationSettings(updated);
+    setTimeout(() => setAutosaveStatus('saved'), 350);
+  };
+
+  const handleRoleTargetChange = (val: 'all' | 'technicians' | 'managers') => {
+    setAutosaveStatus('saving');
+    const updated = { ...notifSettings, roleFilter: val };
+    setNotifSettings(updated);
+    saveNotificationSettings(updated);
+    setTimeout(() => setAutosaveStatus('saved'), 350);
+  };
+
+  const handleRequestNotifPermission = async () => {
+    setIsRequestingPerm(true);
+    const result = await requestNotificationPermission();
+    setNotifPermission(result.status);
+    if (result.granted) {
+      const updated = { ...notifSettings, enabled: true };
+      setNotifSettings(updated);
+      saveNotificationSettings(updated);
+    }
+    setIsRequestingPerm(false);
+  };
+
+  const handleTriggerTestNotif = async () => {
+    setIsNotifTesting(true);
+    setTestNotifResult(null);
+    try {
+      const ok = await sendTestNotification();
+      setTestNotifResult(ok);
+    } catch (e) {
+      setTestNotifResult(false);
+    } finally {
+      setIsNotifTesting(false);
+      setTimeout(() => setTestNotifResult(null), 4000);
+    }
+  };
+
   useEffect(() => {
     const handleStorageChange = () => {
       const savedColor = safeLocalStorage.getItem('saas_primary_color') || '#673de6';
       setPrimaryColor(savedColor);
       const savedCurrency = safeLocalStorage.getItem('saas_base_currency') || 'SAR';
       setBaseCurrency(savedCurrency);
+      setNotifSettings(getNotificationSettings());
+      setNotifPermission(getNotificationPermission());
     };
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('brand-color-changed', handleStorageChange);
     window.addEventListener('base-currency-changed', handleStorageChange);
+    window.addEventListener('notification-settings-changed', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('brand-color-changed', handleStorageChange);
       window.removeEventListener('base-currency-changed', handleStorageChange);
+      window.removeEventListener('notification-settings-changed', handleStorageChange);
     };
   }, []);
 
@@ -454,6 +525,297 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
             );
           })}
         </div>
+      </div>
+      
+      {/* Browser Push Notifications & Real-Time Alerts Configuration Card */}
+      <div className={`p-5 bg-gradient-to-br from-indigo-500/5 via-sky-500/5 to-brand-blue-500/5 dark:from-[#0d1527] dark:via-[#091120] dark:to-[#0d1527] rounded-3xl border border-indigo-500/20 dark:border-indigo-500/40 shadow-3xs space-y-5 ${isRtl ? 'text-right' : 'text-left'}`}>
+        
+        {/* Header & Permission Status */}
+        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isRtl ? 'sm:flex-row-reverse' : ''}`}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-sky-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+              <Bell size={20} className={notifSettings.enabled ? 'animate-pulse' : ''} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-slate-850 dark:text-white">
+                  {isRtl ? 'نظام إشعارات المتصفح الفورية (Browser Push Notifications)' : 'Browser Push Notifications Engine'}
+                </h3>
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                  notifPermission === 'granted'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                    : notifPermission === 'denied'
+                    ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'
+                    : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                }`}>
+                  {notifPermission === 'granted' 
+                    ? (isRtl ? 'إذن المتصفح مسموح ✓' : 'Permission Active ✓') 
+                    : notifPermission === 'denied' 
+                    ? (isRtl ? 'محظور بالمتصفح' : 'Blocked') 
+                    : (isRtl ? 'يتطلب الإذن' : 'Permission Needed')}
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-0.5">
+                {isRtl 
+                  ? 'تنبيه الفنيين ومدراء التشغيل فوراً على سطح المكتب والهاتف عند وصول بلاغ صيانة جديد أو اقتراب موعد صيانة وقائية (٤٨ ساعة).' 
+                  : 'Instantly notify technicians and managers on desktop and mobile when maintenance tickets arrive or periodic service is due.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Actions / Master Toggle */}
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            {notifPermission !== 'granted' && (
+              <button
+                type="button"
+                onClick={handleRequestNotifPermission}
+                disabled={isRequestingPerm}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[10.5px] font-black rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                <Zap size={12} />
+                <span>{isRequestingPerm ? (isRtl ? 'جاري الطلب...' : 'Requesting...') : (isRtl ? 'منح إذن المتصفح' : 'Grant Permission')}</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleTriggerTestNotif}
+              disabled={isNotifTesting}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10.5px] font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <Send size={12} className={isNotifTesting ? 'animate-spin' : ''} />
+              <span>{isRtl ? 'إشعار تجريبي' : 'Test Alert'}</span>
+            </button>
+            
+            {testNotifResult === true && (
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                <Check size={12} />
+                {isRtl ? 'تم الإرسال!' : 'Sent!'}
+              </span>
+            )}
+
+            <div 
+              onClick={() => handleNotifToggle('enabled')}
+              className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer shrink-0 ml-1 ${
+                notifSettings.enabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+              }`}
+              title={isRtl ? 'تفعيل / إيقاف الإشعارات' : 'Toggle Notifications'}
+            >
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-xs ${
+                notifSettings.enabled 
+                  ? (isRtl ? 'right-5' : 'left-5') 
+                  : (isRtl ? 'right-1' : 'left-1')
+              }`} />
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Switches Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+          
+          {/* Switch 1: New Maintenance Orders */}
+          <div className="p-3.5 rounded-2xl border border-slate-150/70 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 shrink-0">
+                <Zap size={15} />
+              </div>
+              <div className="min-w-0">
+                <h5 className="text-[11px] font-black text-slate-850 dark:text-slate-150 truncate">
+                  {isRtl ? 'بلاغات الصيانة الجديدة' : 'New Repair Tickets'}
+                </h5>
+                <p className="text-[9px] text-slate-400 truncate">
+                  {isRtl ? 'تنبيه فوري لأوامر العمل' : 'Instant dispatch alerts'}
+                </p>
+              </div>
+            </div>
+            <div 
+              onClick={() => handleNotifToggle('notifyNewMaintenance')}
+              className={`w-8 h-4.5 rounded-full relative transition-colors cursor-pointer shrink-0 ${
+                notifSettings.notifyNewMaintenance ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+              }`}
+            >
+              <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all shadow-xs ${
+                notifSettings.notifyNewMaintenance 
+                  ? (isRtl ? 'right-4' : 'left-4') 
+                  : (isRtl ? 'right-0.5' : 'left-0.5')
+              }`} />
+            </div>
+          </div>
+
+          {/* Switch 2: Periodic Maintenance Due (48h) */}
+          <div className="p-3.5 rounded-2xl border border-slate-150/70 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+                <Calendar size={15} />
+              </div>
+              <div className="min-w-0">
+                <h5 className="text-[11px] font-black text-slate-850 dark:text-slate-150 truncate">
+                  {isRtl ? 'استحقاق الصيانة الدورية' : 'Upcoming Periodic (48h)'}
+                </h5>
+                <p className="text-[9px] text-slate-400 truncate">
+                  {isRtl ? 'تذكير مبكر قبل ٤٨ ساعة' : '48h early preparation'}
+                </p>
+              </div>
+            </div>
+            <div 
+              onClick={() => handleNotifToggle('notifyPeriodicDue')}
+              className={`w-8 h-4.5 rounded-full relative transition-colors cursor-pointer shrink-0 ${
+                notifSettings.notifyPeriodicDue ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+              }`}
+            >
+              <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all shadow-xs ${
+                notifSettings.notifyPeriodicDue 
+                  ? (isRtl ? 'right-4' : 'left-4') 
+                  : (isRtl ? 'right-0.5' : 'left-0.5')
+              }`} />
+            </div>
+          </div>
+
+          {/* Switch 3: Sound Chimes */}
+          <div className="p-3.5 rounded-2xl border border-slate-150/70 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
+                {notifSettings.soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h5 className="text-[11px] font-black text-slate-850 dark:text-slate-150 truncate">
+                    {isRtl ? 'نغمة التنبيه الصوتية' : 'Audio Chime'}
+                  </h5>
+                  <button
+                    type="button"
+                    onClick={() => playNotificationSound('alert')}
+                    className="text-[9px] text-indigo-600 hover:underline cursor-pointer font-bold"
+                  >
+                    ({isRtl ? 'تجربة' : 'play'})
+                  </button>
+                </div>
+                <p className="text-[9px] text-slate-400 truncate">
+                  {isRtl ? 'جرس تنبيه عالي الوضوح' : 'Clear audible alert'}
+                </p>
+              </div>
+            </div>
+            <div 
+              onClick={() => handleNotifToggle('soundEnabled')}
+              className={`w-8 h-4.5 rounded-full relative transition-colors cursor-pointer shrink-0 ${
+                notifSettings.soundEnabled ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+              }`}
+            >
+              <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all shadow-xs ${
+                notifSettings.soundEnabled 
+                  ? (isRtl ? 'right-4' : 'left-4') 
+                  : (isRtl ? 'right-0.5' : 'left-0.5')
+              }`} />
+            </div>
+          </div>
+
+          {/* Switch 4: Mobile Vibration */}
+          <div className="p-3.5 rounded-2xl border border-slate-150/70 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
+                <Smartphone size={15} />
+              </div>
+              <div className="min-w-0">
+                <h5 className="text-[11px] font-black text-slate-850 dark:text-slate-150 truncate">
+                  {isRtl ? 'الاهتزاز للهواتف' : 'Mobile Vibration'}
+                </h5>
+                <p className="text-[9px] text-slate-400 truncate">
+                  {isRtl ? 'تنبيه حركي للأجهزة الذكية' : 'Haptic vibration pattern'}
+                </p>
+              </div>
+            </div>
+            <div 
+              onClick={() => handleNotifToggle('vibrationEnabled')}
+              className={`w-8 h-4.5 rounded-full relative transition-colors cursor-pointer shrink-0 ${
+                notifSettings.vibrationEnabled ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+              }`}
+            >
+              <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all shadow-xs ${
+                notifSettings.vibrationEnabled 
+                  ? (isRtl ? 'right-4' : 'left-4') 
+                  : (isRtl ? 'right-0.5' : 'left-0.5')
+              }`} />
+            </div>
+          </div>
+
+        </div>
+
+        {/* Targeting & Priority Scope */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          {/* Target Roles */}
+          <div className="p-3 rounded-2xl bg-white/50 dark:bg-slate-900/40 border border-slate-150/50 dark:border-slate-800 flex items-center justify-between gap-2">
+            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400">
+              {isRtl ? 'تخصيص استقبال التنبيهات الميدانية:' : 'Target Audience:'}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleRoleTargetChange('all')}
+                className={`px-2.5 py-1 rounded-xl text-[9.5px] font-black transition-all cursor-pointer ${
+                  notifSettings.roleFilter === 'all'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {isRtl ? 'الكل (فنيين وإداريين)' : 'All Staff'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleTargetChange('technicians')}
+                className={`px-2.5 py-1 rounded-xl text-[9.5px] font-black transition-all cursor-pointer ${
+                  notifSettings.roleFilter === 'technicians'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {isRtl ? 'الفنيين والورش فقط' : 'Technicians'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleTargetChange('managers')}
+                className={`px-2.5 py-1 rounded-xl text-[9.5px] font-black transition-all cursor-pointer ${
+                  notifSettings.roleFilter === 'managers'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {isRtl ? 'الإداريين والمشرفين' : 'Managers'}
+              </button>
+            </div>
+          </div>
+
+          {/* Priority Level */}
+          <div className="p-3 rounded-2xl bg-white/50 dark:bg-slate-900/40 border border-slate-150/50 dark:border-slate-800 flex items-center justify-between gap-2">
+            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400">
+              {isRtl ? 'مستوى أهمية البلاغات المنبه عنها:' : 'Minimum Priority Level:'}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handlePriorityFilterChange('all')}
+                className={`px-2.5 py-1 rounded-xl text-[9.5px] font-black transition-all cursor-pointer ${
+                  notifSettings.minPriority === 'all'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {isRtl ? 'جميع المستويات (عادي، متوسط، حرج)' : 'All Priorities'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePriorityFilterChange('high_only')}
+                className={`px-2.5 py-1 rounded-xl text-[9.5px] font-black transition-all cursor-pointer ${
+                  notifSettings.minPriority === 'high_only'
+                    ? 'bg-rose-600 text-white shadow-2xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {isRtl ? 'الطارئ والحرج فقط 🚨' : 'Urgent Only 🚨'}
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
       
       {/* Dynamic Summary Cards Section */}

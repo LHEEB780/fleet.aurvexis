@@ -58,6 +58,7 @@ import CameraCapture from './CameraCapture';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
 import SmartDiagnostic from './SmartDiagnostic';
+import { notifyNewMaintenanceOrder } from '../services/browserNotifications';
 
 const SYSTEM_ANCHOR_DATE = '2026-05-19';
 
@@ -607,6 +608,16 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
     // Update maintenance orders list
     setOrders(prev => [brandNewOrder, ...prev]);
     setIsAddModalOpen(false);
+
+    // Trigger instant browser push notification for technicians & managers
+    const matchedVehForOrder = localVehicles.find(v => v.id === brandNewOrder.vehicleId);
+    const orderVehName = matchedVehForOrder ? `${matchedVehForOrder.name} (${matchedVehForOrder.plateNumber})` : `مركبة #${brandNewOrder.vehicleId}`;
+    notifyNewMaintenanceOrder({
+      orderId: brandNewOrder.orderNumber || brandNewOrder.id,
+      vehicleName: orderVehName,
+      description: brandNewOrder.description,
+      priority: brandNewOrder.priority
+    }).catch(err => console.log('New maintenance push skipped:', err));
 
     // Run system-wide integrations for vehicle, workshop and tech queues
     applySystemWideIntegrations(brandNewOrder, 'created');

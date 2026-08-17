@@ -876,7 +876,7 @@ export default function FleetManagersShowcaseModal({
                     <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-100 rounded-full blur-3xl pointer-events-none -z-10" />
                     <div className="bg-white border border-slate-200 p-2.5 rounded-2xl shadow-md">
                       <img 
-                        src="/src/assets/images/dashboard_marketing_preview_1780862794942.png" 
+                        src={dashboardMarketingPreview} 
                         alt="Comprehensive cloud fleet SaaS dashboard analytics preview" 
                         className="rounded-xl border border-slate-100 w-full h-auto object-cover max-h-[380px]"
                         referrerPolicy="no-referrer"
