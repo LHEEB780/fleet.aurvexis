@@ -51,7 +51,7 @@ export default function VehicleQrModal({ vehicle, isOpen, onClose, language = 'a
     
     printContainer.innerHTML = `
       <div style="direction: rtl; font-family: 'Inter', system-ui, sans-serif; text-align: center; padding: 25px; border: 4px double #1e293b; border-radius: 20px; max-width: 320px; margin: 30px auto; background: white; color: black; box-shadow: none;">
-        <h2 style="font-size: 15px; margin: 0 0 4px 0; font-weight: 900; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-family: system-ui, sans-serif;">مجمع Axoventra الذكي للأسطول</h2>
+        <h2 style="font-size: 15px; margin: 0 0 4px 0; font-weight: 900; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-family: system-ui, sans-serif;">مجمع FleetAurvexis الذكي للأسطول</h2>
         <p style="font-size: 9.5px; color: #475569; margin: 5px 0 12px 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">الرمز التعريفي السريع للصيانة • Operational QR Pass</p>
         
         <div style="margin: 15px auto; display: flex; justify-content: center; align-items: center; background: white; padding: 10px; border-radius: 12px; border: 1px dashed #cbd5e1; max-width: 200px;">
@@ -184,7 +184,7 @@ export default function VehicleQrModal({ vehicle, isOpen, onClose, language = 'a
               <div className="absolute top-0 right-0 left-0 h-1 bg-brand-blue-500" />
               
               <div className="text-[10.5px] font-black text-slate-700 dark:text-slate-350 tracking-wider">
-                {language === 'ar' ? 'مجمع Axoventra الذكي لإدارة الأسطول' : 'Axoventra Fleet Support Network'}
+                {language === 'ar' ? 'مجمع FleetAurvexis الذكي لإدارة الأسطول' : 'FleetAurvexis Fleet Support Network'}
               </div>
               <div className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase mt-0.5 tracking-wider">
                 {language === 'ar' ? 'الرمز الميكانيكي السريع • Digital Maintenance ID' : 'Digital Active Fleet Pass'}

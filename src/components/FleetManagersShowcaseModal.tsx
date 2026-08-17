@@ -142,8 +142,8 @@ export default function FleetManagersShowcaseModal({
       microCopyEn: 'Centralized enterprise governance to streamline hundreds of heavy assets simultaneously',
       fieldReliefAr: 'يسهّل العمل لفرق الإدارة الكبيرة والشركات اللوجستية الوطنية عبر أتمتة توزيع الصلاحيات والربط الفويّ بين الفروع ومراقبة قطع الغيار المتعددة لرفع إنتاجية الورش والتحول الكامل للرقمنة بدون أوراق وبأعلى مستويات النزاهة والموثوقية.',
       fieldReliefEn: 'It simplifies operations for massive enterprise teams by automating workflows, linking multiple regional subsidiaries, and tracking multi-warehouse spare parts to turn manual paperwork into smooth digital automation.',
-      longOverviewAr: 'تواجه المؤسسات التي تمتلك أساطيل ضخمة فجوات في البيانات بين الفروع والمناطق الجغرافية، مما يفقدها ملايين الريالات نتيجة التسريب اللوجستي، وغياب تقارير النزاهة في صرف الوقود، وتراكم مستودع قطع الغيار المهملة. يوفر لك Axoventra أسطح تحكم مركزية متقدمة لعزل وتجميع الأداء المالي والتشغيلي لجميع الفروع في منصة واحدة آمنة ومشفرة بالكامل.',
-      longOverviewEn: 'Enterprise organizations with massive distributed fleets often suffer from communication gaps between regional centers, manual dispatch tracking failures, and lack of true asset lifetime control (TCO). Axoventra solves this structural issue by creating a unified workspace that securely bridges field technicians, branch managers, and headquarters in one highly responsive control layout.',
+      longOverviewAr: 'تواجه المؤسسات التي تمتلك أساطيل ضخمة فجوات في البيانات بين الفروع والمناطق الجغرافية، مما يفقدها ملايين الريالات نتيجة التسريب اللوجستي، وغياب تقارير النزاهة في صرف الوقود، وتراكم مستودع قطع الغيار المهملة. يوفر لك FleetAurvexis أسطح تحكم مركزية متقدمة لعزل وتجميع الأداء المالي والتشغيلي لجميع الفروع في منصة واحدة آمنة ومشفرة بالكامل.',
+      longOverviewEn: 'Enterprise organizations with massive distributed fleets often suffer from communication gaps between regional centers, manual dispatch tracking failures, and lack of true asset lifetime control (TCO). FleetAurvexis solves this structural issue by creating a unified workspace that securely bridges field technicians, branch managers, and headquarters in one highly responsive control layout.',
       features: [
         { title: 'التكلفة الإجمالية للملكية (TCO)', desc: 'احتساب دقيق ومؤتمت لكافة تكاليف صيانة كل شاحنة طوال عمرها التشغيلي لاتخاذ قرار الاستبقاء أو الاستبدال بوعي وتخطيط استثماري سليم.' },
         { title: 'إدارة مخازن وقطع الغيار الذكية', desc: 'ربط رقمي لطلبات قطع الغيار بالرقم التسلسلي للمركبات، لمنع سحب القطع لآليات غير نشطة وحفظ التوازن المثالي للمستودعات.' },
@@ -176,8 +176,8 @@ export default function FleetManagersShowcaseModal({
       microCopyEn: 'Maximize heavy machinery lifespan in the most severe field environments',
       fieldReliefAr: 'يتيح لمهندسي المواقع والإنشاءات والمدراء الميدانيين إدارة الحفارات والبلدوزرات والمولدات والرافعات بناءً على ساعات تشغيل المحرك الحقيقية (Engine Hour Meter)، مع رصد مستويات الزيوت لمنع تعطل المعدات المفاجئ وتفادي الغرامات المالية الطارئة.',
       fieldReliefEn: 'It enables construction site engineers to track and schedule diagnostics for bulldozers, cranes, and electric generators based on actual engine hour meters, optimizing heavy lubrication schedules directly at the worksite.',
-      longOverviewAr: 'ترتبط إنتاجية مواقع البناء والتشييد ارتباطاً طردياً بنسبة التوفر التشغيلي للمعدات الثقيلة. إن حدوث عطل مفاجئ في رافعة برحية أو مضخة خرسانية قد يعطل المشروع بأكمله ويكبّد الشركة غرامات مالية باهظة. تقدم Axoventra نظاماً هندسياً صلباً، يساعد المهندسين في معرفة أوقات تغيير الفلاتر، وتتبع الضغط بالهيدروليك، ورقمنة الفحص لتصفير احتمالات التعطل الميداني.',
-      longOverviewEn: 'Machinery downtime in large-scale building works breaks development milestones and risks compliance metrics. Axoventra digitizes construction vehicle operations by shifting maintenance calendars away from plain calendar dates into dynamic operating hour intervals. This guarantees high hydraulic endurance and zero-risk field fueling.',
+      longOverviewAr: 'ترتبط إنتاجية مواقع البناء والتشييد ارتباطاً طردياً بنسبة التوفر التشغيلي للمعدات الثقيلة. إن حدوث عطل مفاجئ في رافعة برحية أو مضخة خرسانية قد يعطل المشروع بأكمله ويكبّد الشركة غرامات مالية باهظة. تقدم FleetAurvexis نظاماً هندسياً صلباً، يساعد المهندسين في معرفة أوقات تغيير الفلاتر، وتتبع الضغط بالهيدروليك، ورقمنة الفحص لتصفير احتمالات التعطل الميداني.',
+      longOverviewEn: 'Machinery downtime in large-scale building works breaks development milestones and risks compliance metrics. FleetAurvexis digitizes construction vehicle operations by shifting maintenance calendars away from plain calendar dates into dynamic operating hour intervals. This guarantees high hydraulic endurance and zero-risk field fueling.',
       features: [
         { title: 'عدادات ساعات التشغيل الفعلية (Hours)', desc: 'وداعاً للجداول التقويمية التقريبية؛ الصيانة والتزييت يتم جدولتها بناءً على ساعات الدوران والجهد الفعلي في الميدان.' },
         { title: 'مراقبة وقود المواقع والآليات الثابتة', desc: 'تأمين كامل لخزانات المولدات والمعدات الثابتة في مواقع العمل من السرقة مع مطابقة التعبئة بالبصمة الصوتية.' },
@@ -210,8 +210,8 @@ export default function FleetManagersShowcaseModal({
       microCopyEn: 'Instant field tech dispatcher loop to slash repair cycle times',
       fieldReliefAr: 'صُممت هذه المنصة لمزودي الخدمة، الورش التنافسية، وشركات الصيانة من الغير. تتيح لك المنصة رقمنة مهام الورش من الميدان، وإصدار تقديرات الصيانة وفواتير قطع الغيار بدقة ممتازة لتقليل فترات انتظار العملاء بالورش بشكل كامل.',
       fieldReliefEn: 'How the system eases daily field work:\nIt streamlines repairs for dispatch mechanics and vehicle leasing agencies by automating estimates, creating spare parts invoices, and sharing live repair updates with fleet managers to speed up throughput.',
-      longOverviewAr: 'إن تقديم خدمات ممتازة للعملاء يتطلب سرعة فائقة في تحويل الإبلاغ الميداني إلى أمر عمل للميكانيكي، مع الدقة في صرف قطع الغيار واحتساب تكاليف الخدمة لتقديم عروض الأسعار بسرعة. يربط Axoventra الفني الميداني ومسؤول الجرد والعميل في حلقة عمل واحدة فائقة الكفاءة تحقق الشفافية الكاملة وتلغي الاستهلاك الورقي التقليدي.',
-      longOverviewEn: 'Whether hosting high-scale vehicle repair workshops or operating third-party asset maintenance leases, workflow speed determines profitability. Axoventra offers a fully digital, beautifully simple work-order generator, connecting diagnostic mechanics, purchasing agents, and customers seamlessly.',
+      longOverviewAr: 'إن تقديم خدمات ممتازة للعملاء يتطلب سرعة فائقة في تحويل الإبلاغ الميداني إلى أمر عمل للميكانيكي، مع الدقة في صرف قطع الغيار واحتساب تكاليف الخدمة لتقديم عروض الأسعار بسرعة. يربط FleetAurvexis الفني الميداني ومسؤول الجرد والعميل في حلقة عمل واحدة فائقة الكفاءة تحقق الشفافية الكاملة وتلغي الاستهلاك الورقي التقليدي.',
+      longOverviewEn: 'Whether hosting high-scale vehicle repair workshops or operating third-party asset maintenance leases, workflow speed determines profitability. FleetAurvexis offers a fully digital, beautifully simple work-order generator, connecting diagnostic mechanics, purchasing agents, and customers seamlessly.',
       features: [
         { title: 'أوامر عمل رقمية بالكامل', desc: 'إرسال التذاكر وتعيين المهام للفنيين، مع دعم تسجيل الملاحظات الصوتية والصور لحالة العطل مباشرة من الأرض.' },
         { title: 'إدارة الفواتير وصرف قطع الغيار', desc: 'صرف فوري للقطع من الورش وتحديث جرد المستودع وجمع التكاليف مع الفاتورة النهائية للعميل تلقائياً.' },
@@ -245,7 +245,7 @@ export default function FleetManagersShowcaseModal({
       fieldReliefAr: 'يمكّن الرقابة البلدية والمحليات من حوكمة ناقلات النفايات، سيارات الخدمة العامة، وحافلات النقل المدرسي والبلدي وتفتيش أمانها اليومي مع ربط تكلفة الديزل ومعدل الاستهلاك بكل دقة لمنع الهدر وحفظ المال العام والالتزام بالسلامة.',
       fieldReliefEn: 'How the system eases daily field work:\nIt gives municipal supervisors and government transport units accurate tools to monitor sweepers, trucks, and school buses, assuring total budget control and instant environmental safety compliance.',
       longOverviewAr: 'تحظى إدارة الأصول العامة بأهمية قصوى لدى القطاعات الحكومية لضمان الاستخدام السليم للموارد وتفادي إتلاف الآليات المكلفة. إن رقمنة تفتيش الأسطول يتيح للرقابة البلدية ثقة كاملة بصلاحية ناقلات النفايات وحافلات المدارس وسلامة فراميلها وأنظمتها، مع تقارير مالية شفافة تثبت مسار كل ريال تم صرفه على الوقود وقطع الغيار.',
-      longOverviewEn: 'Municipal services operate civic machinery requiring strict transparency, audit logs, and clear green eco-compliance reporting. Axoventra creates a secure, highly controlled environment that prevents fuel leakage, enforces routine heavy machinery safety checks, and manages public resource budgets down to the single cent.',
+      longOverviewEn: 'Municipal services operate civic machinery requiring strict transparency, audit logs, and clear green eco-compliance reporting. FleetAurvexis creates a secure, highly controlled environment that prevents fuel leakage, enforces routine heavy machinery safety checks, and manages public resource budgets down to the single cent.',
       features: [
         { title: 'حوكمة وقود الأصول العامة', desc: 'منع غش أو تسريب الديزل للأصول الحكومية عبر مطابقة كميات التعبئة بالعداد والباركود تلقائياً لمنع أي تلاعب.' },
         { title: 'تفتيش الأمان والامتثال البلدي والبيئي', desc: 'إجبار السائقين والمشغلين على القيام بالفحوصات اليومية (طفايات الحريق، العوادم والامتثال لسلامة المحركات العامة).' },
@@ -278,8 +278,8 @@ export default function FleetManagersShowcaseModal({
       microCopyEn: 'Secure line haul solutions to ensure zero-delay cargo delivery',
       fieldReliefAr: 'يساعد شركات الخدمات اللوجستية والشحن عبر المدن في تتبع الشاحنات بدقة ومراقبة ضغط وتآكل الإطارات، وزيادة عمرها مع منع سرقات الديزل وسخونة المحرك المفاجئة وسط الطرق الصحراوية الطويلة لضمان التوصيل الآمن.',
       fieldReliefEn: 'How the system eases daily field work:\nIt serves cargo carriers by tracking accurate fuel fills, predicting engine cooling failures, and measuring tyre wear to avoid emergency halts on long cross-country desert routes.',
-      longOverviewAr: 'تعد الموثوقية العصب الحقيقي لأعمال سلاسل الإمداد والنقل اللوجستي. إن أي تأخير في تسليم الشحنات قد يؤثر على ثقة العملاء ويسبب تلفاً للبضائع المبردة أو غرامات تسليم باهظة. صمم Axoventra الحل اللوجستي لمسافات السير الطويلة ليقاوم الحرارة الشديدة بالمدن الصحراوية، عبر تتبع دورات الإطارات، وضبط الصيانة الوقائية لأجهزة ناقل حركة والزيوت ومراقبة سلوك القيادة لحماية السائق والبضاعة.',
-      longOverviewEn: 'Highuptime logistics is the back-bone of trading chains. A highway breakdown for a line-haul multi-axle trailer can mean thousands in refrigeration damage and critical delivery failure. Axoventra manages trans-national logistics by continuously coordinating tire and chassis status directly with real-time mileage sync.',
+      longOverviewAr: 'تعد الموثوقية العصب الحقيقي لأعمال سلاسل الإمداد والنقل اللوجستي. إن أي تأخير في تسليم الشحنات قد يؤثر على ثقة العملاء ويسبب تلفاً للبضائع المبردة أو غرامات تسليم باهظة. صمم FleetAurvexis الحل اللوجستي لمسافات السير الطويلة ليقاوم الحرارة الشديدة بالمدن الصحراوية، عبر تتبع دورات الإطارات، وضبط الصيانة الوقائية لأجهزة ناقل حركة والزيوت ومراقبة سلوك القيادة لحماية السائق والبضاعة.',
+      longOverviewEn: 'Highuptime logistics is the back-bone of trading chains. A highway breakdown for a line-haul multi-axle trailer can mean thousands in refrigeration damage and critical delivery failure. FleetAurvexis manages trans-national logistics by continuously coordinating tire and chassis status directly with real-time mileage sync.',
       features: [
         { title: 'إدارة أداء ومستهلكات الإطارات الذكي', desc: 'متابعة العمر الفعلي وضغط والمسافة التي قطعها كل إطار لتقليص استبدالها الفجائي وتأمين القيادة بالطريق السريع.' },
         { title: 'مزامنة صيانة الزيوت والفرامل بالعداد', desc: 'جدولة تلقائية كبرى لتغيير زيوت صندوق التروس وحواشي الفرامل بناءً على الكيلومتراج الفعلي للشاحنة وبمنتهى الدقة.' },
@@ -312,8 +312,8 @@ export default function FleetManagersShowcaseModal({
       microCopyEn: 'Gold safety benchmarks for school bus fleets keeping children safe daily',
       fieldReliefAr: 'يوفر لمشرفي الحركة والمدارس العامة والخاصة لوحة تحقق ذكية تلزم سائقي الحافلات بالدوران والفحص الصباحي الفعلي (كالمكابح، والأبواب، والأحزمة والوقود) عبر البار كود QR لحماية الطلاب وضمان عودتهم سالمين.',
       fieldReliefEn: 'How the system eases daily field work:\nIt structures morning safety checklists for school bus fleet operators, forcing structural inspections of exits, doors, seatbelts, and tyre pressure to give management absolute piece of mind.',
-      longOverviewAr: 'لا مساومة على معايير سلامة أبنائنا في قطاع التعليم والمدارس. إن غياب الفحص الصباحي الروتيني قد تترتب عليه حوادث أو أعطال فنية حرجة تحرم الطلاب من يومهم الدراسي وتسبب قلقاً هائلاً لأولياء الأمور. يوفر Axoventra منظومة حوكمة رائدة تفرض انضباطاً كاملاً على السائق، وتضمن سلامة أجهزة التبريد والمكابح، مع لوحة تحكم ذكية تعين البدلاء فوراً.',
-      longOverviewEn: 'Transporting pupils is a sacred operational duty requiring flawless reliability, daily driver inspections, emergency plan setups, and constant temperature health checks for cooling and AC cabins. Axoventra creates a high-contrast safety engine for private and public schools.',
+      longOverviewAr: 'لا مساومة على معايير سلامة أبنائنا في قطاع التعليم والمدارس. إن غياب الفحص الصباحي الروتيني قد تترتب عليه حوادث أو أعطال فنية حرجة تحرم الطلاب من يومهم الدراسي وتسبب قلقاً هائلاً لأولياء الأمور. يوفر FleetAurvexis منظومة حوكمة رائدة تفرض انضباطاً كاملاً على السائق، وتضمن سلامة أجهزة التبريد والمكابح، مع لوحة تحكم ذكية تعين البدلاء فوراً.',
+      longOverviewEn: 'Transporting pupils is a sacred operational duty requiring flawless reliability, daily driver inspections, emergency plan setups, and constant temperature health checks for cooling and AC cabins. FleetAurvexis creates a high-contrast safety engine for private and public schools.',
       features: [
         { title: 'التحقق الصباحي بالباركود (QR Checks)', desc: 'إجبار السائقين على مسح الرموز خلف كل حافلة وحولها في الميدان لضمان قيامهم بالفحص الفعلي للسلامة.' },
         { title: 'تنبيهات المكابح وأنظمة التكييف والتبريد', desc: 'مراقبة فورية لأجهزة التكييف والفرامل لضمان سلامة وراحة الأطفال وتفادي تعرضهم للحر الشديد.' },
@@ -356,8 +356,8 @@ export default function FleetManagersShowcaseModal({
       toneEn: 'Tone of voice: Highly structured, exact, and designed to emphasize bottom-line financial impact.',
       imagePrompt: 'A modern clean high-fidelity engine blueprint layout, glowing digital schedule dials and neon calendar highlights, premium white UI elements, soft purple overlays, 4K resolution',
       imageMockUrl: enterpriseFleetDepot,
-      longOverviewAr: 'إن جدولة الصيانة الوقائية بناءً على المسافة الفعلية أو الساعات تعد الركيزة الأساسية لوقف نزيف الأموال في الورش. محرك Axoventra يقوم بحساب دورات فحص المحرك، المكابح، الإطارات، وزيت ناقل الحركة ويرسل إشعارات فورية تمنع تفاقم المشاكل البسيطة إلى كوارث تشغيلية مكلفة.',
-      longOverviewEn: 'Preventative maintenance scheduling based on actual odometer or engine hours is the single layout to cease heavy wear. Axoventra calculates loops for engines, brakes, transmission oil, and filters, sending warnings before simple wears transform to catastrophic breaks.',
+      longOverviewAr: 'إن جدولة الصيانة الوقائية بناءً على المسافة الفعلية أو الساعات تعد الركيزة الأساسية لوقف نزيف الأموال في الورش. محرك FleetAurvexis يقوم بحساب دورات فحص المحرك، المكابح، الإطارات، وزيت ناقل الحركة ويرسل إشعارات فورية تمنع تفاقم المشاكل البسيطة إلى كوارث تشغيلية مكلفة.',
+      longOverviewEn: 'Preventative maintenance scheduling based on actual odometer or engine hours is the single layout to cease heavy wear. FleetAurvexis calculates loops for engines, brakes, transmission oil, and filters, sending warnings before simple wears transform to catastrophic breaks.',
       beforeAfterAr: [
         { before: 'حدوث أعطال مفاجئة ومكلفة للمحركات وتوقف الشاحنات على الطرق الصحراوية بسبب نسيان تغيير الزيوت الدورية.', after: 'إشعارات تلقائية تمنع تجاوز فترات الصيانة بنسبة 100% وتحافظ على صحة المحرك دائماً.' }
       ],
@@ -391,8 +391,8 @@ export default function FleetManagersShowcaseModal({
       toneEn: 'Tone of voice: Structured, fair, operational, and focused on fieldwork integrity.',
       imagePrompt: 'A technical inspector using a modern mobile application in a clean depot workspace scanning a barcode on a transport van, daylight, realistic 4K capture',
       imageMockUrl: mechanicTruckWorkshop,
-      longOverviewAr: 'تضيع جودة الفحص المفرط بسبب الروتين والأوراق حيث يسجل الفني الفحوصات عشوائياً بالاستلقاء على المكاتب. تعيد Axoventra الانضباط لفرق التشغيل بتصميم نماذج ذكية تدعم التقاط الصور، تسجيل الملاحظات الصوتية المباشرة، وقراءة الكود لضمان الفحص الدقيق والنهائي.',
-      longOverviewEn: 'Paper checklists encourage false approvals and lack of trackability. Axoventra updates field inspection standards by implementing custom-crafted digital forms supported by photo evidence, voice commentary, and barcode tags for active accountability.',
+      longOverviewAr: 'تضيع جودة الفحص المفرط بسبب الروتين والأوراق حيث يسجل الفني الفحوصات عشوائياً بالاستلقاء على المكاتب. تعيد FleetAurvexis الانضباط لفرق التشغيل بتصميم نماذج ذكية تدعم التقاط الصور، تسجيل الملاحظات الصوتية المباشرة، وقراءة الكود لضمان الفحص الدقيق والنهائي.',
+      longOverviewEn: 'Paper checklists encourage false approvals and lack of trackability. FleetAurvexis updates field inspection standards by implementing custom-crafted digital forms supported by photo evidence, voice commentary, and barcode tags for active accountability.',
       beforeAfterAr: [
         { before: 'تقارير فحص مزيفة تُكتب على المكاتب، وحالات تآكل للمكابح تُهمل حتى تقع الكارثة الميدانية.', after: 'فحص إلزامي بالباركود في الميدان لتثبيت الحالات وإصلاح الفجوات الميكانيكية بذكاء فائق.' }
       ],
@@ -426,8 +426,8 @@ export default function FleetManagersShowcaseModal({
       toneEn: 'Tone of voice: Active, practical, highly governed, and custom-tailored for peak workshop performance.',
       imagePrompt: 'A vibrant professional team of technicians reviewing digital work-orders on screens inside a spacious highly polished repair depot, daylight, 4K resolution',
       imageMockUrl: mechanicTruckWorkshop,
-      longOverviewAr: 'تتراكم مشاكل الصيانة وتتأخر بسبب البطء التنظيمي في تعيين المهام في صرف العمال والأجزاء. بفضل Axoventra، يمكنك أتمتة تدفق أوامر العمل، ومراجعة العقود مع الورش المعتمدة، وضمان عدم تمرير أي صيانة عشوائية غير معتمدة أو خارج النطاق القانوني.',
-      longOverviewEn: 'Inefficient work dispatch hurts mechanic output and wastes billable time. Axoventra creates a clear interactive bridge that links administrators, field supervisors, and technicians around concrete tasks, parts requisition, and quality audits.',
+      longOverviewAr: 'تتراكم مشاكل الصيانة وتتأخر بسبب البطء التنظيمي في تعيين المهام في صرف العمال والأجزاء. بفضل FleetAurvexis، يمكنك أتمتة تدفق أوامر العمل، ومراجعة العقود مع الورش المعتمدة، وضمان عدم تمرير أي صيانة عشوائية غير معتمدة أو خارج النطاق القانوني.',
+      longOverviewEn: 'Inefficient work dispatch hurts mechanic output and wastes billable time. FleetAurvexis creates a clear interactive bridge that links administrators, field supervisors, and technicians around concrete tasks, parts requisition, and quality audits.',
       beforeAfterAr: [
         { before: 'أوراق صيانة ضائعة، وصرف مفرط لقطع غيار لأعطال لم تخضع للفحص المعتمد الميداني.', after: 'تدفق رقمي مشفر لأوامر الإصلاح مع جرد آلي يحمي الأصول ويصون التنافسية والنزاهة.' }
       ],
@@ -461,8 +461,8 @@ export default function FleetManagersShowcaseModal({
       toneEn: 'Tone of voice: Precise, financial-focused, highly ordered, and built to avoid stock leakages.',
       imagePrompt: 'A vast clean industrial warehouse shelves neatly organized with high contrast boxes and tech labels, soft yellow lighting highlights, 4K resolution',
       imageMockUrl: enterpriseFleetDepot,
-      longOverviewAr: 'تعتبر مخازن قطع الغيار من أكثر الثغرات التي تتسرب منها أموال قادة الأساطيل بلا حسيب. يقدم Axoventra سجلاً برمجياً فائق الدقة، يربط كل صامولة وإطار وفلتر بالرقم التسلسلي للمركبات، مما يمنع السحب العشوائي أو المفقود ويؤطر الإنفاق في قنواته المشروعة والاستثمارية الصحيحة.',
-      longOverviewEn: 'Stock rooms represent massive unused capital which easily leaks out due to lack of item traceability. Axoventra offers a smart parts ledger requiring that every filter, tire, or fuse be linked with a specific vehicle VIN, ensuring total financial control.',
+      longOverviewAr: 'تعتبر مخازن قطع الغيار من أكثر الثغرات التي تتسرب منها أموال قادة الأساطيل بلا حسيب. يقدم FleetAurvexis سجلاً برمجياً فائق الدقة، يربط كل صامولة وإطار وفلتر بالرقم التسلسلي للمركبات، مما يمنع السحب العشوائي أو المفقود ويؤطر الإنفاق في قنواته المشروعة والاستثمارية الصحيحة.',
+      longOverviewEn: 'Stock rooms represent massive unused capital which easily leaks out due to lack of item traceability. FleetAurvexis offers a smart parts ledger requiring that every filter, tire, or fuse be linked with a specific vehicle VIN, ensuring total financial control.',
       beforeAfterAr: [
         { before: 'مخزون مهمل وفجوات بالجرد اليدوي، وشراء مستعجل لقطع متوفرة بالفعل تحت أكوام الغبار والنسيان.', after: 'وضوح متكامل للمخزون بلمسة واحدة، وإشعار فوري لكميات الأمان مع توقف الاستهلاك المالي العشوائي.' }
       ],
@@ -497,7 +497,7 @@ export default function FleetManagersShowcaseModal({
       imagePrompt: 'A fleet of modern logistics trucks and passenger vans lined up perfectly outside a sleek digital hub, soft blue evening light, premium photorealistic render, 4K resolution',
       imageMockUrl: enterpriseFleetDepot,
       longOverviewAr: 'إن تتبع الأصول الفنية في الشركات يقتضي تضافر جهود التشغيل والمالية والإدارة. توفر منصتنا مستودعاً برمجياً واحداً يحتوي على السيرة التاريخية لكل مركبة (تاريخ الشراء، عقود الـ SLA، التأمين، الأعطال، الفني المباشر)، مما يتيح للإدارة العليا رؤية شاملة وتخطيطاً استثمارياً صائباً يخلو من العشوائية والحدس الزائد.',
-      longOverviewEn: 'Managing distributed technical vehicles demands extreme coordination. Axoventra creates a centralized system of record harboring the comprehensive lifecycle of every machinery block, preventing document lapses and optimizing operations.',
+      longOverviewEn: 'Managing distributed technical vehicles demands extreme coordination. FleetAurvexis creates a centralized system of record harboring the comprehensive lifecycle of every machinery block, preventing document lapses and optimizing operations.',
       beforeAfterAr: [
         { before: 'غرامات مالية بسبب نسيان تجديد وثائق المركبات، وغياب كلي للتكلفة التشغيلية الحقيقية لكل شاحنة.', after: 'تنبيهات فورية مرئية للوثائق، وحساب تلقائي لكلفة كم السير وتخصيص آمن للسائقين طوال الساعة.' }
       ],
@@ -531,8 +531,8 @@ export default function FleetManagersShowcaseModal({
       toneEn: 'Tone of voice: Structured, governing, rigorous, and perfect for ensuring massive operational audit trails.',
       imagePrompt: 'A glowing secure database server isometric, dynamic glowing wires, modern clean dark UI overlay with glowing ticks, 4K resolution render',
       imageMockUrl: enterpriseFleetDepot,
-      longOverviewAr: 'تنتج الكثير من الفواقد اللوجستية من تغييب المستندات والاعتماد على الموافقات اللفظية التي تصعب مراجعتها مالياً. توفر Axoventra ركائز أتمتة ممتازة، تلتزم بقواعد محددة (مثل: لا يمكن شراء قطعة إذا كانت متوفرة بالمخزن، ولا وقود قبل إثبات قراءة العداد الفعلي للسيارة)، تكرس الحوكمة الكاملة بجميع ريالات التشغيل.',
-      longOverviewEn: 'Lack of systematic compliance causes severe leakages in maintenance projects. Axoventra solves this structural issue by creating solid, event-driven approval workflows that enforce administrative guardrails before money leaves.',
+      longOverviewAr: 'تنتج الكثير من الفواقد اللوجستية من تغييب المستندات والاعتماد على الموافقات اللفظية التي تصعب مراجعتها مالياً. توفر FleetAurvexis ركائز أتمتة ممتازة، تلتزم بقواعد محددة (مثل: لا يمكن شراء قطعة إذا كانت متوفرة بالمخزن، ولا وقود قبل إثبات قراءة العداد الفعلي للسيارة)، تكرس الحوكمة الكاملة بجميع ريالات التشغيل.',
+      longOverviewEn: 'Lack of systematic compliance causes severe leakages in maintenance projects. FleetAurvexis solves this structural issue by creating solid, event-driven approval workflows that enforce administrative guardrails before money leaves.',
       beforeAfterAr: [
         { before: 'موافقات شفهية عشوائية وتجاوز مستمر للموازنات التشغيلية وهدر مستمر بمستندات وهمية وصرف عابر.', after: 'حوكمة صارمة ومؤتمتة بالمنصة، وسلسلة موافقات رقمية فورية تحفظ النزاهة وترتب المصاريف بدقة لثوانٍ.' }
       ],
@@ -566,8 +566,8 @@ export default function FleetManagersShowcaseModal({
       toneEn: 'Tone of voice: Robust, industrial-focused, highly reliable, and built to survive severe construction climates.',
       imagePrompt: 'A rugged yellow construction hydraulic bulldozer scoop in a clean site, glowing neon lines of diagnostic signals around, photorealistic 4K resolution',
       imageMockUrl: constructionHeavyMachinery,
-      longOverviewAr: 'تختلف الصيانة الوقائية للمعدات الثقيلة (كالبلدوزرات والمولدات والرافعات الفنية) اختلافاً جذرياً عن السيارات التجارية، فـ ٣٠ يوماً في المستودع ليست كـ ٣٠ ساعة تشغيل محرك شاق. يتبنى Axoventra أساليب الحوسبة المعتمدة على العداد الفعلي ومستويات الضغط الهيدروليكي وإلزام السائق بفحص سوائل التبريد يومياً لتجنب تعطل العمل المفاجئ والمكلف.',
-      longOverviewEn: 'Heavy equipment cannot rely on normal calendar dates since machine stress is strictly tied to actual operation engine hours. Axoventra creates a solid environment that schedules lubrication and filter swappings based on real running hours.',
+      longOverviewAr: 'تختلف الصيانة الوقائية للمعدات الثقيلة (كالبلدوزرات والمولدات والرافعات الفنية) اختلافاً جذرياً عن السيارات التجارية، فـ ٣٠ يوماً في المستودع ليست كـ ٣٠ ساعة تشغيل محرك شاق. يتبنى FleetAurvexis أساليب الحوسبة المعتمدة على العداد الفعلي ومستويات الضغط الهيدروليكي وإلزام السائق بفحص سوائل التبريد يومياً لتجنب تعطل العمل المفاجئ والمكلف.',
+      longOverviewEn: 'Heavy equipment cannot rely on normal calendar dates since machine stress is strictly tied to actual operation engine hours. FleetAurvexis creates a solid environment that schedules lubrication and filter swappings based on real running hours.',
       beforeAfterAr: [
         { before: 'تعطل مفاجئ لحفار بموقع البناء يوقف العشرات من عمال الحفر ويكلف آلاف الريالات يومياً تشمل الفني والقطع.', after: 'صيانة استباقية دقيقة ترسل إخطارات بالفلتر والزيوت قبل انتهاء دورتها، وتصفير احتمالات التوقف وسط العمل.' }
       ],
@@ -1212,7 +1212,7 @@ export default function FleetManagersShowcaseModal({
                       احسب وفوراتك بعد التحول الرقمي للأسطول
                     </h3>
                     <p className="text-xs text-slate-500 font-bold">
-                      قم بتحريك مؤشرات التمرير أدناه لتحديث وفورات الصيانة السنوية بناءً على مخرجات Axoventra التلقائية:
+                      قم بتحريك مؤشرات التمرير أدناه لتحديث وفورات الصيانة السنوية بناءً على مخرجات FleetAurvexis التلقائية:
                     </p>
                   </div>
 
@@ -1462,7 +1462,7 @@ export default function FleetManagersShowcaseModal({
                   {/* 3. HARDWARE & SOFTWARE MODULE FEATURES */}
                   <div className="pt-8 border-t border-slate-150 space-y-6 text-right" dir={isRtl ? 'rtl' : 'ltr'}>
                     <span className="text-[10.5px] font-black text-indigo-700 tracking-wide font-mono uppercase bg-indigo-50 p-1 px-2.5 rounded-md">
-                      {isRtl ? 'ثانياً: أركان حوسبة Axoventra' : 'II. THE AXOVENTRA STRUCTURAL PILLARS'}
+                      {isRtl ? 'ثانياً: أركان حوسبة FleetAurvexis' : 'II. THE FLEETAURVEXIS STRUCTURAL PILLARS'}
                     </span>
                     <h3 className="text-xl md:text-2xl font-black text-slate-900">
                       {isRtl ? 'المميزات والمحاور الحيوية للمنظومة' : 'Core System Modules'}
@@ -1514,7 +1514,7 @@ export default function FleetManagersShowcaseModal({
                           <div className="flex items-center gap-2 justify-start flex-row-reverse">
                             <span className="w-2.5 h-2.5 bg-emerald-600 rounded-full animate-pulse" />
                             <h4 className="text-sm font-black text-emerald-800">
-                              {isRtl ? 'بعد تفعيل Axoventra (حالياً)' : 'With Axoventra (Streamlined)'}
+                              {isRtl ? 'بعد تفعيل FleetAurvexis (حالياً)' : 'With FleetAurvexis (Streamlined)'}
                             </h4>
                           </div>
                           <p className="text-xs sm:text-sm text-emerald-950 leading-relaxed font-bold">
@@ -1619,7 +1619,7 @@ export default function FleetManagersShowcaseModal({
           {/* SHARED SCORED FOOTER */}
           <div className="bg-[#FAF9F6] border-t border-slate-200 py-10 px-6 shrink-0 text-center text-slate-400 text-xs font-sans">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 font-mono leading-relaxed" dir={isRtl ? 'rtl' : 'ltr'}>
-              <span>© 2026 {isRtl ? 'Axoventra لإدارة تتبع وصيانة الأساطيل والآليات الذكية' : 'AXOVENTRA AUTOMATION INC.'}</span>
+              <span>© 2026 {isRtl ? 'FleetAurvexis لإدارة تتبع وصيانة الأساطيل والآليات الذكية' : 'FLEETAURVEXIS AUTOMATION INC.'}</span>
               <span className="flex items-center gap-1 bg-white border border-slate-200 px-3 py-1 rounded-full text-[10px] font-bold text-slate-500">
                 <ShieldCheck size={12} className="text-emerald-500" />
                 <span>{isRtl ? 'جميع قنوات الاتصال مشفرة بالكامل ومعززة بامتثال السحاب' : 'SECURE SSL ENCRYPTED CONNECTION'}</span>

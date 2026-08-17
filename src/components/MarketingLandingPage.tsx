@@ -248,7 +248,7 @@ const DEFAULT_FOOTER_COLUMNS = [
     titleEn: "Key Resources",
     items: [
       { id: "item-3-1", labelAr: "قصص ودراسات نجاح العملاء", labelEn: "Validated Customer Case Stories" },
-      { id: "item-3-2", labelAr: "مدونة Axoventra للفنيين", labelEn: "Axoventra Engineering Blog" },
+      { id: "item-3-2", labelAr: "مدونة FleetAurvexis للفنيين", labelEn: "FleetAurvexis Engineering Blog" },
       { id: "item-3-3", labelAr: "مكتبة الفيديوهات والشروحات", labelEn: "Platform Video Library" },
       { id: "item-3-4", labelAr: "أدلة وركائز الاستخدام التشغيلي", labelEn: "Operations Guides" }
     ]
@@ -258,7 +258,7 @@ const DEFAULT_FOOTER_COLUMNS = [
     titleAr: "الشركة والدعم",
     titleEn: "Company & Support",
     items: [
-      { id: "item-4-1", labelAr: "نبذة عن شركة Axoventra", labelEn: "About Axoventra" },
+      { id: "item-4-1", labelAr: "نبذة عن شركة FleetAurvexis", labelEn: "About FleetAurvexis" },
       { id: "item-4-2", labelAr: "غرفة المركز الإعلامي والأخبار", labelEn: "Corporate Press Room" },
       { id: "item-4-3", labelAr: "الاتصال المباشر بالدعم الفني", labelEn: "24/7 Engineers Helpdesk" },
       { id: "item-4-4", labelAr: "تنسيق وحجز عرض تقديمي ديمو للمنصة", labelEn: "Request a Dynamic Demo Run" }
@@ -443,7 +443,7 @@ export default function MarketingLandingPage({
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // Dynamic branding computations
-  const effectiveBrandName = brandName || 'Axoventra';
+  const effectiveBrandName = brandName || 'FleetAurvexis';
   const effectiveBrandDesc = brandDesc || (language === 'ar' 
     ? 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة للمؤسسات والشركات الكبرى.' 
     : 'The ultimate digital ecosystem for fleet vehicle maintenance, preventative PM tracking, and AI-enabled diagnostics.');
@@ -620,8 +620,8 @@ export default function MarketingLandingPage({
             <Sparkles size={14} className="text-yellow-400 animate-pulse" />
             <span className="font-semibold text-white/95">
               {language === 'ar' 
-                ? 'مرحباً بك في Axoventra - تم دمج نظام الهوية والخطوط الجديد باحترافية تامة'
-                : 'Welcome to Axoventra - Premium typography & colors fully active'}
+                ? 'مرحباً بك في FleetAurvexis - تم دمج نظام الهوية والخطوط الجديد باحترافية تامة'
+                : 'Welcome to FleetAurvexis - Premium typography & colors fully active'}
             </span>
           </span>
           <div className="flex items-center gap-4 text-xs">
@@ -808,7 +808,7 @@ export default function MarketingLandingPage({
                     <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
                   </div>
                   <span className="text-[9px] font-sans text-slate-400 tracking-wider">
-                    {language === 'ar' ? 'بوابة Axoventra التشخيصية' : 'AXOVENTRA DIAGNOSTIC GATEWAY'}
+                    {language === 'ar' ? 'بوابة FleetAurvexis التشخيصية' : 'FLEETAURVEXIS DIAGNOSTIC GATEWAY'}
                   </span>
                   <span className="px-1.5 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded text-[9px] font-bold">SECURE SSL</span>
                 </div>
@@ -1187,7 +1187,7 @@ export default function MarketingLandingPage({
               {language === 'ar' ? 'تقدير العائد المالي' : 'ROI Estimation Calculator'}
             </span>
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-              {language === 'ar' ? 'حاسبة التوفير المباشرة من Axoventra' : 'Predict Your Fleet Savings & ROI with Axoventra'}
+              {language === 'ar' ? 'حاسبة التوفير المباشرة من FleetAurvexis' : 'Predict Your Fleet Savings & ROI with FleetAurvexis'}
             </h2>
             <p className="text-slate-600 text-xs leading-relaxed">
               {language === 'ar' 
@@ -1623,7 +1623,7 @@ export default function MarketingLandingPage({
                           else if (item.id === "item-3-2") mappedTab = "item-2-6";      // Blog -> map to Compliance Audit
                           else if (item.id === "item-3-3") mappedTab = "item-2-8";      // Video Library -> map to QR / Walkaround demo
                           else if (item.id === "item-3-4") mappedTab = "item-2-1";      // Operations Guides -> map to Preventative PM
-                          else if (item.id === "item-4-1") mappedTab = "owners";        // About M360 -> map to Fleet Owners
+                          else if (item.id === "item-4-1") mappedTab = "about-company"; // About FleetAurvexis -> map to About Company Profile
                           else if (item.id === "item-4-2") mappedTab = "item-2-6";      // Press Room -> map to Compliance Audit
                           else if (item.id === "item-4-3") mappedTab = "item-2-5";      // Helpdesk -> map to Asset Management
                           else if (item.id === "item-4-4") mappedTab = "item-2-8";      // Demo Request -> map to QR label printing & checkup demo

@@ -2666,7 +2666,7 @@ export default function App() {
                         {language === 'ar' ? 'استفسارات المبيعات والاشتراك' : 'Sales & Subscription Support'}
                       </h3>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold mt-0.5">
-                        {language === 'ar' ? 'تواصل مباشر مع فريق مبيعات ودعم Axoventra SaaS' : 'Direct channel with Axoventra SaaS Sales Team'}
+                        {language === 'ar' ? 'تواصل مباشر مع فريق مبيعات ودعم FleetAurvexis SaaS' : 'Direct channel with FleetAurvexis SaaS Sales Team'}
                       </p>
                     </div>
                   </div>
@@ -2834,7 +2834,7 @@ export default function App() {
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-bold">
                         <Mail size={12} className="text-indigo-500" />
-                        <span>sales@axoventra.com</span>
+                        <span>sales@fleetaurvexis.com</span>
                       </div>
                     </div>
 

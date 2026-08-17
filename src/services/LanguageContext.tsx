@@ -34,7 +34,7 @@ const globalDict: Record<string, string> = {
   'الاشتراكات والفوترة للشركة': 'Subscription & SaaS Billing',
   'مجمع تشفير السجلات والأمان': 'Permissions & Access Control',
   'أمر صيانة جديد': 'New Work Order',
-  'مجمع نظام Axoventra': 'Axoventra SaaS Suite',
+  'مجمع نظام FleetAurvexis': 'FleetAurvexis SaaS Suite',
   'بوابة سحابية لإدارة حركة الصيانات ومخازن الأساطيل': 'Cloud portal for logistics, workshops, and fleet maintenance',
 
   // Actions, Buttons & Generic terms
@@ -64,7 +64,7 @@ const globalDict: Record<string, string> = {
   'جاري تشغيل المستشعر البصري...': 'Instantiating optic lenses...',
   'تم قراءة لوحة الترخيص بنجاح!': 'Vehicle barcode matched!',
   'قارئ واستشعار الباركود الذكي': 'Intelligent Telemetric Barcode Reader',
-  'Axoventra - نظام فحص ومعالجة الأصول الرقمية': 'Axoventra - Digital Asset Scanner',
+  'FleetAurvexis - نظام فحص ومعالجة الأصول الرقمية': 'FleetAurvexis - Digital Asset Scanner',
   'تبديل الصلاحيات (تجريبي)': 'Swap Roles (Walkthrough)',
   'التبديل لـ': 'Swap to ',
   'جميع الورش': 'All Workshops',
@@ -234,7 +234,7 @@ const globalDict: Record<string, string> = {
   'موقع الرف والموقع الجغرافي': 'Rack ID Grid coordinates',
 
   // Security Audit
-  'مسؤول تكنولوجيا نظام Axoventra': 'Axoventra Head Cyber Security Architect',
+  'مسؤول تكنولوجيا نظام FleetAurvexis': 'FleetAurvexis Head Cyber Security Architect',
   'سجل الامتثال والوصول': 'System Auditing & Real-time Intrusion Logs',
   'مجمع تشفير السجلات والأمان والامتثال': 'Security Permissions, SSL Protocol Auditing & Compliance Sinks',
   'الامتثال الإلكتروني لتسجيل الدخول الفوري والتحركات بـ SaaS': 'Real-time SaaS Enterprise Compliance Cryptographic Logs',
@@ -245,7 +245,7 @@ const globalDict: Record<string, string> = {
   // Billing tab
   'إدارة الاشتراك والفوترة': 'SaaS Subscriptions Sinks & Billing Operations',
   'باقة بريميوم كلاس النشطة': 'Premium Class Enterprise Active Package',
-  'Axoventra بريميوم كلاس': 'Axoventra Premium SLA Package',
+  'FleetAurvexis بريميوم كلاس': 'FleetAurvexis Premium SLA Package',
   'مجموع دورة الفوترة الأوتوماتيكية الحالية': 'Consolidated Monthly SLA Billing Cycle Ratio',
   'الفواتير والتحميل المباشر للتقارير المالية': 'Automated PDF Invoice Sinks & Financial Statements Archive',
   'توزيع المصاريف الإجمالية': 'Aggregated Operations Cost Components Allocation',
@@ -352,7 +352,7 @@ const globalDict: Record<string, string> = {
 
   // Drivers page specific
   'قاعدة تسجيل وإدارة السائقين والمفوضين بالحركة': 'Drivers & Authorized Movement Personnel Registry',
-  'وحدة ذكاء الأسطول المركزي Axoventra': 'Central Fleet Intel Module Axoventra',
+  'وحدة ذكاء الأسطول المركزي FleetAurvexis': 'Central Fleet Intel Module FleetAurvexis',
   'تأكيد الإجراء وحفظ السجل': 'Confirm Action & Save Log',
   'سجل رخص قيادة السائقين وتفويضات القيادة النشطة': 'Driver Licenses & Active Authorization Records',
   'إجمالي السائقين': 'Total Drivers',
@@ -446,7 +446,7 @@ const globalDict: Record<string, string> = {
   'منظومة السيطرة الشاملة لتسجيل رخص القيادة وربطهم بالأجهزة والمعدات، ومراقبة فترات الصلاحية والأخلاقيات المهنية للسائقين والمساعدين.': 'Comprehensive platform for registering driver licenses, assigning them to machinery, and monitoring validity periods & professional behavior.',
   'سجل كامل بجميع الأصول التابعة للمؤسسة تفصيلياً مع الإطارات والبيانات المتقدمة.': 'Detailed asset lifecycle records mapping multi-axle pressure sensors and chassis safety.',
   'إضافة مركبة تفصيلياً': 'Add Custom Vehicle Details',
-  'تتبع توزيع الأصول، الطاقات الاستيعابية، كفاءة الرافعات والعدد الفنية المتخصصة داخل المجمّع العام لـ Axoventra.': 'Track overall asset allocation, bay capacities, mechanic dispatching, and diagnostic tool reserves.',
+  'تتبع توزيع الأصول، الطاقات الاستيعابية، كفاءة الرافعات والعدد الفنية المتخصصة داخل المجمّع العام لـ FleetAurvexis.': 'Track overall asset allocation, bay capacities, mechanic dispatching, and diagnostic tool reserves.',
   'متابعة تخصصات الفنيين بالورشة، توزيع جدول البلاغات، وإضافة الفنيين وحالاتهم التشغيلية.': 'Track workshop engineer classifications, daily repair schedules, and log certificated availability.',
   'ابحث بالاسم، التخصص أو الهاتف...': 'Search by name, expertise, or phone...',
   'تتبع كلي لقطع الغيار، الإطارات والزيوت وسوائل الآلات مع حدود التنبيه التلقائي وسجل توريد وجرد متكامل.': 'Enterprise spare parts master log, specifying rack ID grids, safety alert thresholds, and automated audits.',

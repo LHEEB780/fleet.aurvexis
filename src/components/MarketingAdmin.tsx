@@ -332,10 +332,10 @@ const DEFAULT_FOOTER_COLUMNS = [
     titleEn: "Key Resources",
     items: [
       { id: "item-3-1", labelAr: "قصص ودراسات نجاح العملاء", labelEn: "Validated Customer Case Stories" },
-      { id: "item-3-2", labelAr: "مدونة Axoventra للفنيين", labelEn: "Axoventra Engineering Blog" },
+      { id: "item-3-2", labelAr: "مدونة FleetAurvexis للفنيين", labelEn: "FleetAurvexis Engineering Blog" },
       { id: "item-3-3", labelAr: "مكتبة الفيديوهات والشروحات", labelEn: "Platform Video Library" },
       { id: "item-3-4", labelAr: "أدلة وركائز الاستخدام التشغيلي", labelEn: "Operations Guides" },
-      { id: "item-3-5", labelAr: "Axoventra مقابل فليتيو", labelEn: "Axoventra vs Fleetio Comparison" },
+      { id: "item-3-5", labelAr: "FleetAurvexis مقابل فليتيو", labelEn: "FleetAurvexis vs Fleetio Comparison" },
       { id: "item-3-6", labelAr: "أداة حاسبة العائد الاستثماري ROI", labelEn: "Interactive Earnings ROI Tool" },
       { id: "item-3-7", labelAr: "نماذج وقوالب سجلات الحركة", labelEn: "Worksheets & Daily Logs" }
     ]
@@ -345,7 +345,7 @@ const DEFAULT_FOOTER_COLUMNS = [
     titleAr: "الشركة والدعم",
     titleEn: "Company & Support",
     items: [
-      { id: "item-4-1", labelAr: "نبذة عن شركة Axoventra", labelEn: "About Axoventra" },
+      { id: "item-4-1", labelAr: "نبذة عن شركة FleetAurvexis", labelEn: "About FleetAurvexis" },
       { id: "item-4-2", labelAr: "غرفة المركز الإعلامي والأخبار", labelEn: "Corporate Press Room" },
       { id: "item-4-3", labelAr: "الشراكات اللوجستية والتحالفات", labelEn: "Strategic Supply Partnerships" },
       { id: "item-4-4", labelAr: "الاتصال المباشر بالدعم الفني", labelEn: "24/7 Engineers Helpdesk" },
@@ -1246,8 +1246,8 @@ export function MarketingAdmin({
       try { setFooterMeta(JSON.parse(storedFooterMeta)); } catch(e) {}
     } else {
       const defaultMeta = {
-        copyrightAr: "حقوق النشر © ٢٠٢٦ Axoventra لإدارة أساطيل النقل والورش الذكية. جميع الحقوق محفوظة.",
-        copyrightEn: "Copyright © 2026 Axoventra Intelligent Fleet & Workshop Management. All Rights Reserved.",
+        copyrightAr: "حقوق النشر © ٢٠٢٦ FleetAurvexis لإدارة أساطيل النقل والورش الذكية. جميع الحقوق محفوظة.",
+        copyrightEn: "Copyright © 2026 FleetAurvexis Intelligent Fleet & Workshop Management. All Rights Reserved.",
         playStoreUrl: "https://play.google.com/store",
         appStoreUrl: "https://apps.apple.com",
         privacyLabelAr: "سياسة الخصوصية والموثوقية وبنود الأمان",
@@ -1996,7 +1996,7 @@ export function MarketingAdmin({
                 explanationAr="وحدة تحكم متكاملة خاصة بالمشرفين لتغيير ومطابقة ألوان التطبيق الإجمالية، وتخصيص عنوان ووصف العلامة التجارية، بالإضافة إلى تتبع طلبات تواصل العملاء الواردة من الصفحة التسويقية العامة."
                 explanationEn="An elite administrative module to configure custom SaaS brand colors, manage reviews listed on public pages, and review active client leads."
                 benefitsAr={[
-                  "تعديل فوري للون الرئيسي الخاص بتطبيقك وشعار Axoventra المخصص.",
+                  "تعديل فوري للون الرئيسي الخاص بتطبيقك وشعار FleetAurvexis المخصص.",
                   "عرض وتعديل الميزات وآراء ومراجعات ملاك الورش لتسريع المبيعات.",
                   "سجل متكامل للـ Leads والعملاء مع ميزة تحديث ورصد حالتهم اللوجيستية."
                 ]}
@@ -2165,7 +2165,7 @@ export function MarketingAdmin({
                           <X size={15} />
                         </button>
                         <div className="text-right">
-                          <span className="text-[9px] font-black tracking-wider block leading-none" style={{ color: brandPrimaryColor }}>بوابة Axoventra</span>
+                          <span className="text-[9px] font-black tracking-wider block leading-none" style={{ color: brandPrimaryColor }}>بوابة FleetAurvexis</span>
                           <h3 className="text-xs font-black text-slate-100 mt-1">SaaS CRM Controller</h3>
                         </div>
                       </div>
@@ -4111,7 +4111,7 @@ export function MarketingAdmin({
                     <span className="p-1.5 rounded-lg text-white" style={{ backgroundColor: brandPrimaryColor }}>
                       <Globe2 size={14} />
                     </span>
-                    <span className="text-xs font-black text-slate-800 dark:text-white">{saasBrandName || 'Axoventra'}</span>
+                    <span className="text-xs font-black text-slate-800 dark:text-white">{saasBrandName || 'FleetAurvexis'}</span>
                   </div>
                   <p className="text-[10.5px] text-slate-505 dark:text-slate-400 font-semibold truncate px-3">{saasBrandDesc || 'بوابة الـ SaaS الذكية لصناعة الحركة'}</p>
                   <button 
@@ -4733,7 +4733,7 @@ export function MarketingAdmin({
                         value={footerMeta.copyrightEn || ""}
                         onChange={(e) => saveFooterMeta({ ...footerMeta, copyrightEn: e.target.value })}
                         className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl leading-normal text-left focus:ring-1 focus:ring-indigo-500 animate-none"
-                        placeholder="Copyright © Axoventra"
+                        placeholder="Copyright © FleetAurvexis"
                       />
                     </div>
 

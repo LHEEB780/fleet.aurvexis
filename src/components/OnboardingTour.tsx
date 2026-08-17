@@ -50,8 +50,8 @@ export default function OnboardingTour({
     {
       id: 'welcome',
       icon: <Compass className="text-violet-500 w-10 h-10 animate-bounce" />,
-      titleAr: 'مرحباً بك في Axoventra! 👋',
-      titleEn: 'Welcome to Axoventra! 👋',
+      titleAr: 'مرحباً بك في FleetAurvexis! 👋',
+      titleEn: 'Welcome to FleetAurvexis! 👋',
       descAr: 'دعنا نأخذك في جولة تعريفية سريعة تفاعلية لشرح كيفية تتبع وإدارة أسطولك وصياناته بذكاء وسرعة.',
       descEn: "Let's take a quick interactive walkthrough to explore how to monitor, diagnose, and optimize your fleet in real-time.",
       tabTarget: 'no-change'
@@ -116,7 +116,7 @@ export default function OnboardingTour({
       titleAr: 'لقد أكملت الجولة التعريفية بنجاح! 🎉',
       titleEn: 'Tour Completed Successfully! 🎉',
       descAr: 'أنت الآن جاهز لإدارة أسطولك بكفاءة متناهية وبتحكم رقمي كامل. لا تتردد في تفعيل الذكاء الاصطناعي دائماً لتسهيل عملك.',
-      descEn: 'You are now ready to run your logistics and maintenance departments with full digital visibility. Enjoy absolute control with Axoventra!',
+      descEn: 'You are now ready to run your logistics and maintenance departments with full digital visibility. Enjoy absolute control with FleetAurvexis!',
       tabTarget: 'dashboard'
     }
   ];

@@ -893,8 +893,8 @@ export default function AppLayout({
     { 
       sender: 'bot', 
       text: language === 'ar' 
-        ? 'أهلاً بك في الدعم الميداني التقني لمجموعة Axoventra المعزز بالـ SaaS. يمكننا معاً معالجة أي استفسارات تخص الاشتراكات، الفواتير، إدارة القطع التكتيكية، أو المشكلات الميكانيكية.' 
-        : 'Welcome to the Axoventra Tech Support portal. We are here to assist you with subscription billing, logistics tracking, or spare parts management workflows.',
+        ? 'أهلاً بك في الدعم الميداني التقني لمجموعة FleetAurvexis المعزز بالـ SaaS. يمكننا معاً معالجة أي استفسارات تخص الاشتراكات، الفواتير، إدارة القطع التكتيكية، أو المشكلات الميكانيكية.' 
+        : 'Welcome to the FleetAurvexis Tech Support portal. We are here to assist you with subscription billing, logistics tracking, or spare parts management workflows.',
       time: '12:00'
     }
   ]);
@@ -1424,7 +1424,7 @@ export default function AppLayout({
           : 'Technicians are currently auto-assigned using regional heatmaps and cell occupancy values to prevent workflow bottlenecks.';
       } else if (textLower.includes('مخزن') || textLower.includes('قطع') || textLower.includes('inv') || textLower.includes('part')) {
         responseText = language === 'ar'
-          ? 'إدارة مخازن Axoventra تدعم فحص حركة العتاد وربط استهلاك البواجي ومرشحات الزيت بأوامر الصيانة (Work Orders) الجارية.'
+          ? 'إدارة مخازن FleetAurvexis تدعم فحص حركة العتاد وربط استهلاك البواجي ومرشحات الزيت بأوامر الصيانة (Work Orders) الجارية.'
           : 'Stock inventory tracking monitors spare oil filters, spark plugs, and tires, updating stock levels on active work orders in real-time.';
       } else {
         responseText = language === 'ar'
@@ -3145,7 +3145,7 @@ export default function AppLayout({
                             value={saasBrandName}
                             onChange={(e) => setSaasBrandName(e.target.value)}
                             className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-xs font-black dark:text-white outline-none focus:border-brand-blue-500/60 focus:bg-white"
-                            placeholder={language === 'ar' ? 'مثال: Axoventra' : 'e.g. Axoventra'}
+                            placeholder={language === 'ar' ? 'مثال: FleetAurvexis' : 'e.g. FleetAurvexis'}
                           />
                         </div>
 
@@ -5213,7 +5213,7 @@ export default function AppLayout({
                     {language === 'ar' ? 'مرشد البدء السريع وإعداد أبعاد النظام' : 'Getting Started Welcome Wizard & Configurator'}
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    {language === 'ar' ? 'مواءمة النظام وتفصيل الأقسام حسب متطلبات وكادرك الفني بضغطة واحدة.' : 'Tailor your Axoventra platform based on your fleet density & corporate focus.'}
+                    {language === 'ar' ? 'مواءمة النظام وتفصيل الأقسام حسب متطلبات وكادرك الفني بضغطة واحدة.' : 'Tailor your FleetAurvexis platform based on your fleet density & corporate focus.'}
                   </p>
                 </div>
 
