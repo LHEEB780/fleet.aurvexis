@@ -220,6 +220,47 @@ export function downloadFleetAssetTemplate(language: string = 'ar') {
 }
 
 /**
+ * Downloads a standardized, UTF-8 encoded CSV template (.csv) with sample vehicle data for bulk asset import.
+ */
+export function downloadFleetAssetCsvTemplate(language: string = 'ar') {
+  const isAr = language === 'ar';
+  const headers = isAr
+    ? ["اسم الآلية / المركبة", "نوع الأصل / التصنيف", "رقم اللوحة / الرمز", "القسم", "القسم الفرعي", "الحالة التشغيلية", "رقم الشاسيه / الرقم التسلسلي", "رقم المحرك", "سنة الصنع", "نوع الوقود", "الحمولة / سعة التوليد", "عدد العجلات / الإطارات", "مقاس الإطارات", "ضغط الهواء الموصى به", "حالة الإطارات", "تاريخ انتهاء الفحص/التأمين"]
+    : ["Vehicle / Asset Name", "Asset Type / Category", "Plate / Serial Number", "Department", "Sub Department", "Status", "Chassis / Serial No", "Engine Number", "Model Year", "Fuel Type", "Capacity / Rating", "Tire Count", "Tire Size", "Recommended PSI", "Tire Status", "Inspection Expiry Date"];
+
+  const rows = isAr ? [
+    ["شاحنة مرسيدس أكتروس 3340 قلاب", "شاحنة نقل", "أ ب ج 1234", "إدارة النقل الثقيل", "شاحنات الصب والقلابات", "active", "WDB9340321K882190", "OM501LA-V6", "2022", "diesel", "24 طن", "10", "315/80R22.5", "115 PSI", "ممتاز", "2027-11-20"],
+    ["مولد كهرباء بيركنز 500 ك ف أ", "معدة هندسية", "GEN-500-01", "قسم المشروعات والمحطات", "المولدات والطاقة المستمرة", "active", "PK-882910-2023", "ENG-PERKINS-1606", "2023", "diesel", "500 kVA", "0", "غير متوفر (معدة ثابتة)", "N/A", "ممتاز", "2027-12-31"],
+    ["حفار كوماتسو جنزير PC200-8", "معدة ثقيلة", "KOM-PC200-08", "قطاع المقاولات والحفر", "المعدات الثقيلة والمجنزرات", "active", "KM-PC200-983112", "SAA6D107E-1", "2022", "diesel", "21 طن تشغيلي", "0", "سلاسل جنزير حديدية", "N/A", "ممتاز", "2027-06-30"],
+    ["رافعة شوكية تويوتا 5 طن ديزل", "معدة ثقيلة", "FL-TOY-5T-03", "الخدمات اللوجستية والمستودعات", "معدات المناولة والرافعات", "active", "TY-8FD50N-11029", "TOYOTA-14Z-II", "2023", "diesel", "5 طن", "4", "300-15 Solid", "N/A", "ممتاز", "2028-01-15"],
+    ["حافلة ركاب تويوتا كوستر 30 راكب", "نقل جماعي", "د هـ و 5678", "نقل العاملين والإسكان", "حافلات نقل الموظفين", "active", "JT733HZB500192841", "1HZ-4.2L", "2023", "diesel", "30 راكب", "6", "215/75R17.5", "75 PSI", "ممتاز", "2027-04-10"],
+    ["تويوتا هايلوكس غمارتين 4X4", "مركبة خفيفة", "س ص ع 9988", "الصيانة الميدانية والطوارئ", "مركبات الورش المتنقلة", "active", "MROER22G001928374", "2GD-FTV-2.4L", "2024", "diesel", "1 طن", "4", "265/65R17", "35 PSI", "ممتاز", "2028-09-30"]
+  ] : [
+    ["Mercedes Actros 3340 Dump Truck", "Heavy Truck", "TRK-ACT-1234", "Heavy Transport", "Bulk Carriers", "active", "WDB9340321K882190", "OM501LA-V6", "2022", "diesel", "24 Tons", "10", "315/80R22.5", "115 PSI", "Excellent", "2027-11-20"],
+    ["Perkins 500 kVA Generator", "Engineering Equipment", "GEN-500-01", "Power & Projects", "Continuous Power", "active", "PK-882910-2023", "ENG-PERKINS-1606", "2023", "diesel", "500 kVA", "0", "N/A (Stationary Base)", "N/A", "Excellent", "2027-12-31"],
+    ["Komatsu Track Excavator PC200-8", "Heavy Equipment", "KOM-PC200-08", "Earthmoving", "Tracked Machinery", "active", "KM-PC200-983112", "SAA6D107E-1", "2022", "diesel", "21 Tons", "0", "Steel Track", "N/A", "Excellent", "2027-06-30"],
+    ["Toyota 5-Ton Diesel Forklift", "Heavy Equipment", "FL-TOY-5T-03", "Logistics", "Material Handling", "active", "TY-8FD50N-11029", "TOYOTA-14Z-II", "2023", "diesel", "5 Tons", "4", "300-15 Solid", "N/A", "Excellent", "2028-01-15"],
+    ["Toyota Coaster 30-Passenger Bus", "Public Transport", "BUS-CST-5678", "Staff Transport", "Commute Buses", "active", "JT733HZB500192841", "1HZ-4.2L", "2023", "diesel", "30 Seats", "6", "215/75R17.5", "75 PSI", "Excellent", "2027-04-10"],
+    ["Toyota Hilux Double Cab 4x4", "Light Vehicle", "HLX-4X4-9988", "Field Operations", "Mobile Workshop", "active", "MROER22G001928374", "2GD-FTV-2.4L", "2024", "diesel", "1 Ton", "4", "265/65R17", "35 PSI", "Excellent", "2028-09-30"]
+  ];
+
+  // \uFEFF is UTF-8 Byte Order Mark (BOM) to ensure Arabic letters display properly in Excel
+  const csvContent = "\uFEFF" + [
+    headers.map(h => `"${h.replace(/"/g, '""')}"`).join(","),
+    ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))
+  ].join("\r\n");
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", isAr ? "نموذج_تسجيل_الأساطيل_CSV.csv" : "fleet_vehicles_bulk_template.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
  * Converts a File object to base64 string
  */
 export function fileToBase64(file: File): Promise<string> {
