@@ -421,10 +421,10 @@ export default function SaasBilling({ user }: { user?: User }) {
                 "Provides quick billing history table with downloadable transaction receipts."
               ]}
               tipsAr={[
-                "اختر الدفع السنوي لتوفير حتى 20% من التكلفة الإجمالية لباقات خدمات ميكانيك 360 المتقدمة."
+                "اختر الدفع السنوي لتوفير حتى 20% من التكلفة الإجمالية لباقات خدمات FleetAurvexis المتقدمة."
               ]}
               tipsEn={[
-                "Opting for Yearly Billing cycle directly waives 20% off all mechanics billing limits automatically."
+                "Opting for Yearly Billing cycle directly waives 20% off all FleetAurvexis billing limits automatically."
               ]}
               language={language}
             />

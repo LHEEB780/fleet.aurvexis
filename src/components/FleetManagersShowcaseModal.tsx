@@ -15,6 +15,7 @@ import municipalCleanFleet from '../assets/images/municipal_clean_fleet_17829351
 import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
 import dashboardMarketingPreview from '../assets/images/dashboard_marketing_preview_1780862794942.png';
 import saasWorkflowIllustration from '../assets/images/saas_workflow_illustration_1780862810991.png';
+import AboutCompanyView from './AboutCompanyView';
 
 interface FleetManagersShowcaseModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface FleetManagersShowcaseModalProps {
   language: 'ar' | 'en';
   onStartTrial: () => void;
   initialTab?: string;
+  brandName?: string;
 }
 
 // Data structures for the 7 solutions requested by the user
@@ -32,7 +34,7 @@ interface FeatureItem {
 
 interface SolutionData {
   id: string;
-  type?: 'sector' | 'feature';
+  type?: 'sector' | 'feature' | 'company' | 'resource';
   nameAr: string;
   nameEn: string;
   icon: React.ReactNode;
@@ -60,13 +62,15 @@ export default function FleetManagersShowcaseModal({
   onClose, 
   language, 
   onStartTrial,
-  initialTab
+  initialTab,
+  brandName
 }: FleetManagersShowcaseModalProps) {
   const isRtl = language === 'ar';
+  const effectiveBrandName = brandName || localStorage.getItem('saas_brand_name') || 'FleetAurvexis';
   
   // Tab/Section Selector: Default is 'owners' (القسم الخاص لمالكي الأساطيل)
   const [activeTab, setActiveTab] = useState<string>('owners');
-  const [activeSegment, setActiveSegment] = useState<'sectors' | 'features'>('sectors');
+  const [activeSegment, setActiveSegment] = useState<'sectors' | 'features' | 'company'>('sectors');
   
   // State for simulator inside owners tab
   const [vehicleCount, setVehicleCount] = useState<number>(45);
@@ -615,6 +619,33 @@ export default function FleetManagersShowcaseModal({
         { label: 'انضباط السائقين بالفحص الصباحي العملي اليومي', value: '100%', desc: 'تراجع حاد لغياب أو تجاهل الفحص اليومي للطرق والرحلات' },
         { label: 'سرعة المتابعة والتحقق الميداني المباشر بالأصل الفني', value: '3 ثوانٍ', desc: 'مسح فوري يفتح صفحة الفحص المريحة من المتصفح بلحظات بسيطة ومريحة' },
         { label: 'إجمالي تقليص إصابات وأضرار حوادث الطرق بالمركبات', value: '45% ↓', desc: 'بفضل الكشف والتنبؤ المبكر بأي تآكل في الأجزاء الهامة بالأسفار' }
+      ]
+    },
+    {
+      id: 'about-company',
+      type: 'company',
+      nameAr: 'نبذة عن شركة FleetAurvexis',
+      nameEn: 'About FleetAurvexis',
+      icon: <Building2 size={16} />,
+      microCopyAr: 'المنظومة السحابية المتكاملة لإدارة صيانة وحوكمة الأساطيل ومستودعات قطع الغيار',
+      microCopyEn: 'Enterprise cloud fleet maintenance, diagnostics and multi-warehouse supply chain',
+      fieldReliefAr: 'شركة رائدة تبتكر برمجيات الحوسبة السحابية (SaaS) والذكاء الاصطناعي لإدارة الأساطيل والورش الميكانيكية.',
+      fieldReliefEn: 'A leading deep-tech SaaS enterprise specializing in cloud fleet maintenance and AI diagnostic systems.',
+      features: [
+        { title: 'الذكاء الاصطناعي التشخيصي', desc: 'تحويل أكواد الأعطال OBD-II إلى خطط إصلاح فورية دقيقة.' },
+        { title: 'فحص الباركود والـ QR الميداني', desc: 'ملصقات ذكية مقاومة للحرارة لإلزام الفحص اليومي دون أوراق.' },
+        { title: 'حوكمة المخزون وقطع الغيار', desc: 'ربط القطع المصروفة بالرقم التسلسلي للمركبة لمنع الهدر والتسريب.' }
+      ],
+      toneAr: 'النبرة: مؤسسية، ريادية، هندسية، وموثوقة بأعلى المعايير العالمية.',
+      toneEn: 'Tone of voice: Enterprise, visionary, authoritative, and trusted globally.',
+      imagePrompt: 'A futuristic clean fleet enterprise control room, daytime bright light, professional operator looking at digital screens with purple and blue flowcharts',
+      imageMockUrl: enterpriseFleetDepot,
+      longOverviewAr: 'شركة FleetAurvexis رائدة الحلول التقنية السحابية في إدارة الأساطيل، صيانة المعدات الثقيلة، والربط الذكي لسلاسل إمداد قطع الغيار في الشرق الأوسط.',
+      longOverviewEn: 'FleetAurvexis is the leading cloud-native fleet maintenance and AI diagnostics software enterprise across the region.',
+      kpisAr: [
+        { label: 'المركبات والآليات المدارة بالمنظومة', value: '+45,000', desc: 'أسطول نشط من الشاحنات والمعدات الثقيلة' },
+        { label: 'متوسط خفض التكاليف التشغيلية', value: '30% ↓', desc: 'وفر مالي موثق من ميزانيات الصيانة والوقود' },
+        { label: 'نسبة منع تسريب قطع الغيار', value: '99.4%', desc: 'بفضل الربط المباشر برقم الهيكل وأمر العمل' }
       ]
     }
   ];
@@ -1402,8 +1433,17 @@ export default function FleetManagersShowcaseModal({
             </div>
           )}
 
-          {/* TAB 2 to 7: RENDER PREMIUM, LIGHT-PAPER SAAS DOCUMENT COVERING OTHER SELECTED SECTION */}
-          {activeTab !== 'owners' && (
+          {/* TAB: ABOUT COMPANY DEDICATED BESPOKE VIEW */}
+          {(activeTab === 'about-company' || activeTab === 'item-4-1') && (
+            <AboutCompanyView 
+              language={language}
+              brandName={effectiveBrandName}
+              onStartTrial={onStartTrial}
+            />
+          )}
+
+          {/* TAB 2 to 7 & OTHER FEATURES: RENDER PREMIUM, LIGHT-PAPER SAAS DOCUMENT COVERING OTHER SELECTED SECTION */}
+          {activeTab !== 'owners' && activeTab !== 'about-company' && activeTab !== 'item-4-1' && (
             <div className="animate-fade-in py-10 px-4 max-w-5xl mx-auto space-y-12">
               
               {/* Layout Container styled as gorgeous white paper */}

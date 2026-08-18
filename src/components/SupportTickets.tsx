@@ -76,7 +76,7 @@ export const SupportTickets: React.FC = () => {
           {
             id: 'r2',
             sender: 'support_agent',
-            senderName: language === 'ar' ? 'ميكانيك 360 (الدعم المتقدم)' : 'Mechanic 360 (Advanced Support)',
+            senderName: language === 'ar' ? 'FleetAurvexis (الدعم المتقدم)' : 'FleetAurvexis (Advanced Support)',
             text: language === 'ar'
               ? 'مرحباً بك! النظام يعتمد معمارية هجينة بالكامل (Hybrid Client-Server): يتم ربط كل مستخدم بقاعدة بيانات Firestore سحابية فوراً. في حالة انقطاع الشبكة، يتم تخزين الحركات في السجل المحلي للباركود والمعدات (In-Memory/LocalStorage)، وعند عودة الاتصال تتم المزامنة دون تضارب. المزامنة تتم في أجزاء من الثانية (أقل من 150ms).'
               : 'Welcome! The system utilizes a hybrid local-first architecture. Standard telemetry connects directly to Firebase Firestore. If network connections drop, inputs compile securely within device registers and localStorage. Upon reconnection, automatic delta synconization occurs inside 150ms with zero conflicts.',
@@ -278,14 +278,14 @@ export const SupportTickets: React.FC = () => {
           : `Hi! Connecting laser scanning devices or hardware terminals uses standard keyboard HID emulations. Please configure your scanning hardware to append a Carriage-Return (Enter key suffix) following any barcode parse to ensure instant dispatch lookup.`;
       } else {
         replyMessage = language === 'ar'
-          ? `نشكرك على استفسارك الاستشاري رقم (${ticketId}). لربط وصيانة النظام بالكامل: أولاً، يتم الربط السحابي بشكل آمن باستخدام مفتاح تشفير يربط أسطولك بمنفذ السحابة المعزول. ثانياً، صيانة المنصة تتم تلقائياً في الخلفية (أقل من ثانية واحدة لكل تحديث) دون التأثير على ورشة العمل لتظل دائماً ميكانيك 360 فاعلة ومستقرة للأدمن وللسائقين.`
+          ? `نشكرك على استفسارك الاستشاري رقم (${ticketId}). لربط وصيانة النظام بالكامل: أولاً، يتم الربط السحابي بشكل آمن باستخدام مفتاح تشفير يربط أسطولك بمنفذ السحابة المعزول. ثانياً، صيانة المنصة تتم تلقائياً في الخلفية (أقل من ثانية واحدة لكل تحديث) دون التأثير على ورشة العمل لتظل دائماً FleetAurvexis فاعلة ومستقرة للأدمن وللسائقين.`
           : `Thank you for your consultation query ${ticketId}. To securely link your systems: we provision key-based SSL channels bridging your fleet registers to your private Firestore instance. Platform updates are deployed in background hot-patches requiring zero downtown, allowing supervisors and operators to work non-stop.`;
       }
 
       const aiReply = {
         id: `rep-${Math.floor(Math.random() * 100000)}`,
         sender: 'support_agent' as const,
-        senderName: language === 'ar' ? 'ميكانيك 360 (الاستجابة الفورية للمهندس)' : 'Mechanic 360 (Specialist AI Response)',
+        senderName: language === 'ar' ? 'FleetAurvexis (الاستجابة الفورية للمهندس)' : 'FleetAurvexis (Specialist AI Response)',
         text: replyMessage,
         time: new Date().toISOString()
       };
@@ -367,7 +367,7 @@ export const SupportTickets: React.FC = () => {
           const technicianReply = {
             id: `rep-bot-${Math.floor(Math.random() * 100000)}`,
             sender: 'support_agent' as const,
-            senderName: language === 'ar' ? 'ميكانيك 360 (المهندس الذاتي لإصلاح الأكواد)' : 'Mechanic 360 (AI Repair Automation Specialist)',
+            senderName: language === 'ar' ? 'FleetAurvexis (المهندس الذاتي لإصلاح الأكواد)' : 'FleetAurvexis (AI Repair Automation Specialist)',
             text: language === 'ar'
               ? `⚙️ [مصلح الأكواد التلقائي] تم الدخول للملحق الميداني وتطبيق الترقيع البرمجي (Hot-Fix) بنجاح وإعادة تفعيل مزامنة الباركود. كود النظام مستقر وخال من الأخطاء الآن.`
               : `⚙️ [AI Automatic Code Repair] System verified. Remote compiler successfully merged the hotpatch into code registers. The local scanner module has been fully restored.`,
@@ -447,7 +447,7 @@ export const SupportTickets: React.FC = () => {
         const engineerReply = {
           id: `rep-${Math.floor(Math.random() * 100000)}`,
           sender: 'support_agent' as const,
-          senderName: language === 'ar' ? 'ميكانيك 360 (مكتب المهندسين الميدانيين)' : 'Mechanic 360 (Technical Advisor)',
+          senderName: language === 'ar' ? 'FleetAurvexis (مكتب المهندسين الميدانيين)' : 'FleetAurvexis (Technical Advisor)',
           text: language === 'ar' 
             ? `لقد تم إرسال ردك الفني لإشراف الأسطول الشامل وصيانة الـ SaaS. نحن نتتبع هذا التعديل وسنقوم بالتواصل معك لتأكيد إصلاح المنافذ.`
             : `Your technical reply has been logged. Our mechanical advisors are actively reviewing the performance parameters to ensure full compatibility.`,
@@ -597,7 +597,7 @@ export const SupportTickets: React.FC = () => {
         <div className="space-y-1">
           <h4 className="text-sm font-black text-slate-800 dark:text-white flex items-center gap-1.5 justify-start">
             <LifeBuoy className="text-violet-500" size={18} />
-            <span>{language === 'ar' ? 'مركز دعم العملاء وصيانة وتطوير الأنشطة' : 'Mechanic 360 Support & PM Center'}</span>
+            <span>{language === 'ar' ? 'مركز دعم العملاء وصيانة وتطوير الأنشطة' : 'FleetAurvexis Support & PM Center'}</span>
           </h4>
           <p className="text-[10px] text-slate-400">
             {language === 'ar' ? 'دعم فني فوري بالذكاء الاصطناعي، وأدلة المزامنة، وتطوير خصائص الـ SaaS المبتكرة.' : 'AI automated repairs, configuration audits, and B2B custom feature development.'}
@@ -832,7 +832,7 @@ export const SupportTickets: React.FC = () => {
                             >
                               <div className="p-3 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-205 dark:border-slate-800 text-[9.5px] leading-relaxed text-slate-500 space-y-1.5">
                                 <p className="font-extrabold text-violet-650">
-                                  {language === 'ar' ? '🛡️ ميثاق الموثوقية لحماية أسطول الـ SaaS:' : '🛡️ Mechanic 360 Strict Sandbox Protocol:'}
+                                  {language === 'ar' ? '🛡️ ميثاق الموثوقية لحماية أسطول الـ SaaS:' : '🛡️ FleetAurvexis Strict Sandbox Protocol:'}
                                 </p>
                                 <p>
                                   {language === 'ar'
@@ -995,7 +995,7 @@ export const SupportTickets: React.FC = () => {
                 {language === 'ar' ? 'إرسال طلب صيانة أو استشارة جديدة بالمنشأة' : 'Submit Diagnostic Support Request'}
               </h4>
               <p className="text-[10px] text-slate-450 leading-relaxed">
-                {language === 'ar' ? 'املأ أبعاد مشكلتك وسيجيب مستشار ميكانيك 365 الميداني الذكي ويحل تضارب المزامنة والربط فورياً.' : 'Describe your operational bottleneck; our diagnostic queue assigns an active engineer.'}
+                {language === 'ar' ? 'املأ أبعاد مشكلتك وسيجيب مستشار FleetAurvexis الميداني الذكي ويحل تضارب المزامنة والربط فورياً.' : 'Describe your operational bottleneck; our diagnostic queue assigns an active engineer.'}
               </p>
             </div>
 
@@ -1103,8 +1103,8 @@ export const SupportTickets: React.FC = () => {
                 <div className="text-[11px] leading-relaxed text-slate-550 dark:text-slate-350 space-y-2.5">
                   <p>
                     {language === 'ar' 
-                      ? 'تم ربط منصة "ميكانيك 360" بقاعدة بيانات سحابية مشفرة وخلفية قوية تعمل بنظام سحابة Google Firestore. يتم توثيق الحركات وحركات الأسطول وقطع غيار المستودعات تلقائياً وثنائياً.'
-                      : 'Mechanic 360 utilizes Google Firestore relational-document architectures. Frontlines stream data seamlessly with zero synchronization roadblocks.'}
+                      ? 'تم ربط منصة "FleetAurvexis" بقاعدة بيانات سحابية مشفرة وخلفية قوية تعمل بنظام سحابة Google Firestore. يتم توثيق الحركات وحركات الأسطول وقطع غيار المستودعات تلقائياً وثنائياً.'
+                      : 'FleetAurvexis utilizes Google Firestore relational-document architectures. Frontlines stream data seamlessly with zero synchronization roadblocks.'}
                   </p>
                   
                   <div className="p-3 bg-slate-50 dark:bg-[#121829] rounded-2xl border border-slate-205 dark:border-slate-800 space-y-2 text-[10px]">
@@ -1189,7 +1189,7 @@ export const SupportTickets: React.FC = () => {
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 bg-[#008069] rounded flex items-center justify-center text-xs text-white">💼</div>
                 <span className="text-[12px] font-bold text-slate-800 dark:text-slate-200">
-                  {language === 'ar' ? 'لوحة تخطيط وتطوير ميكانيك 360 - مدير المشروع (PM Workspace)' : 'Mechanic 360 PM Workspace'}
+                  {language === 'ar' ? 'لوحة تخطيط وتطوير FleetAurvexis - مدير المشروع (PM Workspace)' : 'FleetAurvexis PM Workspace'}
                 </span>
                 <span className="text-[10px] bg-slate-200/80 dark:bg-slate-755 px-2 py-0.5 rounded-full font-serif text-[#008069] dark:text-[#00a884]">
                   {pmWindowSize === 'fullscreen' ? (language === 'ar' ? 'عرض ملء الشاشة' : 'Fullscreen Mode') : (language === 'ar' ? 'عرض متوسط' : 'Medium Mode')}
@@ -1412,7 +1412,7 @@ export const SupportTickets: React.FC = () => {
                           </div>
                           <div className="text-left font-sans">
                             <h5 className="text-[15px] font-bold text-[#111b21] dark:text-[#e9edef] leading-tight">
-                              {language === 'ar' ? 'مدير مشروع ميكانيك 360 المعين' : 'Mechanic 360 Dedicated PM'}
+                              {language === 'ar' ? 'مدير مشروع FleetAurvexis المعين' : 'FleetAurvexis Dedicated PM'}
                             </h5>
                             <p className="text-[12px] text-[#00a884] font-semibold">
                               {language === 'ar' ? 'متصل الآن - يدرس ساعات التطبيق المخصص' : 'online • Scoping custom upgrades'}
@@ -1713,7 +1713,7 @@ export const SupportTickets: React.FC = () => {
                   </p>
                   <p>
                     {language === 'ar'
-                      ? '٢. يلتزم الذكاء الاصطناعي التابع لـ Mechanic 360 بحيادية البيانات تامة وحصر أنشطة الترقيع خارج نطاقات بيانات فواتير العملاء أو الخصوصية الحساسة.'
+                      ? '٢. يلتزم الذكاء الاصطناعي التابع لـ FleetAurvexis بحيادية البيانات تامة وحصر أنشطة الترقيع خارج نطاقات بيانات فواتير العملاء أو الخصوصية الحساسة.'
                       : '2. Support is highly isolated inside read-only variables. Temporary hot patches of physical barcode drivers shall be transparently logged and visualized in active terminal logs.'}
                   </p>
                 </div>

@@ -44,6 +44,8 @@ import { useLanguage } from '../services/LanguageContext';
 import { saveDocument } from '../services/firebase';
 import FleetManagersShowcaseModal from './FleetManagersShowcaseModal';
 import CustomerSuccessStories from './CustomerSuccessStories';
+import FleetAurvexisLogo, { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
+import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 
 import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
 import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
@@ -266,6 +268,32 @@ const DEFAULT_FOOTER_COLUMNS = [
   }
 ];
 
+const sanitizeFooterColumns = (cols: any[], activeBrandName: string = 'FleetAurvexis') => {
+  if (!Array.isArray(cols)) return DEFAULT_FOOTER_COLUMNS;
+  const brand = activeBrandName || 'FleetAurvexis';
+  return cols.map(col => ({
+    ...col,
+    items: Array.isArray(col.items) ? col.items.map((item: any) => {
+      let labelAr = (item.labelAr || '')
+        .replace(/ميكانيك 360/g, brand)
+        .replace(/ميكانيك360/g, brand)
+        .replace(/شعبة صيانة الآليات والمعدات/g, brand);
+      let labelEn = (item.labelEn || '')
+        .replace(/Mechanic 360/g, brand)
+        .replace(/Mechanic360/g, brand);
+      if (item.id === 'item-4-1') {
+        labelAr = `نبذة عن شركة ${brand}`;
+        labelEn = `About ${brand}`;
+      }
+      return {
+        ...item,
+        labelAr,
+        labelEn
+      };
+    }) : []
+  }));
+};
+
 const getReviewInitials = (name: string) => {
   if (!name) return '??';
   const clean = name.replace(/(المهندس|المهندسة|الدكتور|الدكتورة|الأستاذ|الأستاذة|الشيخ|م\.|د\.)/g, '').trim();
@@ -345,18 +373,25 @@ export default function MarketingLandingPage({
   });
 
   const [footerColumnsList, setFooterColumnsList] = useState(() => {
+    const activeBrand = brandName || 'FleetAurvexis';
     const stored = localStorage.getItem('saas_marketing_footer_columns_v2');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        const sanitized = sanitizeFooterColumns(parsed, activeBrand);
+        localStorage.setItem('saas_marketing_footer_columns_v2', JSON.stringify(sanitized));
+        return sanitized;
       } catch (e) {}
     }
-    return DEFAULT_FOOTER_COLUMNS;
+    const defaultSanitized = sanitizeFooterColumns(DEFAULT_FOOTER_COLUMNS, activeBrand);
+    localStorage.setItem('saas_marketing_footer_columns_v2', JSON.stringify(defaultSanitized));
+    return defaultSanitized;
   });
 
   // Keep states in sync with any modifications in the Admin panel
   useEffect(() => {
     const handleStorageChange = () => {
+      const activeBrand = brandName || 'FleetAurvexis';
       const storedFeatures = localStorage.getItem('saas_marketing_features_v1');
       if (storedFeatures) {
         try { 
@@ -376,7 +411,11 @@ export default function MarketingLandingPage({
       }
       const storedFooter = localStorage.getItem('saas_marketing_footer_columns_v2');
       if (storedFooter) {
-        try { setFooterColumnsList(JSON.parse(storedFooter)); } catch (e) {}
+        try { 
+          const parsed = JSON.parse(storedFooter);
+          const sanitized = sanitizeFooterColumns(parsed, activeBrand);
+          setFooterColumnsList(sanitized); 
+        } catch (e) {}
       }
     };
 
@@ -387,7 +426,7 @@ export default function MarketingLandingPage({
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('marketing-data-updated', handleStorageChange);
     };
-  }, []);
+  }, [brandName]);
 
   // Helper to resolve high-fidelity default images if none are supplied customly
   const getFeatureImage = (id: string, customImage?: string) => {
@@ -442,11 +481,25 @@ export default function MarketingLandingPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Dynamic branding computations
-  const effectiveBrandName = brandName || 'FleetAurvexis';
-  const effectiveBrandDesc = brandDesc || (language === 'ar' 
-    ? 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة للمؤسسات والشركات الكبرى.' 
-    : 'The ultimate digital ecosystem for fleet vehicle maintenance, preventative PM tracking, and AI-enabled diagnostics.');
+  // Dynamic branding computations with robust sanitization
+  const getCleanBrandName = (val?: string) => {
+    if (!val || val === 'شعبة صيانة الآليات والمعدات التخصصية' || val.includes('شعبة صيانة') || val.includes('المعدات التخصصية') || val.toLowerCase().includes('axoventra')) {
+      return 'FleetAurvexis';
+    }
+    return val;
+  };
+
+  const getCleanBrandDesc = (val?: string, lang: string = 'ar') => {
+    if (!val || val.includes('شعبة صيانة') || val.includes('المعدات التخصصية') || val.includes('حساب الكلف') || val.includes('للعجلات')) {
+      return lang === 'ar' 
+        ? 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة للمؤسسات والشركات الكبرى.' 
+        : 'The ultimate digital ecosystem for fleet vehicle maintenance, preventative PM tracking, and AI-enabled diagnostics.';
+    }
+    return val;
+  };
+
+  const effectiveBrandName = getCleanBrandName(brandName || localStorage.getItem('saas_brand_name') || '');
+  const effectiveBrandDesc = getCleanBrandDesc(brandDesc || localStorage.getItem('saas_brand_desc') || '', language);
 
   // Simulated live automation logs for the landing sandbox
   const [logs, setLogs] = useState<Array<{ id: string; time: string; msgAr: string; msgEn: string; status: 'ok' | 'info' | 'warning' }>>([
@@ -610,102 +663,74 @@ export default function MarketingLandingPage({
         </div>
       )}
       
-      {/* Top Professional Accent Bar */}
-      <div 
-        style={{ backgroundColor: brandPrimaryColor }}
-        className="text-white text-xs py-2.5 px-6 font-medium flex items-center justify-between shadow-sm overflow-hidden"
-      >
-        <div className="max-w-7xl mx-auto w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <span className="flex items-center gap-2">
-            <Sparkles size={14} className="text-yellow-400 animate-pulse" />
-            <span className="font-semibold text-white/95">
-              {language === 'ar' 
-                ? 'مرحباً بك في FleetAurvexis - تم دمج نظام الهوية والخطوط الجديد باحترافية تامة'
-                : 'Welcome to FleetAurvexis - Premium typography & colors fully active'}
-            </span>
-          </span>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="text-white/80 font-mono tracking-wider">
-              {language === 'ar' ? 'الحالة الفنية: ممتاز' : 'Operations Standing: Excellent 🟢'}
-            </span>
+      {/* Main Responsive Unified Sticky Header in Brand Purple Gradient */}
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#1b0c36] via-[#2d1254] to-[#43147a] text-white backdrop-blur-xl border-b border-purple-400/20 shadow-lg shadow-purple-950/25 transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between gap-3 sm:gap-4">
+          
+          {/* Logo Brand with Official Emblem & Modal Trigger */}
+          <div className="shrink-0">
+            <FleetAurvexisLogo 
+              size="md" 
+              isDarkBg={true}
+              customText={effectiveBrandName}
+              customSubtitle={language === 'ar' ? 'إدارة صيانة الأساطيل' : 'Connectivity & Maintenance Suite'}
+              enableModalOnPress={true}
+            />
+          </div>
+
+          {/* Nav Links (Desktop) */}
+          <nav className="hidden lg:flex items-center gap-2 font-sans">
             <button 
               onClick={() => {
-                syncLocalBranding();
-                onNavigateToSaaS(true);
+                setSelectedShowcaseTab('about-company');
+                setIsShowcaseOpen(true);
               }}
-              className="bg-white/15 hover:bg-white/25 transition-all duration-200 px-3 py-1 rounded-md font-bold uppercase tracking-wider text-[11px]"
+              className="text-xs font-bold text-purple-100 hover:text-white bg-white/10 hover:bg-white/20 border border-purple-300/30 transition-all cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-xl shadow-xs"
             >
-              {language === 'ar' ? 'دخول الكونسول' : 'Console Login'}
+              <Sparkles size={13} className="text-amber-300 animate-pulse" />
+              <span>{language === 'ar' ? 'نبذة عن الشركة' : 'About Us'}</span>
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Responsive Sticky Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E8EAF1] shadow-xs">
-        <div className="max-w-7xl mx-auto px-6 min-h-20 py-3 md:py-0 md:h-20 flex items-center justify-between gap-4">
-          
-          {/* Logo Brand with Geometric Icon */}
-          <div className="flex items-center gap-3.5">
-            <div 
-              style={{ backgroundColor: brandPrimaryColor }}
-              className="shrink-0 flex items-center justify-center p-2 rounded-xl shadow-md transform hover:rotate-6 transition-all duration-300"
-            >
-              {/* Distinct Geometric Logo Icon representing connectivity, AI and mechanical alignment */}
-              <svg width="24" height="24" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="240" height="240" rx="64" fill="transparent" />
-                <path d="M70 70 L120 120 L70 170" stroke="white" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M170 70 L120 120 L170 170" stroke="white" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
-                <circle cx="120" cy="120" r="32" fill={brandPrimaryColor} stroke="white" strokeWidth="10" />
-              </svg>
-            </div>
-            
-            <div className="flex flex-col">
-              <span className="font-extrabold text-[16px] tracking-[0.05em] text-[#202124] font-sans">
-                {effectiveBrandName}
-              </span>
-              <span className="text-[10px] font-bold text-[#5F6368] tracking-widest uppercase">
-                {language === 'ar' ? 'إدارة صيانة الأساطيل' : 'Connectivity & Maintenance Suite'}
-              </span>
-            </div>
-          </div>
-
-          {/* Nav Links */}
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+            <a href="#features" className="text-xs font-semibold text-purple-200/90 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-xl transition-all">
               {language === 'ar' ? 'الميزات الأساسية' : 'Platform Pillars'}
             </a>
-            <a href="#simulator" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+            <a href="#simulator" className="text-xs font-semibold text-purple-200/90 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-xl transition-all">
               {language === 'ar' ? 'المحاكي المباشر' : 'Live Sandbox'}
             </a>
-            <a href="#clients" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+            <a href="#clients" className="text-xs font-semibold text-purple-200/90 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-xl transition-all">
               {language === 'ar' ? 'عملاؤنا' : 'Enterprise Partners'}
             </a>
-            <a href="#roi" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+            <a href="#roi" className="text-xs font-semibold text-purple-200/90 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-xl transition-all">
               {language === 'ar' ? 'حاسبة الوفورات' : 'ROI Tool'}
             </a>
           </nav>
 
-          {/* Actions & Multilingual Toggle */}
-          <div className="flex items-center gap-3.5">
-            {/* Arabic / English Toggle */}
+          {/* Actions: Equal-Height Compact Buttons & Status */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Live Operational Status Indicator (Hidden on small mobile) */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 h-8 bg-purple-900/60 border border-purple-400/30 rounded-lg text-[10px] font-bold text-purple-200 shadow-inner select-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse shrink-0"></span>
+              <span>{language === 'ar' ? 'متصل 2026' : 'Live Active'}</span>
+            </div>
+
+            {/* Arabic / English Language Switcher (Compact Equal Size) */}
             <button
               onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              className="px-3 py-1.5 border border-[#E8EAF1] rounded-xl text-xs font-semibold hover:bg-slate-50 transition-colors flex items-center gap-1 cursor-pointer"
+              className="h-8 px-2.5 sm:px-3 bg-white/10 hover:bg-white/20 active:bg-white/25 text-white border border-purple-300/35 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer backdrop-blur-md shadow-xs hover:border-purple-200/60 shrink-0"
+              title={language === 'ar' ? 'Switch to English' : 'التحويل للعربية'}
             >
-              <Globe2 size={14} className="text-slate-500" />
+              <Globe2 size={12} className="text-purple-200" />
               <span>{language === 'ar' ? 'English' : 'العربية'}</span>
             </button>
 
-            {/* Launch Console */}
+            {/* Single Primary Action: Launch Console / System (Compact Equal Size) */}
             <button
               onClick={() => {
                 syncLocalBranding();
                 onNavigateToSaaS(true);
               }}
-              className="px-4.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all duration-200 cursor-pointer"
+              className="h-8 px-3 sm:px-3.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:from-purple-400 hover:via-indigo-400 hover:to-purple-500 active:scale-[0.98] text-white text-[11px] font-black rounded-lg shadow-sm shadow-purple-950/50 border border-purple-300/40 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 hover:shadow-purple-500/25 shrink-0"
             >
-              {language === 'ar' ? 'دخول النظام' : 'Launch System'}
+              <span>{language === 'ar' ? 'دخول النظام' : 'Launch System'}</span>
             </button>
           </div>
         </div>
@@ -721,13 +746,24 @@ export default function MarketingLandingPage({
           
           {/* Hero Left Info */}
           <div className="lg:col-span-7 space-y-6 text-center lg:text-right">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-blue-50 border border-brand-blue-100/50 rounded-full text-xs font-semibold text-brand-blue-700 mx-auto lg:mx-0">
-              <Sparkles size={13} style={{ color: brandPrimaryColor }} />
-              <span>
+            <div 
+              onClick={() => {
+                setSelectedShowcaseTab('about-company');
+                setIsShowcaseOpen(true);
+              }}
+              className="inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-white/90 dark:bg-slate-900/90 border border-indigo-200/80 dark:border-indigo-500/30 rounded-2xl shadow-xs text-xs font-bold text-slate-800 dark:text-slate-200 mx-auto lg:mx-0 cursor-pointer hover:border-indigo-400 hover:shadow-md transition-all group"
+            >
+              <div className="w-5 h-5 rounded-lg overflow-hidden border border-indigo-400/50 bg-[#090D16] shrink-0 p-0.5 group-hover:scale-110 transition-transform">
+                <FleetAurvexisVectorEmblem className="w-full h-full" />
+              </div>
+              <span className="text-indigo-600 dark:text-indigo-400 font-black">FleetAurvexis™</span>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span className="text-slate-600 dark:text-slate-300 font-semibold">
                 {language === 'ar' 
-                  ? 'برمجة ذكية ومعاينة فورية بهوية صيانة معتمدة' 
-                  : 'Enterprise connectivity with sub-second telemetry'}
+                  ? 'الهوية الرسمية المعتمدة + ذكاء اصطناعي للأساطيل' 
+                  : 'Official Certified Brand & AI Diagnostics'}
               </span>
+              <Sparkles size={13} className="text-amber-500 animate-pulse" />
             </div>
 
             <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
@@ -1569,6 +1605,7 @@ export default function MarketingLandingPage({
           onClose={() => setIsShowcaseOpen(false)}
           language={language}
           initialTab={selectedShowcaseTab}
+          brandName={effectiveBrandName}
           onStartTrial={() => {
             setIsShowcaseOpen(false);
             setShowSignupModal(true);
@@ -1637,7 +1674,10 @@ export default function MarketingLandingPage({
                         }}
                         className="text-purple-200 hover:text-white hover:translate-x-0.5 rtl:hover:-translate-x-0.5 transition-all inline-block font-medium"
                       >
-                        {language === 'ar' ? item.labelAr : item.labelEn}
+                        {language === 'ar' 
+                          ? (item.id === 'item-4-1' ? `نبذة عن شركة ${brandName || 'FleetAurvexis'}` : (item.labelAr || '').replace(/ميكانيك 360/g, brandName || 'FleetAurvexis'))
+                          : (item.id === 'item-4-1' ? `About ${brandName || 'FleetAurvexis'}` : (item.labelEn || '').replace(/Mechanic 360/g, brandName || 'FleetAurvexis'))
+                        }
                       </a>
                     </li>
                   ))}
@@ -1646,9 +1686,12 @@ export default function MarketingLandingPage({
             ))}
           </div>
 
-          <div className="border-t border-purple-500/30 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap text-[10.5px] text-purple-200/90 font-medium">
+          <div className="border-t border-purple-500/30 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap text-[11px] text-purple-200/90 font-medium">
             <div className="flex items-center gap-3">
-              <span className="font-mono text-white tracking-widest font-black text-xs">
+              <div className="w-8 h-8 rounded-xl overflow-hidden border border-purple-400/50 shadow-md shrink-0 bg-[#090D16] p-0.5">
+                <FleetAurvexisVectorEmblem className="w-full h-full" />
+              </div>
+              <span className="font-mono text-white tracking-widest font-black text-sm">
                 {effectiveBrandName.toUpperCase()}
               </span>
               <span>

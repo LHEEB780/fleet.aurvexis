@@ -5656,7 +5656,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                   </h4>
                   <p className="text-xs text-slate-550 dark:text-slate-400 leading-relaxed">
                     {language === 'ar' 
-                      ? 'تم رصد المواعيد المجدولة التالية للصيانة الدورية خلال الـ ٤٨ ساعة القادمة. يرجى التنسيق مع شعبة الصيانة والفنيين الميدانيين لتجهيز قطع الغيار وبدء العمل.'
+                      ? 'تم رصد المواعيد المجدولة التالية للصيانة الدورية خلال الـ ٤٨ ساعة القادمة. يرجى التنسيق مع فريق صيانة FleetAurvexis والفنيين الميدانيين لتجهيز قطع الغيار وبدء العمل.'
                       : 'The following vehicles are scheduled for critical PM within 48 hours. Please coordinate with field mechanics and workshop dispatchers to mobilize spare parts.'}
                   </p>
                 </div>

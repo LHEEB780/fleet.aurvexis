@@ -668,7 +668,7 @@ export default function Workshops({ user }: { user?: User }) {
                   />
                 </div>
                 <p className="text-[11px] sm:text-xs text-purple-200/75 mt-0.5 text-right leading-snug">
-                  {t('تتبع توزيع الأصول، الطاقات الاستيعابية، كفاءة الرافعات والعدد الفنية المتخصصة داخل المجمّع العام لميكانيك 360.')}
+                  {t('تتبع توزيع الأصول، الطاقات الاستيعابية، كفاءة الرافعات والعدد الفنية المتخصصة داخل المجمّع العام لمنظومة FleetAurvexis.')}
                 </p>
               </div>
             </div>

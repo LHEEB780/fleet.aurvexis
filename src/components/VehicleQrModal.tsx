@@ -72,7 +72,7 @@ export default function VehicleQrModal({ vehicle, isOpen, onClose, language = 'a
         <div style="margin-top: 15px; font-size: 9.5px; color: #475569; border-top: 1px dashed #e2e8f0; padding-top: 12px; font-weight: 600; line-height: 1.5;">
           امسح الرمز بواسطة كاميرا الجوال للوصول المباشر لسجل الصيانة والأعطال على مدار الساعة
         </div>
-        <div style="font-size: 8px; color: #94a3b8; margin-top: 5px; font-weight: 500;">شعبة الحركة • هندسة الأسطول الفنية الذكية</div>
+        <div style="font-size: 8px; color: #94a3b8; margin-top: 5px; font-weight: 500;">منظومة FleetAurvexis • هندسة الأسطول الفنية الذكية</div>
       </div>
     `;
 

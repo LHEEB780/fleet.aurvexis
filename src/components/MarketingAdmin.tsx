@@ -53,6 +53,8 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
+import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
+import { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 import { 
   db, 
   saveDocument, 
@@ -632,7 +634,7 @@ export function MarketingAdmin({
         isActive: true,
         triggerEvent: 'On New Lead Registration',
         triggerEventAr: 'عند تسجيل مشترك أو طلب جديد',
-        prompt: 'أنت الوكيل الذكي لإدارة العملاء المحتملين في ميكانيك 360. قم بمراجعة بيانات العميل الجديد وفحص حجم ورشته، وإسناد العميل للمندوب الأنسب مع صياغة رسالة واتساب ترحيبية مخصصة للحل الذي تم اختياره.',
+        prompt: 'أنت الوكيل الذكي لإدارة العملاء المحتملين في FleetAurvexis. قم بمراجعة بيانات العميل الجديد وفحص حجم أسطوله وورشته، وإسناد العميل للمندوب الأنسب مع صياغة رسالة واتساب ترحيبية مخصصة للحل الذي تم اختياره.',
         lastRun: 'منذ دقيقة واحدة',
         stats: { scansCount: 142, actionsTaken: 118, efficiencyRating: '98.5%' },
         logs: [
@@ -653,7 +655,7 @@ export function MarketingAdmin({
         isActive: true,
         triggerEvent: 'Hourly Recurring Scan',
         triggerEventAr: 'كل ساعة بشكل دوري تلقائي',
-        prompt: 'أنت الخبير المالي ومحلل ساس ميكانيك 360. قم بتحليل باقات الاشتراك ومقارنتها بسلوك العملاء، وتحديد أكثر الباقات مبيعاً وتوليد تقرير شهري استشرافي للمبيعات.',
+        prompt: 'أنت الخبير المالي ومحلل ساس FleetAurvexis. قم بتحليل باقات الاشتراك ومقارنتها بسلوك العملاء، وتحديد أكثر الباقات مبيعاً وتوليد تقرير شهري استشرافي للمبيعات.',
         lastRun: 'منذ ٢٢ دقيقة',
         stats: { scansCount: 89, actionsTaken: 12, efficiencyRating: '94.2%' },
         logs: [
@@ -673,7 +675,7 @@ export function MarketingAdmin({
         isActive: false,
         triggerEvent: 'On Lead Status Change / Task Added',
         triggerEventAr: 'عند تغير حالة المشترك أو إضافة مهمة',
-        prompt: 'أنت مدير المشروع المساعد في منصة ميكانيك 360. تتبع المهام المفتوحة وقم بموازنة التوزيع على الزملاء بناءً على أعداد المهام النشطة لكل ممثل مبيعات.',
+        prompt: 'أنت مدير المشروع المساعد في منصة FleetAurvexis. تتبع المهام المفتوحة وقم بموازنة التوزيع على الزملاء بناءً على أعداد المهام النشطة لكل ممثل مبيعات.',
         lastRun: 'منذ ٣ ساعات',
         stats: { scansCount: 56, actionsTaken: 41, efficiencyRating: '91.0%' },
         logs: [
@@ -691,7 +693,7 @@ export function MarketingAdmin({
         isActive: true,
         triggerEvent: 'On Support Ticket Open',
         triggerEventAr: 'عند فتح تذكرة دعم أو تلقي استفسار',
-        prompt: 'أنت مهندس الدعم الفني للعملاء المشتركين في ميكانيك 360. تعامل مع التذكرة بترحيب لبق مع تقديم الدليل التدريجي لحل الخلل البرمجي أو التشغيلي للورشة.',
+        prompt: 'أنت مهندس الدعم الفني للعملاء المشتركين في FleetAurvexis. تعامل مع التذكرة بترحيب لبق مع تقديم الدليل التدريجي لحل الخلل البرمجي أو التشغيلي للورشة.',
         lastRun: 'منذ ١٠ دقائق',
         stats: { scansCount: 204, actionsTaken: 195, efficiencyRating: '97.8%' },
         logs: [
@@ -710,7 +712,7 @@ export function MarketingAdmin({
         isActive: true,
         triggerEvent: 'On Maintenance Scan / Periodic Run',
         triggerEventAr: 'عند طلب صيانة فورية أو لفة دورية مجدولة',
-        prompt: 'أنت مهندس الصيانة والمسؤول التقني الذكي لنظام ميكانيك 360. تعامل مع طلب الفحص والمسح بموثوقية فائقة؛ افحص اتصال وتماسك السحابة Firestore، والـ APIs الميدانية، ومنافذ البريد والاستقبال، وقم بإجراء تطهير ذكي فوري للملفات التالفة والذاكرة المؤقتة لضمان استجابة ١٠٠٪.',
+        prompt: 'أنت مهندس الصيانة والمسؤول التقني الذكي لنظام FleetAurvexis. تعامل مع طلب الفحص والمسح بموثوقية فائقة؛ افحص اتصال وتماسك السحابة Firestore، والـ APIs الميدانية، ومنافذ البريد والاستقبال، وقم بإجراء تطهير ذكي فوري للملفات التالفة والذاكرة المؤقتة لضمان استجابة ١٠٠٪.',
         lastRun: 'منذ ثوانٍ',
         stats: { scansCount: 310, actionsTaken: 289, efficiencyRating: '99.9%' },
         logs: [
@@ -975,7 +977,7 @@ export function MarketingAdmin({
       isActive: newRobotForm.isActive,
       triggerEvent: newRobotForm.triggerEvent,
       triggerEventAr: newRobotForm.triggerEventAr,
-      prompt: newRobotForm.prompt || 'أنت وكيل مساعد لأتمتة المهام بقاعدة ميكانيك 360.',
+      prompt: newRobotForm.prompt || 'أنت وكيل مساعد لأتمتة المهام بقاعدة FleetAurvexis.',
       lastRun: 'لم يشتغل بعد',
       stats: {
         scansCount: 0,
@@ -3296,7 +3298,7 @@ export function MarketingAdmin({
                 </h4>
                 <p className="text-[11px] text-slate-400 max-w-2xl leading-relaxed">
                   {language === 'ar' 
-                    ? 'رأس الحكمة لإدارة ساس ميكانيك 360 التلقائي: معالجات ذكية كمدير مشروع محترف تعمل خلف كواليس السيرفر. تقوم بتقليل التدخل البشري والرد الفوري وتوزيع المهام بدقة ١٠٠٪.'
+                    ? 'رأس الحكمة لإدارة ساس FleetAurvexis التلقائي: معالجات ذكية كمدير مشروع محترف تعمل خلف كواليس السيرفر. تقوم بتقليل التدخل البشري والرد الفوري وتوزيع المهام بدقة ١٠٠٪.'
                     : 'A premium suite of background AI micro-agents working on schedules or events. They streamline client follow-ups, handle transactional analysis, dispatch workload checklists, and respond to incoming support queues autonomously.'}
                 </p>
               </div>
@@ -4107,15 +4109,15 @@ export function MarketingAdmin({
                 <p className="text-[10px] text-slate-400">كيف تظهر الهوية في ترويسة وعناصر النظام الإلكتروني:</p>
 
                 <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-850 space-y-3 text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="p-1.5 rounded-lg text-white" style={{ backgroundColor: brandPrimaryColor }}>
-                      <Globe2 size={14} />
-                    </span>
-                    <span className="text-xs font-black text-slate-800 dark:text-white">{saasBrandName || 'FleetAurvexis'}</span>
+                  <div className="flex items-center justify-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl overflow-hidden border border-indigo-400/50 shadow-md bg-[#090D16] shrink-0 p-0.5">
+                      <FleetAurvexisVectorEmblem className="w-full h-full" />
+                    </div>
+                    <span className="text-sm font-black text-slate-800 dark:text-white">{saasBrandName || 'FleetAurvexis'}</span>
                   </div>
-                  <p className="text-[10.5px] text-slate-505 dark:text-slate-400 font-semibold truncate px-3">{saasBrandDesc || 'بوابة الـ SaaS الذكية لصناعة الحركة'}</p>
+                  <p className="text-[10.5px] text-slate-505 dark:text-slate-400 font-semibold truncate px-3">{saasBrandDesc || 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة'}</p>
                   <button 
-                    className="w-full py-1.5 text-[10px] font-black text-white rounded-lg"
+                    className="w-full py-1.5 text-[10px] font-black text-white rounded-lg cursor-pointer"
                     style={{ backgroundColor: brandPrimaryColor }}
                   >
                     أريد تجربة مجانية

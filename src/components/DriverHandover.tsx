@@ -618,7 +618,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
             <div class="stamp">معتمد ومأمور</div>
             <div class="header">
               <div>
-                <h3 style="margin: 0; color: #0284c7; font-weight: 900; font-size: 16px;">ميكانيك 360</h3>
+                <h3 style="margin: 0; color: #6d28d9; font-weight: 900; font-size: 16px;">FleetAurvexis</h3>
                 <p style="margin: 3px 0 0 0; font-size: 10px; color: #64748b;">حفظ أمان وجودة أسطول المركبات</p>
               </div>
               <div class="title">
@@ -682,8 +682,8 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
               <div class="signature-box">
                 <strong>توقيع واعتماد ضابط الفحص الفني</strong>
                 <p style="font-size:10px; color:#64748b; margin-top:2px;">أصادق أنا الفني المشرف على مطابقتي للبيانات المذكورة وحياديتها وسلامة عجلات وسلامة فحص الآلية بالقسم.</p>
-                <div style="margin: 20px 0; font-family:'Courier New', monospace; font-size:11px; font-weight:bold; color:#0284c7;">
-                  [ميكانيك 360 - تم الفحص والاعتداد]<br/>ID: SIG-8594-SEC
+                <div style="margin: 20px 0; font-family:'Courier New', monospace; font-size:11px; font-weight:bold; color:#6d28d9;">
+                  [FleetAurvexis - تم الفحص والاعتداد]<br/>ID: SIG-8594-SEC
                 </div>
                 <span style="font-size: 11px; font-weight: bold;">(المراقب: ${record.employeeName})</span>
               </div>
@@ -1010,7 +1010,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
           >
             {/* Elegant wizard subtitle representing high craftsmanship */}
             <div className="border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
-              <span className="text-[10px] font-extrabold uppercase text-slate-400 block tracking-widest leading-none">شعبة جودة الأساطيل الرقمية</span>
+              <span className="text-[10px] font-extrabold uppercase text-slate-400 block tracking-widest leading-none">منظومة FleetAurvexis لجودة الأساطيل الرقمية</span>
               <h2 className="text-md sm:text-lg font-black text-slate-900 dark:text-white mt-1">تحرير محضر فني لنقل عهدة المركبة</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-normal">
                 الرجاء تعبئة تفاصيل الفحص وتصوير أو تحديد الأضرار لفرض المسؤولية القانونية وحفظ حالة العجلات بالكامل.
@@ -1373,7 +1373,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
           >
             {/* Stamp simulation banner */}
             <div className="absolute top-12 left-12 border-4 border-emerald-500/30 text-emerald-600/35 rounded-full w-24 h-24 font-black flex items-center justify-center text-[10.5px] uppercase tracking-wider transform -rotate-15 pointer-events-none select-none font-sans">
-              ميكانيك 360 معتمد
+              FleetAurvexis معتمد
             </div>
 
             {/* Header popup info */}

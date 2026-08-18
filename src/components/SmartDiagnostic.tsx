@@ -229,7 +229,7 @@ export default function SmartDiagnostic({
       milestones: matchedMilestones,
       progress: 20, // Start with 20% progress since first step is pre-checked
       partsUsed: diagnosticResult.suggestedParts || [],
-      techNotes: 'تم توليد هذا الأمر تلقائياً بواسطة التشخيص الذكي بالذكاء الاصطناعي (Mechanic 360).',
+      techNotes: 'تم توليد هذا الأمر تلقائياً بواسطة التشخيص الذكي بالذكاء الاصطناعي (FleetAurvexis).',
     };
 
     onAddOrder(newOrderPayload);

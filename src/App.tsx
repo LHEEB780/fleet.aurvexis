@@ -713,11 +713,35 @@ export default function App() {
   const isDarkMode = false;
   const setIsDarkMode = (_val?: any) => {};
 
+  const sanitizeBrandName = (name: string | null | undefined): string => {
+    if (!name || name === 'شعبة صيانة الآليات والمعدات التخصصية' || name.includes('شعبة صيانة') || name.includes('المعدات التخصصية') || name.toLowerCase().includes('axoventra')) {
+      return 'FleetAurvexis';
+    }
+    return name;
+  };
+
+  const sanitizeBrandDesc = (desc: string | null | undefined): string => {
+    if (!desc || desc.includes('شعبة صيانة') || desc.includes('المعدات التخصصية') || desc.includes('حساب الكلف') || desc.includes('للعجلات')) {
+      return 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة للمؤسسات والشركات الكبرى.';
+    }
+    return desc;
+  };
+
   const [saasBrandName, setSaasBrandName] = useState(() => {
-    return localStorage.getItem('saas_brand_name') || 'FleetAurvexis';
+    const raw = localStorage.getItem('saas_brand_name');
+    const cleaned = sanitizeBrandName(raw);
+    if (cleaned !== raw) {
+      localStorage.setItem('saas_brand_name', cleaned);
+    }
+    return cleaned;
   });
   const [saasBrandDesc, setSaasBrandDesc] = useState(() => {
-    return localStorage.getItem('saas_brand_desc') || '';
+    const raw = localStorage.getItem('saas_brand_desc');
+    const cleaned = sanitizeBrandDesc(raw);
+    if (cleaned !== raw) {
+      localStorage.setItem('saas_brand_desc', cleaned);
+    }
+    return cleaned;
   });
   const [saasBrandLogo, setSaasBrandLogo] = useState(() => {
     return localStorage.getItem('saas_brand_logo') || '';
@@ -807,8 +831,8 @@ export default function App() {
 
   React.useEffect(() => {
     const handleStorageChange = () => {
-      setSaasBrandName(localStorage.getItem('saas_brand_name') || '');
-      setSaasBrandDesc(localStorage.getItem('saas_brand_desc') || '');
+      setSaasBrandName(sanitizeBrandName(localStorage.getItem('saas_brand_name')));
+      setSaasBrandDesc(sanitizeBrandDesc(localStorage.getItem('saas_brand_desc')));
       setSaasBrandLogo(localStorage.getItem('saas_brand_logo') || '');
       setBrandPrimaryColor(localStorage.getItem('saas_brand_primary_color') || '#6d28d9');
       setSyncThresholdMB(parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5'));

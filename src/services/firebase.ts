@@ -264,8 +264,16 @@ export async function pullCloudDataToLocal(): Promise<{ success: boolean; count:
     const brandingDoc = await getDoc(doc(db, 'settings', 'branding'));
     if (brandingDoc.exists()) {
       const bData = brandingDoc.data();
-      if (bData.name) safeLocalStorage.setItem('saas_brand_name', bData.name);
-      if (bData.description) safeLocalStorage.setItem('saas_brand_desc', bData.description);
+      let brandName = bData.name || 'FleetAurvexis';
+      if (brandName === 'شعبة صيانة الآليات والمعدات التخصصية' || brandName.includes('شعبة صيانة') || brandName.includes('المعدات التخصصية') || brandName.toLowerCase().includes('axoventra')) {
+        brandName = 'FleetAurvexis';
+      }
+      let brandDesc = bData.description || '';
+      if (brandDesc.includes('شعبة صيانة') || brandDesc.includes('المعدات التخصصية') || brandDesc.includes('حساب الكلف') || brandDesc.includes('للعجلات')) {
+        brandDesc = 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة للمؤسسات والشركات الكبرى.';
+      }
+      safeLocalStorage.setItem('saas_brand_name', brandName);
+      safeLocalStorage.setItem('saas_brand_desc', brandDesc);
       if (bData.logo) safeLocalStorage.setItem('saas_brand_logo', bData.logo);
       if (bData.color) safeLocalStorage.setItem('saas_brand_color', bData.color);
       if (bData.primaryColor) safeLocalStorage.setItem('saas_brand_primary_color', bData.primaryColor);

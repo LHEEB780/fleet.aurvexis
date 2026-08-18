@@ -1862,7 +1862,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                             <span className="text-[10px] font-black text-indigo-500 block font-mono mb-1">{activeOrder.orderNumber}</span>
                             <h3 className="text-base font-black text-slate-900 dark:text-white">{activeOrder.description}</h3>
                             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-                              تم التحديث بواسطة شعبة التفتيش الفني في: {activeOrder.date}
+                              تم التحديث بواسطة فريق التفتيش الفني لـ FleetAurvexis في: {activeOrder.date}
                             </p>
                           </div>
                           <div className="self-start sm:self-auto flex items-center gap-1.5">

@@ -70,6 +70,8 @@ import {
   getNotificationSettings
 } from '../services/browserNotifications';
 import { BrowserNotificationModal } from './BrowserNotificationModal';
+import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
+import { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -538,8 +540,22 @@ export default function AppLayout({
   });
   const [backupSchedule, setBackupSchedule] = useState('daily');
   const [showSaveFeedback, setShowSaveFeedback] = useState(false);
-  const [saasBrandName, setSaasBrandName] = useState(() => localStorage.getItem('saas_brand_name') || 'FleetAurvexis');
-  const [saasBrandDesc, setSaasBrandDesc] = useState(() => localStorage.getItem('saas_brand_desc') || '');
+  const sanitizeBrandName = (name: string | null | undefined): string => {
+    if (!name || name === 'شعبة صيانة الآليات والمعدات التخصصية' || name.includes('شعبة صيانة') || name.includes('المعدات التخصصية') || name.toLowerCase().includes('axoventra')) {
+      return 'FleetAurvexis';
+    }
+    return name;
+  };
+
+  const sanitizeBrandDesc = (desc: string | null | undefined): string => {
+    if (!desc || desc.includes('شعبة صيانة') || desc.includes('المعدات التخصصية') || desc.includes('حساب الكلف') || desc.includes('للعجلات')) {
+      return 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة للمؤسسات والشركات الكبرى.';
+    }
+    return desc;
+  };
+
+  const [saasBrandName, setSaasBrandName] = useState(() => sanitizeBrandName(localStorage.getItem('saas_brand_name')));
+  const [saasBrandDesc, setSaasBrandDesc] = useState(() => sanitizeBrandDesc(localStorage.getItem('saas_brand_desc')));
   const [saasBrandLogo, setSaasBrandLogo] = useState(() => localStorage.getItem('saas_brand_logo') || '');
 
   // Cloud Database Sync States
@@ -861,8 +877,8 @@ export default function AppLayout({
       setProfileName(user.name);
       setProfileTitle(user.title || 'مدير قسم الصيانة');
       setProfileAvatar(user.avatar);
-      setSaasBrandName(localStorage.getItem('saas_brand_name') || '');
-      setSaasBrandDesc(localStorage.getItem('saas_brand_desc') || '');
+      setSaasBrandName(sanitizeBrandName(localStorage.getItem('saas_brand_name')));
+      setSaasBrandDesc(sanitizeBrandDesc(localStorage.getItem('saas_brand_desc')));
       setAdminPin(localStorage.getItem('saas_admin_pin') || '4321');
       setSaasBrandColor(localStorage.getItem('saas_brand_color') || 'blue');
       const saved = localStorage.getItem('saas_staff_list');
@@ -874,8 +890,8 @@ export default function AppLayout({
 
   React.useEffect(() => {
     const handleStorageChange = () => {
-      setSaasBrandName(localStorage.getItem('saas_brand_name') || '');
-      setSaasBrandDesc(localStorage.getItem('saas_brand_desc') || '');
+      setSaasBrandName(sanitizeBrandName(localStorage.getItem('saas_brand_name')));
+      setSaasBrandDesc(sanitizeBrandDesc(localStorage.getItem('saas_brand_desc')));
       const savedModules = localStorage.getItem('saas_enabled_modules');
       if (savedModules) {
         try {
@@ -1761,28 +1777,51 @@ export default function AppLayout({
           dir === 'rtl' ? 'border-l' : 'border-r'
         } ${collapsed ? 'w-14' : 'w-56'}`}
       >
-        <div className="p-4 flex items-center justify-between border-b border-[#f1f5f9] dark:border-slate-800/60">
-          {!collapsed && (
+        <div className="p-3.5 flex items-center justify-between border-b border-[#f1f5f9] dark:border-slate-800/60 min-h-[64px]">
+          {!collapsed ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2.5 min-w-0"
             >
-              <div className="w-7 h-7 bg-brand-blue-500 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm shadow-brand-blue-500/20 overflow-hidden">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-500/25 overflow-hidden border border-indigo-400/40 bg-[#090D16] p-0.5">
                 {saasBrandLogo ? (
-                  <img src={saasBrandLogo} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img 
+                    src={saasBrandLogo} 
+                    alt="Logo" 
+                    className="w-full h-full object-cover rounded-xl" 
+                    referrerPolicy="no-referrer" 
+                  />
                 ) : (
-                  <Wrench size={14} className="text-white" />
+                  <FleetAurvexisVectorEmblem className="w-full h-full" />
                 )}
               </div>
-              <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white select-none">
-                {saasBrandName ? saasBrandName : 'FleetAurvexis'}
-              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[15px] font-black tracking-tight text-slate-900 dark:text-white select-none truncate">
+                  {saasBrandName ? saasBrandName : 'FleetAurvexis'}
+                </span>
+                <span className="text-[9px] font-black tracking-widest uppercase text-indigo-600 dark:text-indigo-400 -mt-0.5">
+                  AI Fleet Suite
+                </span>
+              </div>
             </motion.div>
+          ) : (
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm overflow-hidden border border-indigo-400/40 bg-[#090D16] mx-auto p-0.5">
+              {saasBrandLogo ? (
+                <img 
+                  src={saasBrandLogo} 
+                  alt="Logo" 
+                  className="w-full h-full object-cover rounded-lg" 
+                  referrerPolicy="no-referrer" 
+                />
+              ) : (
+                <FleetAurvexisVectorEmblem className="w-full h-full" />
+              )}
+            </div>
           )}
           <button 
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800/60 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer shrink-0"
           >
             {collapsed ? <Menu size={16} /> : <ChevronLeft size={16} className={dir === 'ltr' ? 'rotate-180' : ''} />}
           </button>
@@ -2526,17 +2565,22 @@ export default function AppLayout({
                }`}
             >
               <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-brand-blue-600 rounded flex items-center justify-center text-white overflow-hidden shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-500/25 overflow-hidden border border-indigo-400/40 bg-[#090D16] p-0.5">
                     {saasBrandLogo ? (
-                      <img src={saasBrandLogo} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <img src={saasBrandLogo} alt="Logo" className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" />
                     ) : (
-                      <Wrench size={16} />
+                      <FleetAurvexisVectorEmblem className="w-full h-full" />
                     )}
                   </div>
-                  <span className="text-md font-black text-slate-900 dark:text-white">
-                    {saasBrandName ? saasBrandName : 'FleetAurvexis'}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                      {saasBrandName ? saasBrandName : 'FleetAurvexis'}
+                    </span>
+                    <span className="text-[9px] font-black tracking-widest uppercase text-indigo-600 dark:text-indigo-400">
+                      AI Fleet Suite
+                    </span>
+                  </div>
                 </div>
                 <button onClick={() => setMobileMenuOpen(false)}>
                   <X size={18} className="text-slate-500 hover:text-slate-900 dark:text-emerald-300 dark:hover:text-white cursor-pointer" />
