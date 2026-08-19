@@ -39,7 +39,15 @@ import {
   CheckSquare,
   Square,
   CheckCheck,
-  MousePointerClick
+  MousePointerClick,
+  FileSpreadsheet,
+  Download,
+  CheckCircle2,
+  AlertCircle,
+  Edit3,
+  RefreshCw,
+  FileCheck,
+  FileX
 } from 'lucide-react';
 import { vehicles as initialVehicles } from '../data';
 import { VehicleStatus, Vehicle, User, hasGranularPermission } from '../types';
@@ -50,7 +58,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
-import { downloadFleetAssetTemplate, fileToBase64, parseFleetFileClientSide } from '../services/universalFileParser';
+import { 
+  downloadFleetAssetTemplate, 
+  downloadFleetAssetCsvTemplate, 
+  fileToBase64, 
+  parseFleetFileClientSide,
+  parseAndValidateCsvRows,
+  revalidateRow,
+  autoFixAllRows,
+  ProcessedCsvRow
+} from '../services/universalFileParser';
 
 // Definitions for custom selectable icons for vehicles with matching eye-friendly colors
 export const VEHICLE_ICONS: Record<string, { component: React.ComponentType<{ size?: number; className?: string }>; label: string; bg: string; text: string }> = {
@@ -458,6 +475,32 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
   const [generationLog, setGenerationLog] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [previewVehicles, setPreviewVehicles] = useState<Vehicle[]>([]);
+  const [isPreviewingCsv, setIsPreviewingCsv] = useState(false);
+  const [processedCsvRows, setProcessedCsvRows] = useState<ProcessedCsvRow[]>([]);
+  const [csvParsingProgress, setCsvParsingProgress] = useState<number>(0);
+  const [csvCurrentRow, setCsvCurrentRow] = useState<number>(0);
+  const [csvTotalRows, setCsvTotalRows] = useState<number>(0);
+  const [csvProcessingStatus, setCsvProcessingStatus] = useState<string>('');
+  const [csvStatusFilter, setCsvStatusFilter] = useState<'all' | 'valid' | 'error' | 'warning'>('all');
+  const [editingCsvRow, setEditingCsvRow] = useState<ProcessedCsvRow | null>(null);
+  const [editRowForm, setEditRowForm] = useState<{
+    name: string;
+    plateNumber: string;
+    department: string;
+    type: string;
+    modelYear: string;
+    fuelType: 'diesel' | 'gasoline' | 'electric' | 'hybrid';
+    chassisNumber: string;
+  }>({
+    name: '',
+    plateNumber: '',
+    department: '',
+    type: 'مركبة خفيفة',
+    modelYear: '2023',
+    fuelType: 'diesel',
+    chassisNumber: ''
+  });
 
   // Smart Input Assistant state
   const [isSmartInputModalOpen, setIsSmartInputModalOpen] = useState(false);
@@ -909,20 +952,145 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
     setDragActive(true);
   };
 
+  const processUploadedFile = async (file: File) => {
+    setUploadedFile(file);
+    setIsPreviewingCsv(true);
+    setCsvParsingProgress(0);
+    setCsvCurrentRow(0);
+    setCsvTotalRows(0);
+    setCsvProcessingStatus(language === 'ar' ? 'بدء فحص وتدقيق بنية الملف وتصنيف الصفوف...' : 'Starting spreadsheet inspection and row classification...');
+    
+    try {
+      const rows = await parseAndValidateCsvRows(file, language, (prog, current, total, log) => {
+        setCsvParsingProgress(prog);
+        setCsvCurrentRow(current);
+        setCsvTotalRows(total);
+        setCsvProcessingStatus(log);
+      });
+
+      setProcessedCsvRows(rows);
+      setPreviewVehicles(rows.filter(r => r.status === 'valid' || r.status === 'warning').map(r => r.vehicle));
+    } catch (err) {
+      console.warn("Error parsing fleet file:", err);
+      setProcessedCsvRows([]);
+      setPreviewVehicles([]);
+    } finally {
+      setIsPreviewingCsv(false);
+    }
+  };
+
   const handleDropFile = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      setUploadedFile(file);
+      processUploadedFile(file);
     }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setUploadedFile(file);
+      processUploadedFile(file);
     }
+  };
+
+  const handleStartEditCsvRow = (row: ProcessedCsvRow) => {
+    setEditingCsvRow(row);
+    setEditRowForm({
+      name: row.vehicle.name && !row.vehicle.name.includes('غير مسمى') && !row.vehicle.name.includes('Unnamed') ? row.vehicle.name : '',
+      plateNumber: row.vehicle.plateNumber && !row.vehicle.plateNumber.includes('مفقودة') && !row.vehicle.plateNumber.includes('NO-PLATE') ? row.vehicle.plateNumber : '',
+      department: row.vehicle.department || '',
+      type: row.vehicle.type || (language === 'ar' ? 'مركبة خفيفة' : 'Light Vehicle'),
+      modelYear: row.vehicle.modelYear || '2023',
+      fuelType: (row.vehicle.fuelType as any) || 'diesel',
+      chassisNumber: row.vehicle.chassisNumber || ''
+    });
+  };
+
+  const handleSaveRowCorrection = () => {
+    if (!editingCsvRow) return;
+
+    const updatedVehicle = {
+      ...editingCsvRow.vehicle,
+      name: editRowForm.name.trim() || (language === 'ar' ? `أصل مصحح #${editingCsvRow.rowNumber}` : `Corrected Asset #${editingCsvRow.rowNumber}`),
+      plateNumber: editRowForm.plateNumber.trim() || (language === 'ar' ? `لوحة مصححة #${editingCsvRow.rowNumber}` : `FIXED-${editingCsvRow.rowNumber}`),
+      department: editRowForm.department.trim() || (language === 'ar' ? 'العمليات الميدانية' : 'Field Operations'),
+      type: editRowForm.type,
+      modelYear: editRowForm.modelYear.trim() || '2023',
+      fuelType: editRowForm.fuelType,
+      chassisNumber: editRowForm.chassisNumber.trim() || editingCsvRow.vehicle.chassisNumber
+    };
+
+    const revalidated = revalidateRow({
+      ...editingCsvRow,
+      vehicle: updatedVehicle
+    }, language);
+
+    setProcessedCsvRows(prev => {
+      const nextRows = prev.map(r => r.id === editingCsvRow.id ? revalidated : r);
+      setPreviewVehicles(nextRows.filter(r => r.status === 'valid' || r.status === 'warning').map(r => r.vehicle));
+      return nextRows;
+    });
+
+    setEditingCsvRow(null);
+  };
+
+  const handleAutoFixAllCsvRows = () => {
+    const fixed = autoFixAllRows(processedCsvRows, language);
+    setProcessedCsvRows(fixed);
+    setPreviewVehicles(fixed.map(r => r.vehicle));
+  };
+
+  const handleDeleteProcessedCsvRow = (id: string) => {
+    setProcessedCsvRows(prev => {
+      const nextRows = prev.filter(r => r.id !== id);
+      setPreviewVehicles(nextRows.filter(r => r.status === 'valid' || r.status === 'warning').map(r => r.vehicle));
+      return nextRows;
+    });
+  };
+
+  const handleRemovePreviewVehicle = (id: string) => {
+    handleDeleteProcessedCsvRow(id);
+  };
+
+  const handleDirectBulkRegister = (vehiclesToRegister: Vehicle[]) => {
+    if (!vehiclesToRegister || vehiclesToRegister.length === 0) return;
+    
+    const updatedVehicles = [...vehiclesToRegister, ...vehicleList];
+    setVehicleList(updatedVehicles);
+    localStorage.setItem('fleet_vehicles_v3', JSON.stringify(updatedVehicles));
+    
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('fleet-data-synced'));
+
+    try {
+      const newLog = {
+        id: 'crit-log-bulk-direct-' + Date.now(),
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        user: user.name || 'مستخدم النظام',
+        role: (user.role as string) === 'admin' ? 'مدير نظام' : (user.role as string) === 'fleet_manager' ? 'مدير حركة' : 'مشاهد ومراقب',
+        action: 'تسجيل جماعي لملف أصول CSV',
+        category: 'vehicles',
+        ipAddress: '197.82.16.42',
+        status: 'نجاح',
+        details: `تم بنجاح تسجيل وإدراج ${vehiclesToRegister.length} أصل ومركبة مباشرة في الأسطول من ملف (${uploadedFile?.name || 'CSV'}).`
+      };
+      const savedLogs = localStorage.getItem('saas_critical_audit_logs');
+      const logsArray = savedLogs ? JSON.parse(savedLogs) : [];
+      logsArray.unshift(newLog);
+      localStorage.setItem('saas_critical_audit_logs', JSON.stringify(logsArray));
+    } catch (e) {}
+
+    setIsBulkModalOpen(false);
+    setUploadedFile(null);
+    setPreviewVehicles([]);
+    
+    alert(
+      language === 'ar'
+        ? `✅ تم تسجيل وإدراج ${vehiclesToRegister.length} مركبة وأصل بنجاح في قاعدة بيانات الأسطول!`
+        : `✅ Successfully registered ${vehiclesToRegister.length} fleet assets from CSV!`
+    );
   };
 
   const executeBulkDataGeneration = (count: number, years: number) => {
@@ -1519,8 +1687,8 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                   onClick={() => setIsBulkModalOpen(true)}
                   className="flex items-center justify-center gap-2 px-4 h-11 bg-white/10 hover:bg-white/15 text-white border border-white/20 hover:border-white/30 rounded-xl font-black shadow-sm active:scale-[98%] transition-all text-xs cursor-pointer w-full lg:w-auto"
                 >
-                  <Sparkles size={15} className="animate-pulse text-purple-300 shrink-0" />
-                  <span>{language === 'ar' ? 'الاستيراد والإنشاء الجماعي للأصول' : 'Smart Bulk Import & Creation'}</span>
+                  <FileSpreadsheet size={16} className="text-purple-300 shrink-0" />
+                  <span>{language === 'ar' ? 'استيراد وتسجيل الأصول (CSV / Excel)' : 'Bulk CSV / Fleet Import'}</span>
                 </button>
                 <button 
                   id="smart-input-assistant-btn"
@@ -3181,60 +3349,91 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', duration: 0.4 }}
-              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[1.8rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-[1.8rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[94vh]"
               dir={language === 'ar' ? 'rtl' : 'ltr'}
             >
               {/* Modal Header */}
               <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/20">
-                <div className="flex items-center gap-2">
-                  <div className="p-2.5 bg-violet-500/10 rounded-xl text-violet-600 dark:text-violet-400">
-                    <Sparkles size={20} className="animate-pulse" />
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-purple-500/10 rounded-2xl text-purple-600 dark:text-purple-400">
+                    <FileSpreadsheet size={24} />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-slate-900 dark:text-white">
-                      {language === 'ar' ? 'الاستيراد والإنشاء الجماعي الذكي للأصول والبيانات' : 'Smart Bulk Asset Import & Data Creation'}
+                    <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>{language === 'ar' ? 'استيراد وفحص وتدقيق الأصول الجماعي (CSV / Excel)' : 'Bulk Asset Import & Verification Center (CSV / Excel)'}</span>
+                      <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 text-[10px] font-black rounded-lg border border-purple-200 dark:border-purple-800">
+                        {language === 'ar' ? 'فحص ومعاينة حية' : 'Live Validation'}
+                      </span>
                     </h3>
-                    <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
-                      {language === 'ar' ? 'رفع ملفات الأساطيل الكبيرة أو توليد سجل تشغيلي تاريخي بالكامل لـ 3 سنوات' : 'Import large fleets or generate comprehensive 3-year historical archives'}
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      {language === 'ar' ? 'رفع ملفات الأصول وتدقيق الصفوف وتصحيح الأخطاء قبل الاعتماد النهائي' : 'Upload fleet files, review row validation status, and correct errors before registration'}
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={() => !isGenerating && setIsBulkModalOpen(false)}
-                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl transition-colors cursor-pointer"
-                  disabled={isGenerating}
+                  onClick={() => {
+                    if (!isGenerating && !isPreviewingCsv) {
+                      setIsBulkModalOpen(false);
+                      setUploadedFile(null);
+                      setProcessedCsvRows([]);
+                      setPreviewVehicles([]);
+                      setEditingCsvRow(null);
+                    }
+                  }}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl transition-colors cursor-pointer"
+                  disabled={isGenerating || isPreviewingCsv}
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
 
               {/* Scrollable content */}
               <div className="p-6 overflow-y-auto space-y-6 flex-1 min-h-0">
-                {/* Quick Guide explaining this feature */}
-                <div className="bg-violet-500/10 dark:bg-violet-500/15 p-4.5 rounded-2xl border border-violet-500/20 space-y-2.5">
-                  <h4 className="text-xs font-black text-violet-850 dark:text-violet-300 flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-violet-500 shrink-0" />
-                    <span>{language === 'ar' ? 'الدليل السريع: ميزة المزامنة والمحاكاة للأساطيل بالذكاء الاصطناعي' : 'Quick Guide: Fleet Sync & AI Simulation Feature'}</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-350 leading-relaxed font-semibold">
-                    {language === 'ar' 
-                      ? 'تتيح هذه الميزة الفائقة للمؤسسات رفع أي ملف بيانات حقيقي للمركبات والأساطيل (حتى وإن كانت الأعمدة غير مرتبة أو عشوائية). يقوم الذكاء الاصطناعي بقراءة وتصنيف الحقول لبناء قراءة صحيحة، مع توليد سجل تشغيلي وصيانة شامل بأثر رجعي يمتد لـ 3 سنوات كاملة تناسب طبيعة عمل كل آلية.'
-                      : 'This feature allows you to upload raw fleet spreadsheets (even with messy or random columns). The AI will parse and align them correctly, while generating tailored, retroactive 3-year operating and workshop records matching each vehicle\'s type.'}
-                  </p>
+                {/* Guide & Template download banner */}
+                <div className="bg-gradient-to-r from-purple-500/10 via-indigo-500/5 to-purple-500/10 dark:from-purple-950/30 dark:to-indigo-950/20 p-4.5 rounded-2xl border border-purple-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                      <Sparkles size={15} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span>{language === 'ar' ? 'قوالب ونماذج استيراد الأصول المعتمدة' : 'Official Fleet Import Spreadsheets & Templates'}</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-350 leading-relaxed font-semibold">
+                      {language === 'ar'
+                        ? 'يمكنك تحميل نموذج CSV أو Excel وتعبئته ببيانات شاحناتك أو سياراتك ومولداتك ثم رفعه للفحص الفوري.'
+                        : 'Download standard CSV or Excel template, fill it with your vehicles or heavy machinery, and upload for instant inspection.'}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => downloadFleetAssetCsvTemplate(language)}
+                      className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                    >
+                      <Download size={14} />
+                      <span>{language === 'ar' ? 'تحميل نموذج CSV 📥' : 'Download CSV (.csv) 📥'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadFleetAssetTemplate(language)}
+                      className="px-3.5 py-2 bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-slate-750 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                    >
+                      <Download size={14} />
+                      <span>{language === 'ar' ? 'نموذج Excel (.xlsx) 📥' : 'Download Excel (.xlsx) 📥'}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {isGenerating ? (
                   /* Generation status page */
                   <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
                     <div className="relative">
-                      <div className="w-16 h-16 rounded-full border-4 border-violet-500/20 border-t-violet-600 animate-spin" />
+                      <div className="w-16 h-16 rounded-full border-4 border-purple-500/20 border-t-purple-600 animate-spin" />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <Sparkles size={20} className="text-violet-600 animate-pulse" />
+                        <Sparkles size={20} className="text-purple-600 animate-pulse" />
                       </div>
                     </div>
                     <div className="space-y-1.5 max-w-md">
                       <h4 className="text-sm font-black text-slate-800 dark:text-white">
-                        {language === 'ar' ? 'جاري معالجة ومطابقة البيانات بالذكاء الاصطناعي...' : 'Processing & mapping fleet logs via AI...'}
+                        {language === 'ar' ? 'جاري معالجة وتسجيل الأصول وتوليد الأرشيف التاريخي...' : 'Processing & registering fleet assets with AI historical archive...'}
                       </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold animate-pulse">
                         {generationLog}
@@ -3242,19 +3441,19 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     </div>
                     <div className="w-full max-w-xs bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                       <motion.div
-                        className="bg-violet-600 h-full rounded-full"
+                        className="bg-purple-600 h-full rounded-full"
                         initial={{ width: '0%' }}
                         animate={{ width: `${generationProgress}%` }}
                         transition={{ duration: 0.3 }}
                       />
                     </div>
-                    <span className="text-xs font-black text-violet-600 dark:text-violet-400 font-mono">{generationProgress}%</span>
+                    <span className="text-xs font-black text-purple-600 dark:text-purple-400 font-mono">{generationProgress}%</span>
                   </div>
                 ) : (
-                  /* Options page */
-                  <div className="space-y-6">
-                    {/* Option 1 view: Drag and Drop */}
-                    <div className="space-y-4">
+                  /* Upload and Status List Center */
+                  <div className="space-y-5">
+                    {/* Drag and Drop Zone (shown when no file is uploaded) */}
+                    {!uploadedFile ? (
                       <div
                         onDragOver={handleDragOverFile}
                         onDragLeave={handleDragLeave}
@@ -3262,90 +3461,637 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                         onClick={() => fileInputRef.current?.click()}
                         className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center space-y-3 ${
                           dragActive 
-                            ? 'border-violet-500 bg-violet-500/5' 
-                            : 'border-slate-200 dark:border-slate-800 hover:border-violet-400 hover:bg-slate-50/50 dark:hover:bg-slate-950/10'
+                            ? 'border-purple-500 bg-purple-500/5' 
+                            : 'border-slate-200 dark:border-slate-800 hover:border-purple-400 hover:bg-slate-50/50 dark:hover:bg-slate-950/10'
                         }`}
                       >
                         <input
                           ref={fileInputRef}
                           type="file"
-                          accept=".csv,.xlsx,.xls,.txt"
+                          accept=".csv,.xlsx,.xls,.tsv,.txt"
                           className="hidden"
                           onChange={handleFileInputChange}
                         />
-                        <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl text-slate-400 group-hover:text-violet-500 transition-colors">
-                          <Upload size={24} />
+                        <div className="p-3.5 bg-purple-50 dark:bg-purple-950/40 rounded-2xl text-purple-600 dark:text-purple-400 transition-colors">
+                          <Upload size={28} />
                         </div>
-                        <div>
-                          <p className="text-xs font-black text-slate-800 dark:text-white">
-                            {uploadedFile ? uploadedFile.name : (language === 'ar' ? 'اسحب ملف بيانات الأسطول الحقيقي هنا أو انقر للتصفح' : 'Drag & drop real fleet spreadsheet here or click to browse')}
+                        <div className="space-y-1">
+                          <p className="text-sm font-black text-slate-800 dark:text-white">
+                            {language === 'ar' ? 'اسحب ملف بيانات الأسطول (CSV أو Excel) هنا أو انقر للتصفح' : 'Drag & drop fleet CSV / Excel spreadsheet here or click to browse'}
                           </p>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-                            {language === 'ar' ? 'يدعم ملفات Excel أو CSV أو ملفات النصوص غير المرتبة' : 'Supports Excel, CSV, or raw unstructured text dumps'}
+                          <p className="text-xs text-slate-400 dark:text-slate-500">
+                            {language === 'ar' ? 'يدعم ملفات CSV المفصولة بفواصل، وملفات Excel (.xlsx / .xls)، مع تدقيق وفحص مباشر لكل صف' : 'Supports CSV, Excel workbooks (.xlsx, .xls), with live row-by-row status and validation'}
                           </p>
                         </div>
                       </div>
-
-                      {uploadedFile && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="p-4.5 bg-violet-500/5 dark:bg-violet-500/10 rounded-2xl border border-violet-500/20 space-y-4"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-violet-500 animate-ping" />
-                              <span className="text-xs font-black text-slate-800 dark:text-white">
-                                {language === 'ar' ? 'جاهز للمطابقة الذكية والمزامنة' : 'Ready for AI Mapping & Sync'}
+                    ) : (
+                      /* Live Inspection, Progress Bar, & Status List */
+                      <div className="space-y-5">
+                        {/* File status bar */}
+                        <div className="flex flex-wrap items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/60 gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-xl">
+                              <FileSpreadsheet size={20} />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-900 dark:text-white font-mono">{uploadedFile.name}</span>
+                                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 text-[10.5px] font-black rounded-md border border-purple-200 dark:border-purple-800">
+                                  {language === 'ar' ? `إجمالي ${processedCsvRows.length} صف` : `${processedCsvRows.length} Total Rows`}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {(uploadedFile.size / 1024).toFixed(1)} KB • {uploadedFile.name.endsWith('.csv') ? 'CSV File' : 'Spreadsheet File'}
                               </span>
                             </div>
-                            <span className="text-[10px] font-mono font-bold text-slate-400">
-                              {(uploadedFile.size / 1024).toFixed(1)} KB
-                            </span>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => handleAiBulkImport(uploadedFile)}
-                            className="w-full py-3.5 bg-violet-600 hover:bg-violet-750 text-white rounded-xl font-black transition-all text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer hover:scale-[101%] active:scale-95"
-                          >
-                            <Sparkles size={15} className="animate-pulse" />
-                            <span>
-                              {language === 'ar' 
-                                ? 'مزامنة وبدء معالجة الذكاء الاصطناعي الذكية ومحاكاة 3 سنوات ماضية 🚀' 
-                                : 'Sync & Begin AI Mapping with Retroactive 3-Year Archive 🚀'}
-                            </span>
-                          </button>
-                        </motion.div>
-                      )}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={handleAutoFixAllCsvRows}
+                              className="px-3 py-1.5 text-xs text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/50 hover:bg-purple-200 dark:hover:bg-purple-900/60 font-black rounded-lg border border-purple-200 dark:border-purple-800 transition-all flex items-center gap-1.5 cursor-pointer"
+                              title={language === 'ar' ? 'إصلاح وتعبئة الحقول الناقصة تلقائياً' : 'Auto-fix missing fields'}
+                            >
+                              <Sparkles size={13} className="text-purple-600" />
+                              <span>{language === 'ar' ? 'إصلاح ذكي لجميع الأخطاء' : 'Smart Auto-Fix All'}</span>
+                            </button>
 
-                      <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-semibold">
-                        <span className="text-slate-550">{language === 'ar' ? 'تحميل الهيكل المعتمد للنموذج الاسترشادي للأصول والمولدات والمعدات:' : 'Download reference fleet & heavy machinery spreadsheet template:'}</span>
-                        <button 
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            downloadFleetAssetTemplate(language);
-                          }}
-                          className="text-violet-600 dark:text-violet-400 hover:underline font-black flex items-center gap-1 cursor-pointer bg-transparent border-0"
-                        >
-                          <span>{language === 'ar' ? 'تحميل نموذج الأصول (fleet_template.xlsx) 📥' : 'Download Template (.xlsx) 📥'}</span>
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUploadedFile(null);
+                                setProcessedCsvRows([]);
+                                setPreviewVehicles([]);
+                                setEditingCsvRow(null);
+                                if (fileInputRef.current) fileInputRef.current.value = '';
+                              }}
+                              className="px-3 py-1.5 text-xs text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 font-bold bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-rose-300 transition-all cursor-pointer"
+                            >
+                              {language === 'ar' ? 'استبدال الملف' : 'Change File'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Upload & Row Validation Progress Bar */}
+                        {isPreviewingCsv ? (
+                          <div className="p-6 bg-purple-50/50 dark:bg-purple-950/20 rounded-2xl border border-purple-200 dark:border-purple-900/50 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Loader2 size={16} className="text-purple-600 animate-spin" />
+                                <span className="text-xs font-black text-purple-900 dark:text-purple-200">
+                                  {language === 'ar' ? 'جاري قراءة وفحص بنية الصفوف في الملف...' : 'Parsing and inspecting rows...'}
+                                </span>
+                              </div>
+                              <span className="text-xs font-black font-mono text-purple-700 dark:text-purple-300">
+                                {csvParsingProgress}%
+                              </span>
+                            </div>
+
+                            {/* Progress bar line */}
+                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                              <motion.div
+                                className="bg-gradient-to-r from-purple-600 to-indigo-600 h-full rounded-full"
+                                initial={{ width: '0%' }}
+                                animate={{ width: `${csvParsingProgress}%` }}
+                                transition={{ duration: 0.2 }}
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+                              <span>{csvProcessingStatus}</span>
+                              {csvTotalRows > 0 && (
+                                <span className="font-mono">{csvCurrentRow} / {csvTotalRows} {language === 'ar' ? 'صف' : 'rows'}</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : processedCsvRows.length > 0 ? (
+                          <div className="space-y-4">
+                            {/* Validation Metric Summary Cards */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              {/* Total Card */}
+                              <div 
+                                onClick={() => setCsvStatusFilter('all')}
+                                className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                                  csvStatusFilter === 'all'
+                                    ? 'bg-purple-500/10 border-purple-500/40 shadow-sm ring-2 ring-purple-500/20'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-300'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-slate-500">{language === 'ar' ? 'إجمالي الصفوف' : 'Total Rows'}</span>
+                                  <FileSpreadsheet size={16} className="text-purple-600" />
+                                </div>
+                                <div className="text-lg font-black text-slate-900 dark:text-white font-mono mt-1">
+                                  {processedCsvRows.length}
+                                </div>
+                              </div>
+
+                              {/* Valid Card */}
+                              <div 
+                                onClick={() => setCsvStatusFilter('valid')}
+                                className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                                  csvStatusFilter === 'valid'
+                                    ? 'bg-emerald-500/10 border-emerald-500/40 shadow-sm ring-2 ring-emerald-500/20'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-300'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{language === 'ar' ? 'سليمة وجاهزة' : 'Valid & Ready'}</span>
+                                  <CheckCircle2 size={16} className="text-emerald-500" />
+                                </div>
+                                <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1">
+                                  {processedCsvRows.filter(r => r.status === 'valid').length}
+                                </div>
+                              </div>
+
+                              {/* Errors Card */}
+                              <div 
+                                onClick={() => setCsvStatusFilter('error')}
+                                className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                                  csvStatusFilter === 'error'
+                                    ? 'bg-rose-500/10 border-rose-500/40 shadow-sm ring-2 ring-rose-500/20'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-rose-300'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400">{language === 'ar' ? 'تحتوي أخطاء' : 'Has Errors'}</span>
+                                  <AlertCircle size={16} className="text-rose-500" />
+                                </div>
+                                <div className="text-lg font-black text-rose-600 dark:text-rose-400 font-mono mt-1">
+                                  {processedCsvRows.filter(r => r.status === 'error').length}
+                                </div>
+                              </div>
+
+                              {/* Warnings Card */}
+                              <div 
+                                onClick={() => setCsvStatusFilter('warning')}
+                                className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                                  csvStatusFilter === 'warning'
+                                    ? 'bg-amber-500/10 border-amber-500/40 shadow-sm ring-2 ring-amber-500/20'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-300'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">{language === 'ar' ? 'تنبيهات غير حرجة' : 'Warnings'}</span>
+                                  <AlertTriangle size={16} className="text-amber-500" />
+                                </div>
+                                <div className="text-lg font-black text-amber-600 dark:text-amber-400 font-mono mt-1">
+                                  {processedCsvRows.filter(r => r.status === 'warning').length}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Filter Tabs & Quick Actions */}
+                            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+                                <button
+                                  type="button"
+                                  onClick={() => setCsvStatusFilter('all')}
+                                  className={`px-3 py-1 text-xs font-black rounded-lg transition-all cursor-pointer ${
+                                    csvStatusFilter === 'all'
+                                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                                  }`}
+                                >
+                                  {language === 'ar' ? `الكل (${processedCsvRows.length})` : `All (${processedCsvRows.length})`}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setCsvStatusFilter('valid')}
+                                  className={`px-3 py-1 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                                    csvStatusFilter === 'valid'
+                                      ? 'bg-emerald-600 text-white shadow-xs'
+                                      : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                                  }`}
+                                >
+                                  <CheckCircle2 size={13} />
+                                  <span>{language === 'ar' ? `السليمة (${processedCsvRows.filter(r => r.status === 'valid').length})` : `Valid (${processedCsvRows.filter(r => r.status === 'valid').length})`}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setCsvStatusFilter('error')}
+                                  className={`px-3 py-1 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                                    csvStatusFilter === 'error'
+                                      ? 'bg-rose-600 text-white shadow-xs'
+                                      : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                                  }`}
+                                >
+                                  <AlertCircle size={13} />
+                                  <span>{language === 'ar' ? `أخطاء (${processedCsvRows.filter(r => r.status === 'error').length})` : `Errors (${processedCsvRows.filter(r => r.status === 'error').length})`}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setCsvStatusFilter('warning')}
+                                  className={`px-3 py-1 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                                    csvStatusFilter === 'warning'
+                                      ? 'bg-amber-500 text-white shadow-xs'
+                                      : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                                  }`}
+                                >
+                                  <AlertTriangle size={13} />
+                                  <span>{language === 'ar' ? `تنبيهات (${processedCsvRows.filter(r => r.status === 'warning').length})` : `Warnings (${processedCsvRows.filter(r => r.status === 'warning').length})`}</span>
+                                </button>
+                              </div>
+
+                              <span className="text-[11px] text-slate-400 font-semibold">
+                                {language === 'ar' ? 'انقر على "تصحيح الخطأ" لتعديل أي حقل مفقود مباشرة' : 'Click "Fix Error" to correct missing or invalid fields directly'}
+                              </span>
+                            </div>
+
+                            {/* Status List & Row Table */}
+                            <div className="max-h-72 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900 shadow-inner">
+                              <table className="w-full text-xs text-right divide-y divide-slate-100 dark:divide-slate-800">
+                                <thead className="bg-slate-50 dark:bg-slate-950/60 text-[11px] font-black text-slate-600 dark:text-slate-400 sticky top-0 z-10">
+                                  <tr>
+                                    <th className="p-2.5 text-right w-12">#</th>
+                                    <th className="p-2.5 text-right w-28">{language === 'ar' ? 'حالة التدقيق' : 'Validation Status'}</th>
+                                    <th className="p-2.5 text-right">{language === 'ar' ? 'اسم الأصل / المركبة' : 'Asset / Vehicle'}</th>
+                                    <th className="p-2.5 text-right">{language === 'ar' ? 'رقم اللوحة / الرمز' : 'Plate / Code'}</th>
+                                    <th className="p-2.5 text-right">{language === 'ar' ? 'القسم والتصنيف' : 'Department & Type'}</th>
+                                    <th className="p-2.5 text-right">{language === 'ar' ? 'سنة الصنع / الوقود' : 'Year / Fuel'}</th>
+                                    <th className="p-2.5 text-right">{language === 'ar' ? 'ملاحظات وتفاصيل الفحص' : 'Validation Notes / Error Reason'}</th>
+                                    <th className="p-2.5 text-center w-24">{language === 'ar' ? 'الإجراء' : 'Actions'}</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+                                  {processedCsvRows
+                                    .filter(row => {
+                                      if (csvStatusFilter === 'valid') return row.status === 'valid';
+                                      if (csvStatusFilter === 'error') return row.status === 'error';
+                                      if (csvStatusFilter === 'warning') return row.status === 'warning';
+                                      return true;
+                                    })
+                                    .map((row) => {
+                                      const isRowError = row.status === 'error';
+                                      const isRowWarning = row.status === 'warning';
+
+                                      return (
+                                        <tr 
+                                          key={row.id} 
+                                          className={`transition-colors ${
+                                            isRowError 
+                                              ? 'bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-50/70 dark:hover:bg-rose-950/30' 
+                                              : isRowWarning 
+                                                ? 'bg-amber-50/30 dark:bg-amber-950/15 hover:bg-amber-50/60 dark:hover:bg-amber-950/25'
+                                                : 'hover:bg-purple-50/30 dark:hover:bg-slate-800/40'
+                                          }`}
+                                        >
+                                          {/* Row Number */}
+                                          <td className="p-2.5 text-slate-400 font-mono text-[11px]">{row.rowNumber}</td>
+
+                                          {/* Status Badge */}
+                                          <td className="p-2.5 whitespace-nowrap">
+                                            {row.status === 'valid' ? (
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10.5px] font-black border border-emerald-200 dark:border-emerald-800">
+                                                <CheckCircle2 size={12} className="text-emerald-600" />
+                                                <span>{language === 'ar' ? 'سليم وجاهز' : 'Valid'}</span>
+                                              </span>
+                                            ) : row.status === 'error' ? (
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-[10.5px] font-black border border-rose-200 dark:border-rose-800 animate-pulse">
+                                                <AlertCircle size={12} className="text-rose-600" />
+                                                <span>{language === 'ar' ? 'يوجد خطأ' : 'Error'}</span>
+                                              </span>
+                                            ) : (
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10.5px] font-black border border-amber-200 dark:border-amber-800">
+                                                <AlertTriangle size={12} className="text-amber-600" />
+                                                <span>{language === 'ar' ? 'تنبيه' : 'Warning'}</span>
+                                              </span>
+                                            )}
+                                          </td>
+
+                                          {/* Asset Name */}
+                                          <td className="p-2.5 font-bold text-slate-900 dark:text-white">
+                                            <div className="flex items-center gap-1.5">
+                                              <span>{row.vehicle.name}</span>
+                                              {(!row.vehicle.name || row.vehicle.name.includes('غير مسمى') || row.vehicle.name.includes('Unnamed')) && (
+                                                <span className="px-1.5 py-0.2 bg-rose-500 text-white text-[9.5px] rounded font-bold">{language === 'ar' ? 'فارغ' : 'Missing'}</span>
+                                              )}
+                                            </div>
+                                          </td>
+
+                                          {/* Plate Number */}
+                                          <td className="p-2.5 font-mono text-purple-700 dark:text-purple-300 font-black">
+                                            <div className="flex items-center gap-1.5">
+                                              <span>{row.vehicle.plateNumber}</span>
+                                              {(row.vehicle.plateNumber.includes('مفقودة') || row.vehicle.plateNumber.includes('NO-PLATE')) && (
+                                                <span className="px-1.5 py-0.2 bg-rose-500 text-white text-[9.5px] rounded font-bold">{language === 'ar' ? 'مفقود' : 'Required'}</span>
+                                              )}
+                                            </div>
+                                          </td>
+
+                                          {/* Department & Type */}
+                                          <td className="p-2.5 text-slate-600 dark:text-slate-300 text-[11px]">
+                                            <div>{row.vehicle.department}</div>
+                                            <div className="text-[10px] text-slate-400">{row.vehicle.type}</div>
+                                          </td>
+
+                                          {/* Year & Fuel */}
+                                          <td className="p-2.5 text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+                                            <div>{row.vehicle.modelYear}</div>
+                                            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-sans">{row.vehicle.fuelType}</div>
+                                          </td>
+
+                                          {/* Validation Notes & Reason */}
+                                          <td className="p-2.5 text-[11px]">
+                                            {row.errors.length > 0 ? (
+                                              <div className="space-y-0.5 text-rose-600 dark:text-rose-400 font-bold">
+                                                {row.errors.map((err, errIdx) => (
+                                                  <div key={errIdx} className="flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                                                    <span>{err}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : row.warnings.length > 0 ? (
+                                              <div className="space-y-0.5 text-amber-600 dark:text-amber-400">
+                                                {row.warnings.map((warn, warnIdx) => (
+                                                  <div key={warnIdx} className="flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                                    <span>{warn}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <span className="text-emerald-600 dark:text-emerald-400 text-[10.5px]">
+                                                {language === 'ar' ? 'تم الفحص ومطابقة الحقول بنجاح' : 'All required fields verified'}
+                                              </span>
+                                            )}
+                                          </td>
+
+                                          {/* Actions: Edit / Fix and Delete */}
+                                          <td className="p-2.5 text-center whitespace-nowrap">
+                                            <div className="flex items-center justify-center gap-1">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleStartEditCsvRow(row)}
+                                                className="px-2 py-1 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 rounded-lg text-[11px] font-black border border-purple-200 dark:border-purple-800 flex items-center gap-1 cursor-pointer transition-colors"
+                                                title={language === 'ar' ? 'تصحيح وتعديل بيانات الصف' : 'Fix row details'}
+                                              >
+                                                <Edit3 size={12} />
+                                                <span>{language === 'ar' ? 'تصحيح' : 'Fix'}</span>
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteProcessedCsvRow(row.id)}
+                                                className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                                                title={language === 'ar' ? 'حذف هذا الصف من الاستيراد' : 'Remove row'}
+                                              >
+                                                <Trash2 size={13} />
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Dual action registration buttons */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const readyVehicles = processedCsvRows.filter(r => r.status !== 'error').map(r => r.vehicle);
+                                  handleDirectBulkRegister(readyVehicles);
+                                }}
+                                disabled={processedCsvRows.filter(r => r.status !== 'error').length === 0}
+                                className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-black transition-all text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-98"
+                              >
+                                <Check size={16} />
+                                <span>
+                                  {language === 'ar'
+                                    ? `اعتماد وتسجيل الصفوف السليمة فقط (${processedCsvRows.filter(r => r.status !== 'error').length} أصل) ✅`
+                                    : `Register Valid Rows Only (${processedCsvRows.filter(r => r.status !== 'error').length} Assets) ✅`}
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleAiBulkImport(uploadedFile)}
+                                className="w-full py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-black transition-all text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-98"
+                              >
+                                <Sparkles size={15} className="animate-pulse" />
+                                <span>
+                                  {language === 'ar'
+                                    ? 'تسجيل ذكي + توليد سجل صيانة تاريخي لـ 3 سنوات (AI) 🚀'
+                                    : 'Smart Import + 3-Year Maintenance Archive (AI) 🚀'}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-6 text-center text-slate-400 space-y-1">
+                            <p className="text-xs font-bold">{language === 'ar' ? 'لم يتم العثور على أصول صالحة في الملف المرفوع' : 'No valid assets found in uploaded file'}</p>
+                            <p className="text-[11px]">{language === 'ar' ? 'يرجى التأكد من مطابقة الملف لنموذج CSV الاسترشادي' : 'Please check template headers and re-upload'}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 shrink-0">
+              <div className="p-5 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
+                <div className="text-[11px] text-slate-400 font-semibold hidden sm:block">
+                  {language === 'ar' ? 'نظام FleetAurvexis لإدارة وتدقيق ومزامنة الأصول الجماعية' : 'FleetAurvexis Bulk Asset Verification & Management System'}
+                </div>
                 <button
                   type="button"
-                  onClick={() => setIsBulkModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-600 rounded-xl font-bold text-xs transition-all cursor-pointer"
-                  disabled={isGenerating}
+                  onClick={() => {
+                    setIsBulkModalOpen(false);
+                    setUploadedFile(null);
+                    setProcessedCsvRows([]);
+                    setPreviewVehicles([]);
+                    setEditingCsvRow(null);
+                  }}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs transition-all cursor-pointer"
+                  disabled={isGenerating || isPreviewingCsv}
                 >
                   {language === 'ar' ? 'إلغاء وإغلاق' : 'Close'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Inline Row Correction Modal */}
+        {editingCsvRow && (
+          <div className="fixed inset-0 z-[130] overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[1.8rem] border border-purple-200 dark:border-purple-800 shadow-2xl overflow-hidden flex flex-col"
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+            >
+              {/* Header */}
+              <div className="p-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-white/10 rounded-xl">
+                    <Edit3 size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black">
+                      {language === 'ar' ? `تصحيح وتعديل بيانات الصف رقم #${editingCsvRow.rowNumber}` : `Edit & Correct Row #${editingCsvRow.rowNumber}`}
+                    </h4>
+                    <p className="text-[10.5px] text-purple-100">
+                      {language === 'ar' ? 'قم بتصحيح الحقول لتتحول حالة الصف فوراً إلى "سليم وجاهز للتسجيل"' : 'Fix the required fields to immediately validate this row'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingCsvRow(null)}
+                  className="p-1.5 hover:bg-white/10 rounded-xl text-white/80 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                {/* Current Errors list */}
+                {editingCsvRow.errors.length > 0 && (
+                  <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl border border-rose-200 dark:border-rose-900 space-y-1">
+                    <span className="text-[11px] font-black text-rose-700 dark:text-rose-300 flex items-center gap-1">
+                      <AlertCircle size={13} />
+                      <span>{language === 'ar' ? 'الأخطاء المطلوب تصحيحها:' : 'Errors to resolve:'}</span>
+                    </span>
+                    <ul className="text-xs text-rose-600 dark:text-rose-400 list-disc list-inside font-semibold">
+                      {editingCsvRow.errors.map((e, idx) => (
+                        <li key={idx}>{e}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Form fields */}
+                <div className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="block font-black text-slate-700 dark:text-slate-300 mb-1">
+                      {language === 'ar' ? 'اسم الأصل / المركبة *' : 'Asset / Vehicle Name *'}
+                    </label>
+                    <input
+                      type="text"
+                      value={editRowForm.name}
+                      onChange={(e) => setEditRowForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder={language === 'ar' ? 'مثال: شاحنة مرسيدس أكتروس 3340 قلاب' : 'e.g. Mercedes Actros 3340 Dump Truck'}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-black text-slate-700 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'رقم اللوحة / الرمز *' : 'Plate / Code *'}
+                      </label>
+                      <input
+                        type="text"
+                        value={editRowForm.plateNumber}
+                        onChange={(e) => setEditRowForm(prev => ({ ...prev, plateNumber: e.target.value }))}
+                        placeholder={language === 'ar' ? 'مثال: أ ب ج 1234 أو GEN-500' : 'e.g. ABC 1234 or GEN-500'}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold font-mono focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-black text-slate-700 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'سنة الصنع' : 'Model Year'}
+                      </label>
+                      <input
+                        type="text"
+                        value={editRowForm.modelYear}
+                        onChange={(e) => setEditRowForm(prev => ({ ...prev, modelYear: e.target.value }))}
+                        placeholder="2023"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold font-mono focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-black text-slate-700 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'القسم الإداري' : 'Department'}
+                      </label>
+                      <input
+                        type="text"
+                        value={editRowForm.department}
+                        onChange={(e) => setEditRowForm(prev => ({ ...prev, department: e.target.value }))}
+                        placeholder={language === 'ar' ? 'مثال: العمليات الميدانية' : 'e.g. Field Operations'}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-black text-slate-700 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'التصنيف' : 'Category'}
+                      </label>
+                      <select
+                        value={editRowForm.type}
+                        onChange={(e) => setEditRowForm(prev => ({ ...prev, type: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                      >
+                        <option value="معدة ثقيلة">{language === 'ar' ? 'معدة ثقيلة' : 'Heavy Equipment'}</option>
+                        <option value="مركبة خفيفة">{language === 'ar' ? 'مركبة خفيفة' : 'Light Vehicle'}</option>
+                        <option value="نقل جماعي">{language === 'ar' ? 'نقل جماعي / حافلة' : 'Public Transport'}</option>
+                        <option value="معدة هندسية">{language === 'ar' ? 'معدة هندسية / مولد' : 'Engineering Equipment'}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-black text-slate-700 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'نوع الوقود' : 'Fuel Type'}
+                      </label>
+                      <select
+                        value={editRowForm.fuelType}
+                        onChange={(e) => setEditRowForm(prev => ({ ...prev, fuelType: e.target.value as any }))}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                      >
+                        <option value="diesel">{language === 'ar' ? 'ديزل (Diesel)' : 'Diesel'}</option>
+                        <option value="gasoline">{language === 'ar' ? 'بنزين (Gasoline)' : 'Gasoline'}</option>
+                        <option value="electric">{language === 'ar' ? 'كهرباء (Electric)' : 'Electric'}</option>
+                        <option value="hybrid">{language === 'ar' ? 'هجين (Hybrid)' : 'Hybrid'}</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-black text-slate-700 dark:text-slate-300 mb-1">
+                        {language === 'ar' ? 'رقم الشاسيه / الهيكل' : 'Chassis / VIN'}
+                      </label>
+                      <input
+                        type="text"
+                        value={editRowForm.chassisNumber}
+                        onChange={(e) => setEditRowForm(prev => ({ ...prev, chassisNumber: e.target.value }))}
+                        placeholder="CHS-2025-XXXX"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold font-mono focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingCsvRow(null)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs transition-all cursor-pointer"
+                >
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveRowCorrection}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                >
+                  <Check size={15} />
+                  <span>{language === 'ar' ? 'حفظ وتصحيح الصف فوراً' : 'Save & Validate Row'}</span>
                 </button>
               </div>
             </motion.div>

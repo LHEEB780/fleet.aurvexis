@@ -535,3 +535,352 @@ export async function parseFleetFileClientSide(file: File, language: string = 'a
   return { vehicles, maintenanceOrders };
 }
 
+/**
+ * Interface representing a processed and validated CSV row
+ */
+export interface ProcessedCsvRow {
+  id: string;
+  rowNumber: number;
+  originalData: Record<string, any>;
+  vehicle: any;
+  status: 'valid' | 'error' | 'warning';
+  errors: string[];
+  warnings: string[];
+}
+
+/**
+ * Validates and constructs a vehicle object from a raw CSV/Excel row
+ */
+export function validateAndBuildCsvRow(rawRow: Record<string, any>, rowNumber: number, language: string = 'ar'): ProcessedCsvRow {
+  const isAr = language === 'ar';
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  let name = "";
+  let plateNumber = "";
+  let modelYear = "";
+  let department = "";
+  let category = "";
+  let fuelType = "diesel";
+  let chassisNumber = "";
+
+  for (const [key, val] of Object.entries(rawRow)) {
+    const k = key.toLowerCase();
+    const v = String(val || "").trim();
+    if (!v) continue;
+
+    if (!name && (k.includes("name") || k.includes("اسم") || k.includes("آلية") || k.includes("معدة") || k.includes("asset") || k.includes("vehicle") || k.includes("model"))) {
+      name = v;
+    } else if (!plateNumber && (k.includes("plate") || k.includes("لوحة") || k.includes("رمز") || k.includes("serial") || k.includes("كود") || k.includes("رقم"))) {
+      plateNumber = v;
+    } else if (!modelYear && (k.includes("year") || k.includes("سنة") || k.includes("صنع") || k.includes("موديل"))) {
+      modelYear = v.replace(/[^\d]/g, '');
+    } else if (!department && (k.includes("dept") || k.includes("قسم") || k.includes("department") || k.includes("إدارة") || k.includes("تشغيل"))) {
+      department = v;
+    } else if (!category && (k.includes("cat") || k.includes("نوع") || k.includes("تصنيف") || k.includes("type"))) {
+      category = v;
+    } else if (k.includes("fuel") || k.includes("وقود")) {
+      const fuelLower = v.toLowerCase();
+      if (fuelLower.includes('بنزين') || fuelLower.includes('gas') || fuelLower.includes('petrol')) fuelType = 'gasoline';
+      else if (fuelLower.includes('كهرب') || fuelLower.includes('elec')) fuelType = 'electric';
+      else if (fuelLower.includes('هجين') || fuelLower.includes('hyb')) fuelType = 'hybrid';
+      else fuelType = 'diesel';
+    } else if (!chassisNumber && (k.includes("chassis") || k.includes("شاسيه") || k.includes("vin") || k.includes("هيكل"))) {
+      chassisNumber = v;
+    }
+  }
+
+  // Fallback scan if explicit headers weren't found
+  if (!name) {
+    const stringVals = Object.values(rawRow).filter(v => typeof v === 'string' && (v as string).trim().length > 2);
+    if (stringVals.length > 0) {
+      name = String(stringVals[0]).trim();
+    }
+  }
+
+  // Validation Checks
+  if (!name || name.length < 2) {
+    errors.push(isAr ? 'اسم الأصل أو المركبة مفقود أو فارغ' : 'Asset / Vehicle Name is missing or empty');
+  }
+
+  const valuesStr = Object.values(rawRow).map(v => String(v || "")).join(" ").toLowerCase();
+  const isGen = (name + " " + valuesStr).includes('مولد') || (name + " " + valuesStr).includes('generator') || (name + " " + valuesStr).includes('kva');
+
+  if (!plateNumber) {
+    if (isGen) {
+      warnings.push(isAr ? 'رقم الكود/اللوحة مفقود (تم توليد رمز تسلسلي تلقائي للمولد)' : 'Plate/Serial is missing (Auto-generated)');
+      plateNumber = `GEN-${100 + rowNumber}`;
+    } else {
+      errors.push(isAr ? 'رقم اللوحة / الرمز التسلسلي مفقود' : 'Plate number / Serial code is missing');
+    }
+  }
+
+  if (modelYear) {
+    const y = parseInt(modelYear, 10);
+    if (isNaN(y) || y < 1970 || y > 2035) {
+      warnings.push(isAr ? `سنة الصنع (${modelYear}) غير اعتيادية` : `Model year (${modelYear}) looks irregular`);
+      modelYear = "2023";
+    }
+  } else {
+    warnings.push(isAr ? 'سنة الصنع غير محددة (تم تعيين 2023 افتراضياً)' : 'Model year not specified (defaulted to 2023)');
+    modelYear = "2023";
+  }
+
+  if (!department) {
+    warnings.push(isAr ? 'القسم الإداري غير محدد (تم تعيين: العمليات الميدانية)' : 'Department not specified (defaulted to Field Operations)');
+    department = isAr ? 'العمليات الميدانية' : 'Field Operations';
+  }
+
+  const textLower = (name + " " + valuesStr).toLowerCase();
+  let type = category || (isAr ? 'مركبة خفيفة' : 'Light Vehicle');
+  let iconName = 'car';
+  let tireCount = 4;
+  let tireSize = '265/65R17';
+  let tirePressure = '35 PSI';
+  let tireBrand = 'Bridgestone';
+  let loadingCapacity = isAr ? '1.5 طن' : '1.5 Tons';
+
+  if (isGen) {
+    type = isAr ? 'معدة هندسية' : 'Engineering Equipment';
+    iconName = 'cpu';
+    tireCount = 0;
+    tireSize = isAr ? 'غير متوفر (معدة ثابتة)' : 'N/A (Stationary Base)';
+    tirePressure = 'N/A';
+    tireBrand = 'N/A';
+    fuelType = 'diesel';
+    loadingCapacity = '500 kVA';
+  } else if (textLower.includes('حفار') || textLower.includes('جنزير') || textLower.includes('بلدوزر') || textLower.includes('excavator')) {
+    type = isAr ? 'معدة ثقيلة' : 'Heavy Equipment';
+    iconName = 'wrench';
+    tireCount = 0;
+    tireSize = 'Steel Track';
+    tirePressure = 'N/A';
+    tireBrand = 'Komatsu Track';
+    fuelType = 'diesel';
+    loadingCapacity = isAr ? '21 طن تشغيلي' : '21 Operating Tons';
+  } else if (textLower.includes('رافعة شوكية') || textLower.includes('forklift')) {
+    type = isAr ? 'معدة ثقيلة' : 'Heavy Equipment';
+    iconName = 'wrench';
+    tireCount = 4;
+    tireSize = '300-15 Solid';
+    tirePressure = 'N/A (مصمت)';
+    tireBrand = 'Industrial Solid';
+    fuelType = 'diesel';
+    loadingCapacity = isAr ? '5.0 طن' : '5.0 Tons';
+  } else if (textLower.includes('شاحنة') || textLower.includes('أكتروس') || textLower.includes('مان') || textLower.includes('قلاب') || textLower.includes('truck')) {
+    type = isAr ? 'معدة ثقيلة' : 'Heavy Equipment';
+    iconName = 'truck';
+    tireCount = 10;
+    tireSize = '315/80R22.5';
+    tirePressure = '115 PSI';
+    tireBrand = 'Michelin';
+    fuelType = 'diesel';
+    loadingCapacity = isAr ? '25 طن' : '25 Tons';
+  } else if (textLower.includes('حافلة') || textLower.includes('باص') || textLower.includes('كوستر') || textLower.includes('bus')) {
+    type = isAr ? 'نقل جماعي' : 'Public Transport';
+    iconName = 'bus';
+    tireCount = 6;
+    tireSize = '215/75R17.5';
+    tirePressure = '75 PSI';
+    tireBrand = 'Yokohama';
+    fuelType = 'diesel';
+    loadingCapacity = isAr ? '30 راكب' : '30 Seats';
+  }
+
+  const id = `asset-imp-${Date.now()}-${rowNumber}`;
+  if (!chassisNumber) {
+    chassisNumber = `CHS-${new Date().getFullYear()}-${1000 + rowNumber * 13}`;
+  }
+
+  const vehicle = {
+    id,
+    name: name || (isAr ? `أصل غير مسمى #${rowNumber}` : `Unnamed Asset #${rowNumber}`),
+    type,
+    plateNumber: plateNumber || (isAr ? `لوحة مفقودة #${rowNumber}` : `NO-PLATE-${rowNumber}`),
+    department,
+    subDepartment: isAr ? 'الصيانة المركزية' : 'Central Workshop',
+    status: 'active' as const,
+    lastMaintenance: new Date().toISOString().split('T')[0],
+    iconName,
+    chassisNumber,
+    modelYear: modelYear || '2023',
+    fuelType: fuelType as any,
+    loadingCapacity,
+    tireCount,
+    tireSize,
+    tirePressure,
+    tireBrand,
+    tireStatus: isAr ? 'ممتاز' : 'Excellent',
+    insuranceExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  };
+
+  const status: 'valid' | 'error' | 'warning' = errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'valid';
+
+  return {
+    id,
+    rowNumber,
+    originalData: rawRow,
+    vehicle,
+    status,
+    errors,
+    warnings
+  };
+}
+
+/**
+ * Re-validates a single row after the user edits any field
+ */
+export function revalidateRow(row: ProcessedCsvRow, language: string = 'ar'): ProcessedCsvRow {
+  const isAr = language === 'ar';
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  const v = row.vehicle;
+
+  if (!v.name || String(v.name).trim().length < 2) {
+    errors.push(isAr ? 'اسم الأصل أو المركبة مفقود أو فارغ' : 'Asset / Vehicle Name is missing or empty');
+  }
+
+  if (!v.plateNumber || String(v.plateNumber).trim().length < 2 || String(v.plateNumber).includes('مفقودة') || String(v.plateNumber).includes('NO-PLATE')) {
+    errors.push(isAr ? 'رقم اللوحة / الرمز التسلسلي مفقود أو غير صالح' : 'Plate number / Serial code is missing');
+  }
+
+  if (v.modelYear) {
+    const y = parseInt(String(v.modelYear), 10);
+    if (isNaN(y) || y < 1970 || y > 2035) {
+      warnings.push(isAr ? `سنة الصنع (${v.modelYear}) غير اعتيادية` : `Model year (${v.modelYear}) looks irregular`);
+    }
+  } else {
+    warnings.push(isAr ? 'سنة الصنع غير محددة' : 'Model year is not specified');
+  }
+
+  if (!v.department || String(v.department).trim().length < 2) {
+    warnings.push(isAr ? 'القسم غير محدد' : 'Department is not specified');
+  }
+
+  const status: 'valid' | 'error' | 'warning' = errors.length > 0 ? 'error' : warnings.length > 0 ? 'warning' : 'valid';
+
+  return {
+    ...row,
+    status,
+    errors,
+    warnings
+  };
+}
+
+/**
+ * Auto-fixes missing or broken fields for all rows
+ */
+export function autoFixAllRows(rows: ProcessedCsvRow[], language: string = 'ar'): ProcessedCsvRow[] {
+  const isAr = language === 'ar';
+  return rows.map((r, idx) => {
+    const v = { ...r.vehicle };
+    if (!v.name || v.name.includes('غير مسمى') || v.name.includes('Unnamed')) {
+      v.name = isAr ? `شاحنة صيانة ميدانية #${idx + 1}` : `Field Service Vehicle #${idx + 1}`;
+    }
+    if (!v.plateNumber || v.plateNumber.includes('مفقودة') || v.plateNumber.includes('NO-PLATE')) {
+      const letters = 'أبجدرسط';
+      v.plateNumber = `${letters[idx % letters.length]} ${letters[(idx + 1) % letters.length]} ${letters[(idx + 2) % letters.length]} ${2000 + idx * 7}`;
+    }
+    if (!v.modelYear || isNaN(parseInt(v.modelYear, 10))) {
+      v.modelYear = '2023';
+    }
+    if (!v.department) {
+      v.department = isAr ? 'العمليات الميدانية' : 'Field Operations';
+    }
+    return revalidateRow({ ...r, vehicle: v }, language);
+  });
+}
+
+/**
+ * Parses and processes rows with step-by-step progress callbacks for UI
+ */
+export async function parseAndValidateCsvRows(
+  file: File,
+  language: string = 'ar',
+  onProgress?: (progress: number, current: number, total: number, log: string) => void
+): Promise<ProcessedCsvRow[]> {
+  const isAr = language === 'ar';
+  let rawRows: any[] = [];
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+    
+    for (const sheetName of workbook.SheetNames) {
+      const sheet = workbook.Sheets[sheetName];
+      if (sheet) {
+        const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        if (jsonRows && jsonRows.length > 0) {
+          rawRows.push(...jsonRows);
+        } else {
+          const arrayRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }) as any[][];
+          if (arrayRows && arrayRows.length > 1) {
+            const headers = arrayRows[0].map((h: any) => String(h || "").trim());
+            for (let r = 1; r < arrayRows.length; r++) {
+              const row = arrayRows[r];
+              if (row && row.some((c: any) => String(c || "").trim().length > 0)) {
+                const rowObj: Record<string, any> = {};
+                headers.forEach((h: string, idx: number) => {
+                  rowObj[h || `col_${idx}`] = row[idx] || "";
+                });
+                rawRows.push(rowObj);
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    try {
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+      for (const line of lines) {
+        if (line.includes('اسم') || line.includes('name') || line.includes('Asset')) continue;
+        const cols = line.split(/[,\t;|]/).map(c => c.trim().replace(/^["']|["']$/g, ''));
+        if (cols.some(c => c.length > 0)) {
+          rawRows.push({
+            name: cols[0] || "",
+            plate: cols[1] || "",
+            type: cols[2] || "",
+            year: cols[3] || cols[8] || "2023"
+          });
+        }
+      }
+    } catch (textErr) {}
+  }
+
+  // Filter out empty rows
+  const cleanRows = rawRows.filter(r => {
+    const vals = Object.values(r).map(v => String(v || "")).join("").trim();
+    return vals.length > 1 && !vals.includes("اسم الآلية");
+  });
+
+  const total = Math.max(cleanRows.length, 1);
+  const processedRows: ProcessedCsvRow[] = [];
+
+  for (let i = 0; i < cleanRows.length; i++) {
+    const rawRow = cleanRows[i];
+    const rowNumber = i + 1;
+
+    if (onProgress) {
+      const percent = Math.round(((i + 1) / total) * 100);
+      onProgress(
+        percent,
+        i + 1,
+        total,
+        isAr ? `فحص وتدقيق وتصنيف الصف رقم ${i + 1} من ${total}...` : `Validating and classifying row ${i + 1} of ${total}...`
+      );
+      // Small artificial delay for visual feedback if total < 50
+      if (total < 50) {
+        await new Promise(r => setTimeout(r, 15));
+      }
+    }
+
+    const item = validateAndBuildCsvRow(rawRow, rowNumber, language);
+    processedRows.push(item);
+  }
+
+  return processedRows;
+}
+
