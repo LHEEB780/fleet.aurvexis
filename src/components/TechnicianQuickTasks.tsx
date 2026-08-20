@@ -484,7 +484,7 @@ export const TechnicianQuickTasks: React.FC<TechnicianQuickTasksProps> = ({
                         const ordNum = order.orderNumber || `#${order.id}`;
                         return (
                           <option key={order.id} value={order.id}>
-                            {ordNum} {vStr} ({order.description.slice(0, 25)}...)
+                            {ordNum} {vStr} ({(order.description || '').slice(0, 25)}...)
                           </option>
                         );
                       })}

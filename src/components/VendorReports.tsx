@@ -68,6 +68,7 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
           o.vendorId === v.id && 
           o.status === 'delivered' && 
           o.actualDeliveryDate && 
+          typeof o.actualDeliveryDate === 'string' &&
           o.actualDeliveryDate.startsWith(m.key)
         );
         const spend = monthlyOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
@@ -92,6 +93,7 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
         o.vendorId === selectedVendorId && 
         o.status === 'delivered' && 
         o.actualDeliveryDate && 
+        typeof o.actualDeliveryDate === 'string' &&
         o.actualDeliveryDate.startsWith(m.key)
       );
       

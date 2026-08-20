@@ -1570,10 +1570,10 @@ export function MarketingAdmin({
         adminUser: lead.name,
         adminEmail: lead.email,
         packageSelected: packageType,
-        databaseSchema: `tenant_db_sch_${lead.id}`,
+        databaseSchema: `tenant_db_sch_${lead?.id || 'lead'}`,
         apiToken: `pk_live_saas_${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
         subscriptionExpires: expirationDate.toLocaleDateString('ar-SA'),
-        assignedSubdomain: `${lead.company.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]/g, '').slice(0, 12)}.fleetlock.com.sa`
+        assignedSubdomain: `${(lead?.company || 'fleet').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]/g, '').slice(0, 12) || 'tenant'}.fleetlock.com.sa`
       };
       
       const currentLogs = Array.isArray(lead.communicationLogs) ? lead.communicationLogs : [];
@@ -1926,7 +1926,7 @@ export function MarketingAdmin({
         notes: 'حالة غير مهتمة حالياً. لم يقرر التفعيل لامتلاك ورشته الخاصة براد صيانة متكامل يدوياً.'
       }
     ];
-    const organic = leads.filter(l => !l.id.startsWith('sim-'));
+    const organic = leads.filter(l => l && (!l.id || !l.id.startsWith('sim-')));
     saveLeads([...mockSaudiLeads, ...organic]);
   };
 
@@ -1949,7 +1949,7 @@ export function MarketingAdmin({
   };
 
   const handleClearSimulatedLeads = () => {
-    const filtered = leads.filter(l => !l.id.startsWith('sim-'));
+    const filtered = leads.filter(l => l && (!l.id || !l.id.startsWith('sim-')));
     saveLeads(filtered);
   };
 
@@ -2187,11 +2187,11 @@ export function MarketingAdmin({
                       {/* Filtered Tabs List */}
                       <div className="space-y-1.5 select-none">
                         {filteredMenuItems.length > 0 ? (
-                          filteredMenuItems.map(t => {
+                          filteredMenuItems.map((t, idx) => {
                             const isActive = activeSubTab === t.id;
                             return (
                               <button
-                                key={t.id}
+                                key={t?.id ? `mobile-tab-${t.id}` : `mobile-tab-${idx}`}
                                 onClick={() => {
                                   setActiveSubTab(t.id as any);
                                   setIsMobileMenuOpen(false);
@@ -2288,11 +2288,11 @@ export function MarketingAdmin({
                   {/* Items List */}
                   <div className="space-y-1.5 select-none">
                     {filteredMenuItems.length > 0 ? (
-                      filteredMenuItems.map(t => {
+                      filteredMenuItems.map((t, idx) => {
                         const isActive = activeSubTab === t.id;
                         return (
                           <button
-                            key={t.id}
+                            key={t?.id ? `desk-tab-${t.id}` : `desk-tab-${idx}`}
                             onClick={() => setActiveSubTab(t.id as any)}
                             className={`w-full text-right p-3 rounded-2xl transition-all duration-200 flex items-start gap-3 cursor-pointer group border ${
                               isActive 
@@ -2650,7 +2650,7 @@ export function MarketingAdmin({
                       <span>{language === 'ar' ? 'مسح الاشتراكات المحاكية' : 'Wipe Simulated Deals'}</span>
                     </button>
                     <span className="text-slate-400 font-medium">
-                      {language === 'ar' ? `العملاء المحاكون بالجدول حالياً: ${leads.filter(l => l.id.startsWith('sim-')).length}` : `Simulated: ${leads.filter(l => l.id.startsWith('sim-')).length}`}
+                      {language === 'ar' ? `العملاء المحاكون بالجدول حالياً: ${leads.filter(l => l && l.id && l.id.startsWith('sim-')).length}` : `Simulated: ${leads.filter(l => l && l.id && l.id.startsWith('sim-')).length}`}
                     </span>
                   </div>
                 </div>
@@ -2760,9 +2760,9 @@ export function MarketingAdmin({
                   </div>
                 ) : (
                   <div className="overflow-x-auto divide-y divide-slate-100 dark:divide-slate-850 font-sans text-right">
-                    {filteredLeads.map((l) => (
+                    {filteredLeads.map((l, idx) => (
                       <div 
-                        key={l.id} 
+                        key={l?.id || `lead-row-${idx}`} 
                         className={`p-5 hover:bg-slate-50/70 dark:hover:bg-slate-850/30 transition-all grid grid-cols-1 md:grid-cols-12 gap-4 items-center group cursor-pointer ${
                           selectedLeadForDetail?.id === l.id ? 'bg-indigo-50/15 dark:bg-indigo-950/15 border-r-4 border-indigo-500' : ''
                         }`}
@@ -2771,7 +2771,9 @@ export function MarketingAdmin({
                         <div className="md:col-span-3 space-y-1.5" onClick={() => setSelectedLeadForDetail(l)}>
                           <div className="flex items-center gap-1.5 justify-end">
                             <span className="text-[12px] font-black text-slate-850 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{l.name}</span>
-                            <span className="p-1 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono text-[8px]">{l.id.slice(0, 8)}</span>
+                            <span className="p-1 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono text-[8px]">
+                              {l?.id ? String(l.id).slice(0, 8) : 'LEAD'}
+                            </span>
                           </div>
                           <div className="space-y-1 text-[10.5px] text-slate-500 dark:text-slate-450 select-all font-mono leading-relaxed">
                             <div className="flex items-center justify-end gap-1.5">
@@ -3326,7 +3328,7 @@ export function MarketingAdmin({
                   </h3>
                   
                   <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                    {aiRobots.map(bot => {
+                    {aiRobots.map((bot, idx) => {
                       const isSelected = selectedRobotId === bot.id;
                       let botIcon = <Users size={15} />;
                       if (bot.icon === 'dollar') botIcon = <DollarSign size={15} />;
@@ -3339,7 +3341,7 @@ export function MarketingAdmin({
 
                       return (
                         <div
-                          key={bot.id}
+                          key={bot?.id || `robot-${idx}`}
                           className={`p-3.5 rounded-2xl cursor-pointer transition-all border text-right relative group ${
                             isSelected 
                               ? 'bg-slate-900' 
@@ -3901,7 +3903,7 @@ export function MarketingAdmin({
                 const isDone = s.status === 'completed';
                 return (
                   <div 
-                    key={s.id}
+                    key={s?.id || `launch-step-${index}`}
                     className={`bg-white dark:bg-slate-900 border transition-all rounded-3xl p-5 shadow-soft flex flex-col justify-between gap-5 relative overflow-hidden ${
                       isDone 
                         ? 'border-emerald-200/60 bg-emerald-50/5 dark:bg-emerald-950/5' 
@@ -4865,9 +4867,9 @@ export function MarketingAdmin({
                   </div>
 
                   <div className="flex flex-row-reverse gap-1 overflow-x-auto pb-1 border-b border-slate-100 dark:border-slate-850 select-none">
-                    {footerColumns.map((col) => (
+                    {footerColumns.map((col, idx) => (
                       <button
-                        key={col.id}
+                        key={col?.id || `footer-col-${idx}`}
                         type="button"
                         onClick={() => setSelectedColId(col.id)}
                         className={`p-2 px-3 text-[11px] font-black whitespace-nowrap cursor-pointer rounded-xl transition-all ${
@@ -4883,8 +4885,8 @@ export function MarketingAdmin({
                   </div>
 
                   {/* Active Selected Column Editing Form */}
-                  {footerColumns.filter(c => c.id === selectedColId).map((activeCol) => (
-                    <div key={activeCol.id} className="space-y-4 pt-1">
+                  {footerColumns.filter(c => c.id === selectedColId).map((activeCol, acIdx) => (
+                    <div key={activeCol?.id || `active-col-${acIdx}`} className="space-y-4 pt-1">
                       
                       {/* Column Title inputs */}
                       <div className="grid grid-cols-2 gap-3 text-right">

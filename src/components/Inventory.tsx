@@ -2254,7 +2254,7 @@ export default function Inventory({ user }: InventoryProps) {
                             {item.brand || 'هيكل ميكانيكي'}
                           </span>
                           <span className="font-mono bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded text-[8.5px] tracking-wide text-slate-100 border border-slate-400/20">
-                            SKU-{item.sku || item.id.slice(-6).toUpperCase()}
+                            SKU-{item.sku || (item?.id ? String(item.id).slice(-6).toUpperCase() : '000000')}
                           </span>
                         </div>
                       </div>

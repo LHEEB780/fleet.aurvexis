@@ -1361,7 +1361,7 @@ export default function AppLayout({
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('notification-navigate', { detail: { tab: 'workshops', search: 'شمال الرياض' } }));
       }, 100);
-    } else if (n.id.startsWith('notif-pm-48h-')) {
+    } else if (n?.id && n.id.startsWith('notif-pm-48h-')) {
       setActiveTab('periodic-maintenance');
     }
   };

@@ -1212,7 +1212,7 @@ export default function Vendors({ user }: VendorsProps) {
                             <div className="space-y-0.5">
                               <p className="flex items-center gap-1.5">
                                 <span className="text-[10px] font-mono bg-slate-100 dark:bg-slate-850 px-1.5 py-0.5 rounded-md text-slate-500">
-                                  {order.id.startsWith('so-') && order.id.length < 10 ? order.id.toUpperCase() : 'ORD-' + order.id.slice(-4).toUpperCase()}
+                                  {order?.id && typeof order.id === 'string' && order.id.startsWith('so-') && order.id.length < 10 ? order.id.toUpperCase() : 'ORD-' + (order?.id ? order.id.slice(-4).toUpperCase() : '0000')}
                                 </span>
                                 <span>{order.partName}</span>
                               </p>

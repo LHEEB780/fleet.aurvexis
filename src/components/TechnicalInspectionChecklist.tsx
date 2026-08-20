@@ -619,7 +619,7 @@ export default function TechnicalInspectionChecklist({
                                 <span className="text-xs font-black text-slate-700 dark:text-slate-200">
                                   {isRtl ? sub.nameAr : sub.nameEn}
                                 </span>
-                                {sub.id.startsWith('custom-sub-') && (
+                                {Boolean(sub?.id && typeof sub.id === 'string' && sub.id.startsWith('custom-sub-')) && (
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveSubItem(item.id, sub.id)}

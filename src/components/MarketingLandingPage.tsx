@@ -43,6 +43,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import { saveDocument } from '../services/firebase';
 import FleetManagersShowcaseModal from './FleetManagersShowcaseModal';
+import VideoTutorialsModal from './VideoTutorialsModal';
 import CustomerSuccessStories from './CustomerSuccessStories';
 import FleetAurvexisLogo, { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
@@ -322,16 +323,17 @@ export default function MarketingLandingPage({
   // Helper to migrate legacy/broken feature image URLs to reliable local assets
   const migrateFeatures = (features: typeof DEFAULT_FEATURES) => {
     return features.map((feat) => {
-      if (feat.id === 'f-1' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.startsWith('/src/'))) {
+      const featImg = feat?.image || '';
+      if (feat.id === 'f-1' && (!featImg || featImg.includes('unsplash.com') || featImg.startsWith('/src/'))) {
         return { ...feat, image: highwayLogisticsTruck };
       }
-      if (feat.id === 'f-2' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.startsWith('/src/'))) {
+      if (feat.id === 'f-2' && (!featImg || featImg.includes('unsplash.com') || featImg.startsWith('/src/'))) {
         return { ...feat, image: driverTruckInspection };
       }
-      if (feat.id === 'f-3' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.includes('photo-1486006920555') || feat.image.startsWith('/src/'))) {
+      if (feat.id === 'f-3' && (!featImg || featImg.includes('unsplash.com') || featImg.includes('photo-1486006920555') || featImg.startsWith('/src/'))) {
         return { ...feat, image: aiFleetDiagnostics };
       }
-      if (feat.id === 'f-4' && (!feat.image || feat.image.includes('unsplash.com') || feat.image.startsWith('/src/'))) {
+      if (feat.id === 'f-4' && (!featImg || featImg.includes('unsplash.com') || featImg.startsWith('/src/'))) {
         return { ...feat, image: mechanicTruckWorkshop };
       }
       return feat;
@@ -443,6 +445,8 @@ export default function MarketingLandingPage({
   // State elements
   const [isShowcaseOpen, setIsShowcaseOpen] = useState(false);
   const [selectedShowcaseTab, setSelectedShowcaseTab] = useState<string>('owners');
+  const [isVideoLibraryOpen, setIsVideoLibraryOpen] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | undefined>(undefined);
   const [selectedReview, setSelectedReview] = useState(0);
   const [isReviewHovered, setIsReviewHovered] = useState(false);
   const [reviewImageError, setReviewImageError] = useState(false);
@@ -1613,6 +1617,18 @@ export default function MarketingLandingPage({
         />
       )}
 
+      {/* Video & Tutorial Academy Library Modal */}
+      {isVideoLibraryOpen && (
+        <VideoTutorialsModal
+          isOpen={isVideoLibraryOpen}
+          onClose={() => setIsVideoLibraryOpen(false)}
+          language={language}
+          onNavigateToSaaS={onNavigateToSaaS}
+          brandName={effectiveBrandName}
+          initialVideoId={selectedVideoId}
+        />
+      )}
+
       {/* Customer Success Stories & Case Studies */}
       <CustomerSuccessStories />
 
@@ -1647,23 +1663,27 @@ export default function MarketingLandingPage({
                             }
                           }
 
+                          if (item.id === "item-3-3") {
+                            setIsVideoLibraryOpen(true);
+                            return;
+                          }
+
                           // Map footer item IDs to activeTab inside FleetManagersShowcaseModal
                           let mappedTab: string | null = null;
-                          if (item.id === "item-1-1") mappedTab = "owners";
-                          else if (item.id === "item-1-2") mappedTab = "large-fleets";
-                          else if (item.id === "item-1-3") mappedTab = "construction";
-                          else if (item.id === "item-1-4") mappedTab = "service-providers";
-                          else if (item.id === "item-1-5") mappedTab = "municipalities";
-                          else if (item.id === "item-1-6") mappedTab = "logistics";
-                          else if (item.id.startsWith("item-2-")) mappedTab = item.id; // e.g. item-2-1, item-2-2...
-                          else if (item.id === "item-3-1") mappedTab = "large-fleets"; // Validated Customer Case Stories -> map to Enterprise
-                          else if (item.id === "item-3-2") mappedTab = "item-2-6";      // Blog -> map to Compliance Audit
-                          else if (item.id === "item-3-3") mappedTab = "item-2-8";      // Video Library -> map to QR / Walkaround demo
-                          else if (item.id === "item-3-4") mappedTab = "item-2-1";      // Operations Guides -> map to Preventative PM
-                          else if (item.id === "item-4-1") mappedTab = "about-company"; // About FleetAurvexis -> map to About Company Profile
-                          else if (item.id === "item-4-2") mappedTab = "item-2-6";      // Press Room -> map to Compliance Audit
-                          else if (item.id === "item-4-3") mappedTab = "item-2-5";      // Helpdesk -> map to Asset Management
-                          else if (item.id === "item-4-4") mappedTab = "item-2-8";      // Demo Request -> map to QR label printing & checkup demo
+                          if (item?.id === "item-1-1") mappedTab = "owners";
+                          else if (item?.id === "item-1-2") mappedTab = "large-fleets";
+                          else if (item?.id === "item-1-3") mappedTab = "construction";
+                          else if (item?.id === "item-1-4") mappedTab = "service-providers";
+                          else if (item?.id === "item-1-5") mappedTab = "municipalities";
+                          else if (item?.id === "item-1-6") mappedTab = "logistics";
+                          else if (item?.id && item.id.startsWith("item-2-")) mappedTab = item.id; // e.g. item-2-1, item-2-2...
+                          else if (item?.id === "item-3-1") mappedTab = "large-fleets"; // Validated Customer Case Stories -> map to Enterprise
+                          else if (item?.id === "item-3-2") mappedTab = "item-2-6";      // Blog -> map to Compliance Audit
+                          else if (item?.id === "item-3-4") mappedTab = "item-2-1";      // Operations Guides -> map to Preventative PM
+                          else if (item?.id === "item-4-1") mappedTab = "about-company"; // About FleetAurvexis -> map to About Company Profile
+                          else if (item?.id === "item-4-2") mappedTab = "item-2-6";      // Press Room -> map to Compliance Audit
+                          else if (item?.id === "item-4-3") mappedTab = "item-2-5";      // Helpdesk -> map to Asset Management
+                          else if (item?.id === "item-4-4") mappedTab = "item-2-8";      // Demo Request -> map to QR label printing & checkup demo
                           
                           if (mappedTab) {
                             setSelectedShowcaseTab(mappedTab);

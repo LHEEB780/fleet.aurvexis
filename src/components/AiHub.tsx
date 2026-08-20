@@ -2282,14 +2282,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 <span>{language === 'ar' ? 'نسخ' : 'Copy'}</span>
                               </button>
 
-                              {(msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair')) && (
+                              {Boolean(msg?.text && (msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair'))) && (
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setQuickOrderData({
                                       vehicleId: defaultVehicles[0]?.id || 'V1',
                                       category: 'mechanical',
-                                      description: msg.text.slice(0, 150) + '...',
+                                      description: (msg?.text || '').slice(0, 150) + '...',
                                       technicianId: defaultTechnicians[0]?.id || 'T1',
                                       cost: '350'
                                     });
@@ -2866,14 +2866,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 <span>{language === 'ar' ? 'نسخ' : 'Copy'}</span>
                               </button>
 
-                              {(msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair')) && (
+                              {Boolean(msg?.text && (msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair'))) && (
                                 <button
                                   type="button"
                                   onClick={() => {
                                     setQuickOrderData({
                                       vehicleId: defaultVehicles[0]?.id || 'V1',
                                       category: 'mechanical',
-                                      description: msg.text.slice(0, 150) + '...',
+                                      description: (msg?.text || '').slice(0, 150) + '...',
                                       technicianId: defaultTechnicians[0]?.id || 'T1',
                                       cost: '350'
                                     });
@@ -3856,14 +3856,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 </button>
 
                                 {/* Work Order Generator for repair recommendations */}
-                                {(msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair')) && (
+                                {Boolean(msg?.text && (msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair'))) && (
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setQuickOrderData({
                                         vehicleId: defaultVehicles[0]?.id || 'V1',
                                         category: activeChatAgent.id === 'mechanic' ? 'mechanical' : 'body',
-                                        description: msg.text.slice(0, 150) + '...',
+                                        description: (msg?.text || '').slice(0, 150) + '...',
                                         technicianId: defaultTechnicians[0]?.id || 'T1',
                                         cost: '300'
                                       });

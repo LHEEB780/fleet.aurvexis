@@ -5,7 +5,7 @@ import {
   TrendingUp, Coins, Clock, ArrowRight, BarChart2, X, 
   ChevronRight, Layers, Volume2, Landmark, CheckSquare, ListTodo,
   Users, Building2, Truck, Key, MessageSquare, Activity, ShieldCheck,
-  HelpCircle, AlertTriangle, Fuel, Star, Copy, Image as ImageIcon, School
+  HelpCircle, AlertTriangle, Fuel, Star, Copy, Image as ImageIcon, School, Video
 } from 'lucide-react';
 
 import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
@@ -89,7 +89,7 @@ export default function FleetManagersShowcaseModal({
   useEffect(() => {
     if (isOpen && initialTab) {
       setActiveTab(initialTab);
-      if (initialTab.startsWith('item-2-')) {
+      if (typeof initialTab === 'string' && initialTab.startsWith('item-2-')) {
         setActiveSegment('features');
       } else {
         setActiveSegment('sectors');
@@ -619,6 +619,41 @@ export default function FleetManagersShowcaseModal({
         { label: 'انضباط السائقين بالفحص الصباحي العملي اليومي', value: '100%', desc: 'تراجع حاد لغياب أو تجاهل الفحص اليومي للطرق والرحلات' },
         { label: 'سرعة المتابعة والتحقق الميداني المباشر بالأصل الفني', value: '3 ثوانٍ', desc: 'مسح فوري يفتح صفحة الفحص المريحة من المتصفح بلحظات بسيطة ومريحة' },
         { label: 'إجمالي تقليص إصابات وأضرار حوادث الطرق بالمركبات', value: '45% ↓', desc: 'بفضل الكشف والتنبؤ المبكر بأي تآكل في الأجزاء الهامة بالأسفار' }
+      ]
+    },
+    {
+      id: 'item-3-3',
+      type: 'feature',
+      nameAr: 'مكتبة الفيديوهات والشروحات',
+      nameEn: 'Video & Tutorials Library',
+      icon: <Video size={16} />,
+      microCopyAr: 'أكاديمية مرئية شاملة تضم دروس فيديو تطبيقية وتفاعلية لشرح جميع جوانب إدارة الأساطيل والصيانة',
+      microCopyEn: 'Comprehensive video academy featuring practical fleet management walkthroughs',
+      fieldReliefAr: 'شروحات فيديو تفاعلية، أدلة تطبيقية قابلة للتحميل، ومحاكاة حية لجميع وحدات المنظومة من رفع ملفات CSV وحتى فحص الـ QR وإغلاق أوامر العمل.',
+      fieldReliefEn: 'Interactive video walkthroughs, downloadable job aids, and live simulations covering all platform modules.',
+      features: [
+        { title: 'شروحات فيديو تفاعلية بدقة 4K', desc: 'فيديوهات تطبيقية عالية الوضوح مع فصول ونقاط زمنية للوصول السريع للمعلومة.' },
+        { title: 'أدلة خطوة بخطوة وقوالب CSV جاهزة', desc: 'شرح مكتوب مرافق لكل درس مع إمكانية تحميل القوالب القياسية المعتمدة بنقرة واحدة.' },
+        { title: 'أسئلة شائعة وحلول للمشاكل الميدانية', desc: 'إجابات فورية لأبرز التحديات التي تواجه الفنيين ومشرفي الحركة أثناء العمليات اليومية.' }
+      ],
+      toneAr: 'النبرة: تعليمية، عملية، سهلة الفهم، ومصممة لتمكين الفنيين والمدراء من الاستفادة القصوى.',
+      toneEn: 'Tone of voice: Educational, practical, crystal-clear, and structured for maximum operational efficiency.',
+      imagePrompt: 'A sleek modern high-tech training room with interactive displays demonstrating fleet management software, soft glowing purple gradients, photorealistic 4K',
+      imageMockUrl: dashboardMarketingPreview,
+      longOverviewAr: 'صُممت مكتبة الفيديوهات والشروحات في FleetAurvexis لتكون المرجع الشامل والعملي لكل مدير أسطول ومهندس صيانة ومشرف حركة. نوفر من خلالها سلسلة متكاملة من الدروس المرئية القصيرة والمركّزة التي تغطي استيراد الأصول، الفحص الرقمي، حوكمة المخزون، وتحليلات الذكاء الاصطناعي.',
+      longOverviewEn: 'FleetAurvexis Video Academy provides fleet directors, lead mechanics, and dispatchers with a comprehensive repository of concise, high-impact video walkthroughs covering every facet of operations.',
+      beforeAfterAr: [
+        { before: 'صعوبة تدريب الموظفين الجدد وقضاء ساعات طويلة في شرح الإجراءات اليدوية والأنظمة المعقدة.', after: 'أكاديمية فيديو جاهزة تمكّن أي عضو في الفريق من إتقان العمل على المنظومة وتطبيق المعايير خلال دقائق.' }
+      ],
+      roadmapAr: [
+        'المرحلة الأولى: مشاهدة فيديو البدء السريع وتحميل قالب الـ CSV لتهيئة الأسطول.',
+        'المرحلة الثانية: تطبيق الفحص الرقمي وطباعة ملصقات الـ QR وتوزيعها على السائقين.',
+        'المرحلة الثالثة: إتقان دورة أوامر الصيانة ومتابعة مؤشرات الأداء المالي والذكاء الاصطناعي.'
+      ],
+      kpisAr: [
+        { label: 'سرعة تأهيل وتدريب فرق العمل الجديدة', value: '10 دقائق', desc: 'بفضل الشروحات المرئية المباشرة والمبسطة' },
+        { label: 'تقليص أخطاء الإدخال والتشغيل', value: '95% ↓', desc: 'نتيجة الإرشادات التوضيحية الدقيقة لكل خطوة' },
+        { label: 'تقييم رضا المتدربين والفنيين', value: '4.9 / 5 ⭐', desc: 'إشادة واسعة بسهولة التطبيق وسرعة الفهم' }
       ]
     },
     {

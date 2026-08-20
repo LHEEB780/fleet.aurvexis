@@ -291,8 +291,8 @@ export default function Technicians({ user }: { user?: User }) {
   const getMonthlyHours = (tech: Technician) => {
     if (!tech.workLogs) return 0;
     return tech.workLogs
-      .filter(log => log.date.startsWith('2026-05'))
-      .reduce((sum, log) => sum + log.hours, 0);
+      .filter(log => log?.date && typeof log.date === 'string' && log.date.startsWith('2026-05'))
+      .reduce((sum, log) => sum + (Number(log.hours) || 0), 0);
   };
 
   // Handle Form Submission
