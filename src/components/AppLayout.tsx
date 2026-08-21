@@ -48,7 +48,8 @@ import {
   Wifi,
   WifiOff,
   Type,
-  Video
+  Video,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, UserRole } from '../types';
@@ -1940,17 +1941,19 @@ export default function AppLayout({
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Header */}
-        <header className="h-16 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-3 sm:px-6 z-10 transition-colors duration-300">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <header className="min-h-16 py-2 sm:py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 flex flex-wrap items-center justify-between px-3 sm:px-4 lg:px-6 z-20 transition-all duration-300 gap-2.5">
+          {/* Left: Mobile Menu & Search */}
+          <div className="flex items-center gap-2.5 min-w-0 flex-shrink-0">
             <button 
-              className="md:hidden w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent shadow-xs cursor-pointer shrink-0"
+              className="md:hidden w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-200/50 dark:border-slate-700/50 shadow-2xs cursor-pointer shrink-0"
               onClick={() => setMobileMenuOpen(true)}
+              title="القائمة"
             >
-              <Menu size={19} />
+              <Menu size={18} />
             </button>
-            <div className="relative hidden md:block w-full max-w-xs lg:max-w-sm">
-              <span className={`absolute inset-y-0 flex items-center text-slate-400 ${dir === 'rtl' ? 'right-3' : 'left-3'}`}>
-                <Search size={14} />
+            <div className="relative w-36 sm:w-44 lg:w-56 transition-all">
+              <span className={`absolute inset-y-0 flex items-center text-slate-400 pointer-events-none ${dir === 'rtl' ? 'right-2.5' : 'left-2.5'}`}>
+                <Search size={13} />
               </span>
               <input 
                 id="header-search-input"
@@ -1964,49 +1967,58 @@ export default function AppLayout({
                     setActiveTab('vehicles');
                   }
                 }}
-                className={`w-full py-2 bg-slate-100/80 dark:bg-slate-800/80 border border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-brand-blue-500 rounded-full transition-all outline-none text-xs font-semibold dark:text-white ${
-                  dir === 'rtl' ? 'pr-9 pl-4' : 'pl-9 pr-4'
+                className={`w-full py-1.5 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/40 dark:border-slate-700/40 focus:bg-white dark:focus:bg-slate-750 focus:border-brand-blue-500 rounded-full transition-all outline-none text-xs font-semibold dark:text-white ${
+                  dir === 'rtl' ? 'pr-8 pl-3' : 'pl-8 pr-3'
                 }`}
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2">
+          {/* Right: Actions & Tools with Flex Wrap & Spacing */}
+          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2 flex-1 min-w-0">
             {/* General Barcode Scanner Button */}
             <button 
               onClick={() => setIsBarcodeModalOpen(true)}
-              className="h-9 sm:h-10 px-2.5 sm:px-3 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/70 dark:bg-brand-blue-950/25 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/30 border border-brand-blue-100/30 dark:border-brand-blue-950/40 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-xs"
+              className="h-9 px-2.5 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/70 dark:bg-brand-blue-950/25 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/30 border border-brand-blue-100/30 dark:border-brand-blue-950/40 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
               title={t('common.barcodeScanner')}
             >
-              <Scan size={15} />
-              <span className="text-[10px] font-black hidden lg:inline-block leading-none">
+              <Scan size={14} />
+              <span className="text-[10.5px] font-black hidden xl:inline-block leading-none">
                 {t('common.barcodeScanner').split(' ')[0]}
               </span>
             </button>
 
             {/* External Marketing Site Preview Action */}
-            {onNavigateToMarketing && (
-              <button 
-                onClick={onNavigateToMarketing}
-                className="hidden sm:flex h-9 sm:h-10 px-2.5 sm:px-3 text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 border border-indigo-100/40 dark:border-slate-800/40 rounded-xl transition-all cursor-pointer items-center justify-center gap-1.5 shrink-0 shadow-xs"
-                title={language === 'ar' ? 'معاينة الموقع والواجهة التسويقية' : 'Preview External Marketing Site'}
-              >
-                <Globe size={15} className="text-indigo-500 dark:text-indigo-400" />
-                <span className="text-[10px] font-black hidden lg:inline-block leading-none">
-                  {language === 'ar' ? 'الموقع العام' : 'Public Site'}
-                </span>
-              </button>
-            )}
+            <button 
+              id="topbar-marketing-site-btn"
+              onClick={() => {
+                if (onNavigateToMarketing) {
+                  onNavigateToMarketing();
+                } else {
+                  localStorage.setItem('saas_portal_mode', 'marketing');
+                  window.dispatchEvent(new Event('storage'));
+                  window.location.reload();
+                }
+              }}
+              className="h-9 px-3 text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 active:scale-95 border border-purple-400/30 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-xs shadow-purple-500/15"
+              title={language === 'ar' ? 'عرض وزيارة الموقع التسويقي العام' : 'Preview & Visit Public Marketing Site'}
+            >
+              <Globe size={13} className="text-purple-200 shrink-0" />
+              <span className="text-[11px] font-black leading-none whitespace-nowrap">
+                {language === 'ar' ? 'الموقع التسويقي' : 'Marketing Site'}
+              </span>
+              <Sparkles size={11} className="text-amber-300 shrink-0 animate-pulse" />
+            </button>
 
             {/* Quick Language Toggle Button */}
             <button 
               onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              className="h-9 sm:h-10 px-2 sm:px-3 text-brand-blue-600 dark:text-[#38bdf8] bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
-              title={language === 'ar' ? 'تغيير اللغة إلى الإنجليزية' : 'Switch Language to Arabic'}
+              className="h-9 px-2.5 text-slate-700 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0"
+              title={language === 'ar' ? 'تغيير اللغة إلى English' : 'تغيير اللغة إلى العربية'}
             >
-              <Globe size={14} className="text-violet-500 shrink-0" />
-              <span className="text-[10px] font-black leading-none hidden xs:inline-block">
-                {language === 'ar' ? 'English 🇺🇸' : 'العربية 🇸🇦'}
+              <Globe size={13} className="text-violet-500 shrink-0" />
+              <span className="text-[10.5px] font-black leading-none">
+                {language === 'ar' ? 'EN' : 'عربي'}
               </span>
             </button>
 
@@ -2014,14 +2026,12 @@ export default function AppLayout({
             <div className="relative">
               <button 
                 onClick={() => setFontSizeDropdownOpen(!fontSizeDropdownOpen)}
-                className="h-9 sm:h-10 px-2 sm:px-2.5 text-purple-600 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200/50 dark:border-purple-800/40 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1 shrink-0"
-                title={language === 'ar' ? 'مقياس حجم الخط (عادي / كبير / كبير جداً / فائق)' : 'Font Size Scale (Normal / Large / X-Large / Huge)'}
+                className="h-9 px-2.5 text-purple-600 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200/50 dark:border-purple-800/40 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0"
+                title={language === 'ar' ? 'مقياس حجم الخط والتكبير' : 'Font Size Scale'}
               >
-                <Type size={14} className="text-purple-600 dark:text-purple-400" />
-                <span className="text-[10.5px] font-black leading-none flex items-center gap-0.5">
-                  <span>
-                    {fontSizeMode === 'normal' ? 'A' : fontSizeMode === 'large' ? 'A+' : fontSizeMode === 'xlarge' ? 'A++' : 'A+++'}
-                  </span>
+                <Type size={13} className="text-purple-600 dark:text-purple-400" />
+                <span className="text-[10.5px] font-black leading-none">
+                  {fontSizeMode === 'normal' ? 'A' : fontSizeMode === 'large' ? 'A+' : fontSizeMode === 'xlarge' ? 'A++' : 'A+++'}
                 </span>
                 <ChevronDown size={10} className={`text-purple-400 transition-transform ${fontSizeDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -2034,20 +2044,20 @@ export default function AppLayout({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className={`absolute top-12 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-1.5 overflow-hidden ${
+                      className={`absolute top-11 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-1.5 overflow-hidden ${
                         dir === 'rtl' ? 'left-0' : 'right-0'
                       }`}
                     >
-                      <p className={`px-2.5 py-1.5 text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 ${
+                      <p className={`px-2.5 py-1 text-[9.5px] uppercase font-black text-slate-400 dark:text-slate-500 ${
                         dir === 'rtl' ? 'text-right' : 'text-left'
                       }`}>
-                        {language === 'ar' ? 'مقياس حجم الخط والتكبير' : 'Text Size & Scaling'}
+                        {language === 'ar' ? 'مقياس حجم الخط' : 'Font Size'}
                       </p>
                       {[
                         { id: 'normal', label: language === 'ar' ? 'A عادي (100%)' : 'A Normal (100%)' },
                         { id: 'large', label: language === 'ar' ? 'A+ كبير (118%)' : 'A+ Large (118%)' },
-                        { id: 'xlarge', label: language === 'ar' ? 'A++ كبير جداً (135%)' : 'A++ Extra Large (135%)' },
-                        { id: 'huge', label: language === 'ar' ? 'A+++ فائق الوضوح (155%)' : 'A+++ Maximum (155%)' },
+                        { id: 'xlarge', label: language === 'ar' ? 'A++ كبير جداً (135%)' : 'A++ Extra (135%)' },
+                        { id: 'huge', label: language === 'ar' ? 'A+++ فائق (155%)' : 'A+++ Max (155%)' },
                       ].map((item) => (
                         <button
                           key={item.id}
@@ -2056,7 +2066,7 @@ export default function AppLayout({
                             setFontSizeMode(item.id as 'normal' | 'large' | 'xlarge' | 'huge');
                             setFontSizeDropdownOpen(false);
                           }}
-                          className={`w-full px-3 py-2 text-xs font-bold rounded-xl transition-colors flex items-center justify-between cursor-pointer ${
+                          className={`w-full px-2.5 py-1.5 text-xs font-bold rounded-xl transition-colors flex items-center justify-between cursor-pointer ${
                             dir === 'rtl' ? 'text-right' : 'text-left'
                           } ${
                             fontSizeMode === item.id 
@@ -2065,7 +2075,7 @@ export default function AppLayout({
                           }`}
                         >
                           <span>{item.label}</span>
-                          {fontSizeMode === item.id && <Check size={13} className="text-purple-600 shrink-0" />}
+                          {fontSizeMode === item.id && <Check size={12} className="text-purple-600 shrink-0" />}
                         </button>
                       ))}
                     </motion.div>
@@ -2078,21 +2088,22 @@ export default function AppLayout({
             <div className="relative">
               <button 
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                className="h-9 sm:h-10 flex items-center justify-center gap-1.5 px-2.5 sm:px-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-xs cursor-pointer shrink-0"
+                className="h-9 flex items-center justify-center gap-1 px-2 sm:px-2.5 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0"
+                title={t('common.role')}
               >
-                <Shield size={14} className="text-brand-blue-600" />
-                <span className="text-[11px] font-black text-slate-600 dark:text-slate-300 hidden lg:block">
-                  {t('common.role')}: {
+                <Shield size={13} className="text-brand-blue-600" />
+                <span className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 hidden xl:block">
+                  {
                     user.role === 'admin' 
-                      ? t('common.roleAdmin') 
+                      ? (language === 'ar' ? 'المدير' : 'Admin')
                       : user.role === 'technician' 
-                        ? t('common.roleTechnician') 
+                        ? (language === 'ar' ? 'فني' : 'Tech')
                         : user.role === 'viewer'
-                          ? t('common.roleViewer')
-                          : (language === 'ar' ? 'سائق نقل ثقيل' : 'Heavy Driver')
+                          ? (language === 'ar' ? 'مراقب' : 'Viewer')
+                          : (language === 'ar' ? 'سائق' : 'Driver')
                   }
                 </span>
-                <ChevronDown size={11} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={9} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               
               <AnimatePresence>
@@ -2103,11 +2114,11 @@ export default function AppLayout({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className={`absolute top-12 w-48 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-xl z-30 p-2 overflow-hidden ${
+                      className={`absolute top-11 w-48 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-xl z-30 p-2 overflow-hidden ${
                         dir === 'rtl' ? 'left-0' : 'right-0'
                       }`}
                     >
-                      <p className={`px-3 py-2 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 ${
+                      <p className={`px-3 py-1.5 text-[9.5px] uppercase font-bold text-slate-400 dark:text-slate-500 ${
                         dir === 'rtl' ? 'text-right' : 'text-left'
                       }`}>
                         {language === 'ar' ? 'تبديل الصلاحيات (تجريبي)' : 'Swap Roles (Walkthrough)'}
@@ -2124,7 +2135,7 @@ export default function AppLayout({
                             onRoleChange(r.id as UserRole);
                             setRoleDropdownOpen(false);
                           }}
-                          className={`w-full px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${
+                          className={`w-full px-3 py-1.5 text-xs font-semibold rounded-xl transition-colors ${
                             dir === 'rtl' ? 'text-right' : 'text-left'
                           } ${
                             user.role === r.id 
@@ -2144,31 +2155,31 @@ export default function AppLayout({
             {/* Connection / Synchronization Status Badge */}
             {isSyncing ? (
               <div 
-                className="h-9 sm:h-10 px-2 sm:px-3 flex items-center justify-center gap-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-150 dark:border-amber-900/50 rounded-xl shadow-xs shrink-0"
+                className="h-9 px-2 flex items-center justify-center gap-1 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-150 dark:border-amber-900/50 rounded-xl shadow-2xs shrink-0"
                 title={language === 'ar' ? 'جاري مزامنة تعديلات الصيانة...' : 'Syncing local changes to server...'}
               >
                 <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping inline-block" />
-                <span className="text-[10px] md:text-[11px] font-black leading-none text-amber-705 dark:text-amber-300 hidden xs:inline-block">
+                <span className="text-[10px] font-black leading-none text-amber-705 dark:text-amber-300 hidden 2xl:inline-block">
                   {language === 'ar' ? 'جاري المزامنة...' : 'Syncing...'}
                 </span>
               </div>
             ) : isOffline ? (
               <div 
-                className="h-9 sm:h-10 px-2 sm:px-3 flex items-center justify-center gap-1.5 bg-rose-50/90 dark:bg-rose-950/20 text-rose-650 dark:text-rose-400 border border-rose-150 dark:border-rose-900/40 rounded-xl shadow-xs shrink-0"
+                className="h-9 px-2 flex items-center justify-center gap-1 bg-rose-50/90 dark:bg-rose-950/20 text-rose-650 dark:text-rose-400 border border-rose-150 dark:border-rose-900/40 rounded-xl shadow-2xs shrink-0"
                 title={language === 'ar' ? 'وضعية العمل دون اتصال نشطة (تُحفظ التعديلات بالمتصفح)' : 'Running locally in offline cache mode'}
               >
-                <WifiOff size={14} className="text-rose-500 shrink-0 animate-bounce" />
-                <span className="text-[10px] md:text-[11px] font-black leading-none text-rose-700 dark:text-rose-300">
+                <WifiOff size={13} className="text-rose-500 shrink-0 animate-bounce" />
+                <span className="text-[10px] font-black leading-none text-rose-700 dark:text-rose-300 hidden 2xl:inline-block">
                   {language === 'ar' ? `دون اتصال ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}` : `Offline ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}`}
                 </span>
               </div>
             ) : (
               <div 
-                className="hidden sm:flex h-9 sm:h-10 px-2.5 sm:px-3 items-center justify-center gap-1.5 bg-emerald-50/50 dark:bg-emerald-950/10 text-emerald-600 dark:text-emerald-450 border border-emerald-100/30 rounded-xl shadow-xs shrink-0"
+                className="hidden xl:flex h-9 px-2 items-center justify-center gap-1 bg-emerald-50/50 dark:bg-emerald-950/10 text-emerald-600 dark:text-emerald-450 border border-emerald-100/30 rounded-xl shadow-2xs shrink-0"
                 title={language === 'ar' ? 'الاتصال مستقر مع خادم الصيانة المركزي' : 'Stable server connection'}
               >
-                <Wifi size={14} className="text-emerald-500 shrink-0" />
-                <span className="text-[10px] font-black leading-none text-emerald-700 dark:text-emerald-400">
+                <Wifi size={13} className="text-emerald-500 shrink-0" />
+                <span className="text-[9.5px] font-black leading-none text-emerald-700 dark:text-emerald-400 hidden 2xl:inline-block">
                   {language === 'ar' ? 'متصل' : 'Online'}
                 </span>
               </div>
@@ -2186,12 +2197,12 @@ export default function AppLayout({
                     window.dispatchEvent(new CustomEvent('notification-navigate', { detail: { tab: 'periodic-maintenance', overdueOnly: true } }));
                   }, 150);
                 }}
-                className="h-9 sm:h-10 px-2 sm:px-3 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-red-650 dark:text-rose-405 border border-red-150 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-xs shrink-0 animate-pulse"
+                className="h-9 px-2 flex items-center justify-center gap-1 bg-red-50 hover:bg-red-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-red-650 dark:text-rose-405 border border-red-150 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-2xs shrink-0 animate-pulse"
                 title={language === 'ar' ? `تنبيه: يوجد ${overdueMaintenanceCount} خدمات صيانة متأخرة!` : `System Alert: ${overdueMaintenanceCount} periodic maintenance services are overdue!`}
               >
-                <AlertTriangle size={14} className="shrink-0 text-red-650 dark:text-rose-400" />
-                <span className="text-[10px] md:text-[11px] font-black leading-none text-red-750 dark:text-rose-300">
-                  {language === 'ar' ? `${overdueMaintenanceCount} متأخرة` : `${overdueMaintenanceCount} PM Overdue`}
+                <AlertTriangle size={13} className="shrink-0 text-red-650 dark:text-rose-400" />
+                <span className="text-[10px] font-black leading-none text-red-750 dark:text-rose-300">
+                  {overdueMaintenanceCount}
                 </span>
               </button>
             )}
@@ -2200,14 +2211,14 @@ export default function AppLayout({
             <div className="relative">
               <button 
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-slate-100/80 dark:hover:bg-slate-800/80 rounded-xl border border-slate-200/40 dark:border-slate-800/60 relative transition-all cursor-pointer shrink-0 shadow-xs ${
+                className={`w-9 h-9 flex items-center justify-center hover:bg-slate-100/80 dark:hover:bg-slate-800/80 rounded-xl border border-slate-200/40 dark:border-slate-800/60 relative transition-all cursor-pointer shrink-0 shadow-2xs ${
                   isNotificationsOpen ? 'text-brand-blue-600 bg-slate-100 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400'
                 }`}
                 title={language === 'ar' ? 'الإشعارات الميدانية والتنبيهات' : 'Field Notifications & Alerts'}
               >
-                <Bell size={17} />
+                <Bell size={16} />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center text-[9px] font-black text-white bg-red-650 rounded-full border border-white dark:border-slate-900 shadow-sm animate-pulse">
+                  <span className="absolute top-1 right-1 w-3.5 h-3.5 flex items-center justify-center text-[8.5px] font-black text-white bg-red-650 rounded-full border border-white dark:border-slate-900 shadow-sm animate-pulse">
                     {unreadCount}
                   </span>
                 )}
@@ -2461,16 +2472,16 @@ export default function AppLayout({
             </div>
 
             {/* User Profile Info */}
-            <div className="flex items-center gap-2 sm:gap-3 ps-1 sm:ps-2 pe-0.5 sm:pe-1">
-              <div className={`hidden md:block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none mb-1">{profileName}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <div className="flex items-center gap-2 ps-1 pe-0.5 shrink-0">
+              <div className={`hidden xl:block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                <p className="text-xs font-bold text-slate-900 dark:text-white leading-none mb-0.5 max-w-[110px] truncate">{profileName}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0"></span>
-                  <span>{user.title}</span>
+                  <span className="truncate max-w-[100px]">{user.title}</span>
                 </p>
               </div>
               <div className="relative shrink-0">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-brand-blue-100 dark:bg-brand-blue-900/50 border-2 border-white dark:border-slate-800 overflow-hidden shadow-sm flex items-center justify-center">
+                <div className="w-9 h-9 rounded-full bg-brand-blue-100 dark:bg-brand-blue-900/50 border-2 border-white dark:border-slate-800 overflow-hidden shadow-xs flex items-center justify-center">
                   {!hasHeaderAvatarError && user.avatar ? (
                     <img 
                       referrerPolicy="no-referrer"
@@ -2485,7 +2496,7 @@ export default function AppLayout({
                     </div>
                   )}
                 </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
               </div>
             </div>
           </div>
@@ -2618,13 +2629,32 @@ export default function AppLayout({
                 })}
               </nav>
 
-              <div className="border-t border-slate-200/50 dark:border-slate-800 pt-3 space-y-1">
+              <div className="border-t border-slate-200/50 dark:border-slate-800 pt-3 space-y-1.5">
+                <button 
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    if (onNavigateToMarketing) {
+                      onNavigateToMarketing();
+                    } else {
+                      localStorage.setItem('saas_portal_mode', 'marketing');
+                      window.dispatchEvent(new Event('storage'));
+                      window.location.reload();
+                    }
+                  }}
+                  className="flex items-center justify-between w-full p-2.5 text-xs font-black rounded-xl bg-gradient-to-r from-purple-600/15 via-indigo-600/15 to-purple-600/15 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-950/40 border border-purple-300/40 dark:border-purple-800/50 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Globe size={16} className="text-purple-600 dark:text-purple-400" />
+                    <span>{language === 'ar' ? 'الموقع التسويقي العام' : 'Public Marketing Site'}</span>
+                  </div>
+                  <ExternalLink size={13} className="opacity-70" />
+                </button>
                 <button 
                   onClick={() => {
                     setIsSettingsModalOpen(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center gap-2 w-full p-2.5 text-xs font-bold rounded-xl text-slate-650 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/50"
+                  className="flex items-center gap-2 w-full p-2.5 text-xs font-bold rounded-xl text-slate-650 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/50 cursor-pointer"
                 >
                   <Settings size={16} />
                   <span>{t('menu.settings')}</span>
