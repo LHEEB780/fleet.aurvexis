@@ -295,6 +295,86 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
   const [selectedOrder, setSelectedOrder] = useState<MaintenanceOrder | null>(null);
   const [isSimulatingArchive, setIsSimulatingArchive] = useState(false);
   const [isArchiving30Days, setIsArchiving30Days] = useState(false);
+  // Collapsible Filter lists state (default closed/folded with purple gradient arrow)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [quickArchiveToast, setQuickArchiveToast] = useState<string | null>(null);
+
+  const handleQuickArchiveOrder = async (orderId: string) => {
+    const updated = orders.map(o => {
+      if (o.id === orderId) {
+        return { 
+          ...o, 
+          isArchived: true, 
+          lastUpdate: SYSTEM_ANCHOR_DATE 
+        };
+      }
+      return o;
+    });
+    setOrders(updated);
+    localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(updated));
+
+    // Save to Firebase Firestore if online/available
+    try {
+      const targetOrder = updated.find(o => o.id === orderId);
+      if (targetOrder) {
+        const { saveDocument, db: firestoreDb } = await import('../services/firebase');
+        if (firestoreDb) {
+          await saveDocument('maintenance_orders', orderId, targetOrder);
+        }
+      }
+    } catch (err) {
+      console.warn('Firebase quick archive error:', err);
+    }
+
+    setQuickArchiveToast(language === 'en' 
+      ? 'Task archived and moved to archive successfully! 📦' 
+      : 'تمت الأرشفة السريعة ونقل المهمة إلى الأرشيف لتنظيف الواجهة بنجاح! 📦'
+    );
+    setTimeout(() => setQuickArchiveToast(null), 4000);
+    if (selectedOrder?.id === orderId) {
+      setSelectedOrder(null);
+    }
+  };
+
+  const handleQuickArchiveAllCompleted = async () => {
+    const toArchive = orders.filter(o => o.status === 'completed' && !isOrderArchived(o));
+    if (toArchive.length === 0) {
+      alert(language === 'en' ? 'No completed tasks found to archive.' : 'لا توجد مهام منتهية غير مؤرشفة حالياً.');
+      return;
+    }
+
+    const updated = orders.map(o => {
+      if (o.status === 'completed' && !isOrderArchived(o)) {
+        return { 
+          ...o, 
+          isArchived: true, 
+          lastUpdate: SYSTEM_ANCHOR_DATE 
+        };
+      }
+      return o;
+    });
+
+    setOrders(updated);
+    localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(updated));
+
+    try {
+      const { saveDocument, db: firestoreDb } = await import('../services/firebase');
+      if (firestoreDb) {
+        for (const order of toArchive) {
+          const archivedOrder = { ...order, isArchived: true, lastUpdate: SYSTEM_ANCHOR_DATE };
+          await saveDocument('maintenance_orders', order.id, archivedOrder);
+        }
+      }
+    } catch (err) {
+      console.warn('Firebase quick archive all error:', err);
+    }
+
+    setQuickArchiveToast(language === 'en'
+      ? `Successfully quick-archived (${toArchive.length}) completed tasks! 📦`
+      : `تمت الأرشفة السريعة لعدد (${toArchive.length}) من المهام المنتهية وتنظيف الواجهة بنجاح! 📦`
+    );
+    setTimeout(() => setQuickArchiveToast(null), 4500);
+  };
 
   const archiveCompletedTasksOlderThan30Days = async () => {
     setIsArchiving30Days(true);
@@ -2011,271 +2091,314 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
         )}
       </AnimatePresence>
 
-      {/* 3. Top Horizontal Filters Panel */}
-      <div className="space-y-4 mb-6">
+      {/* 3. Collapsible Filter Lists & Quick Archive Bar */}
+      <div className="space-y-3 mb-5">
         
-        {/* Status filtering widgets container */}
-        <div className="space-y-5">
+        {/* Top Control Strip: Toggle 3 Filter Lists + Quick Archive Button + Active Filter Chips */}
+        <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-150/60 dark:border-slate-800 shadow-soft flex flex-wrap items-center justify-between gap-3">
           
-          {/* Status filtering widgets (Horizontal Process Tabs) */}
-          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-150/60 dark:border-slate-800 shadow-soft">
-            <div className="flex items-center justify-between px-1 pb-1.5 border-b border-slate-100 dark:border-slate-800/80 mb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-3.5 rounded-full bg-brand-blue-500 block"></span>
-                <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-300">مسار المشروع الحالي</span>
+          {/* Right side: Purple Gradient Toggle Button for the 3 Filter lists */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsFiltersOpen(prev => !prev)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-700 hover:via-violet-700 hover:to-indigo-700 text-white shadow-md shadow-purple-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer font-black text-xs select-none border border-white/20"
+              title="فتح أو إغلاق قوائم الفلترة والتخصيص الثلاث"
+            >
+              <Sliders size={13} className="text-purple-200" />
+              <span>{isFiltersOpen ? 'طي وإغلاق قوائم الفلترة' : 'فتح قوائم الفلترة والتخصيص (٣ قوائم)'}</span>
+              <div className={`p-1 bg-white/25 rounded-full backdrop-blur-xs transition-transform duration-300 ${isFiltersOpen ? 'rotate-180' : 'rotate-0'}`}>
+                <ChevronDown size={13} className="text-white" strokeWidth={3} />
               </div>
-              
-              {/* Dynamic View Mode switcher precisely matching user's image with compact styling */}
-              <div className="flex items-center gap-1.5" dir="rtl">
-                <span className="text-[9.5px] font-black text-[#5a718f] dark:text-slate-450 hidden sm:inline-block">طريقة العرض:</span>
-                <div className="flex items-center bg-slate-50/80 dark:bg-slate-950 p-[3px] rounded-full border border-slate-300 dark:border-slate-600 select-none shadow-xs">
-                  <button
-                    type="button"
-                    onClick={() => setManagerMode('list')}
-                    className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] transition-all cursor-pointer ${
-                      managerMode === 'list'
-                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-black'
-                        : 'text-[#425a7a] hover:text-slate-700 dark:hover:text-slate-300 font-bold'
-                    }`}
-                  >
-                    <List size={10} />
-                    <span>القائمة</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setManagerMode('kanban')}
-                    className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] transition-all cursor-pointer ${
-                      managerMode === 'kanban'
-                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-black'
-                        : 'text-[#425a7a] hover:text-slate-700 dark:hover:text-slate-300 font-bold'
-                    }`}
-                  >
-                    <LayoutGrid size={10} />
-                    <span>الشبكة</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setManagerMode('calendar')}
-                    className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] transition-all cursor-pointer ${
-                      managerMode === 'calendar'
-                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-black'
-                        : 'text-[#425a7a] hover:text-slate-700 dark:hover:text-slate-300 font-bold'
-                    }`}
-                  >
-                    <Calendar size={10} />
-                    <span>التقويم</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              {[
-                { id: 'all', label: 'المشاريع النشطة والوافدة', icon: <FileText size={10} />, count: activeCount, color: 'text-brand-blue-500', bg: 'bg-brand-blue-500/10' },
-                { id: 'pending', label: 'التشخيص وتلقي الأعطال', icon: <Clock size={10} />, count: orders.filter(o => o.status === 'pending' && !isOrderArchived(o)).length, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                { id: 'in-progress', label: 'عمليات الصيانة الجارية', icon: <AlertCircle size={10} />, count: orders.filter(o => o.status === 'in-progress' && !isOrderArchived(o)).length, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                { id: 'completed', label: 'مكتملة ومستلمة بالخدمة', icon: <CheckCircle2 size={10} />, count: orders.filter(o => o.status === 'completed' && !isOrderArchived(o)).length, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                { id: 'archived', label: 'مستندات الأرشيف المغلق', icon: <Archive size={10} />, count: archivedCount, color: 'text-violet-500', bg: 'bg-violet-500/10' },
-              ].map((filter) => {
-                const isActive = statusFilter === filter.id;
-                return (
-                  <button 
-                    key={filter.id}
-                    onClick={() => setStatusFilter(filter.id as any)}
-                    className={`w-full flex items-center justify-between py-1 px-2 rounded-xl transition-all border cursor-pointer ${
-                      isActive 
-                        ? 'bg-brand-blue-50/70 dark:bg-brand-blue-955 text-brand-blue-700 dark:text-brand-blue-400 font-extrabold border-brand-blue-150/50 dark:border-brand-blue-800/60 shadow-xs' 
-                        : 'border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-855 text-slate-600 dark:text-slate-350 bg-slate-50/20 dark:bg-slate-905'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1">
-                      <div className={`p-0.5 rounded-md transition-colors shrink-0 ${isActive ? 'bg-brand-blue-500 text-white' : `${filter.bg} ${filter.color}`}`}>
-                        {filter.icon}
-                      </div>
-                      <span className="text-[10px] font-black text-right whitespace-nowrap">{filter.label}</span>
-                    </div>
-                    <span className={`text-[9.5px] font-black px-1.5 py-0.2 rounded-full border shrink-0 ${
-                      isActive 
-                        ? 'bg-brand-blue-105/60 dark:bg-brand-blue-900/60 border-brand-blue-200/40 dark:border-brand-blue-800/60 text-brand-blue-800 dark:text-brand-blue-300' 
-                        : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-450'
-                    }`}>
-                      {filter.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+            </button>
 
-          {/* Column selectors & Database Archiving in split layout side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-fadeIn">
-            
-            {/* Dropdown selectors (takes 3/4 layout) */}
-            <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 mb-3.5 px-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-3.5 rounded-full bg-indigo-500 block"></span>
-                  <span className="text-[11px] font-black text-slate-850 dark:text-slate-300 flex items-center gap-1">
-                    <Sliders size={12} className="text-indigo-500" />
-                    <span>تصفية وتخصيص دقيق للمشاريع</span>
-                  </span>
-                </div>
-                <button 
-                  onClick={clearFilters} 
-                  className="text-[10px] font-extrabold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-350 transition-colors flex items-center gap-1 cursor-pointer bg-rose-50 dark:bg-rose-950/20 px-2.5 py-1 rounded-lg border border-rose-100 dark:border-rose-900/50"
-                >
-                  تصفير الفلاتر
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
-                
-                {/* Vehicle Search selection */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
-                    <Truck size={11} className="text-slate-400" />
-                    <span>المركبة المستطلعة</span>
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={selectedVehicleId} 
-                      onChange={(e) => setSelectedVehicleId(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
-                    >
-                      <option value="all">كافة مركبات الأسطول</option>
-                      {localVehicles.map(v => (
-                        <option key={v.id} value={v.id}>{v.name} ({v.plateNumber})</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Workshop Search selection */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
-                    <Wrench size={11} className="text-slate-400" />
-                    <span>الورشة الفنية المخصصة</span>
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={selectedWorkshopId} 
-                      onChange={(e) => setSelectedWorkshopId(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-955 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
-                    >
-                      <option value="all">كافة فروع وصالات الصيانة</option>
-                      {localWorkshops.map(ws => (
-                        <option key={ws.id} value={ws.id}>{ws.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Technician Search selection */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
-                    <UserIcon size={11} className="text-slate-400" />
-                    <span>فني الصيانة المسؤول</span>
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={selectedTechnicianId} 
-                      onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
-                    >
-                      <option value="all">المدراء والفنيين المعينين</option>
-                      {localTechnicians.map(t => (
-                        <option key={t.id} value={t.id}>{t.name} - {t.role}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Priority selection */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
-                    <AlertTriangle size={11} className="text-slate-400" />
-                    <span>مستوى خطورة العطل</span>
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={selectedPriority} 
-                      onChange={(e) => setSelectedPriority(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
-                    >
-                      <option value="all">جميع درجات الخطورة</option>
-                      <option value="low">منخفضة عادي</option>
-                      <option value="medium">متوسط الاستعجال</option>
-                      <option value="high">طارئة وخطيرة جداً</option>
-                    </select>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Database & Logistics Archiving module */}
-            <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft flex flex-col justify-between">
-              <div className="flex items-center gap-1.5 pb-2 border-b border-slate-100 dark:border-slate-800/80 mb-2">
-                <span className="w-1.5 h-3.5 rounded-full bg-emerald-500 block"></span>
-                <div className="flex items-center gap-1 text-slate-900 dark:text-white font-black text-xs">
-                  <Database size={13} className="text-emerald-500" />
-                  <span>جدول أرشيف الإصلاحات</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 items-center mb-2">
-                <div className="space-y-1">
-                  <span className="text-[9px] font-extrabold text-slate-400 block">فترة الأرشفة:</span>
-                  <select
-                    value={archiveYears}
-                    onChange={(e) => setArchiveYears(parseFloat(e.target.value))}
-                    className="w-full p-1 bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 rounded-lg text-[9px] font-black text-slate-800 dark:text-slate-200 outline-none"
-                  >
-                    <option value={0.5}>٦ أشهر</option>
-                    <option value={1}>سنة</option>
-                    <option value={2}>سنتين</option>
-                    <option value={0}>إيقاف</option>
-                  </select>
-                </div>
-
-                <div className="bg-slate-50 dark:bg-slate-955 p-1.5 rounded-xl border border-slate-100 dark:border-slate-850 text-center">
-                  <span className="text-[9px] text-slate-405 block">المؤرشفة</span>
-                  <span className="text-[10px] font-black text-slate-700 dark:text-slate-200">
-                    {archivedCount} مشروع
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1.5 mt-2">
+            {/* Quick Archive for All Completed Tasks Button (الأرشفة السريعة للمهام المنتهية) */}
+            {(() => {
+              const completedUnarchivedCount = orders.filter(o => o.status === 'completed' && !isOrderArchived(o)).length;
+              return completedUnarchivedCount > 0 ? (
                 <button
-                  onClick={runArchivalMaintenance}
-                  disabled={isSimulatingArchive}
-                  className="w-full text-[9px] font-black py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-755 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200/50 dark:border-slate-700 transition-all cursor-pointer block text-center"
+                  type="button"
+                  onClick={handleQuickArchiveAllCompleted}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100/90 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-black text-xs border border-purple-200/70 dark:border-purple-800/70 transition-all shadow-xs cursor-pointer select-none"
+                  title="أرشفة سريعة لكافة المهام المنتهية بنقرة واحدة لتنظيف الواجهة الرئيسية"
                 >
-                  {isSimulatingArchive ? 'جاري الصيانة...' : 'تحسين جدول الفهرس'}
+                  <Archive size={13} className="text-purple-600 dark:text-purple-400" />
+                  <span>الأرشفة السريعة للمنتهية ({completedUnarchivedCount}) 📦</span>
                 </button>
-                {user.role === 'admin' ? (
-                  <button
-                    onClick={archiveCompletedTasksOlderThan30Days}
-                    disabled={isArchiving30Days}
-                    className="w-full text-[9px] font-black py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-200/50 dark:border-indigo-800 transition-all cursor-pointer flex items-center justify-center gap-1"
-                  >
-                    {isArchiving30Days ? <Loader2 size={10} className="animate-spin" /> : <Archive size={10} />}
-                    <span>أرشفة المكتملة (+30 يوم)</span>
-                  </button>
-                ) : (
-                  <div className="text-[8px] text-center text-slate-400 font-bold bg-slate-50 dark:bg-slate-905 p-1 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
-                    أرشفة الـ 30 يوماً مخصصة للإدارة
-                  </div>
-                )}
-              </div>
-            </div>
-
+              ) : null;
+            })()}
           </div>
 
+          {/* Left side: Quick active filters indicators when collapsed */}
+          <div className="flex items-center gap-2 flex-wrap text-right" dir="rtl">
+            {(statusFilter !== 'all' || selectedVehicleId !== 'all' || selectedTechnicianId !== 'all' || selectedWorkshopId !== 'all' || selectedPriority !== 'all') ? (
+              <div className="flex items-center gap-2 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/20 text-[11px] font-black">
+                <span>تصفية مخصصة نشطة</span>
+                <button 
+                  type="button" 
+                  onClick={clearFilters}
+                  className="text-[10px] text-rose-500 hover:text-rose-600 dark:text-rose-400 font-extrabold underline cursor-pointer"
+                >
+                  تصفير الكل
+                </button>
+              </div>
+            ) : (
+              <span className="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 hidden sm:inline-block">
+                القوائم مطوية لتوفير مساحة العمل — اضغط على السهم البنفسجي لفتحها
+              </span>
+            )}
+          </div>
         </div>
 
+        {/* Collapsible Container for the 3 Filter lists */}
+        <AnimatePresence>
+          {isFiltersOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, scale: 0.99 }}
+              animate={{ opacity: 1, height: 'auto', scale: 1 }}
+              exit={{ opacity: 0, height: 0, scale: 0.99 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="overflow-hidden space-y-4 pt-1"
+            >
+              {/* Status filtering widgets (1. Horizontal Process Tabs) */}
+              <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-150/60 dark:border-slate-800 shadow-soft">
+                <div className="flex items-center justify-between px-1 pb-2 border-b border-slate-100 dark:border-slate-800/80 mb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-3.5 rounded-full bg-brand-blue-500 block"></span>
+                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-300">القائمة ١: مسار المشروع وحالات الإنجاز</span>
+                  </div>
+                  
+                  <span className="text-[10px] font-bold text-slate-400">
+                    اختر الحالة لعرض المشاريع التابعة لها
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  {[
+                    { id: 'all', label: 'المشاريع النشطة والوافدة', icon: <FileText size={11} />, count: activeCount, color: 'text-brand-blue-500', bg: 'bg-brand-blue-500/10' },
+                    { id: 'pending', label: 'التشخيص وتلقي الأعطال', icon: <Clock size={11} />, count: orders.filter(o => o.status === 'pending' && !isOrderArchived(o)).length, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                    { id: 'in-progress', label: 'عمليات الصيانة الجارية', icon: <AlertCircle size={11} />, count: orders.filter(o => o.status === 'in-progress' && !isOrderArchived(o)).length, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                    { id: 'completed', label: 'مكتملة ومستلمة بالخدمة', icon: <CheckCircle2 size={11} />, count: orders.filter(o => o.status === 'completed' && !isOrderArchived(o)).length, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { id: 'archived', label: 'مستندات الأرشيف المغلق', icon: <Archive size={11} />, count: archivedCount, color: 'text-violet-500', bg: 'bg-violet-500/10' },
+                  ].map((filter) => {
+                    const isActive = statusFilter === filter.id;
+                    return (
+                      <button 
+                        key={filter.id}
+                        onClick={() => setStatusFilter(filter.id as any)}
+                        className={`w-full flex items-center justify-between py-1.5 px-2.5 rounded-xl transition-all border cursor-pointer ${
+                          isActive 
+                            ? 'bg-brand-blue-50/70 dark:bg-brand-blue-955 text-brand-blue-700 dark:text-brand-blue-400 font-extrabold border-brand-blue-150/50 dark:border-brand-blue-800/60 shadow-xs' 
+                            : 'border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-855 text-slate-600 dark:text-slate-350 bg-slate-50/20 dark:bg-slate-905'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div className={`p-1 rounded-md transition-colors shrink-0 ${isActive ? 'bg-brand-blue-500 text-white' : `${filter.bg} ${filter.color}`}`}>
+                            {filter.icon}
+                          </div>
+                          <span className="text-[10.5px] font-black text-right whitespace-nowrap">{filter.label}</span>
+                        </div>
+                        <span className={`text-[9.5px] font-black px-1.5 py-0.5 rounded-full border shrink-0 ${
+                          isActive 
+                            ? 'bg-brand-blue-105/60 dark:bg-brand-blue-900/60 border-brand-blue-200/40 dark:border-brand-blue-800/60 text-brand-blue-800 dark:text-brand-blue-300' 
+                            : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-450'
+                        }`}>
+                          {filter.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Column selectors & Database Archiving in split layout side by side */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-fadeIn">
+                
+                {/* 2. Dropdown selectors (takes 3/4 layout) */}
+                <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 mb-3.5 px-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-3.5 rounded-full bg-indigo-500 block"></span>
+                      <span className="text-[11.5px] font-black text-slate-850 dark:text-slate-300 flex items-center gap-1.5">
+                        <Sliders size={13} className="text-indigo-500" />
+                        <span>القائمة ٢: تصفية وتخصيص دقيق للمشاريع</span>
+                      </span>
+                    </div>
+                    <button 
+                      onClick={clearFilters} 
+                      className="text-[10px] font-extrabold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-350 transition-colors flex items-center gap-1 cursor-pointer bg-rose-50 dark:bg-rose-950/20 px-2.5 py-1 rounded-lg border border-rose-100 dark:border-rose-900/50"
+                    >
+                      تصفير الفلاتر
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+                    
+                    {/* Vehicle Search selection */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
+                        <Truck size={11} className="text-slate-400" />
+                        <span>المركبة المستطلعة</span>
+                      </label>
+                      <div className="relative">
+                        <select 
+                          value={selectedVehicleId} 
+                          onChange={(e) => setSelectedVehicleId(e.target.value)}
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
+                        >
+                          <option value="all">كافة مركبات الأسطول</option>
+                          {localVehicles.map(v => (
+                            <option key={v.id} value={v.id}>{v.name} ({v.plateNumber})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Workshop Search selection */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
+                        <Wrench size={11} className="text-slate-400" />
+                        <span>الورشة الفنية المخصصة</span>
+                      </label>
+                      <div className="relative">
+                        <select 
+                          value={selectedWorkshopId} 
+                          onChange={(e) => setSelectedWorkshopId(e.target.value)}
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-955 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
+                        >
+                          <option value="all">كافة فروع وصالات الصيانة</option>
+                          {localWorkshops.map(ws => (
+                            <option key={ws.id} value={ws.id}>{ws.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Technician Search selection */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
+                        <UserIcon size={11} className="text-slate-400" />
+                        <span>فني الصيانة المسؤول</span>
+                      </label>
+                      <div className="relative">
+                        <select 
+                          value={selectedTechnicianId} 
+                          onChange={(e) => setSelectedTechnicianId(e.target.value)}
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
+                        >
+                          <option value="all">المدراء والفنيين المعينين</option>
+                          {localTechnicians.map(t => (
+                            <option key={t.id} value={t.id}>{t.name} - {t.role}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Priority selection */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
+                        <AlertTriangle size={11} className="text-slate-400" />
+                        <span>مستوى خطورة العطل</span>
+                      </label>
+                      <div className="relative">
+                        <select 
+                          value={selectedPriority} 
+                          onChange={(e) => setSelectedPriority(e.target.value)}
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
+                        >
+                          <option value="all">جميع درجات الخطورة</option>
+                          <option value="low">منخفضة عادي</option>
+                          <option value="medium">متوسط الاستعجال</option>
+                          <option value="high">طارئة وخطيرة جداً</option>
+                        </select>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* 3. Database & Logistics Archiving module */}
+                <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5 pb-2 border-b border-slate-100 dark:border-slate-800/80 mb-2">
+                    <span className="w-1.5 h-3.5 rounded-full bg-emerald-500 block"></span>
+                    <div className="flex items-center gap-1 text-slate-900 dark:text-white font-black text-xs">
+                      <Database size={13} className="text-emerald-500" />
+                      <span>القائمة ٣: أرشيف الإصلاحات</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 items-center mb-2">
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-extrabold text-slate-400 block">فترة الأرشفة:</span>
+                      <select
+                        value={archiveYears}
+                        onChange={(e) => setArchiveYears(parseFloat(e.target.value))}
+                        className="w-full p-1 bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 rounded-lg text-[9px] font-black text-slate-800 dark:text-slate-200 outline-none"
+                      >
+                        <option value={0.5}>٦ أشهر</option>
+                        <option value={1}>سنة</option>
+                        <option value={2}>سنتين</option>
+                        <option value={0}>إيقاف</option>
+                      </select>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-955 p-1.5 rounded-xl border border-slate-100 dark:border-slate-850 text-center">
+                      <span className="text-[9px] text-slate-405 block">المؤرشفة</span>
+                      <span className="text-[10px] font-black text-slate-700 dark:text-slate-200">
+                        {archivedCount} مشروع
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 mt-2">
+                    <button
+                      onClick={runArchivalMaintenance}
+                      disabled={isSimulatingArchive}
+                      className="w-full text-[9px] font-black py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-755 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200/50 dark:border-slate-700 transition-all cursor-pointer block text-center"
+                    >
+                      {isSimulatingArchive ? 'جاري الصيانة...' : 'تحسين جدول الفهرس'}
+                    </button>
+                    {user.role === 'admin' ? (
+                      <button
+                        onClick={archiveCompletedTasksOlderThan30Days}
+                        disabled={isArchiving30Days}
+                        className="w-full text-[9px] font-black py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-200/50 dark:border-indigo-800 transition-all cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        {isArchiving30Days ? <Loader2 size={10} className="animate-spin" /> : <Archive size={10} />}
+                        <span>أرشفة المكتملة (+30 يوم)</span>
+                      </button>
+                    ) : (
+                      <div className="text-[8px] text-center text-slate-400 font-bold bg-slate-50 dark:bg-slate-905 p-1 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
+                        أرشفة الـ 30 يوماً مخصصة للإدارة
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
+
+      {/* Floating Toast Notification for Quick Archiving */}
+      <AnimatePresence>
+        {quickArchiveToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-4 py-2.5 rounded-2xl shadow-xl border border-purple-500/40 backdrop-blur-md flex items-center gap-2 font-black text-xs select-none text-right"
+            dir="rtl"
+          >
+            <div className="w-5 h-5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center text-white shrink-0">
+              <Archive size={11} />
+            </div>
+            <span>{quickArchiveToast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 4. Main Body: Full width list / Kanban board! */}
       <div className="space-y-4">
@@ -2618,6 +2741,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                         allOrders={orders}
                         onClick={() => setSelectedOrder(order)}
                         onMove={(next) => moveOrderKanbanStatus(order.id, next)}
+                        onArchive={handleQuickArchiveOrder}
                       />
                     ))}
                   </AnimatePresence>
@@ -2645,6 +2769,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                       <th className="p-3">التقدم الفعلي</th>
                       <th className="p-3">الخطة التقديرية</th>
                       <th className="p-3 text-left">التكلفة</th>
+                      <th className="p-3 text-center">أرشفة سريعة</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2687,6 +2812,8 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                         mute: "text-slate-400 dark:text-slate-555"
                       };
 
+                      const isArchivedItem = isOrderArchived(order);
+
                       return (
                         <tr 
                           key={order.id}
@@ -2721,12 +2848,29 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                           <td className="p-3 text-left font-mono font-black">
                             {order.cost ? `${order.cost.toLocaleString()} ر.س` : 'معلق'}
                           </td>
+                          <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            {order.status === 'completed' && !isArchivedItem ? (
+                              <button
+                                type="button"
+                                onClick={() => handleQuickArchiveOrder(order.id)}
+                                className="text-[10px] font-black px-2.5 py-1 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 rounded-lg border border-purple-200/70 dark:border-purple-800/70 cursor-pointer flex items-center gap-1 mx-auto transition-all shadow-xs"
+                                title="أرشفة سريعة للمهمة المنتهية بنقرة واحدة"
+                              >
+                                <Archive size={11} className="text-purple-600 dark:text-purple-400" />
+                                <span>أرشفة 📦</span>
+                              </button>
+                            ) : isArchivedItem ? (
+                              <span className="text-[9px] font-black text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-200/40">مؤرشف</span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600">—</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
                     {filteredOrders.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="text-center py-20 text-slate-400 font-bold">
+                        <td colSpan={9} className="text-center py-20 text-slate-400 font-bold">
                           لا يوجد مشاريع صيانة تطابق عناصر تصفية البحث المحددة.
                         </td>
                       </tr>
@@ -4018,13 +4162,26 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                                     <span>إكمال وإغلاق المشروع</span>
                                   </button>
                                 ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => moveOrderKanbanStatus(selectedOrder.id, 'in-progress')}
-                                    className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-2xl cursor-pointer"
-                                  >
-                                    إعادة تنشيط الصيانة
-                                  </button>
+                                  <div className="flex-1 flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleQuickArchiveOrder(selectedOrder.id);
+                                        setSelectedOrder(null);
+                                      }}
+                                      className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:scale-[1.01]"
+                                    >
+                                      <Archive size={15} />
+                                      <span>أرشفة سريعة للمهمة المنتهية</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => moveOrderKanbanStatus(selectedOrder.id, 'in-progress')}
+                                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl cursor-pointer"
+                                    >
+                                      إعادة تنشيط
+                                    </button>
+                                  </div>
                                 )}
 
                                 {hasGranularPermission('delete-maintenance-record', user.role) && (
@@ -4068,6 +4225,7 @@ interface ProjectCardProps {
   allOrders?: MaintenanceOrder[];
   onClick: () => void;
   onMove: (next: 'pending' | 'in-progress' | 'completed') => void;
+  onArchive?: (orderId: string) => void;
 }
 
 const SparklineTrend = ({ data }: { data: number[] }) => {
@@ -4117,7 +4275,7 @@ const SparklineTrend = ({ data }: { data: number[] }) => {
   );
 };
 
-function ProjectCard({ order, vehicles, technicians, workshops, allOrders, onClick, onMove }: ProjectCardProps) {
+function ProjectCard({ order, vehicles, technicians, workshops, allOrders, onClick, onMove, onArchive }: ProjectCardProps) {
   const veh = vehicles.find(v => v.id === order.vehicleId);
   const tech = technicians.find(t => t.id === order.technicianId);
   const ws = workshops.find(w => w.id === order.workshopId);
@@ -4267,6 +4425,17 @@ function ProjectCard({ order, vehicles, technicians, workshops, allOrders, onCli
               <span className="text-[8px] font-black border border-emerald-200/50 text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                 جاهز بالخدمة ✔
               </span>
+              {onArchive && (
+                <button
+                  type="button"
+                  onClick={() => onArchive(order.id)}
+                  className="text-[8px] font-black px-1.5 py-0.5 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 dark:hover:bg-purple-900/60 rounded border border-purple-200/60 dark:border-purple-800/60 cursor-pointer flex items-center gap-0.5 shadow-2xs"
+                  title="أرشفة سريعة للمهمة المنتهية"
+                >
+                  <Archive size={8} />
+                  <span>أرشفة</span>
+                </button>
+              )}
             </div>
           )}
         </div>

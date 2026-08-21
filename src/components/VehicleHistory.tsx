@@ -364,7 +364,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
         if (order.description.includes('إطارات')) {
           seedParts.push(
             {
-              id: 'p1',
+              id: `${order.id}-p1`,
               name: 'إطارات ميشلان المقاومة للحرارة العالية 22.5',
               partNumber: 'MIC-315-80R225',
               supplier: 'مجموعة الموزع الحصري للإطارات المحدودة',
@@ -373,7 +373,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
               unitPrice: 450
             },
             {
-              id: 'p2',
+              id: `${order.id}-p2`,
               name: 'صمامات ضغط هواء مع الحساسات المصاحبة',
               partNumber: 'TPMS-VAL-901',
               supplier: 'شركة الاستيراد الوطنية لقطع الغيار',
@@ -384,7 +384,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
           );
           seedAttachments.push(
             {
-              id: 'att1',
+              id: `${order.id}-att1`,
               name: 'فاتورة الشراء الضريبية - رقم INV-94821',
               url: 'https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?auto=format&fit=crop&q=80&w=400',
               type: 'invoice',
@@ -392,7 +392,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
               uploadedAt: order.date
             },
             {
-              id: 'att2',
+              id: `${order.id}-att2`,
               name: 'صورة الإطار التالف والشق بمحيط السير',
               url: 'https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&q=80&w=400',
               type: 'photo',
@@ -405,7 +405,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
         } else if (order.description.includes('زيت') || order.description.includes('صيانة دورية')) {
           seedParts.push(
             {
-              id: 'p3',
+              id: `${order.id}-p3`,
               name: 'زيت محرك تويوتا تخليقي بالكامل 5W-30',
               partNumber: 'TYT-OIL-5W30-4L',
               supplier: 'مورد معتمد - بترومين السعودية',
@@ -414,7 +414,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
               unitPrice: 140
             },
             {
-              id: 'p4',
+              id: `${order.id}-p4`,
               name: 'فلتر زيت أصلي (سيفون محرك)',
               partNumber: 'TYT-FIL-91023',
               supplier: 'الشركة العربية لقطع غيار ميكانيك',
@@ -425,7 +425,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
           );
           seedAttachments.push(
             {
-              id: 'att3',
+              id: `${order.id}-att3`,
               name: 'إيصال دفع نقدي وتقرير الفحص المجهري',
               url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=400',
               type: 'invoice',
@@ -433,7 +433,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
               uploadedAt: order.date
             },
             {
-              id: 'att4',
+              id: `${order.id}-att4`,
               name: 'صورة الفلتر الجديد المستبدل قبل وضعه',
               url: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&q=80&w=400',
               type: 'photo',
@@ -447,7 +447,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
           // General maintenance seed
           seedParts.push(
             {
-              id: 'p_gen_1',
+              id: `${order.id}-p_gen_1`,
               name: 'قطع تصفية السيستم ومحابس الدفع الهيدروليكي',
               partNumber: 'HYD-VAL-X01',
               supplier: 'ورشة الأمل المتخصصة ومخرطة الرياض السريعة',
@@ -458,7 +458,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
           );
           seedAttachments.push(
             {
-              id: 'att_gen_1',
+              id: `${order.id}-att_gen_1`,
               name: 'أمر الشغل الرسمي ونسخة فاتورة المورد',
               url: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&q=80&w=400',
               type: 'invoice',
@@ -566,14 +566,14 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
       // If the order has explicit parts, but cost is not set, total is parts cost
       let orderPartsCost = 0;
       if (order.supplierParts) {
-        order.supplierParts.forEach(part => {
+        order.supplierParts.forEach((part, partIdx) => {
           const partTotal = part.qty * part.unitPrice;
           orderPartsCost += partTotal;
           allParts.push({
             ...part,
             orderNumber: order.orderNumber,
             orderDate: order.date,
-            id: part.id || 'p_' + Math.random().toString(36).substring(2, 9)
+            id: `${order.id}-${part.id || 'part'}-${partIdx}`
           });
         });
       }
@@ -2117,8 +2117,8 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               </thead>
                               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
                                 {activeOrder.supplierParts && activeOrder.supplierParts.length > 0 ? (
-                                  activeOrder.supplierParts.map((p) => (
-                                    <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+                                  activeOrder.supplierParts.map((p, pIdx) => (
+                                    <tr key={p.id ? `act-part-${p.id}-${pIdx}` : `act-part-${pIdx}`} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
                                       <td className="pr-4 py-3.5 text-slate-900 dark:text-slate-100 font-extrabold max-w-[250px]">
                                         <div className="flex flex-col space-y-1">
                                           <span className="block text-xs font-black text-slate-800 dark:text-white leading-tight">{p.name}</span>
@@ -2193,8 +2193,8 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               <span className="text-[10px] font-black text-indigo-650 dark:text-indigo-400 block mb-2">📄 الوصولات والفواتير الضريبية</span>
                               
                               <div className="space-y-2 flex-1">
-                                {activeOrder.attachments?.filter(a => a.type === 'invoice').map(invoice => (
-                                  <div key={invoice.id} className="p-2 bg-white dark:bg-slate-900 border border-slate-150 rounded-xl flex items-center justify-between text-[10px]">
+                                {activeOrder.attachments?.filter(a => a.type === 'invoice').map((invoice, invIdx) => (
+                                  <div key={invoice.id ? `inv-${invoice.id}-${invIdx}` : `inv-${invIdx}`} className="p-2 bg-white dark:bg-slate-900 border border-slate-150 rounded-xl flex items-center justify-between text-[10px]">
                                     <div className="overflow-hidden min-w-0 pr-1 text-right">
                                       <span className="font-extrabold text-slate-800 dark:text-slate-200 block truncate" title={invoice.name}>{invoice.name}</span>
                                       <span className="text-[8px] text-slate-400 block font-mono mt-0.5">{invoice.size}</span>
@@ -2245,8 +2245,8 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               
                               <div className="space-y-2 flex-1">
                                 <div className="grid grid-cols-2 gap-1.5">
-                                  {activeOrder.attachments?.filter(a => a.type === 'photo').map(photo => (
-                                    <div key={photo.id} className="relative group rounded-lg overflow-hidden border border-slate-150 aspect-video bg-black flex items-center justify-center">
+                                  {activeOrder.attachments?.filter(a => a.type === 'photo').map((photo, phIdx) => (
+                                    <div key={photo.id ? `photo-${photo.id}-${phIdx}` : `photo-${phIdx}`} className="relative group rounded-lg overflow-hidden border border-slate-150 aspect-video bg-black flex items-center justify-center">
                                       <img 
                                         src={photo.url} 
                                         alt="صورة الصيانة" 
@@ -2295,12 +2295,12 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               <span className="text-[10px] font-black text-sky-600 dark:text-sky-400 block mb-2">🎥 مقاطع الفيديو والتوثيق المرئي</span>
                               
                               <div className="space-y-2 flex-1">
-                                {activeOrder.attachments?.filter(a => a.type === 'video').map(video => {
+                                {activeOrder.attachments?.filter(a => a.type === 'video').map((video, vidIdx) => {
                                   const isPlaying = videoPlayId === video.id;
                                   const prc = videoPercent[video.id] || 0;
                                   
                                   return (
-                                    <div key={video.id} className="p-2 bg-white dark:bg-slate-900 border border-slate-150 rounded-xl relative overflow-hidden flex flex-col gap-1.5 text-[10px]">
+                                    <div key={video.id ? `vid-${video.id}-${vidIdx}` : `vid-${vidIdx}`} className="p-2 bg-white dark:bg-slate-900 border border-slate-150 rounded-xl relative overflow-hidden flex flex-col gap-1.5 text-[10px]">
                                       <div className="flex items-center justify-between">
                                         <span className="font-extrabold text-slate-800 dark:text-slate-200 block truncate max-w-[100px]">{video.name}</span>
                                         {user?.role !== 'viewer' && (
@@ -2699,12 +2699,12 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 font-sans">
                             {financialData.allParts.length > 0 ? (
-                              financialData.allParts.map((p) => {
+                              financialData.allParts.map((p, pIdx) => {
                                 const partTotal = p.qty * p.unitPrice;
                                 const wInfo = getWarrantyStatus(p.orderDate, p.warrantyMonths);
 
                                 return (
-                                  <tr key={p.id} className="hover:bg-slate-55/70 dark:hover:bg-slate-800/10 transition-all font-sans">
+                                  <tr key={p.id ? `fin-part-${p.id}-${pIdx}` : `fin-part-${pIdx}`} className="hover:bg-slate-55/70 dark:hover:bg-slate-800/10 transition-all font-sans">
                                     <td className="pr-5 py-3.5">
                                       <span className="block text-slate-850 dark:text-slate-100 font-extrabold text-xs">{p.name}</span>
                                       <span className="block text-[9.5px] font-black text-slate-400 dark:text-slate-550 font-mono tracking-wider mt-0.5">{p.partNumber}</span>
