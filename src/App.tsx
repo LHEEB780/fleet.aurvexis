@@ -27,6 +27,7 @@ import { Shield, Key, Eye, EyeOff, Wrench, Languages, Fingerprint, Layers, WifiO
 import { motion, AnimatePresence } from 'motion/react';
 import MarketingLandingPage from './components/MarketingLandingPage';
 import { MarketingAdmin } from './components/MarketingAdmin';
+import VideoTutorialsModal from './components/VideoTutorialsModal';
 
 const adjustColorBrightness = (hex: string, percent: number): string => {
   try {
@@ -1321,6 +1322,15 @@ export default function App() {
             saasBrandDesc={saasBrandDesc}
             setSaasBrandDesc={setSaasBrandDesc}
             onNavigateToTab={setActiveTab}
+          />
+        );
+      case 'video-tutorials':
+        return (
+          <VideoTutorialsModal 
+            isOpen={true} 
+            onClose={() => setActiveTab('dashboard')} 
+            isDarkMode={isDarkMode} 
+            isTabMode={true}
           />
         );
       default:

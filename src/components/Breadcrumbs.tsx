@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, ChevronLeft, ChevronRight, Folder, Truck, Users, LayoutDashboard, Wrench, BarChart3, IdCard, ClipboardCheck, Building2, Calendar, Warehouse, Handshake, ShieldCheck, CreditCard, Globe, Bot, Cloud } from 'lucide-react';
+import { Home, ChevronLeft, ChevronRight, Folder, Truck, Users, LayoutDashboard, Wrench, BarChart3, IdCard, ClipboardCheck, Building2, Calendar, Warehouse, Handshake, ShieldCheck, CreditCard, Globe, Bot, Cloud, Video } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MENU_ITEMS } from '../constants';
 
@@ -34,6 +34,7 @@ export const TAB_LABELS: Record<string, { ar: string; en: string; icon: React.Re
   'security-audit': { ar: 'صلاحيات الموظفين والامتثال', en: 'Permissions & Compliance', icon: <ShieldCheck size={14} /> },
   'firebase-sync': { ar: 'بوابة المزامنة والربط السحابي', en: 'Cloud Sync Portal (Firebase)', icon: <Cloud size={14} /> },
   'saas-billing': { ar: 'إدارة الاشتراك والفوترة', en: 'SaaS Billing & Plan', icon: <CreditCard size={14} /> },
+  'video-tutorials': { ar: 'مكتبة الفيديوهات والشروحات', en: 'Video Tutorials & Academy', icon: <Video size={14} /> },
   'marketing-admin': { ar: 'لوحة تحكم الموقع', en: 'Website Admin Panel', icon: <Globe size={14} /> },
   'maintenance-bot': { ar: 'مركز التحكم بوكلاء الـ AI', en: 'AI Agents Unified Command Hub', icon: <Bot size={14} /> },
 };

@@ -967,6 +967,8 @@ interface VideoTutorialsModalProps {
   onNavigateToSaaS?: (trial?: boolean) => void;
   brandName?: string;
   initialVideoId?: string;
+  isTabMode?: boolean;
+  isDarkMode?: boolean;
 }
 
 export default function VideoTutorialsModal({
@@ -975,11 +977,16 @@ export default function VideoTutorialsModal({
   language: propLanguage,
   onNavigateToSaaS,
   brandName = 'FleetAurvexis',
-  initialVideoId
+  initialVideoId,
+  isTabMode = false,
+  isDarkMode: propIsDarkMode
 }: VideoTutorialsModalProps) {
   const { language: contextLang } = useLanguage();
   const lang = propLanguage || contextLang || 'ar';
   const isRtl = lang === 'ar';
+
+  const [internalDarkMode, setInternalDarkMode] = useState(true);
+  const isDarkMode = propIsDarkMode !== undefined ? propIsDarkMode : internalDarkMode;
 
   const [selectedVideo, setSelectedVideo] = useState<VideoTutorial>(() => {
     if (initialVideoId) {
@@ -1054,9 +1061,13 @@ export default function VideoTutorialsModal({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isFilterCollapsed, setIsFilterCollapsed] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  // Collapsible state for the 3 filter categories (folded by default as requested)
+  const [isMaintFilterOpen, setIsMaintFilterOpen] = useState(false);
+  const [isFleetFilterOpen, setIsFleetFilterOpen] = useState(false);
+  const [isTagsFilterOpen, setIsTagsFilterOpen] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const playerTopRef = useRef<HTMLDivElement>(null);
@@ -2091,28 +2102,24 @@ export default function VideoTutorialsModal({
     </div>
   );
 
-  if (!isOpen) return null;
+  if (!isOpen && !isTabMode) return null;
 
-  return (
-    <AnimatePresence>
-      <div 
-        id="video-tutorials-library-modal"
-        className={`fixed inset-0 z-50 overflow-y-auto backdrop-blur-md flex items-center justify-center p-0 sm:p-3 md:p-6 ${
-          isDarkMode ? 'bg-slate-950/85' : 'bg-slate-900/60'
-        }`}
-        dir={isRtl ? 'rtl' : 'ltr'}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.97, y: 10 }}
-          transition={{ duration: 0.2 }}
-          className={`border-0 sm:border sm:rounded-3xl w-full max-w-7xl h-full sm:h-auto sm:max-h-[94vh] flex flex-col shadow-2xl overflow-hidden relative font-sans transition-colors duration-200 ${
-            isDarkMode 
-              ? 'bg-slate-900 border-purple-500/30 text-slate-100' 
-              : 'bg-white border-slate-200 text-slate-900'
-          }`}
-        >
+  const contentElement = (
+    <motion.div
+      initial={isTabMode ? { opacity: 0, y: 10 } : { opacity: 0, scale: 0.97, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.97, y: 10 }}
+      transition={{ duration: 0.2 }}
+      className={`border rounded-3xl w-full ${
+        isTabMode
+          ? 'min-h-[85vh] flex flex-col shadow-lg overflow-hidden relative font-sans transition-colors duration-200'
+          : 'max-w-7xl h-full sm:h-auto sm:max-h-[94vh] flex flex-col shadow-2xl overflow-hidden relative font-sans transition-colors duration-200'
+      } ${
+        isDarkMode 
+          ? 'bg-slate-900 border-purple-500/30 text-slate-100' 
+          : 'bg-white border-slate-200 text-slate-900'
+      }`}
+    >
           {/* Top Header Bar */}
           <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-3 shrink-0 transition-colors ${
             isDarkMode ? 'border-slate-800/90 bg-slate-950/90' : 'border-slate-200 bg-slate-50/95'
@@ -2174,7 +2181,7 @@ export default function VideoTutorialsModal({
               {/* Theme Toggle (Light / Dark Mode) */}
               <button
                 id="btn-toggle-video-theme"
-                onClick={() => setIsDarkMode(!isDarkMode)}
+                onClick={() => setInternalDarkMode(!isDarkMode)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border cursor-pointer ${
                   isDarkMode
                     ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700'
@@ -2220,18 +2227,20 @@ export default function VideoTutorialsModal({
                 )}
               </button>
 
-              <button
-                id="btn-close-video-modal"
-                onClick={onClose}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center transition border cursor-pointer ${
-                  isDarkMode 
-                    ? 'bg-slate-800/90 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 text-slate-400 border-slate-700' 
-                    : 'bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 border-slate-200 shadow-xs'
-                }`}
-                aria-label="Close"
-              >
-                <X size={17} />
-              </button>
+              {!isTabMode && (
+                <button
+                  id="btn-close-video-modal"
+                  onClick={onClose}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition border cursor-pointer ${
+                    isDarkMode 
+                      ? 'bg-slate-800/90 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 text-slate-400 border-slate-700' 
+                      : 'bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 border-slate-200 shadow-xs'
+                  }`}
+                  aria-label="Close"
+                >
+                  <X size={17} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -2559,107 +2568,236 @@ export default function VideoTutorialsModal({
                   {lang === 'ar' ? selectedVideo.descriptionAr : selectedVideo.descriptionEn}
                 </p>
 
-                {/* Classification (Maintenance Type, Vehicle Fleet Classes, and Operational Tags) Card */}
-                <div className={`p-3.5 rounded-2xl border space-y-2.5 transition ${
+                {/* Classification Accordion (Maintenance Type, Vehicle Fleet Classes, and Operational Tags) - Collapsible by default */}
+                <div className={`rounded-2xl border divide-y transition overflow-hidden ${
                   isDarkMode 
-                    ? 'bg-slate-950/60 border-purple-500/20' 
-                    : 'bg-indigo-50/60 border-indigo-100 shadow-xs'
+                    ? 'bg-slate-950/70 border-purple-500/20 divide-slate-800/80 shadow-md shadow-purple-950/20' 
+                    : 'bg-indigo-50/50 border-indigo-100/90 divide-indigo-100/80 shadow-xs'
                 }`}>
-                  {/* Row 1: Maintenance Classification */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
-                        <span className="text-amber-500">🔧</span>
-                        <span className={isDarkMode ? 'text-slate-300' : 'text-slate-700'}>
-                          {lang === 'ar' ? 'نوع الصيانة والعمليات:' : 'Maintenance & Operations:'}
-                        </span>
+                  {/* Item 1: Maintenance Classification (Foldable) */}
+                  <div className="transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setIsMaintFilterOpen(!isMaintFilterOpen)}
+                      className={`w-full px-3.5 py-2.5 flex items-center justify-between gap-2 text-start transition cursor-pointer ${
+                        isDarkMode ? 'hover:bg-slate-900/60' : 'hover:bg-indigo-100/40'
+                      }`}
+                      aria-expanded={isMaintFilterOpen}
+                    >
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
+                          <span className="text-amber-500 text-sm">🔧</span>
+                          <span className={isDarkMode ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
+                            {lang === 'ar' ? 'نوع الصيانة والعمليات:' : 'Maintenance & Operations:'}
+                          </span>
+                        </div>
+                        {selectedVideo.applicableMaintenanceTypes && selectedVideo.applicableMaintenanceTypes.length > 0 && (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                            selectedMaintenanceType !== 'all'
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                              : (isDarkMode ? 'bg-slate-900 text-slate-400 border-slate-800' : 'bg-white text-slate-600 border-slate-200')
+                          }`}>
+                            {selectedVideo.applicableMaintenanceTypes.length} {lang === 'ar' ? 'خيارات' : 'options'}
+                            {selectedMaintenanceType !== 'all' && ' (مُفلتر)'}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {selectedVideo.applicableMaintenanceTypes?.map(mType => {
-                          const mObj = MAINTENANCE_TYPE_FILTERS.find(f => f.id === mType);
-                          if (!mObj) return null;
-                          const isSelected = selectedMaintenanceType === mType;
-                          return (
-                            <button
-                              key={mType}
-                              onClick={() => setSelectedMaintenanceType(isSelected ? 'all' : mType)}
-                              className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
-                                isSelected
-                                  ? (isDarkMode ? 'bg-amber-600 text-white border-amber-500 font-bold shadow-xs' : 'bg-amber-600 text-white border-amber-600 font-bold shadow-xs')
-                                  : (isDarkMode ? 'bg-slate-900 text-amber-300 border-slate-800 hover:border-amber-500/50' : 'bg-white text-amber-900 border-amber-200 hover:border-amber-400')
-                              }`}
-                              title={lang === 'ar' ? `تصفية القائمة حسب ${mObj.labelAr}` : `Filter playlist by ${mObj.labelEn}`}
-                            >
-                              <span>{mObj.emoji}</span>
-                              <span>{lang === 'ar' ? mObj.shortLabelAr : mObj.shortLabelEn}</span>
-                            </button>
-                          );
-                        })}
+
+                      {/* Purple Gradient Arrow Button */}
+                      <div 
+                        className={`w-7 h-7 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm shadow-purple-600/30 flex items-center justify-center shrink-0 transition-transform duration-250 ${
+                          isMaintFilterOpen ? 'rotate-180 scale-105' : 'hover:scale-105'
+                        }`}
+                      >
+                        <ChevronDown size={15} className="transition-transform duration-200" />
                       </div>
-                    </div>
+                    </button>
+
+                    <AnimatePresence>
+                      {isMaintFilterOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className={`px-3.5 pb-3 pt-1 flex items-center gap-1.5 flex-wrap ${
+                            isDarkMode ? 'bg-slate-900/30' : 'bg-white/40'
+                          }`}>
+                            {selectedVideo.applicableMaintenanceTypes?.map(mType => {
+                              const mObj = MAINTENANCE_TYPE_FILTERS.find(f => f.id === mType);
+                              if (!mObj) return null;
+                              const isSelected = selectedMaintenanceType === mType;
+                              return (
+                                <button
+                                  key={mType}
+                                  onClick={() => setSelectedMaintenanceType(isSelected ? 'all' : mType)}
+                                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
+                                    isSelected
+                                      ? (isDarkMode ? 'bg-amber-600 text-white border-amber-500 font-bold shadow-xs' : 'bg-amber-600 text-white border-amber-600 font-bold shadow-xs')
+                                      : (isDarkMode ? 'bg-slate-900 text-amber-300 border-slate-800 hover:border-amber-500/50' : 'bg-white text-amber-900 border-amber-200 hover:border-amber-400')
+                                  }`}
+                                  title={lang === 'ar' ? `تصفية القائمة حسب ${mObj.labelAr}` : `Filter playlist by ${mObj.labelEn}`}
+                                >
+                                  <span>{mObj.emoji}</span>
+                                  <span>{lang === 'ar' ? mObj.shortLabelAr : mObj.shortLabelEn}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  {/* Row 2: Fleet Classes Compatibility */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-800/20">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
-                        <Truck size={14} className={isDarkMode ? 'text-purple-400' : 'text-indigo-600'} />
-                        <span className={isDarkMode ? 'text-slate-300' : 'text-slate-700'}>
-                          {lang === 'ar' ? 'فئات الأسطول المتوافقة:' : 'Compatible Fleet Classes:'}
-                        </span>
+                  {/* Item 2: Fleet Classes Compatibility (Foldable) */}
+                  <div className="transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setIsFleetFilterOpen(!isFleetFilterOpen)}
+                      className={`w-full px-3.5 py-2.5 flex items-center justify-between gap-2 text-start transition cursor-pointer ${
+                        isDarkMode ? 'hover:bg-slate-900/60' : 'hover:bg-indigo-100/40'
+                      }`}
+                      aria-expanded={isFleetFilterOpen}
+                    >
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
+                          <Truck size={14} className={isDarkMode ? 'text-purple-400' : 'text-indigo-600'} />
+                          <span className={isDarkMode ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
+                            {lang === 'ar' ? 'فئات الأسطول المتوافقة:' : 'Compatible Fleet Classes:'}
+                          </span>
+                        </div>
+                        {selectedVideo.applicableVehicles && selectedVideo.applicableVehicles.length > 0 && (
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                            selectedVehicleType !== 'all'
+                              ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold'
+                              : (isDarkMode ? 'bg-slate-900 text-slate-400 border-slate-800' : 'bg-white text-slate-600 border-slate-200')
+                          }`}>
+                            {selectedVideo.applicableVehicles.length} {lang === 'ar' ? 'فئات' : 'classes'}
+                            {selectedVehicleType !== 'all' && ' (مُفلتر)'}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {selectedVideo.applicableVehicles?.map(vType => {
-                          const vObj = VEHICLE_TYPE_FILTERS.find(f => f.id === vType);
-                          if (!vObj) return null;
-                          const isSelected = selectedVehicleType === vType;
-                          return (
-                            <button
-                              key={vType}
-                              onClick={() => setSelectedVehicleType(isSelected ? 'all' : vType)}
-                              className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
-                                isSelected
-                                  ? (isDarkMode ? 'bg-purple-600 text-white border-purple-500 font-bold' : 'bg-indigo-600 text-white border-indigo-600 font-bold')
-                                  : (isDarkMode ? 'bg-slate-900 text-purple-300 border-slate-800 hover:border-purple-500/50' : 'bg-white text-indigo-900 border-slate-200 hover:border-indigo-300')
-                              }`}
-                              title={lang === 'ar' ? `تصفية القائمة حسب ${vObj.labelAr}` : `Filter playlist by ${vObj.labelEn}`}
-                            >
-                              <span>{vObj.emoji}</span>
-                              <span>{lang === 'ar' ? vObj.shortLabelAr : vObj.shortLabelEn}</span>
-                            </button>
-                          );
-                        })}
+
+                      {/* Purple Gradient Arrow Button */}
+                      <div 
+                        className={`w-7 h-7 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm shadow-purple-600/30 flex items-center justify-center shrink-0 transition-transform duration-250 ${
+                          isFleetFilterOpen ? 'rotate-180 scale-105' : 'hover:scale-105'
+                        }`}
+                      >
+                        <ChevronDown size={15} className="transition-transform duration-200" />
                       </div>
-                    </div>
+                    </button>
+
+                    <AnimatePresence>
+                      {isFleetFilterOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className={`px-3.5 pb-3 pt-1 flex items-center gap-1.5 flex-wrap ${
+                            isDarkMode ? 'bg-slate-900/30' : 'bg-white/40'
+                          }`}>
+                            {selectedVideo.applicableVehicles?.map(vType => {
+                              const vObj = VEHICLE_TYPE_FILTERS.find(f => f.id === vType);
+                              if (!vObj) return null;
+                              const isSelected = selectedVehicleType === vType;
+                              return (
+                                <button
+                                  key={vType}
+                                  onClick={() => setSelectedVehicleType(isSelected ? 'all' : vType)}
+                                  className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
+                                    isSelected
+                                      ? (isDarkMode ? 'bg-purple-600 text-white border-purple-500 font-bold' : 'bg-indigo-600 text-white border-indigo-600 font-bold')
+                                      : (isDarkMode ? 'bg-slate-900 text-purple-300 border-slate-800 hover:border-purple-500/50' : 'bg-white text-indigo-900 border-slate-200 hover:border-indigo-300')
+                                  }`}
+                                  title={lang === 'ar' ? `تصفية القائمة حسب ${vObj.labelAr}` : `Filter playlist by ${vObj.labelEn}`}
+                                >
+                                  <span>{vObj.emoji}</span>
+                                  <span>{lang === 'ar' ? vObj.shortLabelAr : vObj.shortLabelEn}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  {/* Row 3: Operational Tags */}
+                  {/* Item 3: Operational Tags (Foldable) */}
                   {(selectedVideo.tagsAr?.length > 0 || selectedVideo.tagsEn?.length > 0) && (
-                    <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-800/20">
-                      <div className="flex items-center gap-1 text-[11px] font-bold shrink-0">
-                        <Tag size={12} className={isDarkMode ? 'text-purple-400' : 'text-indigo-600'} />
-                        <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
-                          {lang === 'ar' ? 'الوسوم التشغيلية:' : 'Operational Tags:'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {(lang === 'ar' ? selectedVideo.tagsAr : selectedVideo.tagsEn)?.map((tag, idx) => {
-                          const isTagActive = selectedTag === tag;
-                          return (
-                            <button
-                              key={idx}
-                              onClick={() => setSelectedTag(isTagActive ? null : tag)}
-                              className={`text-[10.5px] px-2 py-0.5 rounded-md border transition cursor-pointer flex items-center gap-1 ${
-                                isTagActive
-                                  ? (isDarkMode ? 'bg-indigo-600 text-white border-indigo-500 font-bold' : 'bg-indigo-700 text-white border-indigo-700 font-bold')
-                                  : (isDarkMode ? 'bg-slate-900/80 text-slate-300 border-slate-800 hover:text-white hover:border-slate-700' : 'bg-white text-slate-700 border-slate-200 hover:text-indigo-600 hover:border-indigo-200')
-                              }`}
-                            >
-                              <span>#{tag}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                    <div className="transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => setIsTagsFilterOpen(!isTagsFilterOpen)}
+                        className={`w-full px-3.5 py-2.5 flex items-center justify-between gap-2 text-start transition cursor-pointer ${
+                          isDarkMode ? 'hover:bg-slate-900/60' : 'hover:bg-indigo-100/40'
+                        }`}
+                        aria-expanded={isTagsFilterOpen}
+                      >
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
+                            <Tag size={12} className={isDarkMode ? 'text-purple-400' : 'text-indigo-600'} />
+                            <span className={isDarkMode ? 'text-slate-200 font-bold' : 'text-slate-800 font-bold'}>
+                              {lang === 'ar' ? 'الوسوم التشغيلية:' : 'Operational Tags:'}
+                            </span>
+                          </div>
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                            selectedTag
+                              ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 font-bold'
+                              : (isDarkMode ? 'bg-slate-900 text-slate-400 border-slate-800' : 'bg-white text-slate-600 border-slate-200')
+                          }`}>
+                            {(lang === 'ar' ? selectedVideo.tagsAr : selectedVideo.tagsEn)?.length || 0} {lang === 'ar' ? 'وسوم' : 'tags'}
+                            {selectedTag && ` (#${selectedTag})`}
+                          </span>
+                        </div>
+
+                        {/* Purple Gradient Arrow Button */}
+                        <div 
+                          className={`w-7 h-7 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm shadow-purple-600/30 flex items-center justify-center shrink-0 transition-transform duration-250 ${
+                            isTagsFilterOpen ? 'rotate-180 scale-105' : 'hover:scale-105'
+                          }`}
+                        >
+                          <ChevronDown size={15} className="transition-transform duration-200" />
+                        </div>
+                      </button>
+
+                      <AnimatePresence>
+                        {isTagsFilterOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className={`px-3.5 pb-3 pt-1 flex items-center gap-1.5 flex-wrap ${
+                              isDarkMode ? 'bg-slate-900/30' : 'bg-white/40'
+                            }`}>
+                              {(lang === 'ar' ? selectedVideo.tagsAr : selectedVideo.tagsEn)?.map((tag, idx) => {
+                                const isTagActive = selectedTag === tag;
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={() => setSelectedTag(isTagActive ? null : tag)}
+                                    className={`text-[10.5px] px-2.5 py-1 rounded-md border transition cursor-pointer flex items-center gap-1 ${
+                                      isTagActive
+                                        ? (isDarkMode ? 'bg-indigo-600 text-white border-indigo-500 font-bold' : 'bg-indigo-700 text-white border-indigo-700 font-bold')
+                                        : (isDarkMode ? 'bg-slate-900/90 text-slate-300 border-slate-800 hover:text-white hover:border-slate-700' : 'bg-white text-slate-700 border-slate-200 hover:text-indigo-600 hover:border-indigo-200')
+                                    }`}
+                                  >
+                                    <span>#{tag}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
                 </div>
@@ -2926,19 +3064,41 @@ export default function VideoTutorialsModal({
                 {lang === 'ar' ? 'أكاديمية تدريب FleetAurvexis - متجددة باستمرار' : 'FleetAurvexis Video Academy - Continuously Updated'}
               </span>
             </div>
-            <button
-              onClick={onClose}
-              className={`px-3.5 py-1 rounded-xl font-semibold text-xs transition border cursor-pointer ${
-                isDarkMode
-                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-xs'
-              }`}
-            >
-              {lang === 'ar' ? 'إغلاق' : 'Close'}
-            </button>
+            {!isTabMode && (
+              <button
+                onClick={onClose}
+                className={`px-3.5 py-1 rounded-xl font-semibold text-xs transition border cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-xs'
+                }`}
+              >
+                {lang === 'ar' ? 'إغلاق' : 'Close'}
+              </button>
+            )}
           </div>
 
         </motion.div>
+  );
+
+  if (isTabMode) {
+    return (
+      <div id="video-tutorials-tab-view" className="w-full" dir={isRtl ? 'rtl' : 'ltr'}>
+        {contentElement}
+      </div>
+    );
+  }
+
+  return (
+    <AnimatePresence>
+      <div 
+        id="video-tutorials-library-modal"
+        className={`fixed inset-0 z-50 overflow-y-auto backdrop-blur-md flex items-center justify-center p-0 sm:p-3 md:p-6 ${
+          isDarkMode ? 'bg-slate-950/85' : 'bg-slate-900/60'
+        }`}
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
+        {contentElement}
       </div>
     </AnimatePresence>
   );

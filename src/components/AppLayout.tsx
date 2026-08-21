@@ -47,7 +47,8 @@ import {
   Globe,
   Wifi,
   WifiOff,
-  Type
+  Type,
+  Video
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, UserRole } from '../types';
@@ -440,6 +441,10 @@ export default function AppLayout({
             parsed.push('maintenance-bot');
             hasUpdates = true;
           }
+          if (!parsed.includes('video-tutorials')) {
+            parsed.push('video-tutorials');
+            hasUpdates = true;
+          }
           if (!parsed.includes('firebase-sync')) {
             parsed.push('firebase-sync');
             hasUpdates = true;
@@ -500,6 +505,7 @@ export default function AppLayout({
     return (
       item.id === 'dashboard' || 
       item.id === 'maintenance-bot' || 
+      item.id === 'video-tutorials' || 
       item.id === 'firebase-sync' || 
       item.id === 'saas-billing' || 
       item.id === 'marketing-portal' || 
@@ -1934,15 +1940,15 @@ export default function AppLayout({
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Header */}
-        <header className="h-16 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-4 sm:px-6 z-10 transition-colors duration-300">
-          <div className="flex items-center gap-3">
+        <header className="h-16 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-3 sm:px-6 z-10 transition-colors duration-300">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button 
-              className="md:hidden w-10 h-10 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent shadow-xs cursor-pointer shrink-0"
+              className="md:hidden w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent shadow-xs cursor-pointer shrink-0"
               onClick={() => setMobileMenuOpen(true)}
             >
-              <Menu size={20} />
+              <Menu size={19} />
             </button>
-            <div className="relative hidden sm:block w-full max-w-sm mx-auto">
+            <div className="relative hidden md:block w-full max-w-xs lg:max-w-sm">
               <span className={`absolute inset-y-0 flex items-center text-slate-400 ${dir === 'rtl' ? 'right-3' : 'left-3'}`}>
                 <Search size={14} />
               </span>
@@ -1965,14 +1971,14 @@ export default function AppLayout({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
-             {/* General Barcode Scanner Button */}
-             <button 
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* General Barcode Scanner Button */}
+            <button 
               onClick={() => setIsBarcodeModalOpen(true)}
-              className="h-10 px-3 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/70 dark:bg-brand-blue-950/25 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/30 border border-brand-blue-100/30 dark:border-brand-blue-950/40 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-xs"
+              className="h-9 sm:h-10 px-2.5 sm:px-3 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/70 dark:bg-brand-blue-950/25 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/30 border border-brand-blue-100/30 dark:border-brand-blue-950/40 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-xs"
               title={t('common.barcodeScanner')}
-             >
-              <Scan size={16} />
+            >
+              <Scan size={15} />
               <span className="text-[10px] font-black hidden lg:inline-block leading-none">
                 {t('common.barcodeScanner').split(' ')[0]}
               </span>
@@ -1982,25 +1988,24 @@ export default function AppLayout({
             {onNavigateToMarketing && (
               <button 
                 onClick={onNavigateToMarketing}
-                className="h-10 px-3 text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 border border-indigo-100/40 dark:border-slate-800/40 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-xs"
+                className="hidden sm:flex h-9 sm:h-10 px-2.5 sm:px-3 text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-900/30 border border-indigo-100/40 dark:border-slate-800/40 rounded-xl transition-all cursor-pointer items-center justify-center gap-1.5 shrink-0 shadow-xs"
                 title={language === 'ar' ? 'معاينة الموقع والواجهة التسويقية' : 'Preview External Marketing Site'}
               >
-                <Globe size={16} className="text-indigo-505 dark:text-indigo-400" />
+                <Globe size={15} className="text-indigo-500 dark:text-indigo-400" />
                 <span className="text-[10px] font-black hidden lg:inline-block leading-none">
                   {language === 'ar' ? 'الموقع العام' : 'Public Site'}
                 </span>
               </button>
             )}
 
-
             {/* Quick Language Toggle Button */}
             <button 
               onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              className="h-10 px-3 text-brand-blue-600 dark:text-[#38bdf8] bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700 border border-slate-200/40 dark:border-slate-705 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0 hover:-translate-y-0.5"
+              className="h-9 sm:h-10 px-2 sm:px-3 text-brand-blue-600 dark:text-[#38bdf8] bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
               title={language === 'ar' ? 'تغيير اللغة إلى الإنجليزية' : 'Switch Language to Arabic'}
             >
-              <Globe size={15} className="animate-spin-slow text-violet-500" />
-              <span className="text-[10px] font-black leading-none">
+              <Globe size={14} className="text-violet-500 shrink-0" />
+              <span className="text-[10px] font-black leading-none hidden xs:inline-block">
                 {language === 'ar' ? 'English 🇺🇸' : 'العربية 🇸🇦'}
               </span>
             </button>
@@ -2009,19 +2014,16 @@ export default function AppLayout({
             <div className="relative">
               <button 
                 onClick={() => setFontSizeDropdownOpen(!fontSizeDropdownOpen)}
-                className="h-10 px-2.5 text-purple-600 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200/50 dark:border-purple-800/40 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0 hover:-translate-y-0.5"
+                className="h-9 sm:h-10 px-2 sm:px-2.5 text-purple-600 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200/50 dark:border-purple-800/40 rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1 shrink-0"
                 title={language === 'ar' ? 'مقياس حجم الخط (عادي / كبير / كبير جداً / فائق)' : 'Font Size Scale (Normal / Large / X-Large / Huge)'}
               >
-                <Type size={15} className="text-purple-600 dark:text-purple-400" />
-                <span className="text-[11px] font-black leading-none flex items-center gap-1">
+                <Type size={14} className="text-purple-600 dark:text-purple-400" />
+                <span className="text-[10.5px] font-black leading-none flex items-center gap-0.5">
                   <span>
                     {fontSizeMode === 'normal' ? 'A' : fontSizeMode === 'large' ? 'A+' : fontSizeMode === 'xlarge' ? 'A++' : 'A+++'}
                   </span>
-                  <span className="hidden xl:inline-block text-[10px]">
-                    ({fontSizeMode === 'normal' ? (language === 'ar' ? 'عادي' : 'Normal') : fontSizeMode === 'large' ? (language === 'ar' ? 'كبير' : 'Large') : fontSizeMode === 'xlarge' ? (language === 'ar' ? 'كبير جداً' : 'X-Large') : (language === 'ar' ? 'فائق' : 'Huge')})
-                  </span>
                 </span>
-                <ChevronDown size={11} className={`text-purple-400 transition-transform ${fontSizeDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={10} className={`text-purple-400 transition-transform ${fontSizeDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               <AnimatePresence>
@@ -2076,7 +2078,7 @@ export default function AppLayout({
             <div className="relative">
               <button 
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                className="h-10 flex items-center justify-center gap-1.5 px-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-xs cursor-pointer shrink-0"
+                className="h-9 sm:h-10 flex items-center justify-center gap-1.5 px-2.5 sm:px-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-xs cursor-pointer shrink-0"
               >
                 <Shield size={14} className="text-brand-blue-600" />
                 <span className="text-[11px] font-black text-slate-600 dark:text-slate-300 hidden lg:block">
@@ -2090,7 +2092,7 @@ export default function AppLayout({
                           : (language === 'ar' ? 'سائق نقل ثقيل' : 'Heavy Driver')
                   }
                 </span>
-                <ChevronDown size={12} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={11} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               
               <AnimatePresence>
@@ -2142,31 +2144,31 @@ export default function AppLayout({
             {/* Connection / Synchronization Status Badge */}
             {isSyncing ? (
               <div 
-                className="h-10 px-3 flex items-center justify-center gap-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-150 dark:border-amber-900/50 rounded-xl shadow-xs shrink-0"
+                className="h-9 sm:h-10 px-2 sm:px-3 flex items-center justify-center gap-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-150 dark:border-amber-900/50 rounded-xl shadow-xs shrink-0"
                 title={language === 'ar' ? 'جاري مزامنة تعديلات الصيانة...' : 'Syncing local changes to server...'}
               >
                 <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping inline-block" />
-                <span className="text-[10px] md:text-[11px] font-black leading-none text-amber-705 dark:text-amber-300">
+                <span className="text-[10px] md:text-[11px] font-black leading-none text-amber-705 dark:text-amber-300 hidden xs:inline-block">
                   {language === 'ar' ? 'جاري المزامنة...' : 'Syncing...'}
                 </span>
               </div>
             ) : isOffline ? (
               <div 
-                className="h-10 px-3 flex items-center justify-center gap-1.5 bg-rose-50/90 dark:bg-rose-950/20 text-rose-650 dark:text-rose-400 border border-rose-150 dark:border-rose-900/40 rounded-xl shadow-xs shrink-0"
+                className="h-9 sm:h-10 px-2 sm:px-3 flex items-center justify-center gap-1.5 bg-rose-50/90 dark:bg-rose-950/20 text-rose-650 dark:text-rose-400 border border-rose-150 dark:border-rose-900/40 rounded-xl shadow-xs shrink-0"
                 title={language === 'ar' ? 'وضعية العمل دون اتصال نشطة (تُحفظ التعديلات بالمتصفح)' : 'Running locally in offline cache mode'}
               >
                 <WifiOff size={14} className="text-rose-500 shrink-0 animate-bounce" />
                 <span className="text-[10px] md:text-[11px] font-black leading-none text-rose-700 dark:text-rose-300">
-                  {language === 'ar' ? `دون اتصال ${syncQueueCount > 0 ? `(${syncQueueCount} معلق)` : ''}` : `Offline ${syncQueueCount > 0 ? `(${syncQueueCount} pending)` : ''}`}
+                  {language === 'ar' ? `دون اتصال ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}` : `Offline ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}`}
                 </span>
               </div>
             ) : (
               <div 
-                className="h-10 px-3 flex items-center justify-center gap-1.5 bg-emerald-50/50 dark:bg-emerald-950/10 text-emerald-600 dark:text-emerald-450 border border-emerald-100/30 rounded-xl shadow-xs shrink-0"
+                className="hidden sm:flex h-9 sm:h-10 px-2.5 sm:px-3 items-center justify-center gap-1.5 bg-emerald-50/50 dark:bg-emerald-950/10 text-emerald-600 dark:text-emerald-450 border border-emerald-100/30 rounded-xl shadow-xs shrink-0"
                 title={language === 'ar' ? 'الاتصال مستقر مع خادم الصيانة المركزي' : 'Stable server connection'}
               >
                 <Wifi size={14} className="text-emerald-500 shrink-0" />
-                <span className="text-[10px] font-black leading-none text-emerald-700 dark:text-emerald-400 hidden sm:inline-block">
+                <span className="text-[10px] font-black leading-none text-emerald-700 dark:text-emerald-400">
                   {language === 'ar' ? 'متصل' : 'Online'}
                 </span>
               </div>
@@ -2184,12 +2186,12 @@ export default function AppLayout({
                     window.dispatchEvent(new CustomEvent('notification-navigate', { detail: { tab: 'periodic-maintenance', overdueOnly: true } }));
                   }, 150);
                 }}
-                className="h-10 px-3 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-red-650 dark:text-rose-405 border border-red-150 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-xs shrink-0 animate-pulse"
+                className="h-9 sm:h-10 px-2 sm:px-3 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-red-650 dark:text-rose-405 border border-red-150 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-xs shrink-0 animate-pulse"
                 title={language === 'ar' ? `تنبيه: يوجد ${overdueMaintenanceCount} خدمات صيانة متأخرة!` : `System Alert: ${overdueMaintenanceCount} periodic maintenance services are overdue!`}
               >
-                <AlertTriangle size={15} className="shrink-0 text-red-650 dark:text-rose-400" />
+                <AlertTriangle size={14} className="shrink-0 text-red-650 dark:text-rose-400" />
                 <span className="text-[10px] md:text-[11px] font-black leading-none text-red-750 dark:text-rose-300">
-                  {language === 'ar' ? `${overdueMaintenanceCount} صيانات متأخرة` : `${overdueMaintenanceCount} PM Overdue`}
+                  {language === 'ar' ? `${overdueMaintenanceCount} متأخرة` : `${overdueMaintenanceCount} PM Overdue`}
                 </span>
               </button>
             )}
@@ -2198,12 +2200,12 @@ export default function AppLayout({
             <div className="relative">
               <button 
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className={`w-10 h-10 flex items-center justify-center hover:bg-slate-100/80 dark:hover:bg-slate-800/80 rounded-xl border border-slate-205/10 hover:border-slate-205/10 relative transition-all cursor-pointer shrink-0 shadow-xs ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-slate-100/80 dark:hover:bg-slate-800/80 rounded-xl border border-slate-200/40 dark:border-slate-800/60 relative transition-all cursor-pointer shrink-0 shadow-xs ${
                   isNotificationsOpen ? 'text-brand-blue-600 bg-slate-100 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400'
                 }`}
                 title={language === 'ar' ? 'الإشعارات الميدانية والتنبيهات' : 'Field Notifications & Alerts'}
               >
-                <Bell size={18} />
+                <Bell size={17} />
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-1 w-4 h-4 flex items-center justify-center text-[9px] font-black text-white bg-red-650 rounded-full border border-white dark:border-slate-900 shadow-sm animate-pulse">
                     {unreadCount}
@@ -2459,16 +2461,16 @@ export default function AppLayout({
             </div>
 
             {/* User Profile Info */}
-            <div className="flex items-center gap-3 pr-4 border-slate-200 dark:border-slate-800 border-r">
-              <div className={`hidden sm:block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+            <div className="flex items-center gap-2 sm:gap-3 ps-1 sm:ps-2 pe-0.5 sm:pe-1">
+              <div className={`hidden md:block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                 <p className="text-sm font-semibold text-slate-900 dark:text-white leading-none mb-1">{profileName}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0"></span>
                   <span>{user.title}</span>
                 </p>
               </div>
-              <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-brand-blue-100 dark:bg-brand-blue-900/50 border-2 border-white dark:border-slate-800 overflow-hidden shadow-sm flex items-center justify-center">
+              <div className="relative shrink-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-brand-blue-100 dark:bg-brand-blue-900/50 border-2 border-white dark:border-slate-800 overflow-hidden shadow-sm flex items-center justify-center">
                   {!hasHeaderAvatarError && user.avatar ? (
                     <img 
                       referrerPolicy="no-referrer"
@@ -2483,7 +2485,7 @@ export default function AppLayout({
                     </div>
                   )}
                 </div>
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
               </div>
             </div>
           </div>

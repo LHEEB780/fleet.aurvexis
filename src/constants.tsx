@@ -16,7 +16,8 @@ import {
   ClipboardCheck,
   Bot,
   Cloud,
-  Briefcase
+  Briefcase,
+  Video
 } from 'lucide-react';
 import { UserRole } from './types';
 
@@ -32,6 +33,7 @@ export const MENU_ITEMS: MenuItem[] = [
   // 1. القيادة والتحكم الإستراتيجي (Command & Control)
   { id: 'dashboard', label: 'لوحة التحكم', icon: <LayoutDashboard size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'command' },
   { id: 'maintenance-bot', label: 'مركز التحكم بوكلاء الـ AI', icon: <Bot size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'command' },
+  { id: 'video-tutorials', label: 'مكتبة الفيديوهات والشروحات', icon: <Video size={16} />, roles: ['admin', 'technician', 'viewer'], group: 'command' },
   { id: 'reports', label: 'التقارير والإحصائيات', icon: <BarChart3 size={16} />, roles: ['admin', 'viewer'], group: 'command' },
 
   // 2. إدارة الحركة والعمليات (Fleet Operations)
