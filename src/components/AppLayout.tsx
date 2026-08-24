@@ -1941,19 +1941,19 @@ export default function AppLayout({
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Header */}
-        <header className="min-h-16 py-2 sm:py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 flex flex-wrap items-center justify-between px-3 sm:px-4 lg:px-6 z-20 transition-all duration-300 gap-2.5">
+        <header className="min-h-[64px] py-2 px-3 sm:px-4 lg:px-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800/70 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 z-30 transition-all duration-300">
           {/* Left: Mobile Menu & Search */}
-          <div className="flex items-center gap-2.5 min-w-0 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-[180px] sm:min-w-[220px] flex-1 sm:flex-initial max-w-full sm:max-w-xs md:max-w-sm">
             <button 
-              className="md:hidden w-9 h-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-200/50 dark:border-slate-700/50 shadow-2xs cursor-pointer shrink-0"
+              className="md:hidden w-9.5 h-9.5 flex items-center justify-center text-slate-650 dark:text-slate-250 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-200/60 dark:border-slate-700/60 shadow-2xs cursor-pointer shrink-0 active:scale-95"
               onClick={() => setMobileMenuOpen(true)}
-              title="القائمة"
+              title={language === 'ar' ? 'القائمة الرئيسية' : 'Main Menu'}
             >
               <Menu size={18} />
             </button>
-            <div className="relative w-36 sm:w-44 lg:w-56 transition-all">
-              <span className={`absolute inset-y-0 flex items-center text-slate-400 pointer-events-none ${dir === 'rtl' ? 'right-2.5' : 'left-2.5'}`}>
-                <Search size={13} />
+            <div className="relative flex-1 transition-all">
+              <span className={`absolute inset-y-0 flex items-center text-slate-400 pointer-events-none ${dir === 'rtl' ? 'right-3' : 'left-3'}`}>
+                <Search size={14} />
               </span>
               <input 
                 id="header-search-input"
@@ -1967,512 +1967,542 @@ export default function AppLayout({
                     setActiveTab('vehicles');
                   }
                 }}
-                className={`w-full py-1.5 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/40 dark:border-slate-700/40 focus:bg-white dark:focus:bg-slate-750 focus:border-brand-blue-500 rounded-full transition-all outline-none text-xs font-semibold dark:text-white ${
-                  dir === 'rtl' ? 'pr-8 pl-3' : 'pl-8 pr-3'
+                className={`w-full h-9.5 py-1.5 bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-blue-500 rounded-xl transition-all outline-none text-xs font-semibold dark:text-white shadow-2xs ${
+                  dir === 'rtl' ? 'pr-9 pl-3' : 'pl-9 pr-3'
                 }`}
               />
             </div>
           </div>
 
-          {/* Right: Actions & Tools with Flex Wrap & Spacing */}
-          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2 flex-1 min-w-0">
-            {/* General Barcode Scanner Button */}
-            <button 
-              onClick={() => setIsBarcodeModalOpen(true)}
-              className="h-9 px-2.5 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/70 dark:bg-brand-blue-950/25 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/30 border border-brand-blue-100/30 dark:border-brand-blue-950/40 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs"
-              title={t('common.barcodeScanner')}
-            >
-              <Scan size={14} />
-              <span className="text-[10.5px] font-black hidden xl:inline-block leading-none">
-                {t('common.barcodeScanner').split(' ')[0]}
-              </span>
-            </button>
-
-            {/* External Marketing Site Preview Action */}
-            <button 
-              id="topbar-marketing-site-btn"
-              onClick={() => {
-                if (onNavigateToMarketing) {
-                  onNavigateToMarketing();
-                } else {
-                  localStorage.setItem('saas_portal_mode', 'marketing');
-                  window.dispatchEvent(new Event('storage'));
-                  window.location.reload();
-                }
-              }}
-              className="h-9 px-3 text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 active:scale-95 border border-purple-400/30 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-xs shadow-purple-500/15"
-              title={language === 'ar' ? 'عرض وزيارة الموقع التسويقي العام' : 'Preview & Visit Public Marketing Site'}
-            >
-              <Globe size={13} className="text-purple-200 shrink-0" />
-              <span className="text-[11px] font-black leading-none whitespace-nowrap">
-                {language === 'ar' ? 'الموقع التسويقي' : 'Marketing Site'}
-              </span>
-              <Sparkles size={11} className="text-amber-300 shrink-0 animate-pulse" />
-            </button>
-
-            {/* Quick Language Toggle Button */}
-            <button 
-              onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              className="h-9 px-2.5 text-slate-700 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0"
-              title={language === 'ar' ? 'تغيير اللغة إلى English' : 'تغيير اللغة إلى العربية'}
-            >
-              <Globe size={13} className="text-violet-500 shrink-0" />
-              <span className="text-[10.5px] font-black leading-none">
-                {language === 'ar' ? 'EN' : 'عربي'}
-              </span>
-            </button>
-
-            {/* Quick Font Size Switcher Button */}
-            <div className="relative">
+          {/* Right: Actions & Tools with Organized Functional Groups & Flex Wrap */}
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5 flex-1 min-w-0">
+            {/* Group 1: Operational Action Tools */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* General Barcode Scanner Button */}
               <button 
-                onClick={() => setFontSizeDropdownOpen(!fontSizeDropdownOpen)}
-                className="h-9 px-2.5 text-purple-600 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200/50 dark:border-purple-800/40 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0"
-                title={language === 'ar' ? 'مقياس حجم الخط والتكبير' : 'Font Size Scale'}
+                onClick={() => setIsBarcodeModalOpen(true)}
+                className="h-9.5 px-2.5 sm:px-3 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/80 dark:bg-brand-blue-950/30 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/40 border border-brand-blue-200/40 dark:border-brand-blue-900/50 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95"
+                title={t('common.barcodeScanner')}
               >
-                <Type size={13} className="text-purple-600 dark:text-purple-400" />
-                <span className="text-[10.5px] font-black leading-none">
-                  {fontSizeMode === 'normal' ? 'A' : fontSizeMode === 'large' ? 'A+' : fontSizeMode === 'xlarge' ? 'A++' : 'A+++'}
+                <Scan size={14} className="shrink-0" />
+                <span className="text-[11px] font-black hidden lg:inline-block leading-none">
+                  {t('common.barcodeScanner').split(' ')[0]}
                 </span>
-                <ChevronDown size={10} className={`text-purple-400 transition-transform ${fontSizeDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              <AnimatePresence>
-                {fontSizeDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setFontSizeDropdownOpen(false)} />
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className={`absolute top-11 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-1.5 overflow-hidden ${
-                        dir === 'rtl' ? 'left-0' : 'right-0'
-                      }`}
-                    >
-                      <p className={`px-2.5 py-1 text-[9.5px] uppercase font-black text-slate-400 dark:text-slate-500 ${
-                        dir === 'rtl' ? 'text-right' : 'text-left'
-                      }`}>
-                        {language === 'ar' ? 'مقياس حجم الخط' : 'Font Size'}
-                      </p>
-                      {[
-                        { id: 'normal', label: language === 'ar' ? 'A عادي (100%)' : 'A Normal (100%)' },
-                        { id: 'large', label: language === 'ar' ? 'A+ كبير (118%)' : 'A+ Large (118%)' },
-                        { id: 'xlarge', label: language === 'ar' ? 'A++ كبير جداً (135%)' : 'A++ Extra (135%)' },
-                        { id: 'huge', label: language === 'ar' ? 'A+++ فائق (155%)' : 'A+++ Max (155%)' },
-                      ].map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => {
-                            setFontSizeMode(item.id as 'normal' | 'large' | 'xlarge' | 'huge');
-                            setFontSizeDropdownOpen(false);
-                          }}
-                          className={`w-full px-2.5 py-1.5 text-xs font-bold rounded-xl transition-colors flex items-center justify-between cursor-pointer ${
-                            dir === 'rtl' ? 'text-right' : 'text-left'
-                          } ${
-                            fontSizeMode === item.id 
-                              ? 'bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-black' 
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
-                          }`}
-                        >
-                          <span>{item.label}</span>
-                          {fontSizeMode === item.id && <Check size={12} className="text-purple-600 shrink-0" />}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Quick Access / Mode Changer (Demo Only) */}
-            <div className="relative">
+              {/* Video Tutorials / Academy Quick Action */}
               <button 
-                onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                className="h-9 flex items-center justify-center gap-1 px-2 sm:px-2.5 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0"
-                title={t('common.role')}
-              >
-                <Shield size={13} className="text-brand-blue-600" />
-                <span className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 hidden xl:block">
-                  {
-                    user.role === 'admin' 
-                      ? (language === 'ar' ? 'المدير' : 'Admin')
-                      : user.role === 'technician' 
-                        ? (language === 'ar' ? 'فني' : 'Tech')
-                        : user.role === 'viewer'
-                          ? (language === 'ar' ? 'مراقب' : 'Viewer')
-                          : (language === 'ar' ? 'سائق' : 'Driver')
-                  }
-                </span>
-                <ChevronDown size={9} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-              
-              <AnimatePresence>
-                {roleDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setRoleDropdownOpen(false)} />
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className={`absolute top-11 w-48 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-xl z-30 p-2 overflow-hidden ${
-                        dir === 'rtl' ? 'left-0' : 'right-0'
-                      }`}
-                    >
-                      <p className={`px-3 py-1.5 text-[9.5px] uppercase font-bold text-slate-400 dark:text-slate-500 ${
-                        dir === 'rtl' ? 'text-right' : 'text-left'
-                      }`}>
-                        {language === 'ar' ? 'تبديل الصلاحيات (تجريبي)' : 'Swap Roles (Walkthrough)'}
-                      </p>
-                      {[
-                        { id: 'admin', label: t('common.roleAdmin') || (language === 'ar' ? '🔑 مدير الصيانة (كامل)' : '🔑 Maintenance Admin (Full)') },
-                        { id: 'technician', label: t('common.roleTechnician') || (language === 'ar' ? '🔧 فني ميكانيك أول' : '🔧 Lead Technician') },
-                        { id: 'viewer', label: t('common.roleViewer') || (language === 'ar' ? '👁️ مراقب جودة ونظام (معاينة)' : '👁️ Quality Observer (Read-only)') },
-                        { id: 'driver', label: t('login.roleDriver') || (language === 'ar' ? '🚛 سائق نقل ثقيل' : '🚛 Heavy Driver') },
-                      ].map((r) => (
-                        <button
-                          key={r.id}
-                          onClick={() => {
-                            onRoleChange(r.id as UserRole);
-                            setRoleDropdownOpen(false);
-                          }}
-                          className={`w-full px-3 py-1.5 text-xs font-semibold rounded-xl transition-colors ${
-                            dir === 'rtl' ? 'text-right' : 'text-left'
-                          } ${
-                            user.role === r.id 
-                              ? 'bg-brand-blue-50 dark:bg-brand-blue-900/30 text-brand-blue-700 dark:text-brand-blue-400' 
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
-                          }`}
-                        >
-                          {r.label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Connection / Synchronization Status Badge */}
-            {isSyncing ? (
-              <div 
-                className="h-9 px-2 flex items-center justify-center gap-1 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-150 dark:border-amber-900/50 rounded-xl shadow-2xs shrink-0"
-                title={language === 'ar' ? 'جاري مزامنة تعديلات الصيانة...' : 'Syncing local changes to server...'}
-              >
-                <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping inline-block" />
-                <span className="text-[10px] font-black leading-none text-amber-705 dark:text-amber-300 hidden 2xl:inline-block">
-                  {language === 'ar' ? 'جاري المزامنة...' : 'Syncing...'}
-                </span>
-              </div>
-            ) : isOffline ? (
-              <div 
-                className="h-9 px-2 flex items-center justify-center gap-1 bg-rose-50/90 dark:bg-rose-950/20 text-rose-650 dark:text-rose-400 border border-rose-150 dark:border-rose-900/40 rounded-xl shadow-2xs shrink-0"
-                title={language === 'ar' ? 'وضعية العمل دون اتصال نشطة (تُحفظ التعديلات بالمتصفح)' : 'Running locally in offline cache mode'}
-              >
-                <WifiOff size={13} className="text-rose-500 shrink-0 animate-bounce" />
-                <span className="text-[10px] font-black leading-none text-rose-700 dark:text-rose-300 hidden 2xl:inline-block">
-                  {language === 'ar' ? `دون اتصال ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}` : `Offline ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}`}
-                </span>
-              </div>
-            ) : (
-              <div 
-                className="hidden xl:flex h-9 px-2 items-center justify-center gap-1 bg-emerald-50/50 dark:bg-emerald-950/10 text-emerald-600 dark:text-emerald-450 border border-emerald-100/30 rounded-xl shadow-2xs shrink-0"
-                title={language === 'ar' ? 'الاتصال مستقر مع خادم الصيانة المركزي' : 'Stable server connection'}
-              >
-                <Wifi size={13} className="text-emerald-500 shrink-0" />
-                <span className="text-[9.5px] font-black leading-none text-emerald-700 dark:text-emerald-400 hidden 2xl:inline-block">
-                  {language === 'ar' ? 'متصل' : 'Online'}
-                </span>
-              </div>
-            )}
-
-            {/* Overdue Maintenance Warning Badge */}
-            {overdueMaintenanceCount > 0 && (
-              <button
-                id="overdue-maintenance-warning-badge"
-                onClick={() => {
-                  setActiveTab('periodic-maintenance');
-                  setTimeout(() => {
-                    const scrollOption = { behavior: 'smooth' as ScrollBehavior };
-                    document.getElementById('periodic-maintenance-section')?.scrollIntoView(scrollOption);
-                    window.dispatchEvent(new CustomEvent('notification-navigate', { detail: { tab: 'periodic-maintenance', overdueOnly: true } }));
-                  }, 150);
-                }}
-                className="h-9 px-2 flex items-center justify-center gap-1 bg-red-50 hover:bg-red-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-red-650 dark:text-rose-405 border border-red-150 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-2xs shrink-0 animate-pulse"
-                title={language === 'ar' ? `تنبيه: يوجد ${overdueMaintenanceCount} خدمات صيانة متأخرة!` : `System Alert: ${overdueMaintenanceCount} periodic maintenance services are overdue!`}
-              >
-                <AlertTriangle size={13} className="shrink-0 text-red-650 dark:text-rose-400" />
-                <span className="text-[10px] font-black leading-none text-red-750 dark:text-rose-300">
-                  {overdueMaintenanceCount}
-                </span>
-              </button>
-            )}
-
-            {/* Notifications */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className={`w-9 h-9 flex items-center justify-center hover:bg-slate-100/80 dark:hover:bg-slate-800/80 rounded-xl border border-slate-200/40 dark:border-slate-800/60 relative transition-all cursor-pointer shrink-0 shadow-2xs ${
-                  isNotificationsOpen ? 'text-brand-blue-600 bg-slate-100 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400'
+                id="topbar-video-tutorials-btn"
+                onClick={() => setActiveTab('video-tutorials')}
+                className={`h-9.5 px-2.5 sm:px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95 border ${
+                  activeTab === 'video-tutorials'
+                    ? 'bg-purple-600 text-white border-purple-500 shadow-purple-600/20'
+                    : 'text-purple-700 dark:text-purple-300 bg-purple-50/80 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border-purple-200/50 dark:border-purple-800/40'
                 }`}
-                title={language === 'ar' ? 'الإشعارات الميدانية والتنبيهات' : 'Field Notifications & Alerts'}
+                title={language === 'ar' ? 'أكاديمية وشروحات الفيديو' : 'Video Tutorials & Academy'}
               >
-                <Bell size={16} />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-3.5 h-3.5 flex items-center justify-center text-[8.5px] font-black text-white bg-red-650 rounded-full border border-white dark:border-slate-900 shadow-sm animate-pulse">
-                    {unreadCount}
-                  </span>
-                )}
+                <Video size={14} className="shrink-0 text-purple-600 dark:text-purple-400" />
+                <span className="text-[11px] font-black hidden lg:inline-block leading-none">
+                  {language === 'ar' ? 'شروحات الفيديو' : 'Tutorials'}
+                </span>
               </button>
 
-              <AnimatePresence>
-                {isNotificationsOpen && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setIsNotificationsOpen(false)} />
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className={`absolute top-12 w-80 md:w-96 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 overflow-hidden ${
-                        dir === 'rtl' ? 'left-0' : 'right-0'
-                      }`}
-                    >
-                      {/* Header */}
-                      <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Bell size={16} className="text-brand-blue-600 dark:text-brand-blue-400 animate-pulse" />
-                          <h4 className="text-sm font-black text-slate-800 dark:text-slate-150">
-                            {language === 'ar' ? 'الإشعارات الميدانية والتنبيهات' : 'Field Notifications & Alerts'}
-                          </h4>
+              {/* External Marketing Site Preview Action */}
+              <button 
+                id="topbar-marketing-site-btn"
+                onClick={() => {
+                  if (onNavigateToMarketing) {
+                    onNavigateToMarketing();
+                  } else {
+                    localStorage.setItem('saas_portal_mode', 'marketing');
+                    window.dispatchEvent(new Event('storage'));
+                    window.location.reload();
+                  }
+                }}
+                className="h-9.5 px-2.5 sm:px-3 text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 active:scale-95 border border-purple-400/30 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-xs shadow-purple-500/15"
+                title={language === 'ar' ? 'عرض وزيارة الموقع التسويقي العام' : 'Preview & Visit Public Marketing Site'}
+              >
+                <Globe size={13} className="text-purple-200 shrink-0" />
+                <span className="text-[11px] font-black leading-none whitespace-nowrap hidden sm:inline-block">
+                  {language === 'ar' ? 'الموقع التسويقي' : 'Marketing Site'}
+                </span>
+                <Sparkles size={11} className="text-amber-300 shrink-0 animate-pulse" />
+              </button>
+            </div>
+
+            {/* Group 2: User Preferences & Role */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Quick Language Toggle Button */}
+              <button 
+                onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
+                className="h-9.5 px-2.5 sm:px-3 text-slate-700 dark:text-slate-200 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700 border border-slate-200/50 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95"
+                title={language === 'ar' ? 'تغيير اللغة إلى English' : 'تغيير اللغة إلى العربية'}
+              >
+                <Globe size={13} className="text-violet-500 shrink-0" />
+                <span className="text-[11px] font-black leading-none">
+                  {language === 'ar' ? 'EN' : 'عربي'}
+                </span>
+              </button>
+
+              {/* Quick Font Size Switcher Button */}
+              <div className="relative">
+                <button 
+                  onClick={() => setFontSizeDropdownOpen(!fontSizeDropdownOpen)}
+                  className="h-9.5 px-2.5 sm:px-3 text-purple-600 dark:text-purple-300 bg-purple-50/80 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200/50 dark:border-purple-800/40 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95"
+                  title={language === 'ar' ? 'مقياس حجم الخط والتكبير' : 'Font Size Scale'}
+                >
+                  <Type size={13} className="text-purple-600 dark:text-purple-400" />
+                  <span className="text-[11px] font-black leading-none">
+                    {fontSizeMode === 'normal' ? 'A' : fontSizeMode === 'large' ? 'A+' : fontSizeMode === 'xlarge' ? 'A++' : 'A+++'}
+                  </span>
+                  <ChevronDown size={10} className={`text-purple-400 transition-transform ${fontSizeDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {fontSizeDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setFontSizeDropdownOpen(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className={`absolute top-12 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-1.5 overflow-hidden ${
+                          dir === 'rtl' ? 'left-0' : 'right-0'
+                        }`}
+                      >
+                        <p className={`px-2.5 py-1 text-[9.5px] uppercase font-black text-slate-400 dark:text-slate-550 ${
+                          dir === 'rtl' ? 'text-right' : 'text-left'
+                        }`}>
+                          {language === 'ar' ? 'مقياس حجم الخط' : 'Font Size'}
+                        </p>
+                        {[
+                          { id: 'normal', label: language === 'ar' ? 'A عادي (100%)' : 'A Normal (100%)' },
+                          { id: 'large', label: language === 'ar' ? 'A+ كبير (118%)' : 'A+ Large (118%)' },
+                          { id: 'xlarge', label: language === 'ar' ? 'A++ كبير جداً (135%)' : 'A++ Extra (135%)' },
+                          { id: 'huge', label: language === 'ar' ? 'A+++ فائق (155%)' : 'A+++ Max (155%)' },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setFontSizeMode(item.id as 'normal' | 'large' | 'xlarge' | 'huge');
+                              setFontSizeDropdownOpen(false);
+                            }}
+                            className={`w-full px-2.5 py-1.5 text-xs font-bold rounded-xl transition-colors flex items-center justify-between cursor-pointer ${
+                              dir === 'rtl' ? 'text-right' : 'text-left'
+                            } ${
+                              fontSizeMode === item.id 
+                                ? 'bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-black' 
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                            }`}
+                          >
+                            <span>{item.label}</span>
+                            {fontSizeMode === item.id && <Check size={12} className="text-purple-600 shrink-0" />}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Quick Access / Mode Changer */}
+              <div className="relative">
+                <button 
+                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                  className="h-9.5 flex items-center justify-center gap-1 px-2.5 sm:px-3 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/50 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95"
+                  title={t('common.role')}
+                >
+                  <Shield size={13} className="text-brand-blue-600" />
+                  <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 hidden xl:block">
+                    {
+                      user.role === 'admin' 
+                        ? (language === 'ar' ? 'المدير' : 'Admin')
+                        : user.role === 'technician' 
+                          ? (language === 'ar' ? 'فني' : 'Tech')
+                          : user.role === 'viewer'
+                            ? (language === 'ar' ? 'مراقب' : 'Viewer')
+                            : (language === 'ar' ? 'سائق' : 'Driver')
+                    }
+                  </span>
+                  <ChevronDown size={9} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <AnimatePresence>
+                  {roleDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setRoleDropdownOpen(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className={`absolute top-12 w-48 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-xl z-50 p-2 overflow-hidden ${
+                          dir === 'rtl' ? 'left-0' : 'right-0'
+                        }`}
+                      >
+                        <p className={`px-3 py-1.5 text-[9.5px] uppercase font-bold text-slate-400 dark:text-slate-550 ${
+                          dir === 'rtl' ? 'text-right' : 'text-left'
+                        }`}>
+                          {language === 'ar' ? 'تبديل الصلاحيات (تجريبي)' : 'Swap Roles (Walkthrough)'}
+                        </p>
+                        {[
+                          { id: 'admin', label: t('common.roleAdmin') || (language === 'ar' ? '🔑 مدير الصيانة (كامل)' : '🔑 Maintenance Admin (Full)') },
+                          { id: 'technician', label: t('common.roleTechnician') || (language === 'ar' ? '🔧 فني ميكانيك أول' : '🔧 Lead Technician') },
+                          { id: 'viewer', label: t('common.roleViewer') || (language === 'ar' ? '👁️ مراقب جودة ونظام (معاينة)' : '👁️ Quality Observer (Read-only)') },
+                          { id: 'driver', label: t('login.roleDriver') || (language === 'ar' ? '🚛 سائق نقل ثقيل' : '🚛 Heavy Driver') },
+                        ].map((r) => (
+                          <button
+                            key={r.id}
+                            onClick={() => {
+                              onRoleChange(r.id as UserRole);
+                              setRoleDropdownOpen(false);
+                            }}
+                            className={`w-full px-3 py-1.5 text-xs font-semibold rounded-xl transition-colors ${
+                              dir === 'rtl' ? 'text-right' : 'text-left'
+                            } ${
+                              user.role === r.id 
+                                ? 'bg-brand-blue-50 dark:bg-brand-blue-900/30 text-brand-blue-700 dark:text-brand-blue-400 font-black' 
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                            }`}
+                          >
+                            {r.label}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Group 3: Live Status Indicators & Alerts */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Connection / Synchronization Status Badge */}
+              {isSyncing ? (
+                <div 
+                  className="h-9.5 px-2.5 flex items-center justify-center gap-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50 rounded-xl shadow-2xs shrink-0"
+                  title={language === 'ar' ? 'جاري مزامنة تعديلات الصيانة...' : 'Syncing local changes to server...'}
+                >
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping inline-block" />
+                  <span className="text-[10.5px] font-black leading-none text-amber-705 dark:text-amber-300 hidden 2xl:inline-block">
+                    {language === 'ar' ? 'جاري المزامنة...' : 'Syncing...'}
+                  </span>
+                </div>
+              ) : isOffline ? (
+                <div 
+                  className="h-9.5 px-2.5 flex items-center justify-center gap-1.5 bg-rose-50/90 dark:bg-rose-950/20 text-rose-650 dark:text-rose-400 border border-rose-200/50 dark:border-rose-900/40 rounded-xl shadow-2xs shrink-0"
+                  title={language === 'ar' ? 'وضعية العمل دون اتصال نشطة (تُحفظ التعديلات بالمتصفح)' : 'Running locally in offline cache mode'}
+                >
+                  <WifiOff size={13} className="text-rose-500 shrink-0 animate-bounce" />
+                  <span className="text-[10.5px] font-black leading-none text-rose-700 dark:text-rose-300 hidden 2xl:inline-block">
+                    {language === 'ar' ? `دون اتصال ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}` : `Offline ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}`}
+                  </span>
+                </div>
+              ) : (
+                <div 
+                  className="hidden xl:flex h-9.5 px-2.5 items-center justify-center gap-1.5 bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450 border border-emerald-200/40 rounded-xl shadow-2xs shrink-0"
+                  title={language === 'ar' ? 'الاتصال مستقر مع خادم الصيانة المركزي' : 'Stable server connection'}
+                >
+                  <Wifi size={13} className="text-emerald-500 shrink-0" />
+                  <span className="text-[10px] font-black leading-none text-emerald-700 dark:text-emerald-400 hidden 2xl:inline-block">
+                    {language === 'ar' ? 'متصل' : 'Online'}
+                  </span>
+                </div>
+              )}
+
+              {/* Overdue Maintenance Warning Badge */}
+              {overdueMaintenanceCount > 0 && (
+                <button
+                  id="overdue-maintenance-warning-badge"
+                  onClick={() => {
+                    setActiveTab('periodic-maintenance');
+                    setTimeout(() => {
+                      const scrollOption = { behavior: 'smooth' as ScrollBehavior };
+                      document.getElementById('periodic-maintenance-section')?.scrollIntoView(scrollOption);
+                      window.dispatchEvent(new CustomEvent('notification-navigate', { detail: { tab: 'periodic-maintenance', overdueOnly: true } }));
+                    }, 150);
+                  }}
+                  className="h-9.5 px-2.5 flex items-center justify-center gap-1 bg-red-50 hover:bg-red-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-red-650 dark:text-rose-400 border border-red-200/60 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-2xs shrink-0 animate-pulse active:scale-95"
+                  title={language === 'ar' ? `تنبيه: يوجد ${overdueMaintenanceCount} خدمات صيانة متأخرة!` : `System Alert: ${overdueMaintenanceCount} periodic maintenance services are overdue!`}
+                >
+                  <AlertTriangle size={14} className="shrink-0 text-red-650 dark:text-rose-400" />
+                  <span className="text-[10.5px] font-black leading-none text-red-750 dark:text-rose-300">
+                    {overdueMaintenanceCount}
+                  </span>
+                </button>
+              )}
+
+              {/* Notifications */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                  className={`w-9.5 h-9.5 flex items-center justify-center hover:bg-slate-100/90 dark:hover:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-800/80 relative transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 ${
+                    isNotificationsOpen ? 'text-brand-blue-600 bg-slate-100 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400'
+                  }`}
+                  title={language === 'ar' ? 'الإشعارات الميدانية والتنبيهات' : 'Field Notifications & Alerts'}
+                >
+                  <Bell size={16} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-3.5 h-3.5 flex items-center justify-center text-[8.5px] font-black text-white bg-red-650 rounded-full border border-white dark:border-slate-900 shadow-sm animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {isNotificationsOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className={`absolute top-12 w-80 md:w-96 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden ${
+                          dir === 'rtl' ? 'left-0' : 'right-0'
+                        }`}
+                      >
+                        {/* Header */}
+                        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Bell size={16} className="text-brand-blue-600 dark:text-brand-blue-400 animate-pulse" />
+                            <h4 className="text-sm font-black text-slate-800 dark:text-slate-150">
+                              {language === 'ar' ? 'الإشعارات الميدانية والتنبيهات' : 'Field Notifications & Alerts'}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsBrowserNotifModalOpen(true)}
+                              className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 transition-colors cursor-pointer"
+                              title={language === 'ar' ? 'إعدادات إشعارات المتصفح الفورية' : 'Browser Push Notification Settings'}
+                            >
+                              <Settings size={14} />
+                            </button>
+                            {unreadCount > 0 && (
+                              <button 
+                                onClick={markAllAsRead}
+                                className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                              >
+                                {language === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all as read'}
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
+
+                        {/* Browser Push Fast Status Banner */}
+                        <div className="px-3.5 py-2 bg-gradient-to-r from-indigo-50/80 to-sky-50/80 dark:from-indigo-950/30 dark:to-sky-950/30 border-b border-indigo-100/60 dark:border-indigo-900/40 flex items-center justify-between gap-2 select-none">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${
+                              getNotificationPermission() === 'granted' 
+                                ? 'bg-emerald-500 animate-pulse' 
+                                : getNotificationPermission() === 'denied' 
+                                ? 'bg-rose-500' 
+                                : 'bg-amber-500'
+                            }`} />
+                            <span className="text-[10px] font-black text-slate-700 dark:text-slate-200 truncate">
+                              {getNotificationPermission() === 'granted' 
+                                ? (language === 'ar' ? 'إشعارات المتصفح نشطة ومفعلة 🔔' : 'Push notifications active 🔔')
+                                : (language === 'ar' ? 'تفعيل إشعارات المتصفح الفورية' : 'Enable browser push alerts')}
+                            </span>
+                          </div>
                           <button
                             type="button"
                             onClick={() => setIsBrowserNotifModalOpen(true)}
-                            className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 transition-colors cursor-pointer"
-                            title={language === 'ar' ? 'إعدادات إشعارات المتصفح الفورية' : 'Browser Push Notification Settings'}
+                            className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[9px] font-extrabold cursor-pointer transition-all shrink-0"
                           >
-                            <Settings size={14} />
-                          </button>
-                          {unreadCount > 0 && (
-                            <button 
-                              onClick={markAllAsRead}
-                              className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors cursor-pointer"
-                            >
-                              {language === 'ar' ? 'تحديد الكل كمقروء' : 'Mark all as read'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Browser Push Fast Status Banner */}
-                      <div className="px-3.5 py-2 bg-gradient-to-r from-indigo-50/80 to-sky-50/80 dark:from-indigo-950/30 dark:to-sky-950/30 border-b border-indigo-100/60 dark:border-indigo-900/40 flex items-center justify-between gap-2 select-none">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${
-                            getNotificationPermission() === 'granted' 
-                              ? 'bg-emerald-500 animate-pulse' 
-                              : getNotificationPermission() === 'denied' 
-                              ? 'bg-rose-500' 
-                              : 'bg-amber-500'
-                          }`} />
-                          <span className="text-[10px] font-black text-slate-700 dark:text-slate-200 truncate">
-                            {getNotificationPermission() === 'granted' 
-                              ? (language === 'ar' ? 'إشعارات المتصفح نشطة ومفعلة 🔔' : 'Push notifications active 🔔')
-                              : (language === 'ar' ? 'تفعيل إشعارات المتصفح الفورية' : 'Enable browser push alerts')}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setIsBrowserNotifModalOpen(true)}
-                          className="px-2 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-[9px] font-extrabold cursor-pointer transition-all shrink-0"
-                        >
-                          {getNotificationPermission() === 'granted'
-                            ? (language === 'ar' ? 'تخصيص' : 'Settings')
-                            : (language === 'ar' ? 'تفعيل الآن' : 'Enable')}
-                        </button>
-                      </div>
-
-                      {/* Inspection Stages Mini Dashboard */}
-                      <div className="p-3 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 select-none">
-                        <div className="text-[9.5px] font-extrabold text-slate-400 dark:text-slate-550 mb-2 uppercase tracking-wide flex items-center gap-1">
-                          <Activity size={11} className="text-brand-blue-500 shrink-0" />
-                          <span>{language === 'ar' ? 'حالة فحص الأسطول الميدانية اللحظية (اضغط للتصفية)' : 'Real-time Fleet Inspection Stages (Click to Filter)'}</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {/* Stage 1 */}
-                          <button
-                            onClick={() => setNotificationsFilter(notificationsFilter === 'initial' ? 'all' : 'initial')}
-                            className={`p-2 bg-white dark:bg-slate-900 border rounded-xl hover:shadow-xs transition-all flex flex-col items-center justify-center text-center cursor-pointer outline-none ${
-                              notificationsFilter === 'initial' 
-                                ? 'border-amber-400 dark:border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-400/30' 
-                                : 'border-slate-100 dark:border-slate-800'
-                            }`}
-                          >
-                            <span className="text-xs font-black text-amber-550 dark:text-amber-400 block mb-0.5">{inspectionStats.initial}</span>
-                            <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 leading-tight">
-                              {language === 'ar' ? 'الفحص المبدئي' : 'Initial Check'}
-                            </span>
-                          </button>
-                          
-                          {/* Stage 2 */}
-                          <button
-                            onClick={() => setNotificationsFilter(notificationsFilter === 'final' ? 'all' : 'final')}
-                            className={`p-2 bg-white dark:bg-slate-900 border rounded-xl hover:shadow-xs transition-all flex flex-col items-center justify-center text-center cursor-pointer outline-none ${
-                              notificationsFilter === 'final' 
-                                ? 'border-indigo-400 dark:border-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-950/20 ring-2 ring-indigo-400/30' 
-                                : 'border-slate-100 dark:border-slate-800'
-                            }`}
-                          >
-                            <span className="text-xs font-black text-indigo-650 dark:text-indigo-400 block mb-0.5">{inspectionStats.final}</span>
-                            <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 leading-tight">
-                              {language === 'ar' ? 'الفحص النهائي' : 'Final Check'}
-                            </span>
-                          </button>
-
-                          {/* Stage 3 */}
-                          <button
-                            onClick={() => setNotificationsFilter(notificationsFilter === 'quality' ? 'all' : 'quality')}
-                            className={`p-2 bg-white dark:bg-slate-900 border rounded-xl hover:shadow-xs transition-all flex flex-col items-center justify-center text-center cursor-pointer outline-none ${
-                              notificationsFilter === 'quality' 
-                                ? 'border-emerald-400 dark:border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20 ring-2 ring-emerald-405/30' 
-                                : 'border-slate-100 dark:border-slate-800'
-                            }`}
-                          >
-                            <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 block mb-0.5">{inspectionStats.certified}</span>
-                            <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 leading-tight">
-                              {language === 'ar' ? 'معتمد الجودة' : 'Quality Passed'}
-                            </span>
+                            {getNotificationPermission() === 'granted'
+                              ? (language === 'ar' ? 'تخصيص' : 'Settings')
+                              : (language === 'ar' ? 'تفعيل الآن' : 'Enable')}
                           </button>
                         </div>
-                      </div>
 
-                      {/* Unified Segment Filtering Controls */}
-                      <div className="px-3 py-2 bg-slate-50/50 dark:bg-slate-900/35 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between gap-1 select-none">
-                        <button
-                          onClick={() => setNotificationsFilter('all')}
-                          className={`px-2.5 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                            notificationsFilter === 'all'
-                              ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs'
-                              : 'bg-slate-100/80 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-700/80'
-                          }`}
-                        >
-                          {language === 'ar' ? 'كل التنبيهات' : 'All'}
-                        </button>
-                        <button
-                          onClick={() => setNotificationsFilter('initial')}
-                          className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
-                            notificationsFilter === 'initial'
-                              ? 'bg-amber-500 text-white shadow-xs'
-                              : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20'
-                          }`}
-                        >
-                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full shrink-0" />
-                          <span>{language === 'ar' ? 'مبدئي' : 'Initial'}</span>
-                        </button>
-                        <button
-                          onClick={() => setNotificationsFilter('final')}
-                          className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
-                            notificationsFilter === 'final'
-                              ? 'bg-indigo-600 text-white shadow-xs'
-                              : 'bg-indigo-600/10 text-indigo-700 dark:text-indigo-455 hover:bg-indigo-600/20'
-                          }`}
-                        >
-                          <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full shrink-0" />
-                          <span>{language === 'ar' ? 'نهائي' : 'Final'}</span>
-                        </button>
-                        <button
-                          onClick={() => setNotificationsFilter('quality')}
-                          className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
-                            notificationsFilter === 'quality'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-450 hover:bg-emerald-600/20'
-                          }`}
-                        >
-                          <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full shrink-0" />
-                          <span>{language === 'ar' ? 'جودة' : 'Quality'}</span>
-                        </button>
-                      </div>
-
-                      {/* Content */}
-                      <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 bg-slate-50/10 dark:bg-slate-900/15">
-                        {filteredNotifications.length === 0 ? (
-                          <div className="p-8 text-center text-slate-400 dark:text-slate-550 flex flex-col items-center gap-2">
-                            <Bell size={28} className="opacity-20 text-slate-400 mb-1 animate-bounce" />
-                            <p className="text-xs font-bold leading-normal">
-                              {language === 'ar' 
-                                ? 'لا توجد إشعارات تطابق هذا الفلتر حالياً' 
-                                : 'No notifications match this filter.'}
-                            </p>
-                            <button
-                              onClick={() => setNotificationsFilter('all')}
-                              className="text-[10px] font-bold text-indigo-600 hover:underline dark:text-indigo-400 cursor-pointer"
-                            >
-                              {language === 'ar' ? 'عرض جميع التنبيهات والطلبات' : 'Clear filter and view all'}
-                            </button>
+                        {/* Inspection Stages Mini Dashboard */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 select-none">
+                          <div className="text-[9.5px] font-extrabold text-slate-400 dark:text-slate-550 mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <Activity size={11} className="text-brand-blue-500 shrink-0" />
+                            <span>{language === 'ar' ? 'حالة فحص الأسطول الميدانية اللحظية (اضغط للتصفية)' : 'Real-time Fleet Inspection Stages (Click to Filter)'}</span>
                           </div>
-                        ) : (
-                          filteredNotifications.map((n, notifIdx) => (
-                            <div 
-                              key={`notif-item-${n.id || notifIdx}-${notifIdx}`}
-                              onClick={() => handleNotificationClick(n)}
-                              className={`p-3.5 transition-colors cursor-pointer flex gap-3 items-start relative hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
-                                !n.read ? 'bg-indigo-50/10 dark:bg-indigo-950/10' : ''
+                          <div className="grid grid-cols-3 gap-2">
+                            {/* Stage 1 */}
+                            <button
+                              onClick={() => setNotificationsFilter(notificationsFilter === 'initial' ? 'all' : 'initial')}
+                              className={`p-2 bg-white dark:bg-slate-900 border rounded-xl hover:shadow-xs transition-all flex flex-col items-center justify-center text-center cursor-pointer outline-none ${
+                                notificationsFilter === 'initial' 
+                                  ? 'border-amber-400 dark:border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-400/30' 
+                                  : 'border-slate-100 dark:border-slate-800'
                               }`}
                             >
-                              {/* Dot status for unread */}
-                              {!n.read && (
-                                <span className={`absolute ${dir === 'rtl' ? 'left-3' : 'right-3'} top-4 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full`} />
-                              )}
+                              <span className="text-xs font-black text-amber-550 dark:text-amber-400 block mb-0.5">{inspectionStats.initial}</span>
+                              <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 leading-tight">
+                                {language === 'ar' ? 'الفحص المبدئي' : 'Initial Check'}
+                              </span>
+                            </button>
+                            
+                            {/* Stage 2 */}
+                            <button
+                              onClick={() => setNotificationsFilter(notificationsFilter === 'final' ? 'all' : 'final')}
+                              className={`p-2 bg-white dark:bg-slate-900 border rounded-xl hover:shadow-xs transition-all flex flex-col items-center justify-center text-center cursor-pointer outline-none ${
+                                notificationsFilter === 'final' 
+                                  ? 'border-indigo-400 dark:border-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-950/20 ring-2 ring-indigo-400/30' 
+                                  : 'border-slate-100 dark:border-slate-800'
+                              }`}
+                            >
+                              <span className="text-xs font-black text-indigo-650 dark:text-indigo-400 block mb-0.5">{inspectionStats.final}</span>
+                              <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 leading-tight">
+                                {language === 'ar' ? 'الفحص النهائي' : 'Final Check'}
+                              </span>
+                            </button>
 
-                              {/* Icon Indicator based on type */}
-                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                                n.type === 'warning' 
-                                  ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-500' 
-                                  : n.type === 'danger' 
-                                    ? 'bg-red-50 dark:bg-red-950/30 text-red-500' 
-                                    : n.type === 'success' 
-                                      ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-500' 
-                                      : 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500'
-                              }`}>
-                                <Bell size={14} className={!n.read ? 'animate-pulse' : ''} />
-                              </div>
+                            {/* Stage 3 */}
+                            <button
+                              onClick={() => setNotificationsFilter(notificationsFilter === 'quality' ? 'all' : 'quality')}
+                              className={`p-2 bg-white dark:bg-slate-900 border rounded-xl hover:shadow-xs transition-all flex flex-col items-center justify-center text-center cursor-pointer outline-none ${
+                                notificationsFilter === 'quality' 
+                                  ? 'border-emerald-400 dark:border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20 ring-2 ring-emerald-405/30' 
+                                  : 'border-slate-100 dark:border-slate-800'
+                              }`}
+                            >
+                              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 block mb-0.5">{inspectionStats.certified}</span>
+                              <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 leading-tight">
+                                {language === 'ar' ? 'معتمد الجودة' : 'Quality Passed'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
 
-                              <div className={`min-w-0 pr-4 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                                <h5 className={`text-xs font-semibold ${!n.read ? 'text-slate-900 dark:text-white font-black animate-pulse' : 'text-slate-700 dark:text-slate-300'}`}>
-                                  {language === 'ar' ? n.titleAr : n.titleEn}
-                                </h5>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                                  {language === 'ar' ? n.msgAr : n.msgEn}
-                                </p>
-                                <span className="text-[9.5px] text-slate-400 dark:text-slate-550 font-extrabold flex items-center gap-1 mt-1.5 leading-none">
-                                  <Clock size={11} className="text-slate-400 dark:text-slate-550 shrink-0" />
-                                  <span>{language === 'ar' ? n.timeAr : n.timeEn}</span>
-                                </span>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      {/* Footer */}
-                      {notifications.length > 0 && (
-                        <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-center">
-                          <button 
-                            onClick={clearAllNotifications}
-                            className="text-[10px] text-red-500 hover:text-red-700 font-black cursor-pointer uppercase tracking-wider"
+                        {/* Unified Segment Filtering Controls */}
+                        <div className="px-3 py-2 bg-slate-50/50 dark:bg-slate-900/35 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between gap-1 select-none">
+                          <button
+                            onClick={() => setNotificationsFilter('all')}
+                            className={`px-2.5 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                              notificationsFilter === 'all'
+                                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs'
+                                : 'bg-slate-100/80 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-700/80'
+                            }`}
                           >
-                            {language === 'ar' ? 'مسح الكل' : 'Clear All'}
+                            {language === 'ar' ? 'كل التنبيهات' : 'All'}
+                          </button>
+                          <button
+                            onClick={() => setNotificationsFilter('initial')}
+                            className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                              notificationsFilter === 'initial'
+                                ? 'bg-amber-500 text-white shadow-xs'
+                                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20'
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full shrink-0" />
+                            <span>{language === 'ar' ? 'مبدئي' : 'Initial'}</span>
+                          </button>
+                          <button
+                            onClick={() => setNotificationsFilter('final')}
+                            className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                              notificationsFilter === 'final'
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'bg-indigo-600/10 text-indigo-700 dark:text-indigo-455 hover:bg-indigo-600/20'
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full shrink-0" />
+                            <span>{language === 'ar' ? 'نهائي' : 'Final'}</span>
+                          </button>
+                          <button
+                            onClick={() => setNotificationsFilter('quality')}
+                            className={`px-2 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                              notificationsFilter === 'quality'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-450 hover:bg-emerald-600/20'
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full shrink-0" />
+                            <span>{language === 'ar' ? 'جودة' : 'Quality'}</span>
                           </button>
                         </div>
-                      )}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+
+                        {/* Content */}
+                        <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 bg-slate-50/10 dark:bg-slate-900/15">
+                          {filteredNotifications.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 dark:text-slate-550 flex flex-col items-center gap-2">
+                              <Bell size={28} className="opacity-20 text-slate-400 mb-1 animate-bounce" />
+                              <p className="text-xs font-bold leading-normal">
+                                {language === 'ar' 
+                                  ? 'لا توجد إشعارات تطابق هذا الفلتر حالياً' 
+                                  : 'No notifications match this filter.'}
+                              </p>
+                              <button
+                                onClick={() => setNotificationsFilter('all')}
+                                className="text-[10px] font-bold text-indigo-600 hover:underline dark:text-indigo-400 cursor-pointer"
+                              >
+                                {language === 'ar' ? 'عرض جميع التنبيهات والطلبات' : 'Clear filter and view all'}
+                              </button>
+                            </div>
+                          ) : (
+                            filteredNotifications.map((n, notifIdx) => (
+                              <div 
+                                key={`notif-item-${n.id || notifIdx}-${notifIdx}`}
+                                onClick={() => handleNotificationClick(n)}
+                                className={`p-3.5 transition-colors cursor-pointer flex gap-3 items-start relative hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                                  !n.read ? 'bg-indigo-50/10 dark:bg-indigo-950/10' : ''
+                                }`}
+                              >
+                                {/* Dot status for unread */}
+                                {!n.read && (
+                                  <span className={`absolute ${dir === 'rtl' ? 'left-3' : 'right-3'} top-4 w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full`} />
+                                )}
+
+                                {/* Icon Indicator based on type */}
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                  n.type === 'warning' 
+                                    ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-500' 
+                                    : n.type === 'danger' 
+                                      ? 'bg-red-50 dark:bg-red-950/30 text-red-500' 
+                                      : n.type === 'success' 
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-500' 
+                                        : 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-500'
+                                }`}>
+                                  <Bell size={14} className={!n.read ? 'animate-pulse' : ''} />
+                                </div>
+
+                                <div className={`min-w-0 pr-4 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                                  <h5 className={`text-xs font-semibold ${!n.read ? 'text-slate-900 dark:text-white font-black animate-pulse' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    {language === 'ar' ? n.titleAr : n.titleEn}
+                                  </h5>
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                    {language === 'ar' ? n.msgAr : n.msgEn}
+                                  </p>
+                                  <span className="text-[9.5px] text-slate-400 dark:text-slate-550 font-extrabold flex items-center gap-1 mt-1.5 leading-none">
+                                    <Clock size={11} className="text-slate-400 dark:text-slate-550 shrink-0" />
+                                    <span>{language === 'ar' ? n.timeAr : n.timeEn}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Footer */}
+                        {notifications.length > 0 && (
+                          <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-center">
+                            <button 
+                              onClick={clearAllNotifications}
+                              className="text-[10px] text-red-500 hover:text-red-700 font-black cursor-pointer uppercase tracking-wider"
+                            >
+                              {language === 'ar' ? 'مسح الكل' : 'Clear All'}
+                            </button>
+                          </div>
+                        )}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
-            {/* User Profile Info */}
-            <div className="flex items-center gap-2 ps-1 pe-0.5 shrink-0">
+            {/* Group 4: User Profile Capsule */}
+            <div 
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="flex items-center gap-2 ps-1.5 pe-1 py-1 rounded-2xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all cursor-pointer shrink-0 border border-transparent hover:border-slate-200/50 dark:hover:border-slate-700/50"
+              title={language === 'ar' ? 'إعدادات الحساب والملف الشخصي' : 'Account & Profile Settings'}
+            >
               <div className={`hidden xl:block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                 <p className="text-xs font-bold text-slate-900 dark:text-white leading-none mb-0.5 max-w-[110px] truncate">{profileName}</p>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">

@@ -3,6 +3,16 @@ import { vehicles, maintenanceOrders, inventory, technicians } from "../data";
 export interface AIMessage {
   role: 'user' | 'model';
   text: string;
+  attachment?: {
+    id?: string;
+    name?: string;
+    size?: number;
+    type?: string;
+    dataUrl?: string;
+    previewUrl?: string;
+    isImage?: boolean;
+  };
+  timestamp?: Date;
 }
 
 export async function getAIProjectManagerInsight(messages: AIMessage[], customModifier?: string): Promise<string> {

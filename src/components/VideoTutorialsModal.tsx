@@ -30,7 +30,6 @@ import {
   FileSpreadsheet,
   QrCode,
   Layers,
-  CheckCircle,
   PlaySquare,
   Sun,
   Moon,
@@ -52,7 +51,16 @@ import {
   HardHat,
   Zap,
   Gauge,
-  Heart
+  Heart,
+  Upload,
+  Database,
+  AlertCircle,
+  FileText,
+  CheckCheck,
+  ArrowRight,
+  Link2,
+  Edit3,
+  Tv
 } from 'lucide-react';
 import { useLanguage } from '../services/LanguageContext';
 
@@ -280,6 +288,7 @@ export interface VideoTutorial {
   categoryLabelAr: string;
   categoryLabelEn: string;
   duration: string;
+  videoUrl?: string;
   levelAr: 'مبتدئ' | 'متوسط' | 'متقدم' | 'للمدراء والتنفيذيين' | 'فني وميداني';
   levelEn: 'Beginner' | 'Intermediate' | 'Advanced' | 'Executive' | 'Field & Tech';
   badgeAr?: string;
@@ -324,6 +333,25 @@ export interface VideoTutorial {
   };
 }
 
+export const formatEmbedUrl = (rawUrl: string): string => {
+  if (!rawUrl) return '';
+  const trimmed = rawUrl.trim();
+  
+  // YouTube watch format: youtube.com/watch?v=ID or youtu.be/ID or youtube.com/shorts/ID
+  const ytMatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`;
+  }
+  
+  // Vimeo format: vimeo.com/ID
+  const vimeoMatch = trimmed.match(/vimeo\.com\/(\d+)/i);
+  if (vimeoMatch && vimeoMatch[1]) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+  }
+  
+  return trimmed;
+};
+
 export const VIDEO_TUTORIALS_DATA: VideoTutorial[] = [
   {
     id: 'vid-1',
@@ -335,6 +363,7 @@ export const VIDEO_TUTORIALS_DATA: VideoTutorial[] = [
     categoryLabelAr: 'إدارة وتأسيس الأسطول',
     categoryLabelEn: 'Fleet Setup & CSV',
     duration: '06:45',
+    videoUrl: 'https://www.youtube.com/embed/9B0e3u5Kx6Q',
     levelAr: 'مبتدئ',
     levelEn: 'Beginner',
     badgeAr: 'الأكثر مشاهدة ⭐',
@@ -420,6 +449,7 @@ export const VIDEO_TUTORIALS_DATA: VideoTutorial[] = [
     categoryLabelAr: 'الفحوصات ورموز QR',
     categoryLabelEn: 'Inspections & QR',
     duration: '05:30',
+    videoUrl: 'https://www.youtube.com/embed/hJ8y1L4OswY',
     levelAr: 'فني وميداني',
     levelEn: 'Field & Tech',
     badgeAr: 'ميداني وسريع 📱',
@@ -499,6 +529,7 @@ export const VIDEO_TUTORIALS_DATA: VideoTutorial[] = [
     categoryLabelAr: 'أوامر الصيانة والورش',
     categoryLabelEn: 'Work Orders & Repairs',
     duration: '08:15',
+    videoUrl: 'https://www.youtube.com/embed/aP9W7y8lB5A',
     levelAr: 'متوسط',
     levelEn: 'Intermediate',
     badgeAr: 'شرح فني متقدم 🔧',
@@ -578,6 +609,7 @@ export const VIDEO_TUTORIALS_DATA: VideoTutorial[] = [
     categoryLabelAr: 'المستودع وقطع الغيار',
     categoryLabelEn: 'Inventory & Parts',
     duration: '06:10',
+    videoUrl: 'https://www.youtube.com/embed/dK9E6hPqL60',
     levelAr: 'متوسط',
     levelEn: 'Intermediate',
     badgeAr: 'تحكم بالمخزون 📦',
@@ -657,6 +689,7 @@ export const VIDEO_TUTORIALS_DATA: VideoTutorial[] = [
     categoryLabelAr: 'الصيانة الوقائية PM',
     categoryLabelEn: 'Preventative PM',
     duration: '07:50',
+    videoUrl: 'https://www.youtube.com/embed/eX9Q0zOq7Gk',
     levelAr: 'متوسط',
     levelEn: 'Intermediate',
     badgeAr: 'أساسي لكل أسطول 🛡️',
@@ -727,6 +760,7 @@ export const VIDEO_TUTORIALS_DATA: VideoTutorial[] = [
     categoryLabelAr: 'التحليلات والذكاء الاصطناعي',
     categoryLabelEn: 'AI & Executive Analytics',
     duration: '10:20',
+    videoUrl: 'https://www.youtube.com/embed/bB3Wl4k5t1A',
     levelAr: 'للمدراء والتنفيذيين',
     levelEn: 'Executive',
     badgeAr: 'لصناع القرار 📊',
@@ -1010,6 +1044,17 @@ export default function VideoTutorialsModal({
   });
   const [activeTab, setActiveTab] = useState<'steps' | 'chapters' | 'faqs'>('steps');
 
+  // Synchronize with initialVideoId when passed from parent/navigation
+  useEffect(() => {
+    if (initialVideoId) {
+      const found = VIDEO_TUTORIALS_DATA.find(v => v.id === initialVideoId);
+      if (found) {
+        setSelectedVideo(found);
+        setExpandedSectionIds([getSectionIdForVideo(found)]);
+      }
+    }
+  }, [initialVideoId]);
+
   // Favorites System State & Persistence
   const [favoriteVideoIds, setFavoriteVideoIds] = useState<string[]>(() => {
     try {
@@ -1051,6 +1096,20 @@ export default function VideoTutorialsModal({
   const favoriteVideos = useMemo(() => {
     return VIDEO_TUTORIALS_DATA.filter(v => favoriteVideoIds.includes(v.id));
   }, [favoriteVideoIds]);
+
+  // Video Mode & URL Customization State
+  const [videoMode, setVideoMode] = useState<'video' | 'interactive'>('video');
+  const [customVideoUrls, setCustomVideoUrls] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('fms_custom_tutorial_video_urls');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlSavedSuccess, setUrlSavedSuccess] = useState(false);
 
   // Interactive Player State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1119,6 +1178,56 @@ export default function VideoTutorialsModal({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isPlaying, duration, playbackSpeed]);
+
+  const currentRawUrl = useMemo(() => {
+    return customVideoUrls[selectedVideo.id] || selectedVideo.videoUrl || '';
+  }, [selectedVideo, customVideoUrls]);
+
+  const currentEmbedUrl = useMemo(() => {
+    return formatEmbedUrl(currentRawUrl);
+  }, [currentRawUrl]);
+
+  const handleOpenUrlModal = () => {
+    setUrlInput(currentRawUrl);
+    setUrlSavedSuccess(false);
+    setIsUrlModalOpen(true);
+  };
+
+  const handleSaveCustomUrl = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const updated = {
+      ...customVideoUrls,
+      [selectedVideo.id]: urlInput.trim()
+    };
+    setCustomVideoUrls(updated);
+    try {
+      localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updated));
+    } catch (err) {
+      console.error('Failed to save custom video url:', err);
+    }
+    setUrlSavedSuccess(true);
+    setVideoMode('video');
+    setTimeout(() => {
+      setIsUrlModalOpen(false);
+      setUrlSavedSuccess(false);
+    }, 900);
+  };
+
+  const handleResetCustomUrl = () => {
+    const updated = { ...customVideoUrls };
+    delete updated[selectedVideo.id];
+    setCustomVideoUrls(updated);
+    setUrlInput(selectedVideo.videoUrl || '');
+    try {
+      localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updated));
+    } catch (err) {
+      console.error('Failed to reset custom video url:', err);
+    }
+    setUrlSavedSuccess(true);
+    setTimeout(() => {
+      setUrlSavedSuccess(false);
+    }, 1200);
+  };
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -2120,352 +2229,644 @@ export default function VideoTutorialsModal({
           : 'bg-white border-slate-200 text-slate-900'
       }`}
     >
-          {/* Top Header Bar */}
-          <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-3 shrink-0 transition-colors ${
-            isDarkMode ? 'border-slate-800/90 bg-slate-950/90' : 'border-slate-200 bg-slate-50/95'
+      {/* Top Header Bar */}
+      <div className={`px-4 sm:px-6 py-3 border-b flex items-center justify-between gap-3 shrink-0 transition-colors ${
+        isDarkMode ? 'border-slate-800/90 bg-slate-950/90' : 'border-slate-200 bg-slate-50/95'
+      }`}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-500/20 shrink-0">
+            <Video size={19} className="text-white" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className={`text-base sm:text-lg font-black tracking-tight truncate ${
+                isDarkMode ? 'text-white' : 'text-slate-900'
+              }`}>
+                {lang === 'ar' ? 'أكاديمية الشروحات والفيديوهات الميدانية' : 'Video & Practical Tutorials Academy'}
+              </h2>
+              <span className={`hidden md:inline-flex text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+                isDarkMode 
+                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' 
+                  : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+              }`}>
+                {brandName} Masterclass
+              </span>
+            </div>
+            <p className={`text-xs truncate hidden sm:block ${
+              isDarkMode ? 'text-slate-400' : 'text-slate-500'
+            }`}>
+              {lang === 'ar' 
+                ? 'أدلة مرئية تطبيقية وشروحات خطوة بخطوة لإتقان إدارة الأسطول والورش الذكية' 
+                : 'Interactive video walkthroughs and operational manuals for total fleet mastery'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile Drawer Button to browse other videos */}
+          <button
+            id="btn-toggle-mobile-video-drawer"
+            onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+            className={`lg:hidden px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border cursor-pointer ${
+              isMobileDrawerOpen
+                ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                : (isDarkMode
+                    ? 'bg-slate-800 hover:bg-slate-700 text-purple-300 border-slate-700'
+                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 shadow-xs')
+            }`}
+            title={lang === 'ar' ? 'فهرس وقائمة الفيديوهات' : 'Videos Playlist'}
+          >
+            <ListVideo size={14} />
+            <span>{lang === 'ar' ? 'فهرس الفيديوهات' : 'Videos'}</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+              isMobileDrawerOpen 
+                ? 'bg-white/20 text-white' 
+                : (isDarkMode ? 'bg-purple-900/60 text-purple-200' : 'bg-indigo-200 text-indigo-800')
+            }`}>
+              {VIDEO_TUTORIALS_DATA.length}
+            </span>
+          </button>
+
+          {/* Theme Toggle (Light / Dark Mode) */}
+          <button
+            id="btn-toggle-video-theme"
+            onClick={() => setInternalDarkMode(!isDarkMode)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border cursor-pointer ${
+              isDarkMode
+                ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700'
+                : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-xs'
+            }`}
+            title={isDarkMode 
+              ? (lang === 'ar' ? 'التبديل إلى الوضع الفاتح' : 'Switch to Light Mode') 
+              : (lang === 'ar' ? 'التبديل إلى الوضع المظلم' : 'Switch to Dark Mode')}
+          >
+            {isDarkMode ? (
+              <>
+                <Sun size={14} className="text-amber-400" />
+                <span className="hidden sm:inline">{lang === 'ar' ? 'وضع فاتح' : 'Light'}</span>
+              </>
+            ) : (
+              <>
+                <Moon size={14} className="text-indigo-600" />
+                <span className="hidden sm:inline">{lang === 'ar' ? 'وضع مظلم' : 'Dark'}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            id="btn-share-video-library"
+            onClick={handleCopyLink}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border cursor-pointer ${
+              isDarkMode 
+                ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' 
+                : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-xs'
+            }`}
+            title={lang === 'ar' ? 'نسخ رابط المكتبة' : 'Copy link'}
+          >
+            {copiedLink ? (
+              <>
+                <Check size={13} className="text-emerald-500" />
+                <span className="text-emerald-600 text-xs font-bold">{lang === 'ar' ? 'تم النسخ!' : 'Copied!'}</span>
+              </>
+            ) : (
+              <>
+                <Share2 size={13} />
+                <span className="text-xs">{lang === 'ar' ? 'مشاركة' : 'Share'}</span>
+              </>
+            )}
+          </button>
+
+          {!isTabMode && (
+            <button
+              id="btn-close-video-modal"
+              onClick={onClose}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition border cursor-pointer ${
+                isDarkMode 
+                  ? 'bg-slate-800/90 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 text-slate-400 border-slate-700' 
+                  : 'bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 border-slate-200 shadow-xs'
+              }`}
+              aria-label="Close"
+            >
+              <X size={17} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Body Grid */}
+      <div className={`flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x lg:rtl:divide-x-reverse ${
+        isDarkMode ? 'divide-slate-800' : 'divide-slate-200'
+      }`}>
+        
+        {/* Left Column (Video Player + Guides + Details) - 8 cols */}
+        <div 
+          ref={mainScrollRef}
+          className={`lg:col-span-8 p-3 sm:p-5 space-y-4 overflow-y-auto ${
+            isDarkMode ? 'bg-slate-900/90' : 'bg-slate-50/50'
+          }`}
+        >
+          
+          <div ref={playerTopRef} />
+
+          {/* Mode Switcher & Real Video URL Bar */}
+          <div className={`p-2.5 rounded-2xl border flex flex-wrap items-center justify-between gap-2.5 transition-all ${
+            isDarkMode 
+              ? 'bg-slate-950/80 border-slate-800' 
+              : 'bg-white border-slate-200 shadow-xs'
           }`}>
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-500/20 shrink-0">
-                <Video size={19} className="text-white" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className={`text-base sm:text-lg font-black tracking-tight truncate ${
-                    isDarkMode ? 'text-white' : 'text-slate-900'
-                  }`}>
-                    {lang === 'ar' ? 'أكاديمية الشروحات والفيديوهات الميدانية' : 'Video & Practical Tutorials Academy'}
-                  </h2>
-                  <span className={`hidden md:inline-flex text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
-                    isDarkMode 
-                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' 
-                      : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                  }`}>
-                    {brandName} Masterclass
-                  </span>
-                </div>
-                <p className={`text-xs truncate hidden sm:block ${
-                  isDarkMode ? 'text-slate-400' : 'text-slate-500'
-                }`}>
-                  {lang === 'ar' 
-                    ? 'أدلة مرئية تطبيقية وشروحات خطوة بخطوة لإتقان إدارة الأسطول والورش الذكية' 
-                    : 'Interactive video walkthroughs and operational manuals for total fleet mastery'}
-                </p>
-              </div>
+            {/* Switch Tabs */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                id="tab-mode-video"
+                onClick={() => setVideoMode('video')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  videoMode === 'video'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Tv size={14} />
+                <span>{lang === 'ar' ? 'مشاهدة الفيديو المباشر' : 'Watch Real Video'}</span>
+                {currentRawUrl && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                id="tab-mode-interactive"
+                onClick={() => setVideoMode('interactive')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  videoMode === 'interactive'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Sparkles size={14} />
+                <span>{lang === 'ar' ? 'المحاكي التفاعلي للشاشة' : 'Interactive Stage'}</span>
+              </button>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Mobile Drawer Button to browse other videos */}
+            {/* Right controls: Custom URL & External Link */}
+            <div className="flex items-center gap-2 flex-wrap ms-auto">
               <button
-                id="btn-toggle-mobile-video-drawer"
-                onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-                className={`lg:hidden px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border cursor-pointer ${
-                  isMobileDrawerOpen
-                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                    : (isDarkMode
-                        ? 'bg-slate-800 hover:bg-slate-700 text-purple-300 border-slate-700'
-                        : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 shadow-xs')
-                }`}
-                title={lang === 'ar' ? 'فهرس وقائمة الفيديوهات' : 'Videos Playlist'}
-              >
-                <ListVideo size={14} />
-                <span>{lang === 'ar' ? 'فهرس الفيديوهات' : 'Videos'}</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                  isMobileDrawerOpen 
-                    ? 'bg-white/20 text-white' 
-                    : (isDarkMode ? 'bg-purple-900/60 text-purple-200' : 'bg-indigo-200 text-indigo-800')
-                }`}>
-                  {VIDEO_TUTORIALS_DATA.length}
-                </span>
-              </button>
-
-              {/* Theme Toggle (Light / Dark Mode) */}
-              <button
-                id="btn-toggle-video-theme"
-                onClick={() => setInternalDarkMode(!isDarkMode)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border cursor-pointer ${
+                type="button"
+                id="btn-edit-video-url"
+                onClick={handleOpenUrlModal}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                   isDarkMode
-                    ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700'
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-xs'
+                    ? 'bg-slate-900 hover:bg-slate-800 text-purple-300 border-purple-500/30 hover:border-purple-500/60'
+                    : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200'
                 }`}
-                title={isDarkMode 
-                  ? (lang === 'ar' ? 'التبديل إلى الوضع الفاتح' : 'Switch to Light Mode') 
-                  : (lang === 'ar' ? 'التبديل إلى الوضع المظلم' : 'Switch to Dark Mode')}
+                title={lang === 'ar' ? 'تعديل أو إدراج رابط الفيديو' : 'Edit or Insert Video URL'}
               >
-                {isDarkMode ? (
-                  <>
-                    <Sun size={14} className="text-amber-400" />
-                    <span className="hidden sm:inline">{lang === 'ar' ? 'وضع فاتح' : 'Light'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Moon size={14} className="text-indigo-600" />
-                    <span className="hidden sm:inline">{lang === 'ar' ? 'وضع مظلم' : 'Dark'}</span>
-                  </>
-                )}
+                <Link2 size={13} className="text-purple-500" />
+                <span>{lang === 'ar' ? 'إدراج / تعديل الرابط' : 'Insert / Edit Link'}</span>
               </button>
 
-              <button
-                id="btn-share-video-library"
-                onClick={handleCopyLink}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition border cursor-pointer ${
-                  isDarkMode 
-                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' 
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-xs'
-                }`}
-                title={lang === 'ar' ? 'نسخ رابط المكتبة' : 'Copy link'}
-              >
-                {copiedLink ? (
-                  <>
-                    <Check size={13} className="text-emerald-500" />
-                    <span className="text-emerald-600 text-xs font-bold">{lang === 'ar' ? 'تم النسخ!' : 'Copied!'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Share2 size={13} />
-                    <span className="text-xs">{lang === 'ar' ? 'مشاركة' : 'Share'}</span>
-                  </>
-                )}
-              </button>
-
-              {!isTabMode && (
-                <button
-                  id="btn-close-video-modal"
-                  onClick={onClose}
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition border cursor-pointer ${
-                    isDarkMode 
-                      ? 'bg-slate-800/90 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 text-slate-400 border-slate-700' 
-                      : 'bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 border-slate-200 shadow-xs'
+              {currentRawUrl && (
+                <a
+                  href={currentRawUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                    isDarkMode
+                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
                   }`}
-                  aria-label="Close"
+                  title={lang === 'ar' ? 'فتح الرابط في نافذة جديدة' : 'Open in New Tab'}
                 >
-                  <X size={17} />
-                </button>
+                  <ExternalLink size={12} />
+                  <span className="hidden sm:inline">{lang === 'ar' ? 'فتح الرابط' : 'Open Link'}</span>
+                </a>
               )}
             </div>
           </div>
 
-          {/* Main Body Grid */}
-          <div className={`flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x lg:rtl:divide-x-reverse ${
-            isDarkMode ? 'divide-slate-800' : 'divide-slate-200'
-          }`}>
-            
-            {/* Left Column (Video Player + Guides + Details) - 8 cols */}
+          {/* Video Player Display Box */}
+          {videoMode === 'video' ? (
+            /* REAL VIDEO IFRAME / HTML5 PLAYER */
             <div 
-              ref={mainScrollRef}
-              className={`lg:col-span-8 p-3 sm:p-5 space-y-4 overflow-y-auto ${
-                isDarkMode ? 'bg-slate-900/90' : 'bg-slate-50/50'
+              ref={playerRef}
+              className={`relative rounded-2xl overflow-hidden shadow-2xl group select-none aspect-video w-full flex flex-col justify-center items-center border ${
+                isDarkMode ? 'bg-slate-950 border-purple-500/30' : 'bg-slate-900 border-indigo-200'
               }`}
             >
-              
-              <div ref={playerTopRef} />
-
-              {/* Interactive Simulated Video Player Container */}
-              <div 
-                ref={playerRef}
-                className={`relative rounded-2xl overflow-hidden shadow-2xl group select-none aspect-video w-full flex flex-col justify-between border ${
-                  isDarkMode ? 'bg-slate-950 border-purple-500/30' : 'bg-slate-900 border-indigo-200'
-                }`}
-              >
-                {/* Visual Canvas Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 overflow-hidden pointer-events-none">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${selectedVideo.gradient} opacity-35 mix-blend-overlay`} />
-                  <div className="absolute inset-0 bg-[linear-gradient(to_right,#6366f108_1px,transparent_1px),linear-gradient(to_bottom,#6366f108_1px,transparent_1px)] bg-[size:16px_16px] sm:bg-[size:24px_24px]" />
-                  
-                  {/* High-Tech Demo Simulation Screen */}
-                  <div className="absolute inset-2 sm:inset-4 rounded-xl border border-purple-500/20 bg-slate-900/85 p-2.5 sm:p-4 flex flex-col justify-between backdrop-blur-xs">
-                    {/* Simulated App Topbar */}
-                    <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 sm:pb-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-rose-500" />
-                        <span className="w-2 h-2 rounded-full bg-amber-500" />
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-[10px] font-mono text-slate-400 ms-1.5 hidden sm:inline">{brandName} OS / {selectedVideo.categoryLabelEn}</span>
-                      </div>
-                      <span className={`text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
-                        isPlaying 
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                          : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      }`}>
-                        {isPlaying ? '● LIVE DEMO' : '❚❚ PAUSED'}
-                      </span>
-                    </div>
-
-                    {/* Active Topic Banner in Center */}
-                    <div className="my-auto py-1 sm:py-2 text-center sm:text-start space-y-1">
-                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/30">
-                        <Sparkles size={11} className="text-purple-400" />
-                        <span>{lang === 'ar' ? selectedVideo.categoryLabelAr : selectedVideo.categoryLabelEn}</span>
-                      </div>
-                      <h3 className="text-xs sm:text-sm md:text-base font-black text-white line-clamp-1">
-                        {lang === 'ar' ? selectedVideo.titleAr : selectedVideo.titleEn}
-                      </h3>
-                      
-                      {/* Active chapter text */}
-                      <div className="inline-flex items-center gap-1.5 text-xs text-indigo-200/90 font-medium">
-                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-purple-300">
-                          {formatSeconds(currentTime)}
-                        </span>
-                        <span className="truncate max-w-[220px] sm:max-w-md">
-                          {(() => {
-                            const currentChap = [...selectedVideo.chapters].reverse().find(c => currentTime >= c.seconds) || selectedVideo.chapters[0];
-                            return lang === 'ar' ? currentChap?.titleAr : currentChap?.titleEn;
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Simulated Screen Footer */}
-                    <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-500 border-t border-slate-800/60 pt-1">
-                      <span>4K Ultra HD • 60 FPS</span>
-                      <span className="font-mono text-purple-400/80">{brandName} Interactive Studio</span>
-                    </div>
+              {currentEmbedUrl ? (
+                currentEmbedUrl.endsWith('.mp4') || currentEmbedUrl.endsWith('.webm') || currentEmbedUrl.endsWith('.ogg') ? (
+                  <video
+                    controls
+                    autoPlay
+                    className="w-full h-full object-contain bg-black rounded-2xl"
+                    src={currentEmbedUrl}
+                  />
+                ) : (
+                  <iframe
+                    id="tutorial-video-iframe"
+                    src={currentEmbedUrl}
+                    title={lang === 'ar' ? selectedVideo.titleAr : selectedVideo.titleEn}
+                    className="w-full h-full rounded-2xl border-0 bg-slate-950"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                )
+              ) : (
+                /* No Video URL configured yet */
+                <div className="p-6 text-center max-w-md mx-auto space-y-3.5">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-500/20 border border-purple-500/40 text-purple-400 flex items-center justify-center mx-auto">
+                    <Video size={28} />
                   </div>
-                </div>
-
-                {/* Top Floating Badge Bar */}
-                <div className="relative z-10 p-2 sm:p-3 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold border border-white/10 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
-                      <span>{lang === 'ar' ? 'تطبيق عملي' : 'Practical'}</span>
-                    </span>
-                    {selectedVideo.badgeAr && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-purple-600/80 backdrop-blur-md text-white text-[10px] font-bold">
-                        {lang === 'ar' ? selectedVideo.badgeAr : selectedVideo.badgeEn}
-                      </span>
-                    )}
+                  <div className="space-y-1">
+                    <h3 className="text-white text-sm sm:text-base font-bold">
+                      {lang === 'ar' ? 'لم يتم ربط رابط فيديو لهذا الدرس بعد' : 'No video URL linked yet for this lesson'}
+                    </h3>
+                    <p className="text-slate-400 text-xs leading-relaxed">
+                      {lang === 'ar' 
+                        ? 'يمكنك إدراج رابط يوتيوب أو فيديو MP4 مباشر لمشاهدته فوراً هنا، أو التبديل للمحاكي التفاعلي.'
+                        : 'You can insert a YouTube link or direct MP4 URL to watch it here, or switch to the interactive stage.'}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
                     <button
-                      id="btn-player-quick-fav"
                       type="button"
-                      onClick={(e) => toggleFavoriteVideo(selectedVideo.id, e)}
-                      className={`p-1.5 rounded-full backdrop-blur-md border transition cursor-pointer ${
-                        isVideoFavorite(selectedVideo.id)
-                          ? 'bg-rose-500 text-white border-rose-400 shadow-xs'
-                          : 'bg-slate-950/80 text-slate-300 hover:text-rose-400 border-white/10'
-                      }`}
-                      title={
-                        isVideoFavorite(selectedVideo.id)
-                          ? (lang === 'ar' ? 'إزالة من المفضلة' : 'Remove from Favorites')
-                          : (lang === 'ar' ? 'إضافة إلى المفضلة' : 'Add to Favorites')
-                      }
+                      onClick={handleOpenUrlModal}
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/30 cursor-pointer"
                     >
-                      <Heart size={12} className={isVideoFavorite(selectedVideo.id) ? 'fill-white text-white' : ''} />
+                      <Link2 size={14} />
+                      <span>{lang === 'ar' ? 'إدراج رابط الفيديو الآن' : 'Insert Video URL Now'}</span>
                     </button>
-                    <span className="px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md text-slate-300 font-mono text-xs border border-white/10">
-                      {formatSeconds(currentTime)} / {selectedVideo.duration}
+                    <button
+                      type="button"
+                      onClick={() => setVideoMode('interactive')}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 cursor-pointer"
+                    >
+                      <Sparkles size={14} className="text-purple-400" />
+                      <span>{lang === 'ar' ? 'تشغيل المحاكي التفاعلي' : 'Launch Interactive Stage'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Interactive Simulated Video Player Container */
+            <div 
+              ref={playerRef}
+              className={`relative rounded-2xl overflow-hidden shadow-2xl group select-none aspect-video w-full flex flex-col justify-between border ${
+                isDarkMode ? 'bg-slate-950 border-purple-500/30' : 'bg-slate-900 border-indigo-200'
+              }`}
+            >
+              {/* Visual Canvas Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 overflow-hidden pointer-events-none">
+                <div className={`absolute inset-0 bg-gradient-to-br ${selectedVideo.gradient} opacity-35 mix-blend-overlay`} />
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#6366f108_1px,transparent_1px),linear-gradient(to_bottom,#6366f108_1px,transparent_1px)] bg-[size:16px_16px] sm:bg-[size:24px_24px]" />
+                
+                {/* High-Tech Demo Simulation Screen */}
+                <div className="absolute inset-2 sm:inset-4 rounded-xl border border-purple-500/20 bg-slate-900/85 p-2.5 sm:p-4 flex flex-col justify-between backdrop-blur-xs">
+                  {/* Simulated App Topbar */}
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 sm:pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-500" />
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="text-[10px] font-mono text-slate-400 ms-1.5 hidden sm:inline">{brandName} OS / {selectedVideo.categoryLabelEn}</span>
+                    </div>
+                    <span className={`text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                      isPlaying 
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                        : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    }`}>
+                      {isPlaying ? '● LIVE DEMO' : '❚❚ PAUSED'}
                     </span>
                   </div>
-                </div>
 
-                {/* Center Play Button Overlay */}
-                <div className="relative z-10 flex items-center justify-center my-auto">
-                  <button
-                    id="btn-main-play-pause"
-                    onClick={() => setIsPlaying(!isPlaying)}
-                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition transform hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md ${
-                      isPlaying 
-                        ? 'bg-purple-600/80 hover:bg-purple-600 opacity-0 group-hover:opacity-100 ring-4 ring-purple-500/20' 
-                        : 'bg-purple-600 hover:bg-purple-500 opacity-100 ring-6 sm:ring-8 ring-purple-500/30'
-                    }`}
-                  >
-                    {isPlaying ? <Pause size={24} /> : <Play size={24} className={isRtl ? 'rotate-180' : 'ms-0.5'} />}
-                  </button>
-                </div>
+                  {/* Active Topic Banner & Visual Interactive Stage in Center */}
+                  <div className="my-auto py-1 sm:py-2 text-center sm:text-start space-y-2 flex-1 flex flex-col justify-center">
+                    {/* Topic Badge & Title */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold border border-purple-500/30">
+                          <Sparkles size={11} className="text-purple-400" />
+                          <span>{lang === 'ar' ? selectedVideo.categoryLabelAr : selectedVideo.categoryLabelEn}</span>
+                        </div>
+                        
+                        {/* Active chapter badge */}
+                        <div className="inline-flex items-center gap-1.5 text-xs text-indigo-200/90 font-medium">
+                          <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-purple-300 border border-slate-700">
+                            {formatSeconds(currentTime)}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-300 truncate max-w-[200px] sm:max-w-xs">
+                            {(() => {
+                              const currentChap = [...selectedVideo.chapters].reverse().find(c => currentTime >= c.seconds) || selectedVideo.chapters[0];
+                              return lang === 'ar' ? currentChap?.titleAr : currentChap?.titleEn;
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Bottom Controls Bar Overlay */}
-                <div className="relative z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent p-2.5 sm:p-3.5 pt-4 space-y-1.5">
-                  {/* Progress Scrubber Slider */}
-                  <div className="relative w-full flex items-center">
-                    <input
-                      type="range"
-                      min={0}
-                      max={duration}
-                      value={currentTime}
-                      onChange={handleSeek}
-                      className="w-full h-1.5 bg-slate-700/80 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                    />
+                    {/* Interactive Visual Simulation Stage for Fleet Setup / Excel & Other Videos */}
+                    <div className="relative rounded-lg border border-purple-500/30 bg-slate-950/70 p-2 sm:p-2.5 overflow-hidden text-start">
+                      {selectedVideo.id === 'vid-1' ? (
+                        /* Custom Dynamic Scene for Excel / CSV Fleet Import */
+                        <div className="space-y-1.5">
+                          {currentTime < 90 ? (
+                            /* Scene 1: Excel Structure Matrix */
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-1">
+                                <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                                  <FileSpreadsheet size={12} />
+                                  <span>Fleet_Import_Matrix_2026.xlsx</span>
+                                </span>
+                                <span className="text-amber-300 font-mono text-[9px] bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-800/40">
+                                  {lang === 'ar' ? 'نموذج إكسل معتمد 📋' : 'Standard Template 📋'}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-5 gap-1 text-[9px] font-mono text-center">
+                                <div className="bg-purple-950/60 text-purple-300 p-1 rounded font-bold border border-purple-800/40">
+                                  {lang === 'ar' ? 'اللوحة' : 'Plate No'}
+                                </div>
+                                <div className="bg-purple-950/60 text-purple-300 p-1 rounded font-bold border border-purple-800/40">
+                                  {lang === 'ar' ? 'الهيكل VIN' : 'Chassis VIN'}
+                                </div>
+                                <div className="bg-purple-950/60 text-purple-300 p-1 rounded font-bold border border-purple-800/40">
+                                  {lang === 'ar' ? 'الطراز' : 'Model'}
+                                </div>
+                                <div className="bg-purple-950/60 text-purple-300 p-1 rounded font-bold border border-purple-800/40">
+                                  {lang === 'ar' ? 'العداد' : 'Odometer'}
+                                </div>
+                                <div className="bg-purple-950/60 text-purple-300 p-1 rounded font-bold border border-purple-800/40">
+                                  {lang === 'ar' ? 'السائق' : 'Driver'}
+                                </div>
+                              </div>
+                              <div className="space-y-1 text-[8.5px] font-mono text-slate-300">
+                                <div className="grid grid-cols-5 gap-1 bg-slate-900/90 p-1 rounded border border-slate-800 text-center items-center">
+                                  <span className="text-emerald-300 font-bold">1234-KSA</span>
+                                  <span className="truncate text-slate-400">WDB9634031...</span>
+                                  <span>Actros 1845</span>
+                                  <span className="text-amber-300">124,500 km</span>
+                                  <span className="text-slate-300 truncate">أحمد الخالدي</span>
+                                </div>
+                                <div className="grid grid-cols-5 gap-1 bg-slate-900/90 p-1 rounded border border-slate-800 text-center items-center">
+                                  <span className="text-emerald-300 font-bold">5678-KSA</span>
+                                  <span className="truncate text-slate-400">JTEBU25J80...</span>
+                                  <span>Toyota Hilux</span>
+                                  <span className="text-amber-300">68,200 km</span>
+                                  <span className="text-slate-300 truncate">سعد المطيري</span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : currentTime < 225 ? (
+                            /* Scene 2: Smart Drag & Drop and Mapping */
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[10px] border-b border-slate-800 pb-1">
+                                <span className="flex items-center gap-1 text-purple-300 font-bold">
+                                  <Upload size={12} className="animate-bounce text-purple-400" />
+                                  <span>{lang === 'ar' ? 'سحب وإفلات الملف وتطابق الحقول' : 'Smart CSV Ingestion & Mapping'}</span>
+                                </span>
+                                <span className="text-emerald-400 font-mono text-[9px] bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40">
+                                  {lang === 'ar' ? 'تطابق 100% ⚡' : '100% Match ⚡'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-around gap-1 text-[8.5px] py-1 bg-purple-950/30 rounded border border-dashed border-purple-500/40">
+                                <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-purple-400/30 text-purple-200">
+                                  {lang === 'ar' ? 'رقم اللوحة ➔ Plate' : 'Plate ➔ Plate_No'}
+                                </span>
+                                <span className="text-purple-400 font-bold">⟷</span>
+                                <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-purple-400/30 text-purple-200">
+                                  {lang === 'ar' ? 'رقم الهيكل ➔ VIN' : 'VIN ➔ Chassis_VIN'}
+                                </span>
+                                <span className="text-purple-400 font-bold">⟷</span>
+                                <span className="px-1.5 py-0.5 bg-slate-900 rounded border border-purple-400/30 text-purple-200">
+                                  {lang === 'ar' ? 'العداد ➔ Odometer' : 'Mileage ➔ Odo_Km'}
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-gradient-to-r from-purple-500 to-emerald-400 h-1.5 rounded-full w-4/5 animate-pulse" />
+                              </div>
+                            </div>
+                          ) : currentTime < 310 ? (
+                            /* Scene 3: Instant Validation & Duplicate Prevention */
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[10px] border-b border-slate-800 pb-1">
+                                <span className="flex items-center gap-1 text-emerald-300 font-bold">
+                                  <ShieldCheck size={12} className="text-emerald-400" />
+                                  <span>{lang === 'ar' ? 'التدقيق الآلي ومنع التكرار' : 'AI Audit & Duplicate Resolver'}</span>
+                                </span>
+                                <span className="text-emerald-300 font-mono text-[9px] bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/40">
+                                  {lang === 'ar' ? 'تم الفحص بنجاح ✅' : 'Verified OK ✅'}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1 text-[8.5px] text-center">
+                                <div className="bg-emerald-950/40 border border-emerald-800/40 p-1 rounded text-emerald-300 font-bold">
+                                  48 {lang === 'ar' ? 'مركبة مدققة' : 'Assets Verified'}
+                                </div>
+                                <div className="bg-blue-950/40 border border-blue-800/40 p-1 rounded text-blue-300 font-bold">
+                                  0 {lang === 'ar' ? 'تكرار في الهيكل' : 'VIN Duplicates'}
+                                </div>
+                                <div className="bg-purple-950/40 border border-purple-800/40 p-1 rounded text-purple-300 font-bold">
+                                  100% {lang === 'ar' ? 'جاهزية الأسطول' : 'Readiness'}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Scene 4: Finalizing & Digital Passes */
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[10px] border-b border-slate-800 pb-1">
+                                <span className="flex items-center gap-1 text-purple-300 font-bold">
+                                  <Truck size={12} className="text-purple-400" />
+                                  <span>{lang === 'ar' ? 'تأسيس الأسطول وبطاقات QR الرقمية' : 'Fleet Active & QR Profiles Ready'}</span>
+                                </span>
+                                <span className="text-amber-300 font-mono text-[9px] bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/40">
+                                  {lang === 'ar' ? 'جاهز للتشغيل 🚀' : 'Active 🚀'}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1 text-[8.5px]">
+                                <div className="bg-slate-900 p-1 rounded border border-slate-800 flex items-center justify-between">
+                                  <span className="font-bold text-white">Actros [1234]</span>
+                                  <span className="text-emerald-400 font-mono">QR + PM ✅</span>
+                                </div>
+                                <div className="bg-slate-900 p-1 rounded border border-slate-800 flex items-center justify-between">
+                                  <span className="font-bold text-white">CAT 320D [9012]</span>
+                                  <span className="text-emerald-400 font-mono">QR + PM ✅</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Standard Interactive Preview for Other Videos */
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-1">
+                            <span className="text-purple-300 font-bold flex items-center gap-1">
+                              <Sparkles size={11} className="text-purple-400" />
+                              <span>{lang === 'ar' ? selectedVideo.titleAr : selectedVideo.titleEn}</span>
+                            </span>
+                            <span className="text-emerald-400 font-mono text-[9px]">
+                              {lang === 'ar' ? 'عرض حي تفاعلي' : 'Interactive Demo'}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-300 line-clamp-2 leading-relaxed">
+                            {lang === 'ar' ? selectedVideo.descriptionAr : selectedVideo.descriptionEn}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Buttons Row */}
-                  <div className="flex items-center justify-between gap-2 text-white text-xs">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="p-1 hover:text-purple-300 transition cursor-pointer"
-                        title={isPlaying ? 'Pause' : 'Play'}
-                      >
-                        {isPlaying ? <Pause size={16} /> : <Play size={16} className={isRtl ? 'rotate-180' : ''} />}
-                      </button>
-
-                      <button
-                        onClick={() => setCurrentTime(Math.max(0, currentTime - 10))}
-                        className="p-1 hover:text-purple-300 transition cursor-pointer text-slate-300"
-                        title={lang === 'ar' ? 'تراجع 10 ثوانٍ' : 'Rewind 10s'}
-                      >
-                        <RotateCcw size={14} />
-                      </button>
-
-                      <button
-                        onClick={() => setCurrentTime(Math.min(duration, currentTime + 10))}
-                        className="p-1 hover:text-purple-300 transition cursor-pointer text-slate-300"
-                        title={lang === 'ar' ? 'تقديم 10 ثوانٍ' : 'Forward 10s'}
-                      >
-                        <RotateCw size={14} />
-                      </button>
-
-                      <button
-                        onClick={() => setIsMuted(!isMuted)}
-                        className="p-1 hover:text-white transition cursor-pointer text-slate-300"
-                        title={isMuted ? 'Unmute' : 'Mute'}
-                      >
-                        {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-                      </button>
-
-                      <span className="font-mono text-xs text-slate-300 ps-1">
-                        {formatSeconds(currentTime)} / {selectedVideo.duration}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* Playback speed selector */}
-                      <div className="flex items-center bg-slate-800/90 rounded-md border border-slate-700/80 text-[10px] font-mono p-0.5">
-                        {[1, 1.5, 2].map((spd) => (
-                          <button
-                            key={spd}
-                            onClick={() => setPlaybackSpeed(spd)}
-                            className={`px-1.5 py-0.5 rounded ${playbackSpeed === spd ? 'bg-purple-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
-                          >
-                            {spd}x
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Fullscreen Button */}
-                      <button
-                        onClick={() => {
-                          if (playerRef.current) {
-                            if (!document.fullscreenElement) {
-                              playerRef.current.requestFullscreen?.();
-                              setIsFullscreen(true);
-                            } else {
-                              document.exitFullscreen?.();
-                              setIsFullscreen(false);
-                            }
-                          }
-                        }}
-                        className="p-1 hover:text-purple-300 transition cursor-pointer text-slate-300"
-                        title="Fullscreen"
-                      >
-                        {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-                      </button>
-                    </div>
+                  {/* Simulated Screen Footer */}
+                  <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-500 border-t border-slate-800/60 pt-1">
+                    <span>4K Ultra HD • 60 FPS</span>
+                    <span className="font-mono text-purple-400/80">{brandName} Interactive Studio</span>
                   </div>
                 </div>
               </div>
 
-              {/* Video Title & Actions Bar */}
+              {/* Top Floating Badge Bar */}
+              <div className="relative z-10 p-2 sm:p-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold border border-white/10 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                    <span>{lang === 'ar' ? 'تطبيق عملي' : 'Practical'}</span>
+                  </span>
+                  {selectedVideo.badgeAr && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-purple-600/80 backdrop-blur-md text-white text-[10px] font-bold">
+                      {lang === 'ar' ? selectedVideo.badgeAr : selectedVideo.badgeEn}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    id="btn-player-quick-fav"
+                    type="button"
+                    onClick={(e) => toggleFavoriteVideo(selectedVideo.id, e)}
+                    className={`p-1.5 rounded-full backdrop-blur-md border transition cursor-pointer ${
+                      isVideoFavorite(selectedVideo.id)
+                        ? 'bg-rose-500 text-white border-rose-400 shadow-xs'
+                        : 'bg-slate-950/80 text-slate-300 hover:text-rose-400 border-white/10'
+                    }`}
+                    title={
+                      isVideoFavorite(selectedVideo.id)
+                        ? (lang === 'ar' ? 'إزالة من المفضلة' : 'Remove from Favorites')
+                        : (lang === 'ar' ? 'إضافة إلى المفضلة' : 'Add to Favorites')
+                    }
+                  >
+                    <Heart size={12} className={isVideoFavorite(selectedVideo.id) ? 'fill-white text-white' : ''} />
+                  </button>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md text-slate-300 font-mono text-xs border border-white/10">
+                    {formatSeconds(currentTime)} / {selectedVideo.duration}
+                  </span>
+                </div>
+              </div>
+
+              {/* Center Play Button Overlay */}
+              <div className="relative z-10 flex items-center justify-center my-auto">
+                <button
+                  id="btn-main-play-pause"
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition transform hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md ${
+                    isPlaying 
+                      ? 'bg-purple-600/80 hover:bg-purple-600 opacity-0 group-hover:opacity-100 ring-4 ring-purple-500/20' 
+                      : 'bg-purple-600 hover:bg-purple-500 opacity-100 ring-6 sm:ring-8 ring-purple-500/30'
+                  }`}
+                >
+                  {isPlaying ? <Pause size={24} /> : <Play size={24} className={isRtl ? 'rotate-180' : 'ms-0.5'} />}
+                </button>
+              </div>
+
+              {/* Bottom Controls Bar Overlay */}
+              <div className="relative z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent p-2.5 sm:p-3.5 pt-4 space-y-1.5">
+                {/* Progress Scrubber Slider */}
+                <div className="relative w-full flex items-center">
+                  <input
+                    type="range"
+                    min={0}
+                    max={duration}
+                    value={currentTime}
+                    onChange={handleSeek}
+                    className="w-full h-1.5 bg-slate-700/80 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  />
+                </div>
+
+                {/* Buttons Row */}
+                <div className="flex items-center justify-between gap-2 text-white text-xs">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      className="p-1 hover:text-purple-300 transition cursor-pointer"
+                      title={isPlaying ? 'Pause' : 'Play'}
+                    >
+                      {isPlaying ? <Pause size={16} /> : <Play size={16} className={isRtl ? 'rotate-180' : ''} />}
+                    </button>
+
+                    <button
+                      onClick={() => setCurrentTime(Math.max(0, currentTime - 10))}
+                      className="p-1 hover:text-purple-300 transition cursor-pointer text-slate-300"
+                      title={lang === 'ar' ? 'تراجع 10 ثوانٍ' : 'Rewind 10s'}
+                    >
+                      <RotateCcw size={14} />
+                    </button>
+
+                    <button
+                      onClick={() => setCurrentTime(Math.min(duration, currentTime + 10))}
+                      className="p-1 hover:text-purple-300 transition cursor-pointer text-slate-300"
+                      title={lang === 'ar' ? 'تقديم 10 ثوانٍ' : 'Forward 10s'}
+                    >
+                      <RotateCw size={14} />
+                    </button>
+
+                    <button
+                      onClick={() => setIsMuted(!isMuted)}
+                      className="p-1 hover:text-white transition cursor-pointer text-slate-300"
+                      title={isMuted ? 'Unmute' : 'Mute'}
+                    >
+                      {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+                    </button>
+
+                    <span className="font-mono text-xs text-slate-300 ps-1">
+                      {formatSeconds(currentTime)} / {selectedVideo.duration}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Playback speed selector */}
+                    <div className="flex items-center bg-slate-800/90 rounded-md border border-slate-700/80 text-[10px] font-mono p-0.5">
+                      {[1, 1.5, 2].map((spd) => (
+                        <button
+                          key={spd}
+                          onClick={() => setPlaybackSpeed(spd)}
+                          className={`px-1.5 py-0.5 rounded ${playbackSpeed === spd ? 'bg-purple-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+                        >
+                          {spd}x
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Fullscreen Button */}
+                    <button
+                      onClick={() => {
+                        if (playerRef.current) {
+                          if (!document.fullscreenElement) {
+                            playerRef.current.requestFullscreen?.();
+                            setIsFullscreen(true);
+                          } else {
+                            document.exitFullscreen?.();
+                            setIsFullscreen(false);
+                          }
+                        }
+                      }}
+                      className="p-1 hover:text-purple-300 transition cursor-pointer text-slate-300"
+                      title="Fullscreen"
+                    >
+                      {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Video Title & Actions Bar */}
               <div className="space-y-2.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>

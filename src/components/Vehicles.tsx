@@ -47,7 +47,8 @@ import {
   Edit3,
   RefreshCw,
   FileCheck,
-  FileX
+  FileX,
+  Video
 } from 'lucide-react';
 import { vehicles as initialVehicles } from '../data';
 import { VehicleStatus, Vehicle, User, hasGranularPermission } from '../types';
@@ -3403,6 +3404,18 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsBulkModalOpen(false);
+                        window.dispatchEvent(new CustomEvent('open-video-tutorial', { detail: { videoId: 'vid-1' } }));
+                      }}
+                      className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 border border-amber-300/30"
+                      title={language === 'ar' ? 'مشاهدة فيديو تفاعلي يشرح خطوات الاستيراد من Excel' : 'Watch interactive tutorial on Excel/CSV fleet import'}
+                    >
+                      <Video size={14} className="animate-pulse" />
+                      <span>{language === 'ar' ? 'فيديو الشرح التفاعلي 🎬' : 'Watch Video Guide 🎬'}</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => downloadFleetAssetCsvTemplate(language)}

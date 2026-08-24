@@ -44,7 +44,37 @@ import {
   VolumeX,
   Volume2,
   Copy,
-  Mic
+  Mic,
+  BrainCircuit,
+  ShieldCheck,
+  Boxes,
+  PackageSearch,
+  LineChart,
+  Coins,
+  Calculator,
+  Landmark,
+  Radar,
+  Zap,
+  AlertTriangle,
+  Workflow,
+  User,
+  FilePlus,
+  Radio,
+  Sliders,
+  Shield,
+  Gauge,
+  Maximize2,
+  Minimize2,
+  CheckCheck,
+  Paperclip,
+  Smile,
+  MoreVertical,
+  Phone,
+  Camera,
+  Image as ImageIcon,
+  Download,
+  Eye,
+  File
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -58,15 +88,108 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db, testFirestoreConnection, pushLocalDataToCloud, pullCloudDataToLocal } from '../services/firebase';
 import firebaseConfig from '../services/firebaseConfig';
 
+export interface AttachedFileItem {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  dataUrl?: string;
+  previewUrl?: string;
+  isImage?: boolean;
+}
+
 // Interfaces for Maintenance Bot
 interface MechanicMessage {
   id: string;
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
+  attachment?: AttachedFileItem;
 }
 
-export default function AiHub() {
+// Sleek Modern Geometric AI Brand Emblem matching Hostinger / Agent style
+const ModernAiBrandEmblem = ({ size = 52, className = "" }: { size?: number; className?: string }) => (
+  <div className={`relative flex items-center justify-center ${className}`}>
+    <div className="absolute inset-0 bg-violet-600/25 dark:bg-violet-500/30 blur-2xl rounded-full scale-150 pointer-events-none animate-pulse" />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 drop-shadow-md">
+      <path d="M24 3L29 18.5L44.5 23.5L29 28.5L24 44L19 28.5L3.5 23.5L19 18.5L24 3Z" fill="url(#ai-grad-primary)" />
+      <path d="M24 11.5L27 21L36.5 24L27 27L24 36.5L21 27L11.5 24L21 21L24 11.5Z" fill="url(#ai-grad-secondary)" />
+      <circle cx="24" cy="24" r="3" fill="#ffffff" className="drop-shadow-xs" />
+      <defs>
+        <linearGradient id="ai-grad-primary" x1="3.5" y1="3" x2="44.5" y2="44" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#6366F1" />
+          <stop offset="0.5" stopColor="#7C3AED" />
+          <stop offset="1" stopColor="#A855F7" />
+        </linearGradient>
+        <linearGradient id="ai-grad-secondary" x1="11.5" y1="11.5" x2="36.5" y2="36.5" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#A855F7" />
+          <stop offset="1" stopColor="#4F46E5" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+);
+
+// Categorized Prompt Library for the Empty/Hero State
+const PROMPT_CATEGORIES_DATA = {
+  'for-you': {
+    id: 'for-you',
+    nameAr: 'مخصص لك',
+    nameEn: 'For You',
+    prompts: [
+      { textAr: 'فحص الصيانة الدورية وتنبؤ الأعطال الوشيكة للأسطول', textEn: 'Verify fleet periodic maintenance & forecast failures' },
+      { textAr: 'مراجعة أسعار وتوافر قطع الغيار ومستوى المخزون الحرج', textEn: 'Review spare parts pricing & critical inventory stock' },
+      { textAr: 'خطة الطوارئ وسيناريو تكدس الورشة وتوزيع الفنيين', textEn: 'Workshop peak backlog mitigation & staff allocation' },
+      { textAr: 'تدقيق بطاقات الفحص الفني ومعايير السلامة للسيارات', textEn: 'Audit vehicle technical inspection & safety compliance' }
+    ]
+  },
+  'fleet': {
+    id: 'fleet',
+    nameAr: 'الأسطول والورشة',
+    nameEn: 'Fleet & Workshop',
+    prompts: [
+      { textAr: 'ما هي المركبات الأكثر استهلاكاً للوقود والصيانة هذا الشهر؟', textEn: 'Which vehicles have the highest fuel and maintenance costs?' },
+      { textAr: 'توزيع خطة التشغيل اليومية لسيارات النقل الثقيل', textEn: 'Daily dispatch schedule for heavy transport trucks' },
+      { textAr: 'جدولة مواعيد الفحص الدوري للمركبات المتأخرة', textEn: 'Schedule overdue periodic inspections for the fleet' }
+    ]
+  },
+  'parts': {
+    id: 'parts',
+    nameAr: 'قطع الغيار',
+    nameEn: 'Spare Parts',
+    prompts: [
+      { textAr: 'حصر الأصناف التي وصلت إلى حد إعادة الطلب الأدنى', textEn: 'List items that reached minimum reorder threshold' },
+      { textAr: 'مقارنة أسعار الموردين لقطع الفرامل والفلاتر', textEn: 'Compare vendor prices for brake pads and filters' },
+      { textAr: 'توليد طلب شراء عاجل للقطع الأكثر استهلاكاً', textEn: 'Generate urgent PO for highest moving parts' }
+    ]
+  },
+  'finance': {
+    id: 'finance',
+    nameAr: 'التكاليف والميزانية',
+    nameEn: 'Budget & Finance',
+    prompts: [
+      { textAr: 'تحليل تكلفة الصيانة لكل كيلومتر (Cost Per KM) للشهر الحالي', textEn: 'Calculate maintenance cost per KM for this month' },
+      { textAr: 'مقارنة تكلفة الورشة الداخلية مع مراكز الصيانة الخارجية', textEn: 'Compare in-house vs external workshop repair costs' },
+      { textAr: 'توقع ميزانية قطع الغيار للربع السنوي القادم', textEn: 'Forecast spare parts budget for the next quarter' }
+    ]
+  },
+  'staff': {
+    id: 'staff',
+    nameAr: 'الفنيين والإنتاجية',
+    nameEn: 'Staff & Techs',
+    prompts: [
+      { textAr: 'تقييم كفاءة الفنيين وسرعة إنجاز أوامر الصيانة', textEn: 'Evaluate technician efficiency and work order turnaround' },
+      { textAr: 'إعادة توزيع أوامر العمل المعلقة على الورش المتاحة', textEn: 'Reassign pending work orders across available workshops' },
+      { textAr: 'كشف ساعات العمل الإضافية والضغط التشغيلي للفنيين', textEn: 'Review technician overtime and operational load' }
+    ]
+  }
+};
+
+interface AiHubProps {
+  onBack?: () => void;
+}
+
+export default function AiHub({ onBack }: AiHubProps = {}) {
   const { language, dir } = useLanguage();
   const isRtl = dir === 'rtl';
 
@@ -84,10 +207,10 @@ export default function AiHub() {
       nameEn: 'Robert - Strategic Project Manager',
       descAr: 'تنسيق الخطط وحل اختناقات العمل وتقدير ميزانيات الورش ومزامنة الفواتير سحابياً.',
       descEn: 'Coordinating operational plans, resolving bottleneck constraints, and validating cloud billing Sync.',
-      icon: 'Sparkles',
+      icon: 'BrainCircuit',
       isActive: true,
       color: 'violet',
-      roles: ['Manager', 'Admin']
+      roles: ['Strategic PM', 'Workflow Sync']
     },
     {
       id: 'mechanic',
@@ -98,7 +221,7 @@ export default function AiHub() {
       icon: 'Wrench',
       isActive: true,
       color: 'amber',
-      roles: ['Technician', 'Admin']
+      roles: ['Diagnostics', 'Torque & Parts']
     },
     {
       id: 'safety',
@@ -106,10 +229,10 @@ export default function AiHub() {
       nameEn: 'Safety & Compliance Auditor',
       descAr: 'مراجعة وتدقيق بطاقات التفتيش الرقمي للسلامة وضمان تطابق معايير النقل البري والبيئة.',
       descEn: 'Auditing digital safety checklists and guaranteeing compliance with terrestrial transport laws.',
-      icon: 'ShieldAlert',
+      icon: 'ShieldCheck',
       isActive: true,
       color: 'emerald',
-      roles: ['Inspector', 'Admin']
+      roles: ['Compliance', 'Auditing']
     },
     {
       id: 'supply-chain',
@@ -117,10 +240,10 @@ export default function AiHub() {
       nameEn: 'Supply Chain & Procurement Bot',
       descAr: 'التنبؤ باحتياجات قطع الغيار، التوجيه بطلبات التوريد الفورية ومقارنة عروض أسعار الموردين.',
       descEn: 'Forecasting spare parts consumption, automating purchase requests and comparing vendor quotes.',
-      icon: 'RefreshCw',
+      icon: 'Boxes',
       isActive: true,
       color: 'sky',
-      roles: ['Procurement', 'Admin']
+      roles: ['Procurement', 'Inventory AI']
     },
     {
       id: 'predictive',
@@ -128,10 +251,10 @@ export default function AiHub() {
       nameEn: 'Predictive Fleet Lifecycle Analyst',
       descAr: 'توقع الأعطال الوشيكة بناء على قراءات العدادات وسلوك السائقين لتقليل التعطل المفاجئ.',
       descEn: 'Predicting vehicle wear-and-tear using telemetry, odometer schedules, and driver behaviors.',
-      icon: 'TrendingUp',
+      icon: 'LineChart',
       isActive: true,
       color: 'rose',
-      roles: ['Analyst', 'Admin']
+      roles: ['Telemetry', 'Failure Forecast']
     },
     {
       id: 'finance',
@@ -139,10 +262,10 @@ export default function AiHub() {
       nameEn: 'Financial Controller & Cost Optimizer',
       descAr: 'تحليل تكلفة استهلاك قطع غيار الورشة، والتحقق من الجدوى المالية لمزودي الخدمة الخارجيين.',
       descEn: 'Analyzing maintenance billing trends, workshop spending margins, and external vendor costs.',
-      icon: 'Layers',
+      icon: 'Landmark',
       isActive: true,
       color: 'teal',
-      roles: ['Accountant', 'Admin']
+      roles: ['Budget Control', 'Cost Audit']
     }
   ]);
 
@@ -159,32 +282,93 @@ export default function AiHub() {
     return agentsRegistry.find(a => a.id === id)?.isActive ?? true;
   };
 
-  const renderAgentIcon = (id: string, color: string) => {
-    const iconSize = 13;
+  const renderAgentIcon = (
+    id: string, 
+    color?: string, 
+    size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' = 'sm', 
+    className = ''
+  ) => {
+    const sizeMap = {
+      xs: 12,
+      sm: 15,
+      md: 19,
+      lg: 24,
+      xl: 32
+    };
+    const iconSize = sizeMap[size] || 15;
+
     let colorClass = '';
     if (color === 'violet') colorClass = 'text-violet-600 dark:text-violet-400';
     else if (color === 'amber') colorClass = 'text-amber-600 dark:text-amber-400';
-    else if (color === 'emerald') colorClass = 'text-emerald-500 dark:text-emerald-400';
-    else if (color === 'sky') colorClass = 'text-sky-500 dark:text-sky-400';
-    else if (color === 'rose') colorClass = 'text-rose-500 dark:text-rose-400';
+    else if (color === 'emerald') colorClass = 'text-emerald-600 dark:text-emerald-400';
+    else if (color === 'sky') colorClass = 'text-sky-600 dark:text-sky-400';
+    else if (color === 'rose') colorClass = 'text-rose-600 dark:text-rose-400';
     else if (color === 'teal') colorClass = 'text-teal-600 dark:text-teal-400';
+    else colorClass = 'text-slate-700 dark:text-slate-200';
+
+    const mergedClass = `${colorClass} ${className} shrink-0 stroke-[2.2]`;
 
     switch (id) {
       case 'project-manager':
-        return <Sparkles size={iconSize} className={colorClass} />;
+        return <BrainCircuit size={iconSize} className={mergedClass} />;
       case 'mechanic':
-        return <Wrench size={iconSize} className={colorClass} />;
+        return <Wrench size={iconSize} className={mergedClass} />;
       case 'safety':
-        return <ShieldAlert size={iconSize} className={colorClass} />;
+        return <ShieldCheck size={iconSize} className={mergedClass} />;
       case 'supply-chain':
-        return <RefreshCw size={iconSize} className={colorClass} />;
+        return <Boxes size={iconSize} className={mergedClass} />;
       case 'predictive':
-        return <TrendingUp size={iconSize} className={colorClass} />;
+        return <LineChart size={iconSize} className={mergedClass} />;
       case 'finance':
-        return <Layers size={iconSize} className={colorClass} />;
+        return <Landmark size={iconSize} className={mergedClass} />;
       default:
-        return <Bot size={iconSize} className={colorClass} />;
+        return <Bot size={iconSize} className={mergedClass} />;
     }
+  };
+
+  const renderAgentAvatarContainer = (
+    id: string, 
+    color: string, 
+    isActive = true, 
+    size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' = 'md',
+    showStatusDot = true
+  ) => {
+    const containerClasses = {
+      xs: 'w-6 h-6 rounded-lg',
+      sm: 'w-8 h-8 rounded-xl',
+      md: 'w-10 h-10 rounded-xl',
+      lg: 'w-12 h-12 rounded-2xl',
+      xl: 'w-16 h-16 rounded-2xl'
+    };
+
+    const bgMap: Record<string, string> = {
+      violet: 'bg-violet-500/10 border-violet-500/25 text-violet-600 dark:text-violet-400 dark:bg-violet-950/30',
+      amber: 'bg-amber-500/10 border-amber-500/25 text-amber-600 dark:text-amber-400 dark:bg-amber-950/30',
+      emerald: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/30',
+      sky: 'bg-sky-500/10 border-sky-500/25 text-sky-600 dark:text-sky-400 dark:bg-sky-950/30',
+      rose: 'bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400 dark:bg-rose-950/30',
+      teal: 'bg-teal-500/10 border-teal-500/25 text-teal-600 dark:text-teal-400 dark:bg-teal-950/30'
+    };
+
+    const activeTheme = isActive 
+      ? (bgMap[color] || 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700')
+      : 'bg-slate-100/60 dark:bg-slate-900/40 text-slate-400 dark:text-slate-600 border-slate-200/50 dark:border-slate-800/50 grayscale opacity-65';
+
+    return (
+      <div className="relative shrink-0 select-none">
+        <div className={`${containerClasses[size]} border flex items-center justify-center shadow-xs transition-all ${activeTheme}`}>
+          {renderAgentIcon(id, color, size)}
+        </div>
+        {showStatusDot && (
+          <span 
+            className={`absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white dark:border-[#0c101d] ${
+              size === 'xs' || size === 'sm' ? 'w-2 h-2' : 'w-2.5 h-2.5'
+            } ${isActive ? 'bg-emerald-500 ring-1 ring-emerald-400/40 animate-pulse' : 'bg-slate-400'}`} 
+            title={isActive ? 'Active' : 'Paused'}
+          />
+        )}
+      </div>
+    );
   };
 
   const [isCoPilotEnabled, setIsCoPilotEnabled] = useState<boolean>(false);
@@ -259,6 +443,7 @@ export default function AiHub() {
     pmText?: string;
     mechText?: string;
     timestamp: Date;
+    attachment?: AttachedFileItem;
   }
   const [coPilotMessages, setCoPilotMessages] = useState<CoPilotMessage[]>([
     {
@@ -271,6 +456,29 @@ export default function AiHub() {
   ]);
   const [coPilotInput, setCoPilotInput] = useState('');
   const [coPilotLoading, setCoPilotLoading] = useState(false);
+
+  // File Attachment States
+  const [pmAttachedFile, setPmAttachedFile] = useState<AttachedFileItem | null>(null);
+  const [mechAttachedFile, setMechAttachedFile] = useState<AttachedFileItem | null>(null);
+  const [coPilotAttachedFile, setCoPilotAttachedFile] = useState<AttachedFileItem | null>(null);
+  const [showMechAttachMenu, setShowMechAttachMenu] = useState<boolean>(false);
+  const [previewModalImage, setPreviewModalImage] = useState<string | null>(null);
+
+  const pmFileInputRef = useRef<HTMLInputElement>(null);
+  const mechFileInputRef = useRef<HTMLInputElement>(null);
+  const coPilotFileInputRef = useRef<HTMLInputElement>(null);
+  const cameraFileInputRef = useRef<HTMLInputElement>(null);
+  const [cameraTarget, setCameraTarget] = useState<'pm' | 'mech' | 'copilot'>('pm');
+
+  // Real Voice Recording & Dictation States
+  const [isVoiceRecording, setIsVoiceRecording] = useState<boolean>(false);
+  const [voiceRecordingDuration, setVoiceRecordingDuration] = useState<number>(0);
+  const [voiceRecordingTarget, setVoiceRecordingTarget] = useState<'pm' | 'mech' | 'copilot'>('pm');
+  const [voiceTranscriptText, setVoiceTranscriptText] = useState<string>('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<any>(null);
+  const speechRecRef = useRef<any>(null);
 
   // Text-To-Speech audio player state
   const [activeAudioMessageId, setActiveAudioMessageId] = useState<string | null>(null);
@@ -304,9 +512,13 @@ export default function AiHub() {
     localStorage.setItem('fleet_chat_font_size', size);
   };
 
-  // Shared sidebar visibility state - default to false for a clean, distraction-free full-screen chat on start
+  // Fullscreen Page Mode State
+  const [isFullscreenChat, setIsFullscreenChat] = useState<boolean>(false);
+
+  // Shared sidebar visibility state - default to false so conversation takes 100% full width
   const [showSidebar, setShowSidebar] = useState<boolean>(() => {
-    return localStorage.getItem('fleet_ai_show_sidebar') === 'true';
+    const saved = localStorage.getItem('fleet_ai_show_sidebar');
+    return saved === 'true';
   });
 
   const handleToggleSidebar = () => {
@@ -314,6 +526,14 @@ export default function AiHub() {
     setShowSidebar(nextState);
     localStorage.setItem('fleet_ai_show_sidebar', String(nextState));
   };
+
+  // Fullscreen Modern Chat States
+  const [selectedPromptCategory, setSelectedPromptCategory] = useState<string>('for-you');
+  const [isAgentMenuOpen, setIsAgentMenuOpen] = useState<boolean>(false);
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState<boolean>(false);
+  const [whatsAppMenuOpen, setWhatsAppMenuOpen] = useState<boolean>(false);
+  const [showAttachMenu, setShowAttachMenu] = useState<boolean>(false);
+  const [showQuickPromptsMenu, setShowQuickPromptsMenu] = useState<boolean>(false);
 
   // --- 0. Dedicated Agent Chat States & Helpers ---
   const [activeChatAgent, setActiveChatAgent] = useState<any | null>(null);
@@ -967,28 +1187,41 @@ Regarding: "${text}", live data metrics match our general parameters:
 
   // Sender for PM Bot
   const handlePmSendMessage = async (textToSend?: string) => {
-    const text = textToSend || pmInput;
-    if (!text.trim() || pmLoading) return;
+    const text = textToSend !== undefined ? textToSend : pmInput;
+    const currentAttachment = pmAttachedFile;
+    if ((!text.trim() && !currentAttachment) || pmLoading) return;
 
-    const userMessage: AIMessage = { role: 'user', text };
+    const userMessageText = text.trim() || (currentAttachment ? (language === 'ar' ? `[مرفق: ${currentAttachment.name}]` : `[Attached: ${currentAttachment.name}]`) : '');
+
+    const userMessage: AIMessage = { 
+      role: 'user', 
+      text: userMessageText,
+      attachment: currentAttachment ? { ...currentAttachment } : undefined,
+      timestamp: new Date()
+    };
     setPmMessages(prev => [...prev, userMessage]);
     
-    if (!textToSend) {
+    if (textToSend === undefined) {
       setPmInput('');
     }
-    
+    setPmAttachedFile(null);
     setPmLoading(true);
 
     try {
-      const response = await getAIProjectManagerInsight([...pmMessages, userMessage], getPmContextModifier());
-      setPmMessages(prev => [...prev, { role: 'model', text: response }]);
+      let promptContext = getPmContextModifier();
+      if (currentAttachment) {
+        promptContext += ` [ملاحظة مرفق: أرفق المستخدم ملفاً/صورة باسم "${currentAttachment.name}"، نوعه "${currentAttachment.type}"، وحجمه ${Math.round(currentAttachment.size / 1024)} KB]`;
+      }
+      const response = await getAIProjectManagerInsight([...pmMessages, userMessage], promptContext);
+      setPmMessages(prev => [...prev, { role: 'model', text: response, timestamp: new Date() }]);
     } catch (e) {
       console.error(e);
       setPmMessages(prev => [...prev, { 
         role: 'model', 
         text: language === 'ar'
           ? '⚠️ عذراً، واجهت صعوبة في معالجة طلبك حالياً. يرجى التحقق من اتصال الإنترنت.'
-          : '⚠️ Pardon me, I had issue getting the response. Please check project settings.'
+          : '⚠️ Pardon me, I had issue getting the response. Please check project settings.',
+        timestamp: new Date()
       }]);
     } finally {
       setPmLoading(false);
@@ -997,20 +1230,25 @@ Regarding: "${text}", live data metrics match our general parameters:
 
   // Sender for Mechanic Bot
   const handleMechSendMessage = async (textToSend?: string) => {
-    const text = textToSend || mechInput;
-    if (!text.trim() || mechLoading) return;
+    const text = textToSend !== undefined ? textToSend : mechInput;
+    const currentAttachment = mechAttachedFile;
+    if ((!text.trim() && !currentAttachment) || mechLoading) return;
+
+    const userMessageText = text.trim() || (currentAttachment ? (language === 'ar' ? `[مرفق: ${currentAttachment.name}]` : `[Attached: ${currentAttachment.name}]`) : '');
 
     const newUserMessage: MechanicMessage = {
       id: `msg-${Date.now()}-user`,
       role: 'user',
-      text,
-      timestamp: new Date()
+      text: userMessageText,
+      timestamp: new Date(),
+      attachment: currentAttachment ? { ...currentAttachment } : undefined
     };
 
     setMechMessages(prev => [...prev, newUserMessage]);
-    if (!textToSend) {
+    if (textToSend === undefined) {
       setMechInput('');
     }
+    setMechAttachedFile(null);
     setMechLoading(true);
 
     try {
@@ -1057,7 +1295,10 @@ Regarding: "${text}", live data metrics match our general parameters:
           text: m.text
         }));
 
-      const mechModifier = getMechContextModifier();
+      let mechModifier = getMechContextModifier();
+      if (currentAttachment) {
+        mechModifier += ` [ملاحظة مرفق: أرفق المستخدم ملفاً/صورة باسم "${currentAttachment.name}"، نوعه "${currentAttachment.type}"، وحجمه ${Math.round(currentAttachment.size / 1024)} KB]`;
+      }
       if (mechModifier) {
         mappedMechMessages.unshift({
           role: 'user',
@@ -1109,20 +1350,25 @@ Regarding: "${text}", live data metrics match our general parameters:
 
   // Co-Pilot Multi-Agent concurrent sender
   const handleCoPilotSendMessage = async (textToSend?: string) => {
-    const text = textToSend || coPilotInput;
-    if (!text.trim() || coPilotLoading) return;
+    const text = textToSend !== undefined ? textToSend : coPilotInput;
+    const currentAttachment = coPilotAttachedFile;
+    if ((!text.trim() && !currentAttachment) || coPilotLoading) return;
+
+    const userMessageText = text.trim() || (currentAttachment ? (language === 'ar' ? `[مرفق: ${currentAttachment.name}]` : `[Attached: ${currentAttachment.name}]`) : '');
 
     const newUserMessage: CoPilotMessage = {
       id: `copilot-${Date.now()}-user`,
       role: 'user',
-      text,
-      timestamp: new Date()
+      text: userMessageText,
+      timestamp: new Date(),
+      attachment: currentAttachment ? { ...currentAttachment } : undefined
     };
 
     setCoPilotMessages(prev => [...prev, newUserMessage]);
-    if (!textToSend) {
+    if (textToSend === undefined) {
       setCoPilotInput('');
     }
+    setCoPilotAttachedFile(null);
     setCoPilotLoading(true);
 
     try {
@@ -1131,7 +1377,7 @@ Regarding: "${text}", live data metrics match our general parameters:
         coPilotMessages
           .filter(m => m.text)
           .map(m => ({ role: m.role, text: m.text || '' }))
-          .concat([{ role: 'user', text }]),
+          .concat([{ role: 'user', text: userMessageText }]),
         getPmContextModifier()
       );
 
@@ -1174,7 +1420,7 @@ Regarding: "${text}", live data metrics match our general parameters:
       const mappedMechMessages = coPilotMessages
         .filter(m => m.text)
         .map(m => ({ role: m.role, text: m.text || '' }))
-        .concat([{ role: 'user', text }]);
+        .concat([{ role: 'user', text: userMessageText }]);
 
       const mechModifier = getMechContextModifier();
       if (mechModifier) {
@@ -1208,6 +1454,22 @@ Regarding: "${text}", live data metrics match our general parameters:
         id: `copilot-${Date.now()}-reply`,
         role: 'model',
         pmText: pmRes,
+        mechText: mechRes,
+        timestamp: new Date()
+      }]);
+    } catch (e) {
+      console.error(e);
+      setCoPilotMessages(prev => [...prev, {
+        id: `copilot-${Date.now()}-err`,
+        role: 'model',
+        pmText: language === 'ar' ? '⚠️ تعذر تحميل رد التخطيط.' : '⚠️ PM advice failed.',
+        mechText: language === 'ar' ? '🛑 تعذر تحميل الرد الفني.' : '🛑 Mechanic advice failed.',
+        timestamp: new Date()
+      }]);
+    } finally {
+      setCoPilotLoading(false);
+    }
+  };
         mechText: mechRes,
         timestamp: new Date()
       }]);
@@ -1592,55 +1854,184 @@ Regarding: "${text}", live data metrics match our general parameters:
   ];
 
   return (
-    <div className="flex flex-col h-full flex-1 w-full bg-slate-50 dark:bg-[#070a13] font-sans" dir={dir}>
-      
-      {/* 1. Header Bar: Combines visual aesthetics with interactive submenu switching */}
-      <div className="bg-white dark:bg-[#0c101d] border-b border-slate-200 dark:border-slate-850 p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 transition-all shadow-xs">
-        <div className={`flex items-center gap-3 w-full md:w-auto ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-          <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/10">
-            <Cpu size={24} className="animate-spin-slow" />
+    <div 
+      className="fixed inset-0 z-[100] w-screen h-screen flex flex-col bg-[#efeae2] dark:bg-[#0b141a] overflow-hidden font-sans"
+      dir={dir}
+    >
+      {/* 1. Brand Shadowed Purple Top Bar (بنفسجي ضلي فخم مع تدرجات وظلال عميقة) */}
+      <div className={`bg-gradient-to-r from-[#1e1136] via-[#2d184f] to-[#20123b] dark:from-[#130a24] dark:via-[#1f1038] dark:to-[#140b26] text-white px-3.5 md:px-5 py-2.5 flex items-center justify-between gap-3 shrink-0 z-30 shadow-xl shadow-purple-950/40 border-b border-purple-400/20 backdrop-blur-md ${isRtl ? 'flex-row-reverse' : ''}`}>
+        
+        {/* Left Side (or Right in RTL): Back button + Avatar + Contact Info & Status */}
+        <div className={`flex items-center gap-2.5 md:gap-3.5 min-w-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          {/* Back Arrow Button */}
+          <button
+            type="button"
+            onClick={onBack ? onBack : () => {
+              if (window.history.length > 1) {
+                window.history.back();
+              }
+            }}
+            className="p-2 -mx-1 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 rounded-xl border border-purple-300/20 transition-all cursor-pointer text-purple-100 hover:text-white flex items-center justify-center shrink-0 shadow-xs"
+            title={language === 'ar' ? 'الرجوع للتطبيق' : 'Back to App'}
+          >
+            {isRtl ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
+          </button>
+
+          {/* Avatar with Online Badge */}
+          <div 
+            className="relative shrink-0 cursor-pointer active:scale-95 transition-transform" 
+            onClick={() => activeTab === 'project-manager' ? setPmGuideModalOpen(true) : setMechGuideModalOpen(true)}
+            title={language === 'ar' ? 'عرض بطاقة الوكيل' : 'View Agent Card'}
+          >
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-md overflow-hidden ${
+              activeTab === 'project-manager'
+                ? 'bg-gradient-to-tr from-purple-600 to-indigo-600 border-2 border-purple-300/30 ring-2 ring-purple-500/20'
+                : 'bg-gradient-to-tr from-amber-600 to-yellow-500 border-2 border-amber-300/30 ring-2 ring-amber-500/20'
+            }`}>
+              {activeTab === 'project-manager' ? <Sparkles size={20} /> : <Wrench size={20} />}
+            </div>
+            <span className={`absolute -bottom-0.5 ${isRtl ? '-left-0.5' : '-right-0.5'} w-3.5 h-3.5 bg-[#25d366] rounded-full border-2 border-[#1e1136] shadow-xs animate-pulse`} />
           </div>
-          <div>
-            <h1 className="text-sm md:text-base font-black text-slate-900 dark:text-white leading-tight">
-              {language === 'ar' ? 'مركز وكلاء الذكاء الاصطناعي الموحد' : 'Unified AI Agents Command Hub'}
-            </h1>
-            <p className="text-[10px] md:text-xs text-slate-400 dark:text-slate-500">
-              {language === 'ar' ? 'الإدارة والتحكم والصيانة الفنية مدعومة بنماذج التوليد الفوري' : 'Fleet Operations, Resource Allocation & Mechanical Diagonstics Platform'}
+
+          {/* Contact Name & Live Status Subtitle */}
+          <div className={`leading-tight min-w-0 ${isRtl ? 'text-right' : 'text-left'}`}>
+            <h3 className="text-sm md:text-base font-bold text-white truncate flex items-center gap-1.5">
+              <span>
+                {activeTab === 'project-manager' 
+                  ? (language === 'ar' ? 'روبرت - مدير الأسطول الذكي' : 'Robert - Fleet PM')
+                  : (language === 'ar' ? 'مساعد الصيانة والقطع' : 'Mechanic & Parts Bot')}
+              </span>
+              <span className="text-[9px] bg-purple-900/70 border border-purple-400/30 text-purple-200 px-2 py-0.5 rounded-full font-bold shadow-xs">AI</span>
+            </h3>
+            <p className="text-[11px] text-purple-200/80 truncate flex items-center gap-1 mt-0.5">
+              {(activeTab === 'project-manager' ? pmLoading : mechLoading) ? (
+                <span className="text-purple-200 font-bold italic flex items-center gap-1 animate-pulse">
+                  <span>{language === 'ar' ? 'يكتب الآن...' : 'typing...'}</span>
+                </span>
+              ) : (
+                <span className="text-purple-200/80 font-medium flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#25d366] shrink-0 shadow-xs" />
+                  <span>{language === 'ar' ? 'متصل الآن' : 'online'}</span>
+                </span>
+              )}
             </p>
           </div>
         </div>
 
-         {/* Dynamic Nav Tabs */}
-        <div className="grid grid-cols-2 md:flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl w-full md:w-auto">
+        {/* Center / Right: WhatsApp Agent Switcher Pill + Action Buttons */}
+        <div className={`flex items-center gap-2 shrink-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          {/* Agent Switcher Tabs */}
+          <div className="flex items-center bg-black/35 dark:bg-black/50 p-1 rounded-xl border border-purple-400/20 backdrop-blur-sm shadow-inner">
+            <button
+              type="button"
+              onClick={() => setActiveTab('project-manager')}
+              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                activeTab === 'project-manager'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-black ring-1 ring-white/20'
+                  : 'text-purple-200/80 hover:text-white hover:bg-white/10 active:bg-purple-900'
+              }`}
+            >
+              <Sparkles size={12} />
+              <span className="hidden sm:inline">{language === 'ar' ? 'روبرت' : 'Robert'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('mechanic')}
+              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                activeTab === 'mechanic'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-black ring-1 ring-white/20'
+                  : 'text-purple-200/80 hover:text-white hover:bg-white/10 active:bg-purple-900'
+              }`}
+            >
+              <Wrench size={12} />
+              <span className="hidden sm:inline">{language === 'ar' ? 'الصيانة' : 'Mechanic'}</span>
+            </button>
+          </div>
+
+          {/* Simulator & Metrics Drawer Toggle */}
           <button
-            onClick={() => setActiveTab('project-manager')}
-            className={`px-2 md:px-4.5 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 w-full md:w-auto ${
-              activeTab === 'project-manager'
-                ? 'bg-white dark:bg-[#151c2e] text-violet-600 dark:text-violet-400 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-300'
+            type="button"
+            onClick={handleToggleSidebar}
+            className={`p-2 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 rounded-xl border border-purple-300/20 transition-all cursor-pointer text-purple-100 hover:text-white flex items-center justify-center relative shadow-xs ${
+              showSidebar ? 'bg-purple-600/40 ring-2 ring-purple-400/40' : ''
             }`}
+            title={language === 'ar' ? 'لوحة المحاكاة والمؤشرات' : 'Simulator & Metrics'}
           >
-            <Sparkles size={14} className="shrink-0" />
-            <span className="truncate">
-              {language === 'ar' ? 'روبرت - مدير المشروع (AI)' : 'Robert - Project Manager (AI)'}
-              {!isAgentActive('project-manager') && ' ⏸️'}
-            </span>
+            <LayoutDashboard size={18} />
           </button>
 
-          <button
-            onClick={() => setActiveTab('mechanic')}
-            className={`px-2 md:px-4.5 py-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 w-full md:w-auto ${
-              activeTab === 'mechanic'
-                ? 'bg-white dark:bg-[#151c2e] text-amber-600 dark:text-amber-400 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-300'
-            }`}
-          >
-            <Wrench size={14} className="shrink-0" />
-            <span className="truncate">
-              {language === 'ar' ? 'مساعد الصيانة والقطع' : 'Mechanic Assistant'}
-              {!isAgentActive('mechanic') && ' ⏸️'}
-            </span>
-          </button>
+          {/* WhatsApp Dropdown Menu (3 dots) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setWhatsAppMenuOpen(!whatsAppMenuOpen)}
+              className="p-2 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 rounded-xl border border-purple-300/20 transition-all cursor-pointer text-purple-100 hover:text-white flex items-center justify-center shadow-xs"
+              title={language === 'ar' ? 'خيارات إضافية' : 'More options'}
+            >
+              <MoreVertical size={18} />
+            </button>
+
+            {whatsAppMenuOpen && (
+              <>
+                {/* Backdrop to close when clicking outside */}
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setWhatsAppMenuOpen(false)} 
+                />
+
+                <div 
+                  className="absolute top-full mt-2 right-0 w-60 bg-white dark:bg-[#1f1738] text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl py-2 z-50 border border-purple-100 dark:border-purple-800/40 space-y-0.5 text-xs font-semibold animate-scale-in"
+                  onClick={() => setWhatsAppMenuOpen(false)}
+                >
+                  <button
+                    onClick={() => activeTab === 'project-manager' ? setPmGuideModalOpen(true) : setMechGuideModalOpen(true)}
+                    className={`w-full px-4 py-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white flex items-center gap-2.5 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                  >
+                    <Compass size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span className="flex-1">{language === 'ar' ? 'معلومات ودليل الوكيل' : 'Agent Guide & Card'}</span>
+                  </button>
+
+                  <div className={`px-4 py-2.5 border-t border-b border-slate-100 dark:border-purple-900/30 flex items-center justify-between gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">{language === 'ar' ? 'حجم الخط' : 'Font Size'}</span>
+                    <div className="flex items-center gap-1.5">
+                      {(['sm', 'md', 'lg'] as const).map(sz => (
+                        <button
+                          key={sz}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSetChatFontSize(sz);
+                          }}
+                          className={`w-7 h-7 rounded-lg font-bold text-[11px] flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+                            chatFontSize === sz 
+                              ? 'bg-purple-600 text-white shadow-xs' 
+                              : 'bg-slate-100 dark:bg-purple-950/60 text-slate-600 dark:text-slate-300 hover:bg-purple-100 active:bg-purple-600 active:text-white'
+                          }`}
+                        >
+                          {sz.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => activeTab === 'project-manager' ? handlePmClearChat() : handleMechClearChat()}
+                    className={`w-full px-4 py-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white flex items-center gap-2.5 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                  >
+                    <RefreshCw size={15} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                    <span className="flex-1">{language === 'ar' ? 'مسح تدوينات المحادثة' : 'Clear Chat'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => onBack ? onBack() : null}
+                    className={`w-full px-4 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 active:bg-rose-600 active:text-white text-rose-600 dark:text-rose-400 flex items-center gap-2.5 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                  >
+                    <X size={15} className="shrink-0" />
+                    <span className="flex-1">{language === 'ar' ? 'إغلاق والعودة للتطبيق' : 'Exit to App'}</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1660,10 +2051,37 @@ Regarding: "${text}", live data metrics match our general parameters:
             >
               {/* Left sidebar suggestions and metrics panel */}
               {showSidebar && (
-                <div className={`w-full md:w-80 border-slate-200 dark:border-slate-850 p-5 flex flex-col shrink-0 bg-slate-50/60 dark:bg-[#090d18] overflow-y-auto ${
-                  isRtl ? 'md:order-last md:border-l' : 'md:border-r'
-                }`}>
-                {/* Simulation crisis & Persona selector panel */}
+                <>
+                  {/* Mobile Backdrop Overlay */}
+                  <div 
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 md:hidden"
+                    onClick={() => setShowSidebar(false)}
+                  />
+
+                  <div className={`fixed inset-y-0 z-50 w-[88vw] max-w-sm bg-white dark:bg-[#0c101d] shadow-2xl overflow-y-auto p-5 md:static md:w-80 md:z-auto md:shadow-none md:bg-slate-50/60 md:dark:bg-[#090d18] flex flex-col shrink-0 ${
+                    isRtl ? 'right-0 md:order-last md:border-l border-slate-200 dark:border-slate-850' : 'left-0 md:border-r border-slate-200 dark:border-slate-850'
+                  }`}>
+                    {/* Mobile Drawer Close Header */}
+                    <div className={`flex md:hidden items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-slate-800 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-6 h-6 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                          <LayoutDashboard size={14} />
+                        </div>
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                          {language === 'ar' ? 'محاكي الطوارئ والمؤشرات' : 'Simulator & Controls'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSidebar(false)}
+                        className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors cursor-pointer"
+                        title={language === 'ar' ? 'إغلاق والعودة إلى روبرت' : 'Close and return to Robert'}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Simulation crisis & Persona selector panel */}
                 <div className="mb-5 p-4 bg-violet-50/50 dark:bg-violet-950/15 rounded-2xl border border-violet-150/40 dark:border-violet-900/30 space-y-3.5 shadow-xs">
                   <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
                     <Sparkles size={14} className="text-violet-600 dark:text-violet-400" />
@@ -1672,7 +2090,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                     </span>
                   </div>
                   
-                  {/* Scenario Pills */}
+                  {/* Scenario Pills with Vector Icons */}
                   <div className="space-y-1">
                     <label className={`text-[9px] font-extrabold text-slate-400 dark:text-slate-500 block ${isRtl ? 'text-right' : 'text-left'}`}>
                       {language === 'ar' ? 'سيناريو التشغيل الفعلي للمطابقة:' : 'Active Operational Scenario:'}
@@ -1681,46 +2099,50 @@ Regarding: "${text}", live data metrics match our general parameters:
                       <button
                         type="button"
                         onClick={() => setActiveScenario('normal')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
+                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
                           activeScenario === 'normal'
-                            ? 'bg-emerald-500 text-white border-transparent'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
+                            ? 'bg-emerald-500 text-white border-transparent shadow-xs'
+                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-emerald-500/40'
                         }`}
                       >
-                        {language === 'ar' ? '🟢 طبيعي متزن' : '🟢 Balanced'}
+                        <CheckCircle2 size={12} className="shrink-0" />
+                        <span>{language === 'ar' ? 'طبيعي متزن' : 'Balanced'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveScenario('parts-crisis')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
+                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
                           activeScenario === 'parts-crisis'
-                            ? 'bg-rose-500 text-white border-transparent'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
+                            ? 'bg-rose-500 text-white border-transparent shadow-xs'
+                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-rose-500/40'
                         }`}
                       >
-                        {language === 'ar' ? '🛑 أزمة توريد' : '🛑 Parts Crisis'}
+                        <AlertTriangle size={12} className="shrink-0" />
+                        <span>{language === 'ar' ? 'أزمة توريد' : 'Parts Crisis'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveScenario('backlog-peak')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
+                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
                           activeScenario === 'backlog-peak'
-                            ? 'bg-amber-500 text-white border-transparent'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
+                            ? 'bg-amber-500 text-white border-transparent shadow-xs'
+                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-amber-500/40'
                         }`}
                       >
-                        {language === 'ar' ? '⚡ ذروة تكدس' : '⚡ Backlog Peak'}
+                        <Zap size={12} className="shrink-0" />
+                        <span>{language === 'ar' ? 'ذروة تكدس' : 'Backlog Peak'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveScenario('staff-shortage')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
+                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
                           activeScenario === 'staff-shortage'
-                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
+                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs'
+                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-violet-500/40'
                         }`}
                       >
-                        {language === 'ar' ? '👥 عجز بشري' : '👥 Staff Short'}
+                        <Users size={12} className="shrink-0" />
+                        <span>{language === 'ar' ? 'عجز بشري' : 'Staff Short'}</span>
                       </button>
                     </div>
                   </div>
@@ -1783,16 +2205,16 @@ Regarding: "${text}", live data metrics match our general parameters:
                             ? 'تحكم بتشغيل أو إيقاف الوكلاء ومطابقتهم الذكية بالمؤسسة:' 
                             : 'Configure, run or pause active business agents dynamically:'}
                         </p>
-                        <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
                           {agentsRegistry.map((agent) => {
                             const isAct = agent.isActive;
                             return (
                               <div 
                                 key={agent.id}
-                                className={`p-2.5 rounded-xl border transition-all flex flex-col gap-1.5 cursor-pointer hover:border-violet-500/50 dark:hover:border-violet-400/50 hover:bg-slate-50 dark:hover:bg-[#161d33]/50 ${
+                                className={`p-3 rounded-2xl border transition-all flex flex-col gap-2 cursor-pointer group hover:border-violet-500/50 dark:hover:border-violet-400/50 hover:bg-slate-50/80 dark:hover:bg-[#161d33]/60 ${
                                   isAct 
-                                    ? 'bg-white dark:bg-[#111526] border-slate-150 dark:border-slate-800' 
-                                    : 'bg-slate-50/40 dark:bg-slate-900/20 border-slate-200/30 dark:border-slate-800/40 opacity-75'
+                                    ? 'bg-white dark:bg-[#111526] border-slate-200/80 dark:border-slate-800/90 shadow-xs' 
+                                    : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200/40 dark:border-slate-800/40 opacity-70'
                                 }`}
                                 onClick={(e) => {
                                   const target = e.target as HTMLElement;
@@ -1801,47 +2223,62 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 }}
                                 title={language === 'ar' ? 'انقر لفتح نافذة الدردشة التفاعلية مع الوكيل' : 'Click to open interactive chat with this agent'}
                               >
-                                <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                  <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                                      isAct 
-                                        ? 'bg-slate-100 dark:bg-[#161c30]' 
-                                        : 'bg-slate-100/50 dark:bg-slate-900/50'
-                                    }`}>
-                                      {renderAgentIcon(agent.id, agent.color)}
-                                    </div>
-                                    <div className="text-left leading-tight">
-                                      <span className={`text-[10px] font-black block ${isRtl ? 'text-right' : 'text-left'} ${
+                                <div className={`flex items-center justify-between gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                  <div className={`flex items-center gap-2.5 min-w-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                    {renderAgentAvatarContainer(agent.id, agent.color, isAct, 'md', true)}
+                                    <div className="text-left leading-tight min-w-0">
+                                      <span className={`text-[10.5px] font-black block truncate ${isRtl ? 'text-right' : 'text-left'} ${
                                         isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'
                                       }`}>
                                         {language === 'ar' ? agent.nameAr : agent.nameEn}
                                       </span>
-                                      <span className={`text-[8px] font-extrabold text-slate-400 dark:text-slate-500 block ${isRtl ? 'text-right' : 'text-left'}`}>
-                                        {agent.roles.join(' | ')}
-                                      </span>
+                                      <div className={`flex items-center gap-1 mt-0.5 ${isRtl ? 'flex-row-reverse justify-end' : ''}`}>
+                                        <span className="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 truncate">
+                                          {agent.roles.join(' • ')}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Small Play/Pause Toggle Switch */}
-                                  <button
-                                    onClick={() => toggleAgentActive(agent.id)}
-                                    className={`relative w-9.5 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-hidden cursor-pointer ${
-                                      isAct ? 'bg-gradient-to-r from-purple-600 to-indigo-500' : 'bg-slate-300 dark:bg-slate-700'
-                                    }`}
-                                    title={isAct 
-                                      ? (language === 'ar' ? 'إيقاف الوكيل' : 'Stop Agent') 
-                                      : (language === 'ar' ? 'تشغيل الوكيل' : 'Run Agent')
-                                    }
-                                  >
-                                    <div 
-                                      className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                                        isAct ? (isRtl ? '-translate-x-4.5' : 'translate-x-4.5') : 'translate-x-0'
-                                      }`} 
-                                    />
-                                  </button>
+                                  {/* Quick Action Buttons */}
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenAgentChat(agent);
+                                      }}
+                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-600 hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-300 transition-colors cursor-pointer"
+                                      title={language === 'ar' ? 'محادثة فورية مع الوكيل' : 'Chat with Agent'}
+                                    >
+                                      <MessageSquare size={12} />
+                                    </button>
+
+                                    {/* Small Play/Pause Toggle Switch */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleAgentActive(agent.id);
+                                      }}
+                                      className={`relative w-8 h-4.5 rounded-full p-0.5 transition-colors duration-200 focus:outline-hidden cursor-pointer ${
+                                        isAct ? 'bg-gradient-to-r from-purple-600 to-indigo-500' : 'bg-slate-300 dark:bg-slate-700'
+                                      }`}
+                                      title={isAct 
+                                        ? (language === 'ar' ? 'إيقاف الوكيل' : 'Stop Agent') 
+                                        : (language === 'ar' ? 'تشغيل الوكيل' : 'Run Agent')
+                                      }
+                                    >
+                                      <div 
+                                        className={`w-3.5 h-3.5 rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                                          isAct ? (isRtl ? '-translate-x-3.5' : 'translate-x-3.5') : 'translate-x-0'
+                                        }`} 
+                                      />
+                                    </button>
+                                  </div>
                                 </div>
 
-                                <p className={`text-[9px] leading-normal font-semibold ${isRtl ? 'text-right' : 'text-left'} ${
+                                <p className={`text-[9px] leading-relaxed font-medium ${isRtl ? 'text-right' : 'text-left'} ${
                                   isAct ? 'text-slate-500 dark:text-slate-400' : 'text-slate-400/80 dark:text-slate-600'
                                 }`}>
                                   {language === 'ar' ? agent.descAr : agent.descEn}
@@ -2008,7 +2445,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                     </span>
                                   ) : state.status === 'mismatch' ? (
                                     <span 
-                                      className="bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 p-0.5 px-1.5 rounded-full font-black text-[8px] flex items-center gap-0.5 cursor-help animate-fade-in"
+                                      className="bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 p-0.5 px-1.5 rounded-full font-black text-[8px] flex items-center gap-0.5 cursor-help animate-fade-in"
                                       title={language === 'ar' ? 'تفاوت السجلات المكتوبة بالخادم مقارنة ببيانات المتصفح' : 'Mismatch detected! Local and cloud counts differ.'}
                                     >
                                       <AlertCircle size={8} />
@@ -2030,7 +2467,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                           <button
                             onClick={refreshSyncDiagnostic}
                             disabled={isTestingFirebase || isSyncInProgress}
-                            className="flex items-center justify-center gap-1 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-705 text-slate-600 dark:text-slate-350 font-black cursor-pointer transition-all disabled:opacity-50 text-[9px] border border-transparent shadow-xs"
+                            className="flex items-center justify-center gap-1 p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black cursor-pointer transition-all disabled:opacity-50 text-[9px] border border-transparent shadow-xs"
                             title={language === 'ar' ? 'فحص الاتصال وتحديث العدادات سحابياً' : 'Re-test firestore and refresh cloud states'}
                           >
                             <RefreshCw size={11} className={isTestingFirebase ? 'animate-spin text-violet-500' : ''} />
@@ -2097,327 +2534,337 @@ Regarding: "${text}", live data metrics match our general parameters:
                   </div>
                 </div>
               </div>
+              </>
               )}
 
               {/* Chat Timeline Panel */}
-              <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#0c101d] relative">
+              <div className="flex-1 flex flex-col min-h-0 bg-[#efeae2] dark:bg-[#0b141a] relative">
                 
-                {!isAgentActive('project-manager') && (
-                  <div className="absolute inset-0 z-50 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-6 text-center">
-                    <div className="bg-white dark:bg-[#111625] border border-slate-200 dark:border-slate-800 p-8 rounded-3xl max-w-sm shadow-2xl space-y-4">
-                      <div className="w-16 h-16 mx-auto rounded-2xl bg-violet-500/10 text-violet-500 flex items-center justify-center animate-pulse">
-                        <Sparkles size={32} />
-                      </div>
-                      <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">
-                        {language === 'ar' ? 'الوكيل الاستراتيجي "روبرت" متوقف' : 'Strategic Agent "Robert" is Paused'}
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
-                        {language === 'ar' 
-                          ? 'تم إيقاف تشغيل هذا الوكيل حالياً من لوحة التحكم. يرجى تفعيله بالنقر على زر التشغيل الأخضر في لوحة إدارة الوكلاء الجانبية.'
-                          : 'This agent has been paused. Please toggle it back on from the AI Agents Control & Registry in the sidebar to start chat.'}
-                      </p>
-                      <button
-                        onClick={() => {
-                          setAgentsRegistry(prev => prev.map(a => a.id === 'project-manager' ? { ...a, isActive: true } : a));
-                        }}
-                        className="w-full px-6 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-xl text-xs font-black shadow-lg cursor-pointer transition-all"
-                      >
-                        {language === 'ar' ? 'تفعيل وتشغيل الوكيل الآن' : 'Activate Agent Now'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Title and Controls inside Chat bar */}
-                <div className="p-4 px-5 border-b border-slate-150 dark:border-slate-850 flex items-center justify-between bg-white dark:bg-[#0c101d] shrink-0">
-                  <div className={`flex items-center gap-3 w-full md:w-auto ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                    <div className="w-10 h-10 rounded-2xl bg-violet-600 text-white flex items-center justify-center shadow-md">
-                      <Sparkles size={20} className="animate-pulse" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs md:text-sm font-black text-slate-900 dark:text-white leading-tight">
-                        {language === 'ar' ? 'روبرت - مدير المشروع الذكي (AI)' : 'Robert - AI Project Manager'}
-                      </h3>
-                      <p className="text-[9px] text-slate-400 dark:text-slate-500">
-                        {language === 'ar' ? 'وكيل التخطيط والتنسيق لحل الاختناقات اللحظية' : 'Full-stack scheduling strategy assistant'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Font Size Selector (Three Small Squares) */}
-                    <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 dark:bg-slate-800/80 dark:border-slate-750 p-1 rounded-xl shrink-0" title={language === 'ar' ? 'حجم الخط' : 'Font Size'}>
-                      <button
-                        type="button"
-                        onClick={() => handleSetChatFontSize('sm')}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[11px] transition-all cursor-pointer border ${
-                          chatFontSize === 'sm'
-                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200/80'
-                        }`}
-                        title={language === 'ar' ? 'تصغير الخط' : 'Small font'}
-                      >
-                        {language === 'ar' ? 'أ' : 'A'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetChatFontSize('md')}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all cursor-pointer border ${
-                          chatFontSize === 'md'
-                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200/80'
-                        }`}
-                        title={language === 'ar' ? 'خط متوسط' : 'Medium font'}
-                      >
-                        {language === 'ar' ? 'أ' : 'A'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetChatFontSize('lg')}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-lg transition-all cursor-pointer border ${
-                          chatFontSize === 'lg'
-                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200/80'
-                        }`}
-                        title={language === 'ar' ? 'تكبير الخط' : 'Large font'}
-                      >
-                        {language === 'ar' ? 'أ' : 'A'}
-                      </button>
-                    </div>
-
-                    {/* Sidebar Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={handleToggleSidebar}
-                      className={`p-1.5 md:p-2 md:px-3 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border ${
-                        showSidebar
-                          ? 'bg-violet-50 border-violet-200 text-violet-600 dark:bg-violet-950/25 dark:border-violet-900/40 dark:text-violet-400'
-                          : 'bg-slate-55 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-750 dark:text-slate-300'
-                      }`}
-                      title={language === 'ar' ? 'المحاكاة ومؤشرات التشغيل' : 'Simulator & Metrics'}
-                    >
-                      <LayoutDashboard size={14} />
-                      <span className="hidden sm:inline">{language === 'ar' ? 'المحاكاة والمؤشرات' : 'Simulator & Metrics'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => setPmGuideModalOpen(true)}
-                      className="p-1.5 md:p-2 md:px-3 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border bg-violet-50 border-violet-200 hover:bg-violet-100 text-violet-600 dark:bg-violet-950/25 dark:border-violet-900/40 dark:hover:bg-violet-950/40 dark:text-violet-400"
-                      title={language === 'ar' ? 'الدليل السريع وطبيعة عمل الوكيل' : 'Agent nature of work & guide'}
-                    >
-                      <Compass size={14} className="animate-pulse" />
-                      <span className="hidden sm:inline">{language === 'ar' ? 'طبيعة عمل الروبوت' : 'Nature of Work'}</span>
-                    </button>
-
-                    <button
-                      onClick={handlePmClearChat}
-                      className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-705 text-slate-500 dark:text-slate-400 transition-all cursor-pointer border border-slate-200/50 dark:border-slate-750 shadow-xs"
-                      title={language === 'ar' ? 'مسح تدوينات المحادثة' : 'Clear Strategy cache'}
-                    >
-                      <RefreshCw size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Timeline Messages Area */}
+                {/* WhatsApp Messages Timeline */}
                 <div
                   ref={pmScrollRef}
-                  className="flex-1 overflow-y-auto p-5 md:p-6 space-y-4 bg-slate-50/30 dark:bg-[#070a13]/20"
+                  className="flex-1 overflow-y-auto p-3 md:p-5 space-y-3 bg-[#efeae2] dark:bg-[#0b141a] bg-opacity-95"
                 >
+                  {/* WhatsApp Floating Date Badge */}
+                  <div className="flex justify-center my-1 select-none">
+                    <span className="bg-white/85 dark:bg-[#182229]/90 text-[11px] font-bold text-[#54656f] dark:text-[#8696a0] px-3 py-1 rounded-lg shadow-2xs border border-black/5 dark:border-white/5">
+                      {language === 'ar' ? 'اليوم' : 'TODAY'}
+                    </span>
+                  </div>
+
+                  {/* WhatsApp Security Encryption Disclaimer */}
+                  <div className="flex justify-center my-1 px-4 text-center select-none">
+                    <span className="bg-[#ffeecd]/80 dark:bg-[#182229]/90 text-[10px] font-semibold text-[#54656f] dark:text-[#8696a0] px-3.5 py-1.5 rounded-lg shadow-2xs max-w-md border border-[#ffe6b3] dark:border-slate-800">
+                      🔒 {language === 'ar' ? 'الرسائل مدعومة بالذكاء الاصطناعي مع اتصال مباشر بقاعدة بيانات الأسطول والمخزون.' : 'Messages are AI-powered with real-time fleet & inventory database sync.'}
+                    </span>
+                  </div>
+
                   {pmMessages.map((msg, i) => {
                     const isUser = msg.role === 'user';
                     return (
                       <div
                         key={i}
-                        className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full`}
+                        className={`flex flex-col ${isUser ? (isRtl ? 'items-start' : 'items-end') : (isRtl ? 'items-end' : 'items-start')} w-full`}
                       >
-                        {/* Name tag pointer */}
-                        <span className={`text-[10px] font-extrabold text-slate-400 dark:text-slate-500 block px-1.5 mb-1 ${
-                          isRtl ? 'text-right' : 'text-left'
-                        }`}>
-                          {!isUser 
-                            ? (language === 'ar' ? 'مدير المشروع الذكي 🤖💼' : 'AI Project Planner 🤖💼') 
-                            : (language === 'ar' ? 'أنت (القيادة والعمليات)' : 'You (Strategic Director)')}
-                        </span>
-
-                        <div className={`p-4 md:p-5 leading-relaxed max-w-[85%] md:max-w-[75%] border relative group/msg transition-all duration-300 ${
+                        <div className={`p-3 md:px-4 md:py-2.5 leading-relaxed max-w-[88%] md:max-w-[75%] relative rounded-2xl shadow-xs transition-all ${
                           isUser 
-                            ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black shadow-lg shadow-indigo-600/10' 
-                            : `bg-gradient-to-br from-indigo-50/70 to-white dark:from-[#11172b] dark:to-[#0c1020] text-slate-800 dark:text-slate-200 rounded-3xl rounded-bl-none border-indigo-100/80 dark:border-indigo-950/40 border-l-4 border-l-indigo-600 dark:border-l-indigo-500 font-medium shadow-[0_6px_20px_rgba(99,102,241,0.04)] ${
-                                isRtl ? 'text-right' : 'text-left'
-                              }`
+                            ? `bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium ${isRtl ? 'rounded-tl-xs' : 'rounded-tr-xs'}` 
+                            : `bg-white dark:bg-[#1a152d] text-slate-800 dark:text-slate-100 border border-purple-100/50 dark:border-purple-900/40 ${isRtl ? 'rounded-tr-xs' : 'rounded-tl-xs'}`
                         }`}>
-                          <div className={`select-text ${getFontSizeClass(chatFontSize)}`}>
+                          {!isUser && (
+                            <div className="flex items-center justify-between gap-2 pb-1 mb-1.5 border-b border-slate-100 dark:border-purple-900/30">
+                              <span className="text-[11px] font-extrabold text-purple-600 dark:text-purple-400">
+                                {language === 'ar' ? 'روبرت - مدير الأسطول ⚡' : 'Robert - Fleet PM ⚡'}
+                              </span>
+                              <span className="text-[9px] bg-purple-100/80 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-bold">AI</span>
+                            </div>
+                          )}
+
+                          <div className={`select-text ${getFontSizeClass(chatFontSize)} ${isUser ? (isRtl ? 'text-right' : 'text-left') : (isRtl ? 'text-right' : 'text-left')}`}>
                             {isUser ? msg.text : renderRichMessageText(msg.text, `pm-${i}`)}
                           </div>
 
-                          {!isUser && (
-                            <div className="flex items-center gap-2.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 font-bold select-none">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleSpeakMessage(`pm-${i}`, msg.text)}
-                                className="flex items-center gap-1 hover:text-violet-600 cursor-pointer transition-colors"
-                              >
-                                {activeAudioMessageId === `pm-${i}` && isPlayingAudio ? (
-                                  <>
-                                    <VolumeX size={12} className="text-rose-500 animate-bounce" />
-                                    <span>{language === 'ar' ? 'إيقاف الصوت' : 'Mute'}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Volume2 size={12} />
-                                    <span>{language === 'ar' ? 'قراءة صوتية' : 'Read Aloud'}</span>
-                                  </>
-                                )}
-                              </button>
+                          <div className={`flex items-center gap-2 mt-1.5 pt-1.5 border-t ${isUser ? 'border-white/20 text-purple-100' : 'border-slate-100 dark:border-purple-900/30 text-slate-400 dark:text-slate-400'} text-[10px] select-none ${
+                            isUser ? 'justify-end' : 'justify-between'
+                          }`}>
+                            {!isUser && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleSpeakMessage(`pm-${i}`, msg.text)}
+                                  className="flex items-center gap-1 hover:text-purple-600 dark:hover:text-purple-400 active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all"
+                                >
+                                  {activeAudioMessageId === `pm-${i}` && isPlayingAudio ? (
+                                    <>
+                                      <VolumeX size={12} className="text-rose-500 animate-bounce" />
+                                      <span>{language === 'ar' ? 'إيقاف' : 'Mute'}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Volume2 size={12} />
+                                      <span>{language === 'ar' ? 'صوتي' : 'Audio'}</span>
+                                    </>
+                                  )}
+                                </button>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(msg.text);
-                                }}
-                                className="flex items-center gap-1 hover:text-violet-600 cursor-pointer transition-colors"
-                              >
-                                <Copy size={12} />
-                                <span>{language === 'ar' ? 'نسخ' : 'Copy'}</span>
-                              </button>
-
-                              {Boolean(msg?.text && (msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair'))) && (
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setQuickOrderData({
-                                      vehicleId: defaultVehicles[0]?.id || 'V1',
-                                      category: 'mechanical',
-                                      description: (msg?.text || '').slice(0, 150) + '...',
-                                      technicianId: defaultTechnicians[0]?.id || 'T1',
-                                      cost: '350'
-                                    });
-                                    setQuickOrderModalOpen(true);
+                                    navigator.clipboard.writeText(msg.text);
                                   }}
-                                  className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer transition-colors ml-auto mr-auto"
+                                  className="flex items-center gap-1 hover:text-purple-600 dark:hover:text-purple-400 active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all"
                                 >
-                                  <Wrench size={12} />
-                                  <span>{language === 'ar' ? '⚙️ توليد أمر صيانة فوري' : '⚙️ Quick Work Order'}</span>
+                                  <Copy size={12} />
+                                  <span>{language === 'ar' ? 'نسخ' : 'Copy'}</span>
                                 </button>
-                              )}
+
+                                {Boolean(msg?.text && (msg.text.includes('صيانة') || msg.text.includes('إصلاح') || msg.text.includes('عطل') || msg.text.includes('فرامل') || msg.text.toLowerCase().includes('maintenance') || msg.text.toLowerCase().includes('repair'))) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setQuickOrderData({
+                                        vehicleId: defaultVehicles[0]?.id || 'V1',
+                                        category: 'mechanical',
+                                        description: (msg?.text || '').slice(0, 150) + '...',
+                                        technicianId: defaultTechnicians[0]?.id || 'T1',
+                                        cost: '350'
+                                      });
+                                      setQuickOrderModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-bold hover:underline active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all"
+                                  >
+                                    <Wrench size={11} />
+                                    <span>{language === 'ar' ? 'أمر صيانة' : 'Work Order'}</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1">
+                              <span>{new Date().toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                              {isUser && <CheckCheck size={14} className="text-purple-200" />}
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
 
-                  {pmMessages.length === 1 && (
-                    <div className="mt-8 max-w-2xl mx-auto space-y-4">
-                      <div className={`flex items-center gap-2 text-slate-500 dark:text-slate-450 text-xs font-black ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                        <Compass size={14} className="text-violet-550 shrink-0" />
-                        <span>{language === 'ar' ? 'السيناريوهات والاقتراحات السريعة المقترحة من مدير المشروع:' : 'Quick Strategy & Planning Scenarios:'}</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        {pmSuggestions.map((sug, i) => (
+                  {/* When starting / 1 welcome message: Display Full-Screen Prompts */}
+                  {pmMessages.length <= 1 && (
+                    <div className="py-4 px-2 max-w-2xl mx-auto flex flex-col items-center justify-center text-center animate-fade-in">
+                      <ModernAiBrandEmblem size={48} className="mb-3" />
+
+                      <h2 className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
+                        <span>{language === 'ar' ? 'مرحباً laheeb' : 'Hello laheeb'}</span>
+                        <span className="text-xl animate-pulse">👋</span>
+                      </h2>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 mb-4 font-medium">
+                        {language === 'ar' ? 'كيف يمكنني مساعدتك اليوم في إدارة الأسطول والورشة؟' : 'How can I help you today?'}
+                      </p>
+
+                      <div className="w-full bg-white dark:bg-[#1a152d] border border-purple-100 dark:border-purple-900/40 rounded-2xl shadow-xs overflow-hidden text-right mb-4 divide-y divide-purple-50 dark:divide-purple-900/20">
+                        {((PROMPT_CATEGORIES_DATA as any)[selectedPromptCategory]?.prompts || PROMPT_CATEGORIES_DATA['for-you'].prompts).map((item: any, idx: number) => (
                           <button
-                            key={i}
+                            key={idx}
                             type="button"
-                            onClick={() => handlePmSendMessage(sug.text)}
-                            className={`p-4 bg-white dark:bg-[#111526] hover:bg-violet-50/20 dark:hover:bg-violet-950/10 border border-slate-150 dark:border-slate-800/80 rounded-2xl cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] flex flex-col gap-2 ${
-                              isRtl ? 'items-end text-right' : 'items-start text-left'
+                            onClick={() => handlePmSendMessage(language === 'ar' ? item.textAr : item.textEn)}
+                            className={`w-full px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-950/40 active:bg-purple-600 active:text-white text-slate-700 dark:text-slate-200 text-xs md:text-sm font-semibold transition-all flex items-center gap-3 cursor-pointer group ${
+                              isRtl ? 'flex-row-reverse text-right' : 'text-left'
                             }`}
                           >
-                            <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                              <div className={`p-2 rounded-xl bg-gradient-to-br ${sug.color} shrink-0`}>
-                                {sug.icon}
-                              </div>
-                              <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                {sug.label}
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold leading-normal">
-                              {sug.desc}
-                            </p>
+                            <Sparkles size={14} className="text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="flex-1 leading-snug">{language === 'ar' ? item.textAr : item.textEn}</span>
                           </button>
                         ))}
                       </div>
+
+                      <div className="w-full flex items-center justify-center gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-wrap">
+                        {Object.values(PROMPT_CATEGORIES_DATA).map((cat: any) => {
+                          const isActive = selectedPromptCategory === cat.id;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setSelectedPromptCategory(cat.id)}
+                              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95 ${
+                                isActive
+                                  ? 'bg-purple-600 text-white shadow-xs'
+                                  : 'bg-white/90 dark:bg-[#1a152d] text-slate-600 dark:text-slate-300 border border-purple-100 dark:border-purple-900/40 hover:bg-purple-50 active:bg-purple-600 active:text-white'
+                              }`}
+                            >
+                              {cat.id === 'for-you' && <Sparkles size={11} className={isActive ? 'text-white' : 'text-purple-600'} />}
+                              <span>{language === 'ar' ? cat.nameAr : cat.nameEn}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 
-                  {/* Loading status */}
+                  {/* WhatsApp Typing status */}
                   {pmLoading && (
-                    <div className="flex justify-start w-full">
-                      <div className="bg-white dark:bg-[#111526] p-4.5 rounded-3xl rounded-bl-none border border-slate-150 dark:border-slate-800 flex items-center gap-3 shadow-xs">
-                        <div className="flex gap-1.5">
-                          <motion.div 
-                            animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
-                            transition={{ repeat: Infinity, duration: 1 }}
-                            className="w-1.5 h-1.5 bg-violet-500 rounded-full" 
-                          />
-                          <motion.div 
-                            animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
-                            transition={{ repeat: Infinity, duration: 1, delay: 0.2 }}
-                            className="w-1.5 h-1.5 bg-violet-500 rounded-full" 
-                          />
-                          <motion.div 
-                            animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
-                            transition={{ repeat: Infinity, duration: 1, delay: 0.4 }}
-                            className="w-1.5 h-1.5 bg-violet-500 rounded-full" 
-                          />
-                        </div>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold select-none">
-                          {language === 'ar' ? 'جاري تحليل الأرقام والبيانات للتخطيط...' : 'Analyzing fleet numbers and formulating advice...'}
+                    <div className={`flex ${isRtl ? 'justify-end' : 'justify-start'} w-full my-1`}>
+                      <div className="bg-white dark:bg-[#1a152d] px-4 py-2.5 rounded-2xl rounded-tl-none border border-purple-100 dark:border-purple-900/30 flex items-center gap-2 shadow-xs">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold italic">
+                          {language === 'ar' ? 'جاري التحليل والتخطيط...' : 'Robert is analyzing...'}
                         </span>
+                        <div className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400 animate-bounce [animation-delay:-0.3s]" />
+                          <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400 animate-bounce [animation-delay:-0.15s]" />
+                          <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400 animate-bounce" />
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Input Bar */}
-                <div className="p-4 bg-white dark:bg-[#0c101d] border-t border-slate-150 dark:border-slate-850 shrink-0">
-                  {isDictating && (
-                    <div className="text-[10px] text-rose-500 font-extrabold text-center pb-2 animate-pulse flex items-center justify-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                      <span>{language === 'ar' ? 'جاري الاستماع للتحليل الصوتي الذكي...' : 'Listening for strategic voice input...'}</span>
-                    </div>
-                  )}
-                  <div className={`p-1.5 bg-slate-50 dark:bg-[#070a13] border border-slate-200 dark:border-slate-800/80 rounded-2.5xl flex items-center gap-2 ${
-                    isRtl ? 'flex-row-reverse' : ''
-                  }`}>
-                    {/* Microphone Dictation Button */}
+                {/* Quick Chips Floating Row */}
+                <div className="bg-gradient-to-r from-[#1c1032]/95 via-[#291747]/95 to-[#1f1138]/95 backdrop-blur-md px-3.5 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-b border-purple-400/20 shadow-inner">
+                  {[
+                    { textAr: 'فحص دوري للأسطول', textEn: 'Fleet Inspections', icon: '📋' },
+                    { textAr: 'أوامر الصيانة المتأخرة', textEn: 'Overdue Orders', icon: '🚨' },
+                    { textAr: 'الفنيين المتاحين للعمل', textEn: 'Available Techs', icon: '👨‍🔧' },
+                    { textAr: 'تقرير الميزانية والوقود', textEn: 'Budget & Fuel', icon: '💰' }
+                  ].map((chip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handlePmSendMessage(language === 'ar' ? chip.textAr : chip.textEn)}
+                      disabled={pmLoading}
+                      className="px-3.5 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 active:bg-purple-600 active:text-white active:scale-95 text-purple-100 text-[11px] font-bold shrink-0 shadow-xs border border-purple-400/25 backdrop-blur-xs transition-all flex items-center gap-1.5 cursor-pointer ring-1 ring-black/10"
+                    >
+                      <span>{chip.icon}</span>
+                      <span>{language === 'ar' ? chip.textAr : chip.textEn}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Brand Shadowed Purple Gradient Input Bar */}
+                <div className="bg-gradient-to-r from-[#1e1136] via-[#2d184f] to-[#20123b] dark:from-[#130a24] dark:via-[#1f1038] dark:to-[#140b26] px-3 md:px-5 py-3 border-t border-purple-400/20 flex items-center gap-2 md:gap-3 shrink-0 z-20 shadow-2xl shadow-purple-950/40 backdrop-blur-md">
+                  {/* Emoji / Quick Prompts Button */}
+                  <div className="relative">
                     <button
                       type="button"
-                      onClick={() => handleStartVoiceDictation('pm')}
-                      className={`p-3 rounded-xl transition-all cursor-pointer shrink-0 ${
-                        isDictating
-                          ? 'bg-rose-500 text-white animate-pulse'
-                          : 'bg-slate-150 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-violet-600'
-                      }`}
-                      title={language === 'ar' ? 'إملاء صوتي أو محاكاة سريعة' : 'Voice dictation fallback'}
+                      onClick={() => setIsQuickActionsOpen(!isQuickActionsOpen)}
+                      className="p-2.5 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white rounded-xl border border-purple-300/20 transition-all cursor-pointer shrink-0 shadow-xs"
+                      title={language === 'ar' ? 'نماذج استفسارات' : 'Prompts'}
                     >
-                      <Mic size={15} />
+                      <Smile size={20} />
                     </button>
 
-                    <input 
+                    {isQuickActionsOpen && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setIsQuickActionsOpen(false)} />
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-64 bg-white dark:bg-[#1f1738] rounded-2xl shadow-2xl p-2 z-40 border border-purple-100 dark:border-purple-800/40 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <div className="text-[10px] font-black text-purple-600 dark:text-purple-400 px-2 py-1 uppercase">
+                            {language === 'ar' ? 'استفسارات فورية' : 'Quick Prompts'}
+                          </div>
+                          {PROMPT_CATEGORIES_DATA['for-you'].prompts.map((p: any, idx: number) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                handlePmSendMessage(language === 'ar' ? p.textAr : p.textEn);
+                                setIsQuickActionsOpen(false);
+                              }}
+                              className={`w-full p-2 text-xs rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 transition-all ${
+                                isRtl ? 'flex-row-reverse text-right' : 'text-left'
+                              }`}
+                            >
+                              <Sparkles size={12} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                              <span className="truncate">{language === 'ar' ? p.textAr : p.textEn}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Attachment Button */}
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowAttachMenu(!showAttachMenu)}
+                      className="p-2.5 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white rounded-xl border border-purple-300/20 transition-all cursor-pointer shadow-xs"
+                      title={language === 'ar' ? 'إرفاق بيانات وأوامر صيانة' : 'Attach'}
+                    >
+                      <Paperclip size={20} />
+                    </button>
+
+                    {showAttachMenu && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setShowAttachMenu(false)} />
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-60 bg-white dark:bg-[#1f1738] rounded-2xl shadow-2xl p-2 z-40 border border-purple-100 dark:border-purple-800/40 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <button
+                            onClick={() => {
+                              setQuickOrderModalOpen(true);
+                              setShowAttachMenu(false);
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
+                              <Wrench size={16} />
+                            </div>
+                            <span>{language === 'ar' ? 'إنشاء أمر صيانة فوري' : 'Create Work Order'}</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              handlePmSendMessage(language === 'ar' ? 'تقرير حالة أسطول المركبات والفحص الدوري' : 'Vehicle inspection & periodic maintenance summary');
+                              setShowAttachMenu(false);
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center shrink-0">
+                              <FileText size={16} />
+                            </div>
+                            <span>{language === 'ar' ? 'توليد تقرير أداء فوري' : 'Generate Fleet Report'}</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Text Input Pill / Box */}
+                  <div className="flex-1 bg-purple-950/40 dark:bg-black/50 rounded-2xl px-4 py-2.5 text-sm flex items-center border border-purple-300/25 dark:border-purple-500/20 focus-within:border-purple-300/60 focus-within:bg-purple-950/60 focus-within:ring-2 focus-within:ring-purple-400/30 backdrop-blur-xs shadow-inner transition-all">
+                    <input
                       type="text"
                       value={pmInput}
                       onChange={(e) => setPmInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handlePmSendMessage()}
-                      placeholder={
-                        language === 'ar' 
-                          ? 'استفسر من مدير المشروع (مثال: اقترح سبل تفادي تعطل الشاحنات)...' 
-                          : 'Ask AI manager (e.g. Suggest technical allocation recommendations)...'
-                      }
-                      className="flex-1 bg-transparent p-3 outline-none text-xs md:text-sm font-semibold dark:text-white"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handlePmSendMessage();
+                        }
+                      }}
+                      placeholder={language === 'ar' ? 'اكتب رسالة لـ روبرت...' : 'Type a message to Robert...'}
+                      className={`w-full bg-transparent border-0 outline-none text-white placeholder:text-purple-200/60 ${
+                        isRtl ? 'text-right' : 'text-left'
+                      }`}
                     />
-                    
-                    <button 
-                      onClick={() => handlePmSendMessage()}
-                      disabled={pmLoading || !pmInput.trim()}
-                      className="p-3 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
-                    >
-                      <Send size={15} className={isRtl ? 'rotate-180' : ''} />
-                    </button>
                   </div>
-                </div>
 
+                  {/* Circular Purple Brand Action Button (Send / Mic) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (pmInput.trim()) {
+                        handlePmSendMessage();
+                      } else {
+                        handleStartVoiceDictation('pm');
+                      }
+                    }}
+                    className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-600 hover:brightness-110 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-purple-950/50 border border-purple-300/30 transition-all shrink-0 cursor-pointer"
+                    title={pmInput.trim() ? (language === 'ar' ? 'إرسال' : 'Send') : (language === 'ar' ? 'تسجيل صوتي' : 'Voice')}
+                  >
+                    {pmInput.trim() ? (
+                      <Send size={18} className={isRtl ? 'rotate-180' : ''} />
+                    ) : (
+                      <Mic size={18} className={isDictating ? 'animate-pulse text-rose-500' : ''} />
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -2434,10 +2881,37 @@ Regarding: "${text}", live data metrics match our general parameters:
             >
               {/* Left sidebar suggestions and metrics panel for Mechanic Bot */}
               {showSidebar && (
-                <div className={`w-full md:w-80 border-slate-200 dark:border-slate-850 p-5 flex flex-col shrink-0 bg-slate-50/60 dark:bg-[#090d18] overflow-y-auto ${
-                  isRtl ? 'md:order-last md:border-l' : 'md:border-r'
-                }`}>
-                {/* Simulation crisis & Persona selector panel for Mechanic */}
+                <>
+                  {/* Mobile Backdrop Overlay */}
+                  <div 
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 md:hidden"
+                    onClick={() => setShowSidebar(false)}
+                  />
+
+                  <div className={`fixed inset-y-0 z-50 w-[88vw] max-w-sm bg-white dark:bg-[#0c101d] shadow-2xl overflow-y-auto p-5 md:static md:w-80 md:z-auto md:shadow-none md:bg-slate-50/60 md:dark:bg-[#090d18] flex flex-col shrink-0 ${
+                    isRtl ? 'right-0 md:order-last md:border-l border-slate-200 dark:border-slate-850' : 'left-0 md:border-r border-slate-200 dark:border-slate-850'
+                  }`}>
+                    {/* Mobile Drawer Close Header */}
+                    <div className={`flex md:hidden items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-slate-800 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                          <Wrench size={14} />
+                        </div>
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                          {language === 'ar' ? 'محاكي طوارئ الصيانة والقطع' : 'Maintenance Simulator'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSidebar(false)}
+                        className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors cursor-pointer"
+                        title={language === 'ar' ? 'إغلاق والعودة إلى مساعد الصيانة' : 'Close and return to Mechanic'}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Simulation crisis & Persona selector panel for Mechanic */}
                 <div className="mb-5 p-4 bg-amber-50/40 dark:bg-amber-950/10 rounded-2xl border border-amber-150/40 dark:border-amber-900/30 space-y-3.5 shadow-xs">
                   <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
                     <Wrench size={14} className="text-amber-600 dark:text-amber-400" />
@@ -2446,7 +2920,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                     </span>
                   </div>
                   
-                  {/* Scenario Pills */}
+                  {/* Scenario Pills with Vector Icons */}
                   <div className="space-y-1">
                     <label className={`text-[9px] font-extrabold text-slate-400 dark:text-slate-500 block ${isRtl ? 'text-right' : 'text-left'}`}>
                       {language === 'ar' ? 'سيناريو التشغيل الفعلي للمطابقة:' : 'Active Operational Scenario:'}
@@ -2455,46 +2929,50 @@ Regarding: "${text}", live data metrics match our general parameters:
                       <button
                         type="button"
                         onClick={() => setActiveScenario('normal')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
+                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
                           activeScenario === 'normal'
-                            ? 'bg-emerald-500 text-white border-transparent'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
+                            ? 'bg-emerald-500 text-white border-transparent shadow-xs'
+                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-emerald-500/40'
                         }`}
                       >
-                        {language === 'ar' ? '🟢 طبيعي متزن' : '🟢 Balanced'}
+                        <CheckCircle2 size={12} className="shrink-0" />
+                        <span>{language === 'ar' ? 'طبيعي متزن' : 'Balanced'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveScenario('parts-crisis')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
+                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
                           activeScenario === 'parts-crisis'
-                            ? 'bg-rose-500 text-white border-transparent'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
+                            ? 'bg-rose-500 text-white border-transparent shadow-xs'
+                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-rose-500/40'
                         }`}
                       >
-                        {language === 'ar' ? '🛑 أزمة توريد' : '🛑 Parts Crisis'}
+                        <AlertTriangle size={12} className="shrink-0" />
+                        <span>{language === 'ar' ? 'أزمة توريد' : 'Parts Crisis'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveScenario('backlog-peak')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
+                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
                           activeScenario === 'backlog-peak'
-                            ? 'bg-amber-500 text-white border-transparent'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
+                            ? 'bg-amber-500 text-white border-transparent shadow-xs'
+                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-amber-500/40'
                         }`}
                       >
-                        {language === 'ar' ? '⚡ ذروة تكدس' : '⚡ Backlog Peak'}
+                        <Zap size={12} className="shrink-0" />
+                        <span>{language === 'ar' ? 'ذروة تكدس' : 'Backlog Peak'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveScenario('staff-shortage')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border ${
+                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
                           activeScenario === 'staff-shortage'
-                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800'
+                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs'
+                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-violet-500/40'
                         }`}
                       >
-                        {language === 'ar' ? '👥 عجز بشري' : '👥 Staff Short'}
+                        <Users size={12} className="shrink-0" />
+                        <span>{language === 'ar' ? 'عجز بشري' : 'Staff Short'}</span>
                       </button>
                     </div>
                   </div>
@@ -2557,16 +3035,16 @@ Regarding: "${text}", live data metrics match our general parameters:
                             ? 'تحكم بتشغيل أو إيقاف الوكلاء ومطابقتهم الذكية بالمؤسسة:' 
                             : 'Configure, run or pause active business agents dynamically:'}
                         </p>
-                        <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
                           {agentsRegistry.map((agent) => {
                             const isAct = agent.isActive;
                             return (
                               <div 
                                 key={agent.id}
-                                className={`p-2.5 rounded-xl border transition-all flex flex-col gap-1.5 cursor-pointer hover:border-violet-500/50 dark:hover:border-violet-400/50 hover:bg-slate-50 dark:hover:bg-[#161d33]/50 ${
+                                className={`p-3 rounded-2xl border transition-all flex flex-col gap-2 cursor-pointer group hover:border-violet-500/50 dark:hover:border-violet-400/50 hover:bg-slate-50/80 dark:hover:bg-[#161d33]/60 ${
                                   isAct 
-                                    ? 'bg-white dark:bg-[#111526] border-slate-150 dark:border-slate-800' 
-                                    : 'bg-slate-50/40 dark:bg-slate-900/20 border-slate-200/30 dark:border-slate-800/40 opacity-75'
+                                    ? 'bg-white dark:bg-[#111526] border-slate-200/80 dark:border-slate-800/90 shadow-xs' 
+                                    : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200/40 dark:border-slate-800/40 opacity-70'
                                 }`}
                                 onClick={(e) => {
                                   const target = e.target as HTMLElement;
@@ -2575,47 +3053,62 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 }}
                                 title={language === 'ar' ? 'انقر لفتح نافذة الدردشة التفاعلية مع الوكيل' : 'Click to open interactive chat with this agent'}
                               >
-                                <div className={`flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                  <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                                      isAct 
-                                        ? 'bg-slate-100 dark:bg-[#161c30]' 
-                                        : 'bg-slate-100/50 dark:bg-slate-900/50'
-                                    }`}>
-                                      {renderAgentIcon(agent.id, agent.color)}
-                                    </div>
-                                    <div className="text-left leading-tight">
-                                      <span className={`text-[10px] font-black block ${isRtl ? 'text-right' : 'text-left'} ${
+                                <div className={`flex items-center justify-between gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                  <div className={`flex items-center gap-2.5 min-w-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                    {renderAgentAvatarContainer(agent.id, agent.color, isAct, 'md', true)}
+                                    <div className="text-left leading-tight min-w-0">
+                                      <span className={`text-[10.5px] font-black block truncate ${isRtl ? 'text-right' : 'text-left'} ${
                                         isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'
                                       }`}>
                                         {language === 'ar' ? agent.nameAr : agent.nameEn}
                                       </span>
-                                      <span className={`text-[8px] font-extrabold text-slate-400 dark:text-slate-500 block ${isRtl ? 'text-right' : 'text-left'}`}>
-                                        {agent.roles.join(' | ')}
-                                      </span>
+                                      <div className={`flex items-center gap-1 mt-0.5 ${isRtl ? 'flex-row-reverse justify-end' : ''}`}>
+                                        <span className="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 truncate">
+                                          {agent.roles.join(' • ')}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Small Play/Pause Toggle Switch */}
-                                  <button
-                                    onClick={() => toggleAgentActive(agent.id)}
-                                    className={`relative w-9.5 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-hidden cursor-pointer ${
-                                      isAct ? 'bg-gradient-to-r from-purple-600 to-indigo-500' : 'bg-slate-300 dark:bg-slate-700'
-                                    }`}
-                                    title={isAct 
-                                      ? (language === 'ar' ? 'إيقاف الوكيل' : 'Stop Agent') 
-                                      : (language === 'ar' ? 'تشغيل الوكيل' : 'Run Agent')
-                                    }
-                                  >
-                                    <div 
-                                      className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                                        isAct ? (isRtl ? '-translate-x-4.5' : 'translate-x-4.5') : 'translate-x-0'
-                                      }`} 
-                                    />
-                                  </button>
+                                  {/* Quick Action Buttons */}
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenAgentChat(agent);
+                                      }}
+                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-600 hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-300 transition-colors cursor-pointer"
+                                      title={language === 'ar' ? 'محادثة فورية مع الوكيل' : 'Chat with Agent'}
+                                    >
+                                      <MessageSquare size={12} />
+                                    </button>
+
+                                    {/* Small Play/Pause Toggle Switch */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleAgentActive(agent.id);
+                                      }}
+                                      className={`relative w-8 h-4.5 rounded-full p-0.5 transition-colors duration-200 focus:outline-hidden cursor-pointer ${
+                                        isAct ? 'bg-gradient-to-r from-purple-600 to-indigo-500' : 'bg-slate-300 dark:bg-slate-700'
+                                      }`}
+                                      title={isAct 
+                                        ? (language === 'ar' ? 'إيقاف الوكيل' : 'Stop Agent') 
+                                        : (language === 'ar' ? 'تشغيل الوكيل' : 'Run Agent')
+                                      }
+                                    >
+                                      <div 
+                                        className={`w-3.5 h-3.5 rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                                          isAct ? (isRtl ? '-translate-x-3.5' : 'translate-x-3.5') : 'translate-x-0'
+                                        }`} 
+                                      />
+                                    </button>
+                                  </div>
                                 </div>
 
-                                <p className={`text-[9px] leading-normal font-semibold ${isRtl ? 'text-right' : 'text-left'} ${
+                                <p className={`text-[9px] leading-relaxed font-medium ${isRtl ? 'text-right' : 'text-left'} ${
                                   isAct ? 'text-slate-500 dark:text-slate-400' : 'text-slate-400/80 dark:text-slate-600'
                                 }`}>
                                   {language === 'ar' ? agent.descAr : agent.descEn}
@@ -2681,10 +3174,11 @@ Regarding: "${text}", live data metrics match our general parameters:
                   </div>
                 </div>
               </div>
+              </>
               )}
 
               {/* Chat Timeline Panel for Mechanic */}
-              <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#0c101d] relative">
+              <div className="flex-1 flex flex-col min-h-0 bg-[#efeae2] dark:bg-[#0b141a] relative">
                 
                 {!isAgentActive('mechanic') && (
                   <div className="absolute inset-0 z-50 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-6 text-center">
@@ -2704,7 +3198,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                         onClick={() => {
                           setAgentsRegistry(prev => prev.map(a => a.id === 'mechanic' ? { ...a, isActive: true } : a));
                         }}
-                        className="w-full px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black shadow-lg cursor-pointer transition-all"
+                        className="w-full px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-lg cursor-pointer transition-all"
                       >
                         {language === 'ar' ? 'تفعيل وتشغيل مساعد الصيانة' : 'Activate Assistant Now'}
                       </button>
@@ -2712,135 +3206,37 @@ Regarding: "${text}", live data metrics match our general parameters:
                   </div>
                 )}
                 
-                {/* Title and Controls inside Chat bar */}
-                <div className="p-4 px-5 border-b border-slate-150 dark:border-slate-850 flex items-center justify-between bg-white dark:bg-[#0c101d] shrink-0">
-                  <div className={`flex items-center gap-3 w-full md:w-auto ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                    <div className="w-10 h-10 rounded-2xl bg-amber-600 text-white flex items-center justify-center shadow-md">
-                      <Wrench size={20} className="animate-pulse" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs md:text-sm font-black text-slate-900 dark:text-white leading-tight">
-                        {language === 'ar' ? 'مساعد الصيانة والقطع الذكي' : 'Smart Mechanic Assistant'}
-                      </h3>
-                      <p className="text-[9px] text-slate-400 dark:text-slate-500">
-                        {language === 'ar' ? 'حل مشكلات القطع والأنظمة ومراجعة مستويات المخزن' : 'Check parts stock levels and technical specifications'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Font Size Selector (Three Small Squares) */}
-                    <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 dark:bg-slate-800/80 dark:border-slate-750 p-1 rounded-xl shrink-0" title={language === 'ar' ? 'حجم الخط' : 'Font Size'}>
-                      <button
-                        type="button"
-                        onClick={() => handleSetChatFontSize('sm')}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[11px] transition-all cursor-pointer border ${
-                          chatFontSize === 'sm'
-                            ? 'bg-amber-600 border-amber-600 text-white shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-705 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                        }`}
-                        title={language === 'ar' ? 'تصغير الخط' : 'Small font'}
-                      >
-                        {language === 'ar' ? 'أ' : 'A'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetChatFontSize('md')}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm transition-all cursor-pointer border ${
-                          chatFontSize === 'md'
-                            ? 'bg-amber-600 border-amber-600 text-white shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-705 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                        }`}
-                        title={language === 'ar' ? 'خط متوسط' : 'Medium font'}
-                      >
-                        {language === 'ar' ? 'أ' : 'A'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetChatFontSize('lg')}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-lg transition-all cursor-pointer border ${
-                          chatFontSize === 'lg'
-                            ? 'bg-amber-600 border-amber-600 text-white shadow-xs scale-105 font-black'
-                            : 'bg-white dark:bg-[#121829] text-slate-400 hover:text-slate-750 dark:text-slate-500 hover:dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                        }`}
-                        title={language === 'ar' ? 'تكبير الخط' : 'Large font'}
-                      >
-                        {language === 'ar' ? 'أ' : 'A'}
-                      </button>
-                    </div>
-
-                    {/* Sidebar Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={handleToggleSidebar}
-                      className={`p-1.5 md:p-2 md:px-3 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border ${
-                        showSidebar
-                          ? 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/25 dark:border-amber-900/40 dark:text-amber-400'
-                          : 'bg-slate-55 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-750 dark:text-slate-300'
-                      }`}
-                      title={language === 'ar' ? 'المحاكاة ومؤشرات التشغيل' : 'Simulator & Metrics'}
-                    >
-                      <LayoutDashboard size={14} />
-                      <span className="hidden sm:inline">{language === 'ar' ? 'المحاكاة والمؤشرات' : 'Simulator & Metrics'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => setMechGuideModalOpen(true)}
-                      className="p-1.5 md:p-2 md:px-3 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border bg-amber-50 border-amber-200 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/25 dark:border-amber-900/40 dark:hover:bg-amber-950/40 dark:text-amber-400"
-                      title={language === 'ar' ? 'الدليل السريع وطبيعة عمل الوكيل' : 'Agent nature of work & guide'}
-                    >
-                      <Compass size={14} className="animate-pulse" />
-                      <span className="hidden sm:inline">{language === 'ar' ? 'طبيعة عمل الروبوت' : 'Nature of Work'}</span>
-                    </button>
-
-                    <button
-                      onClick={handleMechClearChat}
-                      className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-705 text-slate-500 dark:text-slate-400 transition-all cursor-pointer border border-slate-200/50 dark:border-slate-750 shadow-xs"
-                      title={language === 'ar' ? 'مسح تدوينات المحادثة' : 'Clear logs'}
-                    >
-                      <RefreshCw size={14} />
-                    </button>
-                  </div>
-                </div>
-
                 {/* Timeline Messages Area */}
                 <div
                   ref={mechScrollRef}
-                  className="flex-1 overflow-y-auto p-5 md:p-6 space-y-4 bg-slate-50/30 dark:bg-[#070a13]/20"
+                  className="flex-1 overflow-y-auto p-3 md:p-5 space-y-3 bg-[#efeae2] dark:bg-[#0b141a] bg-opacity-95"
+                  style={{
+                    backgroundImage: `radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 80%)`
+                  }}
                 >
                   {mechMessages.map((msg, i) => {
                     const isUser = msg.role === 'user';
                     return (
                       <div
                         key={msg.id || i}
-                        className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full`}
+                        className={`flex flex-col ${isUser ? (isRtl ? 'items-start' : 'items-end') : (isRtl ? 'items-end' : 'items-start')} w-full`}
                       >
-                        {/* Name tag pointer */}
-                        <span className={`text-[10px] font-extrabold text-slate-400 dark:text-slate-500 block px-1.5 mb-1 ${
-                          isRtl ? 'text-right' : 'text-left'
-                        }`}>
-                          {!isUser 
-                            ? (language === 'ar' ? 'مساعد ميكانيك الذكي 🤖⚙️' : 'Smart Mechanic Bot 🤖⚙️') 
-                            : (language === 'ar' ? 'أنت (المسؤول الفني)' : 'You (Fleet Engineer)')}
-                        </span>
-
-                        <div className={`p-4 md:p-5 leading-relaxed max-w-[85%] md:max-w-[75%] border relative group/msg transition-all duration-300 ${
+                        {/* WhatsApp-style bubble */}
+                        <div className={`p-3 md:p-4 leading-relaxed max-w-[88%] md:max-w-[75%] relative shadow-xs transition-all ${
                           isUser 
-                            ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black shadow-lg shadow-amber-600/10' 
-                            : `bg-gradient-to-br from-amber-50/40 to-white dark:from-[#131725] dark:to-[#0d101c] text-slate-800 dark:text-slate-200 rounded-3xl rounded-bl-none border-amber-100/70 dark:border-amber-950/30 border-l-4 border-l-amber-500 dark:border-l-amber-400 font-medium shadow-[0_6px_20px_rgba(245,158,11,0.03)] ${
-                                isRtl ? 'text-right' : 'text-left'
-                              }`
+                            ? `bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium rounded-2xl ${isRtl ? 'rounded-tl-xs' : 'rounded-tr-xs'}` 
+                            : `bg-white dark:bg-[#1a152d] text-slate-800 dark:text-slate-100 rounded-2xl border border-purple-100/50 dark:border-purple-900/40 font-medium ${isRtl ? 'rounded-tr-xs' : 'rounded-tl-xs'}`
                         }`}>
-                          <div className={`select-text ${getFontSizeClass(chatFontSize)}`}>
+                          <div className={`select-text ${getFontSizeClass(chatFontSize)} ${isRtl ? 'text-right' : 'text-left'}`}>
                             {isUser ? msg.text : renderRichMessageText(msg.text, `mech-${msg.id || i}`)}
                           </div>
 
                           {!isUser && (
-                            <div className="flex items-center gap-2.5 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 font-bold select-none">
+                            <div className="flex items-center gap-2.5 mt-2.5 pt-2 border-t border-slate-100 dark:border-purple-900/30 text-[10px] text-slate-400 font-bold select-none">
                               <button
                                 type="button"
                                 onClick={() => handleToggleSpeakMessage(`mech-${msg.id || i}`, msg.text)}
-                                className="flex items-center gap-1 hover:text-amber-600 cursor-pointer transition-colors"
+                                className="flex items-center gap-1 hover:text-purple-600 dark:hover:text-purple-400 active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all"
                               >
                                 {activeAudioMessageId === `mech-${msg.id || i}` && isPlayingAudio ? (
                                   <>
@@ -2860,7 +3256,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 onClick={() => {
                                   navigator.clipboard.writeText(msg.text);
                                 }}
-                                className="flex items-center gap-1 hover:text-amber-600 cursor-pointer transition-colors"
+                                className="flex items-center gap-1 hover:text-purple-600 dark:hover:text-purple-400 active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all"
                               >
                                 <Copy size={12} />
                                 <span>{language === 'ar' ? 'نسخ' : 'Copy'}</span>
@@ -2879,10 +3275,10 @@ Regarding: "${text}", live data metrics match our general parameters:
                                     });
                                     setQuickOrderModalOpen(true);
                                   }}
-                                  className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer transition-colors ml-auto mr-auto"
+                                  className="flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:underline active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all ml-auto mr-auto"
                                 >
                                   <Wrench size={12} />
-                                  <span>{language === 'ar' ? '⚙️ توليد أمر صيانة فوري' : '⚙️ Quick Work Order'}</span>
+                                  <span>{language === 'ar' ? '⚙️ أمر صيانة فوري' : '⚙️ Work Order'}</span>
                                 </button>
                               )}
                             </div>
@@ -2892,33 +3288,30 @@ Regarding: "${text}", live data metrics match our general parameters:
                     );
                   })}
 
-                  {mechMessages.length === 1 && (
-                    <div className="mt-8 max-w-2xl mx-auto space-y-4">
-                      <div className={`flex items-center gap-2 text-slate-500 dark:text-slate-450 text-xs font-black ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                        <Compass size={14} className="text-amber-550 shrink-0" />
-                        <span>{language === 'ar' ? 'الاستفسارات والاقتراحات الفنية السريعة المقترحة:' : 'Quick Technical & Maintenance Inquiries:'}</span>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        {mechSuggestions.map((sug, i) => (
+                  {/* Welcome Prompts */}
+                  {mechMessages.length <= 1 && (
+                    <div className="py-6 px-2 max-w-2xl mx-auto flex flex-col items-center justify-center text-center animate-fade-in">
+                      <ModernAiBrandEmblem size={52} className="mb-3" />
+                      <h2 className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
+                        <span>{language === 'ar' ? 'مساعد الصيانة والقطع الذكي' : 'Smart Workshop Assistant'}</span>
+                        <span className="text-xl">🔧</span>
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4 font-medium">
+                        {language === 'ar' ? 'استفسر عن توفر القطع، تشخيص الأعطال، أو توليد أوامر الصيانة الفورية' : 'Query inventory, diagnose vehicle faults, or issue work orders'}
+                      </p>
+
+                      <div className="w-full bg-white dark:bg-[#1a152d] border border-purple-100 dark:border-purple-900/40 rounded-2xl shadow-xs overflow-hidden text-right mb-4 divide-y divide-purple-50 dark:divide-purple-900/20">
+                        {((PROMPT_CATEGORIES_DATA as any)[selectedPromptCategory]?.prompts || PROMPT_CATEGORIES_DATA['parts'].prompts).map((item: any, idx: number) => (
                           <button
-                            key={i}
+                            key={idx}
                             type="button"
-                            onClick={() => handleMechSendMessage(sug.text)}
-                            className={`p-4 bg-white dark:bg-[#111526] hover:bg-amber-50/20 dark:hover:bg-amber-950/10 border border-slate-150 dark:border-slate-800/80 rounded-2xl cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] active:scale-[0.99] flex flex-col gap-2 ${
-                              isRtl ? 'items-end text-right' : 'items-start text-left'
+                            onClick={() => handleMechSendMessage(language === 'ar' ? item.textAr : item.textEn)}
+                            className={`w-full px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-950/40 active:bg-purple-600 active:text-white text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all flex items-center gap-3 cursor-pointer group ${
+                              isRtl ? 'flex-row-reverse text-right' : 'text-left'
                             }`}
                           >
-                            <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                              <div className={`p-2 rounded-xl bg-gradient-to-br ${sug.color} shrink-0`}>
-                                {sug.icon}
-                              </div>
-                              <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                {sug.label}
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold leading-normal">
-                              {sug.desc}
-                            </p>
+                            <Sparkles size={14} className="text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="flex-1 leading-snug">{language === 'ar' ? item.textAr : item.textEn}</span>
                           </button>
                         ))}
                       </div>
@@ -2928,25 +3321,25 @@ Regarding: "${text}", live data metrics match our general parameters:
                   {/* Loading status */}
                   {mechLoading && (
                     <div className="flex justify-start w-full">
-                      <div className="bg-white dark:bg-[#111526] p-4.5 rounded-3xl rounded-bl-none border border-slate-150 dark:border-slate-800 flex items-center gap-3 shadow-xs">
+                      <div className="bg-white dark:bg-[#1a152d] p-3 rounded-2xl rounded-tl-none border border-purple-100 dark:border-purple-900/30 flex items-center gap-3 shadow-xs">
                         <div className="flex gap-1.5">
                           <motion.div 
                             animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1 }}
-                            className="w-1.5 h-1.5 bg-amber-500 rounded-full" 
+                            className="w-1.5 h-1.5 bg-purple-500 rounded-full" 
                           />
                           <motion.div 
                             animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1, delay: 0.2 }}
-                            className="w-1.5 h-1.5 bg-amber-500 rounded-full" 
+                            className="w-1.5 h-1.5 bg-purple-500 rounded-full" 
                           />
                           <motion.div 
                             animate={{ scale: [1, 1.25, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1, delay: 0.4 }}
-                            className="w-1.5 h-1.5 bg-amber-500 rounded-full" 
+                            className="w-1.5 h-1.5 bg-purple-500 rounded-full" 
                           />
                         </div>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold select-none">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold select-none">
                           {language === 'ar' ? 'جاري الاستعلام ومطابقة القطع بالمستودع...' : 'Searching parts catalogs and matching safety quantities...'}
                         </span>
                       </div>
@@ -2954,54 +3347,128 @@ Regarding: "${text}", live data metrics match our general parameters:
                   )}
                 </div>
 
-                {/* Input Bar */}
-                <div className="p-4 bg-white dark:bg-[#0c101d] border-t border-slate-150 dark:border-slate-850 shrink-0">
-                  {isDictating && (
-                    <div className="text-[10px] text-rose-500 font-extrabold text-center pb-2 animate-pulse flex items-center justify-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                      <span>{language === 'ar' ? 'جاري الاستماع لتسجيل تشخيص المهندس...' : 'Listening to workshop voice diagnostics...'}</span>
-                    </div>
-                  )}
-                  <div className={`p-1.5 bg-slate-50 dark:bg-[#070a13] border border-slate-200 dark:border-slate-800/80 rounded-2.5xl flex items-center gap-2 ${
-                    isRtl ? 'flex-row-reverse' : ''
-                  }`}>
-                    {/* Microphone Dictation Button */}
+                {/* Quick Chips Floating Row */}
+                <div className="bg-gradient-to-r from-[#1c1032]/95 via-[#291747]/95 to-[#1f1138]/95 backdrop-blur-md px-3.5 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-b border-purple-400/20 shadow-inner">
+                  {[
+                    { textAr: 'فحص دوري للمحرك والفرامل', textEn: 'Brakes & Engine Check', icon: '🔧' },
+                    { textAr: 'كتالوج قطع غيار تويوتا وهينو', textEn: 'Parts Catalog Search', icon: '📦' },
+                    { textAr: 'توليد أمر صيانة عاجل', textEn: 'Quick Work Order', icon: '⚡' },
+                    { textAr: 'تشخيص الأعطال الشائعة', textEn: 'Diagnostic Troubles', icon: '🔍' }
+                  ].map((chip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleMechSendMessage(language === 'ar' ? chip.textAr : chip.textEn)}
+                      disabled={mechLoading}
+                      className="px-3.5 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 active:bg-purple-600 active:text-white active:scale-95 text-purple-100 text-[11px] font-bold shrink-0 shadow-xs border border-purple-400/25 backdrop-blur-xs transition-all flex items-center gap-1.5 cursor-pointer ring-1 ring-black/10"
+                    >
+                      <span>{chip.icon}</span>
+                      <span>{language === 'ar' ? chip.textAr : chip.textEn}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Brand Shadowed Purple Gradient Input Bar */}
+                <div className="bg-gradient-to-r from-[#1e1136] via-[#2d184f] to-[#20123b] dark:from-[#130a24] dark:via-[#1f1038] dark:to-[#140b26] px-3 md:px-5 py-3 border-t border-purple-400/20 flex items-center gap-2 md:gap-3 shrink-0 z-20 shadow-2xl shadow-purple-950/40 backdrop-blur-md">
+                  {/* Emoji / Quick Prompts Button */}
+                  <div className="relative">
                     <button
                       type="button"
-                      onClick={() => handleStartVoiceDictation('mech')}
-                      className={`p-3 rounded-xl transition-all cursor-pointer shrink-0 ${
-                        isDictating
-                          ? 'bg-rose-500 text-white animate-pulse'
-                          : 'bg-slate-150 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-amber-600'
-                      }`}
-                      title={language === 'ar' ? 'تسجيل صوتي للتشخيص الفوري' : 'Voice diagnostics dictation'}
+                      onClick={() => setIsQuickActionsOpen(!isQuickActionsOpen)}
+                      className="p-2.5 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white rounded-xl border border-purple-300/20 transition-all cursor-pointer shrink-0 shadow-xs"
+                      title={language === 'ar' ? 'نماذج استفسارات' : 'Prompts'}
                     >
-                      <Mic size={15} />
+                      <Smile size={20} />
                     </button>
 
-                    <input 
+                    {isQuickActionsOpen && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setIsQuickActionsOpen(false)} />
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-64 bg-white dark:bg-[#1f1738] rounded-2xl shadow-2xl p-2 z-40 border border-purple-100 dark:border-purple-800/40 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <div className="text-[10px] font-black text-purple-600 dark:text-purple-400 px-2 py-1 uppercase">
+                            {language === 'ar' ? 'اختصارات الصيانة' : 'Quick Prompts'}
+                          </div>
+                          {PROMPT_CATEGORIES_DATA['parts'].prompts.map((p: any, idx: number) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                handleMechSendMessage(language === 'ar' ? p.textAr : p.textEn);
+                                setIsQuickActionsOpen(false);
+                              }}
+                              className={`w-full p-2 text-xs rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 transition-all ${
+                                isRtl ? 'flex-row-reverse text-right' : 'text-left'
+                              }`}
+                            >
+                              <Sparkles size={12} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                              <span className="truncate">{language === 'ar' ? p.textAr : p.textEn}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Attachment Button */}
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuickOrderData({
+                          vehicleId: defaultVehicles[0]?.id || 'V1',
+                          category: 'mechanical',
+                          description: 'طلب فحص وصيانة سريعة من المحادثة',
+                          technicianId: defaultTechnicians[0]?.id || 'T1',
+                          cost: '300'
+                        });
+                        setQuickOrderModalOpen(true);
+                      }}
+                      className="p-2.5 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white rounded-xl border border-purple-300/20 transition-all cursor-pointer shadow-xs"
+                      title={language === 'ar' ? 'أمر صيانة فوري' : 'Work Order'}
+                    >
+                      <Paperclip size={20} />
+                    </button>
+                  </div>
+
+                  {/* Text Input Pill / Box */}
+                  <div className="flex-1 bg-purple-950/40 dark:bg-black/50 rounded-2xl px-4 py-2.5 text-sm flex items-center border border-purple-300/25 dark:border-purple-500/20 focus-within:border-purple-300/60 focus-within:bg-purple-950/60 focus-within:ring-2 focus-within:ring-purple-400/30 backdrop-blur-xs shadow-inner transition-all">
+                    <input
                       type="text"
                       value={mechInput}
                       onChange={(e) => setMechInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleMechSendMessage()}
-                      placeholder={
-                        language === 'ar' 
-                          ? 'استفسر عن قطع أو مركبة بالورشة (مثال: هل يتوفر وسادات فرامل أكتروس؟)...' 
-                          : 'Query inventory or vehicles (e.g. status of Toyota Hilux)...'
-                      }
-                      className="flex-1 bg-transparent p-3 outline-none text-xs md:text-sm font-semibold dark:text-white"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleMechSendMessage();
+                        }
+                      }}
+                      placeholder={language === 'ar' ? 'استفسر عن قطع الغيار أو أعطال الورشة...' : 'Ask about parts or workshop repairs...'}
+                      className={`w-full bg-transparent border-0 outline-none text-white placeholder:text-purple-200/60 ${
+                        isRtl ? 'text-right' : 'text-left'
+                      }`}
                     />
-                    
-                    <button 
-                      onClick={() => handleMechSendMessage()}
-                      disabled={mechLoading || !mechInput.trim()}
-                      className="p-3 bg-amber-600 hover:bg-amber-705 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
-                    >
-                      <Send size={15} className={isRtl ? 'rotate-180' : ''} />
-                    </button>
                   </div>
-                </div>
 
+                  {/* Circular Purple Brand Action Button (Send / Mic) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mechInput.trim()) {
+                        handleMechSendMessage();
+                      } else {
+                        handleStartVoiceDictation('mech');
+                      }
+                    }}
+                    className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-600 hover:brightness-110 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-purple-950/50 border border-purple-300/30 transition-all shrink-0 cursor-pointer"
+                    title={mechInput.trim() ? (language === 'ar' ? 'إرسال' : 'Send') : (language === 'ar' ? 'تسجيل صوتي' : 'Voice')}
+                  >
+                    {mechInput.trim() ? (
+                      <Send size={18} className={isRtl ? 'rotate-180' : ''} />
+                    ) : (
+                      <Mic size={18} className={isDictating ? 'animate-pulse text-rose-500' : ''} />
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -3018,10 +3485,37 @@ Regarding: "${text}", live data metrics match our general parameters:
             >
               {/* Sidebar: Shows Joint Orchestration metrics & Scenario simulator */}
               {showSidebar && (
-                <div className={`w-full md:w-80 border-slate-200 dark:border-slate-850 p-5 flex flex-col shrink-0 bg-slate-50/60 dark:bg-[#090d18] overflow-y-auto ${
-                  isRtl ? 'md:order-last md:border-l' : 'md:border-r'
-                }`}>
-                {/* Simulator panel for Co-Pilot */}
+                <>
+                  {/* Mobile Backdrop Overlay */}
+                  <div 
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 md:hidden"
+                    onClick={() => setShowSidebar(false)}
+                  />
+
+                  <div className={`fixed inset-y-0 z-50 w-[88vw] max-w-sm bg-white dark:bg-[#0c101d] shadow-2xl overflow-y-auto p-5 md:static md:w-80 md:z-auto md:shadow-none md:bg-slate-50/60 md:dark:bg-[#090d18] flex flex-col shrink-0 ${
+                    isRtl ? 'right-0 md:order-last md:border-l border-slate-200 dark:border-slate-850' : 'left-0 md:border-r border-slate-200 dark:border-slate-850'
+                  }`}>
+                    {/* Mobile Drawer Close Header */}
+                    <div className={`flex md:hidden items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-slate-800 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                          <Bot size={14} />
+                        </div>
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                          {language === 'ar' ? 'غرفة محاكاة الطوارئ الموحدة' : 'Unified Control Room'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSidebar(false)}
+                        className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors cursor-pointer"
+                        title={language === 'ar' ? 'إغلاق والعودة إلى المحادثة' : 'Close and return'}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Simulator panel for Co-Pilot */}
                 <div className="mb-5 p-4 bg-emerald-50/40 dark:bg-emerald-950/10 rounded-2xl border border-emerald-150/40 dark:border-emerald-900/30 space-y-3.5 shadow-xs">
                   <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
                     <Bot size={14} className="text-emerald-500 animate-pulse" />
@@ -3158,6 +3652,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                   </div>
                 </div>
               </div>
+              </>
               )}
 
               {/* Chat Timeline Panel */}
@@ -3220,19 +3715,27 @@ Regarding: "${text}", live data metrics match our general parameters:
                       </button>
                     </div>
 
-                    {/* Sidebar Toggle Button */}
+                    {/* Sidebar Toggle Button with Active Scenario Indicator */}
                     <button
                       type="button"
                       onClick={handleToggleSidebar}
                       className={`p-1.5 md:p-2 md:px-3 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border ${
                         showSidebar
-                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/25 dark:border-emerald-900/40 dark:text-amber-400'
-                          : 'bg-slate-55 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-750 dark:text-slate-300'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-emerald-50/80 border-emerald-200/80 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-900/50 dark:text-emerald-300'
                       }`}
-                      title={language === 'ar' ? 'المحاكاة ومؤشرات التشغيل' : 'Simulator & Metrics'}
+                      title={language === 'ar' ? 'غرفة محاكاة الطوارئ الموحدة وبطاقات الوكلاء' : 'Simulator & Metrics'}
                     >
-                      <LayoutDashboard size={14} />
-                      <span className="hidden sm:inline">{language === 'ar' ? 'المحاكاة والمؤشرات' : 'Simulator & Metrics'}</span>
+                      <LayoutDashboard size={14} className="shrink-0" />
+                      <span className="text-[11px] font-extrabold flex items-center gap-1">
+                        <span className="hidden sm:inline">{language === 'ar' ? 'المحاكاة:' : 'Sim:'}</span>
+                        <span>
+                          {activeScenario === 'normal' && (language === 'ar' ? 'متزن' : 'Balanced')}
+                          {activeScenario === 'parts-crisis' && (language === 'ar' ? 'أزمة توريد' : 'Crisis')}
+                          {activeScenario === 'backlog-peak' && (language === 'ar' ? 'ذروة تكدس' : 'Peak')}
+                          {activeScenario === 'staff-shortage' && (language === 'ar' ? 'عجز بشري' : 'Shortage')}
+                        </span>
+                      </span>
                     </button>
 
                     <button
@@ -3399,13 +3902,13 @@ Regarding: "${text}", live data metrics match our general parameters:
                 </div>
 
                 {/* Co-Pilot Input Bar */}
-                <div className="p-4 bg-white dark:bg-[#0c101d] border-t border-slate-150 dark:border-slate-850 shrink-0">
+                <div className="p-3 md:p-4 bg-gradient-to-r from-emerald-950/20 via-slate-900/40 to-emerald-950/20 dark:bg-[#0c101d] border-t border-emerald-500/20 dark:border-emerald-500/15 shrink-0 backdrop-blur-md">
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       handleCoPilotSendMessage();
                     }}
-                    className="flex items-center gap-2 bg-slate-50 dark:bg-[#121829] border border-slate-200/80 dark:border-slate-800 p-1.5 rounded-2xl"
+                    className="flex items-center gap-2 bg-white/80 dark:bg-[#121829]/90 border border-emerald-500/30 dark:border-emerald-500/20 p-2 rounded-2xl shadow-lg focus-within:ring-2 focus-within:ring-emerald-400/30 transition-all"
                   >
                     <input
                       type="text"
@@ -3413,15 +3916,15 @@ Regarding: "${text}", live data metrics match our general parameters:
                       onChange={(e) => setCoPilotInput(e.target.value)}
                       disabled={coPilotLoading}
                       placeholder={language === 'ar' ? 'اكتب سؤالاً موجهاً للمساعد المشترك...' : 'Ask the co-pilot joint command...'}
-                      className="flex-1 bg-transparent p-3 outline-hidden text-xs md:text-sm font-semibold text-slate-850 dark:text-white"
+                      className="flex-1 bg-transparent px-3 py-2 outline-hidden text-xs md:text-sm font-semibold text-slate-800 dark:text-white placeholder:text-slate-400"
                     />
                     
                     <button 
                       type="submit"
                       disabled={coPilotLoading || !coPilotInput.trim()}
-                      className="p-3 bg-emerald-600 hover:bg-emerald-750 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50"
+                      className="p-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 active:scale-95 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 disabled:opacity-50"
                     >
-                      <Send size={15} className={isRtl ? 'rotate-180' : ''} />
+                      <Send size={16} className={isRtl ? 'rotate-180' : ''} />
                     </button>
                   </form>
                 </div>
@@ -3704,26 +4207,25 @@ Regarding: "${text}", live data metrics match our general parameters:
                 {/* Header with Glassmorphic Clean Style */}
                 <div className="py-4 px-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-[#111726] flex items-center justify-between shadow-xs">
                   <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                    {/* Dynamic Colorized Avatar */}
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border border-violet-200/50 dark:border-violet-850">
-                      <div className="scale-110">
-                        {renderAgentIcon(activeChatAgent.id, activeChatAgent.color)}
-                      </div>
-                    </div>
+                    {/* Dynamic Vector Icon Avatar */}
+                    {renderAgentAvatarContainer(activeChatAgent.id, activeChatAgent.color, activeChatAgent.isActive, 'lg', true)}
                     <div>
                       <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                         <h3 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                           {language === 'ar' ? activeChatAgent.nameAr : activeChatAgent.nameEn}
                         </h3>
-                        {/* Active Status Badge */}
-                        <span className="text-[9px] px-2.5 py-0.5 rounded-full font-black bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/30 animate-pulse">
-                          {activeChatAgent.isActive 
-                            ? (language === 'ar' ? '🟢 نشط' : '🟢 Active') 
-                            : (language === 'ar' ? '⏸️ متوقف مؤقتاً' : '⏸️ Paused')}
+                        {/* Active Status Badge with Icon */}
+                        <span className="text-[9px] px-2.5 py-0.5 rounded-full font-black bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/30 flex items-center gap-1">
+                          <CheckCircle2 size={10} className="text-emerald-500 shrink-0" />
+                          <span>
+                            {activeChatAgent.isActive 
+                              ? (language === 'ar' ? 'نشط ومطابق' : 'Active') 
+                              : (language === 'ar' ? 'متوقف مؤقتاً' : 'Paused')}
+                          </span>
                         </span>
                       </div>
                       <p className={`text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-extrabold ${isRtl ? 'text-right' : 'text-left'}`}>
-                        {activeChatAgent.roles.join(' | ')}
+                        {activeChatAgent.roles.join(' • ')}
                       </p>
                     </div>
                   </div>

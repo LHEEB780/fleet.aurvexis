@@ -152,6 +152,8 @@ export default function App() {
   const [activeTab, setActiveTabState] = useState(() => {
     return localStorage.getItem('saas_active_tab') || 'dashboard';
   });
+  const [previousTab, setPreviousTab] = useState<string>('dashboard');
+  const [activeTutorialVideoId, setActiveTutorialVideoId] = useState<string>('vid-1');
   const [isAiEnabled, setIsAiEnabled] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => {
     return localStorage.getItem('saas_remember_me') !== 'false';
@@ -205,6 +207,9 @@ export default function App() {
   };
 
   const setActiveTab = (tab: string) => {
+    if (activeTab !== 'maintenance-bot' && tab !== activeTab) {
+      setPreviousTab(activeTab);
+    }
     const currentMenuItem = MENU_ITEMS.find(item => item.id === tab);
     const userRole = currentUser?.role || 'admin';
     if (isLoggedIn && currentMenuItem) {
@@ -544,14 +549,22 @@ export default function App() {
       triggerOfflineSync();
     };
 
+    const handleOpenTutorial = (e: any) => {
+      const vidId = e.detail?.videoId || 'vid-1';
+      setActiveTutorialVideoId(vidId);
+      setActiveTab('video-tutorials');
+    };
+
     window.addEventListener('trigger-offline-sync', handleManualSyncTrigger);
     window.addEventListener('maintenance-offline-added', updateQueueCount);
+    window.addEventListener('open-video-tutorial', handleOpenTutorial as EventListener);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('trigger-offline-sync', handleManualSyncTrigger);
       window.removeEventListener('maintenance-offline-added', updateQueueCount);
+      window.removeEventListener('open-video-tutorial', handleOpenTutorial as EventListener);
     };
   }, [language]);
   
@@ -1331,6 +1344,7 @@ export default function App() {
             onClose={() => setActiveTab('dashboard')} 
             isDarkMode={isDarkMode} 
             isTabMode={true}
+            initialVideoId={activeTutorialVideoId}
           />
         );
       default:
@@ -3173,6 +3187,16 @@ export default function App() {
       </div>
     );
   };
+
+  if (isLoggedIn && activeTab === 'maintenance-bot') {
+    return (
+      <AiHub 
+        onBack={() => {
+          setActiveTab(previousTab || 'dashboard');
+        }}
+      />
+    );
+  }
 
   if (isLoggedIn && currentUser && currentUser.role === 'driver') {
     return (
