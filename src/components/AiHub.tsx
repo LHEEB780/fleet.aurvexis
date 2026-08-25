@@ -74,6 +74,7 @@ import {
   Image as ImageIcon,
   Download,
   Eye,
+  FileSpreadsheet,
   File
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -462,6 +463,7 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
   const [mechAttachedFile, setMechAttachedFile] = useState<AttachedFileItem | null>(null);
   const [coPilotAttachedFile, setCoPilotAttachedFile] = useState<AttachedFileItem | null>(null);
   const [showMechAttachMenu, setShowMechAttachMenu] = useState<boolean>(false);
+  const [showCoPilotAttachMenu, setShowCoPilotAttachMenu] = useState<boolean>(false);
   const [previewModalImage, setPreviewModalImage] = useState<string | null>(null);
 
   const pmFileInputRef = useRef<HTMLInputElement>(null);
@@ -1462,23 +1464,6 @@ Regarding: "${text}", live data metrics match our general parameters:
       setCoPilotMessages(prev => [...prev, {
         id: `copilot-${Date.now()}-err`,
         role: 'model',
-        pmText: language === 'ar' ? '⚠️ تعذر تحميل رد التخطيط.' : '⚠️ PM advice failed.',
-        mechText: language === 'ar' ? '🛑 تعذر تحميل الرد الفني.' : '🛑 Mechanic advice failed.',
-        timestamp: new Date()
-      }]);
-    } finally {
-      setCoPilotLoading(false);
-    }
-  };
-        mechText: mechRes,
-        timestamp: new Date()
-      }]);
-
-    } catch (err) {
-      console.error(err);
-      setCoPilotMessages(prev => [...prev, {
-        id: `copilot-${Date.now()}-err`,
-        role: 'model',
         pmText: language === 'ar' ? '⚠️ عذراً، تعذر استرداد توجيه مدير المشروع.' : '⚠️ Strategic query failed.',
         mechText: language === 'ar' ? '⚠️ عذراً، تعذر استرداد إفادة كبير الفنيين.' : '⚠️ Workshop query failed.',
         timestamp: new Date()
@@ -1624,6 +1609,192 @@ Regarding: "${text}", live data metrics match our general parameters:
     );
   };
 
+  // Helper to format file sizes
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '0 KB';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Render Message Attachment in Chat Bubble
+  const renderMessageAttachmentBadge = (attachment?: AttachedFileItem) => {
+    if (!attachment) return null;
+
+    if (attachment.isImage && (attachment.previewUrl || attachment.dataUrl)) {
+      const imgSource = attachment.previewUrl || attachment.dataUrl;
+      return (
+        <div className="mt-2 mb-1 overflow-hidden rounded-xl border border-white/20 dark:border-purple-800/40 bg-black/20 backdrop-blur-xs">
+          <div className="relative group cursor-pointer" onClick={() => setPreviewModalImage(imgSource || null)}>
+            <img 
+              src={imgSource} 
+              alt={attachment.name} 
+              className="max-h-56 w-full object-cover rounded-lg transition-transform group-hover:scale-[1.02]" 
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 text-white">
+              <span className="p-2 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1 text-xs font-bold">
+                <Eye size={14} />
+                {language === 'ar' ? 'عرض مكبّر' : 'Zoom View'}
+              </span>
+            </div>
+            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-[10px] text-white font-medium">
+              <span className="truncate max-w-[150px]">{attachment.name}</span>
+              <span>{formatFileSize(attachment.size)}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-2 mb-1 p-2.5 rounded-xl border border-white/20 dark:border-purple-800/40 bg-white/10 dark:bg-black/30 backdrop-blur-xs flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-purple-600/30 text-purple-200 flex items-center justify-center shrink-0">
+            <File size={16} />
+          </div>
+          <div className="min-w-0 text-left">
+            <p className="font-bold truncate text-[11px] text-slate-100 dark:text-slate-200">{attachment.name}</p>
+            <p className="text-[9px] opacity-75">{formatFileSize(attachment.size)}</p>
+          </div>
+        </div>
+        {attachment.dataUrl && (
+          <a
+            href={attachment.dataUrl}
+            download={attachment.name}
+            onClick={(e) => e.stopPropagation()}
+            className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white shrink-0 transition-colors"
+            title={language === 'ar' ? 'تحميل الملف' : 'Download File'}
+          >
+            <Download size={13} />
+          </a>
+        )}
+      </div>
+    );
+  };
+
+  // Render Attachment Preview Bar above Input
+  const renderAttachmentPreviewBar = (attachedFile: AttachedFileItem | null, onRemove: () => void) => {
+    if (!attachedFile) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 5, scale: 0.96 }}
+        className="mx-3 md:mx-5 mb-2 p-2 rounded-2xl bg-purple-950/80 dark:bg-[#150e26] border border-purple-400/30 backdrop-blur-md flex items-center justify-between gap-3 shadow-lg"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          {attachedFile.isImage && (attachedFile.previewUrl || attachedFile.dataUrl) ? (
+            <img
+              src={attachedFile.previewUrl || attachedFile.dataUrl}
+              alt={attachedFile.name}
+              className="w-10 h-10 object-cover rounded-xl border border-purple-400/40 shrink-0"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-purple-600/40 text-purple-200 flex items-center justify-center shrink-0 border border-purple-400/30">
+              <File size={18} />
+            </div>
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-600/40 text-purple-200 font-bold uppercase">
+                {attachedFile.isImage ? (language === 'ar' ? 'صورة' : 'Image') : (language === 'ar' ? 'ملف' : 'Doc')}
+              </span>
+              <p className="text-xs font-bold text-white truncate max-w-[180px] md:max-w-[300px]">
+                {attachedFile.name}
+              </p>
+            </div>
+            <p className="text-[10px] text-purple-200/70">
+              {formatFileSize(attachedFile.size)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {attachedFile.isImage && (
+            <button
+              type="button"
+              onClick={() => setPreviewModalImage(attachedFile.previewUrl || attachedFile.dataUrl || null)}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-purple-100 transition-all cursor-pointer"
+              title={language === 'ar' ? 'معاينة' : 'Preview'}
+            >
+              <Eye size={14} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onRemove}
+            className="p-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 transition-all cursor-pointer"
+            title={language === 'ar' ? 'إلغاء المرفق' : 'Remove Attachment'}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Render Voice Recording Live Banner
+  const renderVoiceRecordingBanner = (target: 'pm' | 'mech' | 'copilot') => {
+    if (!isVoiceRecording || voiceRecordingTarget !== target) return null;
+
+    const formatDuration = (sec: number) => {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="flex-1 bg-gradient-to-r from-rose-950/80 via-purple-950/80 to-rose-950/80 border border-rose-500/40 rounded-2xl px-3.5 py-2 flex items-center justify-between gap-3 shadow-inner"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping shrink-0" />
+            <span className="text-xs font-mono font-bold text-rose-300">
+              {formatDuration(voiceRecordingDuration)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <motion.span animate={{ height: [6, 18, 6] }} transition={{ repeat: Infinity, duration: 0.8 }} className="w-1 bg-rose-400 rounded-full" />
+            <motion.span animate={{ height: [12, 24, 8] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.1 }} className="w-1 bg-purple-400 rounded-full" />
+            <motion.span animate={{ height: [8, 20, 10] }} transition={{ repeat: Infinity, duration: 0.7, delay: 0.2 }} className="w-1 bg-rose-400 rounded-full" />
+            <motion.span animate={{ height: [14, 22, 6] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.3 }} className="w-1 bg-purple-400 rounded-full" />
+          </div>
+
+          <span className="text-xs text-purple-100 font-semibold truncate max-w-[120px] md:max-w-[240px]">
+            {voiceTranscriptText || (language === 'ar' ? 'جارٍ الاستماع والتسجيل...' : 'Listening and recording...')}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleCancelRealVoiceRecording}
+            className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+            title={language === 'ar' ? 'إلغاء' : 'Cancel'}
+          >
+            <X size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleStopRealVoiceRecording(true)}
+            className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-md"
+          >
+            <Check size={14} />
+            <span>{language === 'ar' ? 'إرسال' : 'Send'}</span>
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
+
   // TTS (Text-to-Speech) Read Aloud feature
   const handleToggleSpeakMessage = (messageId: string, text: string) => {
     if (activeAudioMessageId === messageId && isPlayingAudio) {
@@ -1665,50 +1836,193 @@ Regarding: "${text}", live data metrics match our general parameters:
     };
   }, []);
 
-  // Smart Voice Dictation trigger
-  const handleStartVoiceDictation = (target: 'pm' | 'mech' | 'copilot') => {
-    if (isDictating) {
-      setIsDictating(false);
+  // File & Media Upload Handlers
+  const handleFileSelected = (file: File, target: 'pm' | 'mech' | 'copilot') => {
+    if (!file) return;
+    const isImg = file.type.startsWith('image/');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const item: AttachedFileItem = {
+        id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        name: file.name,
+        size: file.size,
+        type: file.type || (isImg ? 'image/jpeg' : 'application/octet-stream'),
+        dataUrl: e.target?.result as string,
+        previewUrl: isImg ? (e.target?.result as string) : undefined,
+        isImage: isImg
+      };
+      if (target === 'pm') setPmAttachedFile(item);
+      else if (target === 'mech') setMechAttachedFile(item);
+      else setCoPilotAttachedFile(item);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleTriggerCamera = (target: 'pm' | 'mech' | 'copilot') => {
+    setCameraTarget(target);
+    if (cameraFileInputRef.current) {
+      cameraFileInputRef.current.value = '';
+      cameraFileInputRef.current.click();
+    }
+  };
+
+  const handleTriggerImageUpload = (target: 'pm' | 'mech' | 'copilot') => {
+    if (target === 'pm' && pmFileInputRef.current) {
+      pmFileInputRef.current.value = '';
+      pmFileInputRef.current.accept = 'image/*';
+      pmFileInputRef.current.click();
+    } else if (target === 'mech' && mechFileInputRef.current) {
+      mechFileInputRef.current.value = '';
+      mechFileInputRef.current.accept = 'image/*';
+      mechFileInputRef.current.click();
+    } else if (target === 'copilot' && coPilotFileInputRef.current) {
+      coPilotFileInputRef.current.value = '';
+      coPilotFileInputRef.current.accept = 'image/*';
+      coPilotFileInputRef.current.click();
+    }
+  };
+
+  const handleTriggerDocumentUpload = (target: 'pm' | 'mech' | 'copilot') => {
+    if (target === 'pm' && pmFileInputRef.current) {
+      pmFileInputRef.current.value = '';
+      pmFileInputRef.current.accept = '.pdf,.doc,.docx,.xlsx,.xls,.txt,.csv,.json';
+      pmFileInputRef.current.click();
+    } else if (target === 'mech' && mechFileInputRef.current) {
+      mechFileInputRef.current.value = '';
+      mechFileInputRef.current.accept = '.pdf,.doc,.docx,.xlsx,.xls,.txt,.csv,.json';
+      mechFileInputRef.current.click();
+    } else if (target === 'copilot' && coPilotFileInputRef.current) {
+      coPilotFileInputRef.current.value = '';
+      coPilotFileInputRef.current.accept = '.pdf,.doc,.docx,.xlsx,.xls,.txt,.csv,.json';
+      coPilotFileInputRef.current.click();
+    }
+  };
+
+  // Real Voice Recording with MediaRecorder & Speech Recognition
+  const handleStartRealVoiceRecording = async (target: 'pm' | 'mech' | 'copilot') => {
+    if (isVoiceRecording) {
+      handleStopRealVoiceRecording(true);
       return;
     }
 
+    setVoiceRecordingTarget(target);
+    setVoiceRecordingDuration(0);
+    setVoiceTranscriptText('');
+    audioChunksRef.current = [];
+
+    // 1. Try Speech Recognition for real-time dictation preview
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       try {
         const recognition = new SpeechRecognition();
         recognition.lang = language === 'ar' ? 'ar-SA' : 'en-US';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-        recognition.onstart = () => {
-          setIsDictating(true);
-        };
+        recognition.interimResults = true;
+        recognition.continuous = true;
 
         recognition.onresult = (event: any) => {
-          const speechResult = event.results[0][0].transcript;
-          if (target === 'pm') setPmInput(speechResult);
-          else if (target === 'mech') setMechInput(speechResult);
-          else setCoPilotInput(speechResult);
+          let currentTranscript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            currentTranscript += event.results[i][0].transcript + ' ';
+          }
+          currentTranscript = currentTranscript.trim();
+          setVoiceTranscriptText(currentTranscript);
+          if (target === 'pm') setPmInput(currentTranscript);
+          else if (target === 'mech') setMechInput(currentTranscript);
+          else setCoPilotInput(currentTranscript);
         };
 
-        recognition.onerror = (event: any) => {
-          console.warn('Speech recognition error:', event.error);
-          setIsDictating(false);
-          triggerSimulationFallback(target);
-        };
-
-        recognition.onend = () => {
-          setIsDictating(false);
+        recognition.onerror = (err: any) => {
+          console.warn('Speech rec error in live recording:', err);
         };
 
         recognition.start();
+        speechRecRef.current = recognition;
       } catch (e) {
-        console.warn('Failed to start speech recognition:', e);
-        triggerSimulationFallback(target);
+        console.warn('Speech recognition initiation error:', e);
       }
-    } else {
-      triggerSimulationFallback(target);
     }
+
+    // 2. Try MediaStream Audio Recording
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            audioChunksRef.current.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start(250);
+      }
+    } catch (micErr) {
+      console.warn('Microphone stream access error:', micErr);
+    }
+
+    setIsVoiceRecording(true);
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    recordingTimerRef.current = setInterval(() => {
+      setVoiceRecordingDuration(prev => prev + 1);
+    }, 1000);
+  };
+
+  const handleStopRealVoiceRecording = (sendImmediately = false) => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+
+    if (speechRecRef.current) {
+      try {
+        speechRecRef.current.stop();
+      } catch (e) {}
+      speechRecRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {}
+    }
+
+    setIsVoiceRecording(false);
+
+    const capturedText = voiceTranscriptText.trim() || 
+      (voiceRecordingTarget === 'pm' ? pmInput.trim() : voiceRecordingTarget === 'mech' ? mechInput.trim() : coPilotInput.trim());
+
+    if (sendImmediately && capturedText) {
+      if (voiceRecordingTarget === 'pm') handlePmSendMessage(capturedText);
+      else if (voiceRecordingTarget === 'mech') handleMechSendMessage(capturedText);
+      else handleCoPilotSendMessage(capturedText);
+    }
+  };
+
+  const handleCancelRealVoiceRecording = () => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (speechRecRef.current) {
+      try { speechRecRef.current.stop(); } catch (e) {}
+      speechRecRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try { mediaRecorderRef.current.stop(); } catch (e) {}
+    }
+    setIsVoiceRecording(false);
+    setVoiceTranscriptText('');
+    setVoiceRecordingDuration(0);
+  };
+
+  // Smart Voice Dictation trigger (Fallback simulation & quick prompt)
+  const handleStartVoiceDictation = (target: 'pm' | 'mech' | 'copilot') => {
+    handleStartRealVoiceRecording(target);
   };
 
   const triggerSimulationFallback = (target: 'pm' | 'mech' | 'copilot') => {
@@ -2584,6 +2898,9 @@ Regarding: "${text}", live data metrics match our general parameters:
                             {isUser ? msg.text : renderRichMessageText(msg.text, `pm-${i}`)}
                           </div>
 
+                          {/* Render Attachment if present */}
+                          {renderMessageAttachmentBadge(msg.attachment)}
+
                           <div className={`flex items-center gap-2 mt-1.5 pt-1.5 border-t ${isUser ? 'border-white/20 text-purple-100' : 'border-slate-100 dark:border-purple-900/30 text-slate-400 dark:text-slate-400'} text-[10px] select-none ${
                             isUser ? 'justify-end' : 'justify-between'
                           }`}>
@@ -2740,6 +3057,9 @@ Regarding: "${text}", live data metrics match our general parameters:
                   ))}
                 </div>
 
+                {/* Attachment Preview Bar above Input */}
+                {renderAttachmentPreviewBar(pmAttachedFile, () => setPmAttachedFile(null))}
+
                 {/* Brand Shadowed Purple Gradient Input Bar */}
                 <div className="bg-gradient-to-r from-[#1e1136] via-[#2d184f] to-[#20123b] dark:from-[#130a24] dark:via-[#1f1038] dark:to-[#140b26] px-3 md:px-5 py-3 border-t border-purple-400/20 flex items-center gap-2 md:gap-3 shrink-0 z-20 shadow-2xl shadow-purple-950/40 backdrop-blur-md">
                   {/* Emoji / Quick Prompts Button */}
@@ -2781,13 +3101,17 @@ Regarding: "${text}", live data metrics match our general parameters:
                     )}
                   </div>
 
-                  {/* Attachment Button */}
+                  {/* Attachment Button & Rich Attachment Menu */}
                   <div className="relative shrink-0">
                     <button
                       type="button"
                       onClick={() => setShowAttachMenu(!showAttachMenu)}
-                      className="p-2.5 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white rounded-xl border border-purple-300/20 transition-all cursor-pointer shadow-xs"
-                      title={language === 'ar' ? 'إرفاق بيانات وأوامر صيانة' : 'Attach'}
+                      className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-xs ${
+                        pmAttachedFile
+                          ? 'bg-purple-600 text-white border-purple-400 ring-2 ring-purple-400/40'
+                          : 'bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white border-purple-300/20'
+                      }`}
+                      title={language === 'ar' ? 'إرفاق ملفات وصور وتقارير' : 'Attach files and reports'}
                     >
                       <Paperclip size={20} />
                     </button>
@@ -2795,73 +3119,161 @@ Regarding: "${text}", live data metrics match our general parameters:
                     {showAttachMenu && (
                       <>
                         <div className="fixed inset-0 z-30" onClick={() => setShowAttachMenu(false)} />
-                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-60 bg-white dark:bg-[#1f1738] rounded-2xl shadow-2xl p-2 z-40 border border-purple-100 dark:border-purple-800/40 space-y-1 text-xs font-bold animate-scale-in`}>
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-64 bg-white dark:bg-[#1c1432] rounded-2xl shadow-2xl p-2 z-40 border border-purple-200 dark:border-purple-800/60 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <div className="text-[10px] font-black text-purple-600 dark:text-purple-400 px-2.5 py-1 uppercase tracking-wider border-b border-slate-100 dark:border-purple-900/30">
+                            {language === 'ar' ? 'إرفاق ملف أو إجراء' : 'Attach File or Action'}
+                          </div>
+
+                          {/* Camera */}
                           <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              handleTriggerCamera('pm');
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 flex items-center justify-center shrink-0">
+                              <Camera size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'التقاط صورة بالكاميرا' : 'Take Camera Photo'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'تصوير مباشر للأعطال والقطع' : 'Live photo of truck or part'}</p>
+                            </div>
+                          </button>
+
+                          {/* Gallery / Image Upload */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              handleTriggerImageUpload('pm');
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
+                              <ImageIcon size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'رفع صورة / مخطط' : 'Upload Image'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'PNG, JPG, WEBP' : 'PNG, JPG, WEBP'}</p>
+                            </div>
+                          </button>
+
+                          {/* Documents Upload */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              handleTriggerDocumentUpload('pm');
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
+                              <FileText size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'إرفاق مستند / PDF' : 'Upload Document / PDF'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'PDF, DOCX, XLSX, TXT' : 'PDF, DOCX, XLSX, TXT'}</p>
+                            </div>
+                          </button>
+
+                          {/* Quick Work Order */}
+                          <button
+                            type="button"
                             onClick={() => {
                               setQuickOrderModalOpen(true);
                               setShowAttachMenu(false);
                             }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer border-t border-slate-100 dark:border-purple-900/30 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
                           >
-                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0">
                               <Wrench size={16} />
                             </div>
-                            <span>{language === 'ar' ? 'إنشاء أمر صيانة فوري' : 'Create Work Order'}</span>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'إنشاء أمر صيانة فوري' : 'Create Work Order'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'إسناد فني وتحديد تكلفة' : 'Assign tech & parts'}</p>
+                            </div>
                           </button>
 
+                          {/* Fleet Report */}
                           <button
+                            type="button"
                             onClick={() => {
                               handlePmSendMessage(language === 'ar' ? 'تقرير حالة أسطول المركبات والفحص الدوري' : 'Vehicle inspection & periodic maintenance summary');
                               setShowAttachMenu(false);
                             }}
                             className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
                           >
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center shrink-0">
-                              <FileText size={16} />
+                            <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center shrink-0">
+                              <FileSpreadsheet size={16} />
                             </div>
-                            <span>{language === 'ar' ? 'توليد تقرير أداء فوري' : 'Generate Fleet Report'}</span>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'توليد تقرير أداء فوري' : 'Generate Fleet Report'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'جاهزية الأسطول والتكاليف' : 'Fleet readiness metrics'}</p>
+                            </div>
                           </button>
                         </div>
                       </>
                     )}
                   </div>
 
-                  {/* Text Input Pill / Box */}
-                  <div className="flex-1 bg-purple-950/40 dark:bg-black/50 rounded-2xl px-4 py-2.5 text-sm flex items-center border border-purple-300/25 dark:border-purple-500/20 focus-within:border-purple-300/60 focus-within:bg-purple-950/60 focus-within:ring-2 focus-within:ring-purple-400/30 backdrop-blur-xs shadow-inner transition-all">
-                    <input
-                      type="text"
-                      value={pmInput}
-                      onChange={(e) => setPmInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handlePmSendMessage();
-                        }
-                      }}
-                      placeholder={language === 'ar' ? 'اكتب رسالة لـ روبرت...' : 'Type a message to Robert...'}
-                      className={`w-full bg-transparent border-0 outline-none text-white placeholder:text-purple-200/60 ${
-                        isRtl ? 'text-right' : 'text-left'
-                      }`}
-                    />
-                  </div>
+                  {/* If voice recording active, show live waveform banner; else show text input */}
+                  {isVoiceRecording && voiceRecordingTarget === 'pm' ? (
+                    renderVoiceRecordingBanner('pm')
+                  ) : (
+                    <div className="flex-1 bg-purple-950/40 dark:bg-black/50 rounded-2xl px-4 py-2.5 text-sm flex items-center border border-purple-300/25 dark:border-purple-500/20 focus-within:border-purple-300/60 focus-within:bg-purple-950/60 focus-within:ring-2 focus-within:ring-purple-400/30 backdrop-blur-xs shadow-inner transition-all">
+                      <input
+                        type="text"
+                        value={pmInput}
+                        onChange={(e) => setPmInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handlePmSendMessage();
+                          }
+                        }}
+                        placeholder={language === 'ar' ? 'اكتب رسالة لـ روبرت أو اضغط المايك للتسجيل...' : 'Type a message or tap mic to record...'}
+                        className={`w-full bg-transparent border-0 outline-none text-white placeholder:text-purple-200/60 ${
+                          isRtl ? 'text-right' : 'text-left'
+                        }`}
+                      />
+                    </div>
+                  )}
 
                   {/* Circular Purple Brand Action Button (Send / Mic) */}
                   <button
                     type="button"
                     onClick={() => {
-                      if (pmInput.trim()) {
+                      if (isVoiceRecording && voiceRecordingTarget === 'pm') {
+                        handleStopRealVoiceRecording(true);
+                      } else if (pmInput.trim() || pmAttachedFile) {
                         handlePmSendMessage();
                       } else {
-                        handleStartVoiceDictation('pm');
+                        handleStartRealVoiceRecording('pm');
                       }
                     }}
-                    className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-600 hover:brightness-110 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-purple-950/50 border border-purple-300/30 transition-all shrink-0 cursor-pointer"
-                    title={pmInput.trim() ? (language === 'ar' ? 'إرسال' : 'Send') : (language === 'ar' ? 'تسجيل صوتي' : 'Voice')}
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-950/50 border transition-all shrink-0 cursor-pointer ${
+                      isVoiceRecording && voiceRecordingTarget === 'pm'
+                        ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400 animate-pulse'
+                        : (pmInput.trim() || pmAttachedFile)
+                        ? 'bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-600 hover:brightness-110 active:scale-95 text-white border-purple-300/30'
+                        : 'bg-white/10 hover:bg-white/20 active:scale-95 text-purple-100 hover:text-white border-purple-300/20'
+                    }`}
+                    title={
+                      isVoiceRecording && voiceRecordingTarget === 'pm'
+                        ? (language === 'ar' ? 'إنهاء وإرسال التسجيل' : 'Finish & Send Recording')
+                        : (pmInput.trim() || pmAttachedFile)
+                        ? (language === 'ar' ? 'إرسال' : 'Send')
+                        : (language === 'ar' ? 'بدء التسجيل الصوتي' : 'Start Voice Recording')
+                    }
                   >
-                    {pmInput.trim() ? (
+                    {isVoiceRecording && voiceRecordingTarget === 'pm' ? (
+                      <Check size={18} />
+                    ) : (pmInput.trim() || pmAttachedFile) ? (
                       <Send size={18} className={isRtl ? 'rotate-180' : ''} />
                     ) : (
-                      <Mic size={18} className={isDictating ? 'animate-pulse text-rose-500' : ''} />
+                      <Mic size={18} className={isVoiceRecording ? 'text-rose-500 animate-pulse' : ''} />
                     )}
                   </button>
                 </div>
@@ -3231,6 +3643,9 @@ Regarding: "${text}", live data metrics match our general parameters:
                             {isUser ? msg.text : renderRichMessageText(msg.text, `mech-${msg.id || i}`)}
                           </div>
 
+                          {/* Render Attachment if present */}
+                          {renderMessageAttachmentBadge(msg.attachment)}
+
                           {!isUser && (
                             <div className="flex items-center gap-2.5 mt-2.5 pt-2 border-t border-slate-100 dark:border-purple-900/30 text-[10px] text-slate-400 font-bold select-none">
                               <button
@@ -3368,6 +3783,9 @@ Regarding: "${text}", live data metrics match our general parameters:
                   ))}
                 </div>
 
+                {/* Attachment Preview Bar above Mechanic Input */}
+                {renderAttachmentPreviewBar(mechAttachedFile, () => setMechAttachedFile(null))}
+
                 {/* Brand Shadowed Purple Gradient Input Bar */}
                 <div className="bg-gradient-to-r from-[#1e1136] via-[#2d184f] to-[#20123b] dark:from-[#130a24] dark:via-[#1f1038] dark:to-[#140b26] px-3 md:px-5 py-3 border-t border-purple-400/20 flex items-center gap-2 md:gap-3 shrink-0 z-20 shadow-2xl shadow-purple-950/40 backdrop-blur-md">
                   {/* Emoji / Quick Prompts Button */}
@@ -3409,63 +3827,168 @@ Regarding: "${text}", live data metrics match our general parameters:
                     )}
                   </div>
 
-                  {/* Attachment Button */}
+                  {/* Attachment Button & Rich Menu for Mechanic */}
                   <div className="relative shrink-0">
                     <button
                       type="button"
-                      onClick={() => {
-                        setQuickOrderData({
-                          vehicleId: defaultVehicles[0]?.id || 'V1',
-                          category: 'mechanical',
-                          description: 'طلب فحص وصيانة سريعة من المحادثة',
-                          technicianId: defaultTechnicians[0]?.id || 'T1',
-                          cost: '300'
-                        });
-                        setQuickOrderModalOpen(true);
-                      }}
-                      className="p-2.5 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white rounded-xl border border-purple-300/20 transition-all cursor-pointer shadow-xs"
-                      title={language === 'ar' ? 'أمر صيانة فوري' : 'Work Order'}
+                      onClick={() => setShowMechAttachMenu(!showMechAttachMenu)}
+                      className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-xs ${
+                        mechAttachedFile
+                          ? 'bg-purple-600 text-white border-purple-400 ring-2 ring-purple-400/40'
+                          : 'bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white border-purple-300/20'
+                      }`}
+                      title={language === 'ar' ? 'إرفاق صور الأعطال والمخططات والملفات' : 'Attach diagnostic files & photos'}
                     >
                       <Paperclip size={20} />
                     </button>
+
+                    {showMechAttachMenu && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setShowMechAttachMenu(false)} />
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-64 bg-white dark:bg-[#1c1432] rounded-2xl shadow-2xl p-2 z-40 border border-purple-200 dark:border-purple-800/60 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <div className="text-[10px] font-black text-purple-600 dark:text-purple-400 px-2.5 py-1 uppercase tracking-wider border-b border-slate-100 dark:border-purple-900/30">
+                            {language === 'ar' ? 'إرفاق فني ومستندات' : 'Attach Diagnostic Item'}
+                          </div>
+
+                          {/* Camera */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowMechAttachMenu(false);
+                              handleTriggerCamera('mech');
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 flex items-center justify-center shrink-0">
+                              <Camera size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'تصوير العطل بالكاميرا' : 'Take Photo of Fault'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'تصوير فوري للشاحنة أو القطعة' : 'Instant snapshot of component'}</p>
+                            </div>
+                          </button>
+
+                          {/* Image / Part Blueprint Upload */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowMechAttachMenu(false);
+                              handleTriggerImageUpload('mech');
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
+                              <ImageIcon size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'رفع مخطط / صورة قطعة' : 'Upload Part / Diagram'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'PNG, JPG, WEBP' : 'PNG, JPG, WEBP'}</p>
+                            </div>
+                          </button>
+
+                          {/* Document Upload */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowMechAttachMenu(false);
+                              handleTriggerDocumentUpload('mech');
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
+                              <FileText size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'كتالوج صيانة / PDF' : 'Maintenance Manual / PDF'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'PDF, DOCX, XLSX, TXT' : 'PDF, DOCX, XLSX, TXT'}</p>
+                            </div>
+                          </button>
+
+                          {/* Quick Work Order */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickOrderData({
+                                vehicleId: defaultVehicles[0]?.id || 'V1',
+                                category: 'mechanical',
+                                description: 'طلب فحص وصيانة سريعة من المحادثة',
+                                technicianId: defaultTechnicians[0]?.id || 'T1',
+                                cost: '300'
+                              });
+                              setQuickOrderModalOpen(true);
+                              setShowMechAttachMenu(false);
+                            }}
+                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer border-t border-slate-100 dark:border-purple-900/30 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0">
+                              <Wrench size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-xs">{language === 'ar' ? 'أمر صيانة فوري' : 'Work Order'}</p>
+                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'تسجيل أمر فحص عاجل' : 'Dispatch quick work order'}</p>
+                            </div>
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {/* Text Input Pill / Box */}
-                  <div className="flex-1 bg-purple-950/40 dark:bg-black/50 rounded-2xl px-4 py-2.5 text-sm flex items-center border border-purple-300/25 dark:border-purple-500/20 focus-within:border-purple-300/60 focus-within:bg-purple-950/60 focus-within:ring-2 focus-within:ring-purple-400/30 backdrop-blur-xs shadow-inner transition-all">
-                    <input
-                      type="text"
-                      value={mechInput}
-                      onChange={(e) => setMechInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleMechSendMessage();
-                        }
-                      }}
-                      placeholder={language === 'ar' ? 'استفسر عن قطع الغيار أو أعطال الورشة...' : 'Ask about parts or workshop repairs...'}
-                      className={`w-full bg-transparent border-0 outline-none text-white placeholder:text-purple-200/60 ${
-                        isRtl ? 'text-right' : 'text-left'
-                      }`}
-                    />
-                  </div>
+                  {/* If voice recording active, show live waveform banner; else show text input */}
+                  {isVoiceRecording && voiceRecordingTarget === 'mech' ? (
+                    renderVoiceRecordingBanner('mech')
+                  ) : (
+                    <div className="flex-1 bg-purple-950/40 dark:bg-black/50 rounded-2xl px-4 py-2.5 text-sm flex items-center border border-purple-300/25 dark:border-purple-500/20 focus-within:border-purple-300/60 focus-within:bg-purple-950/60 focus-within:ring-2 focus-within:ring-purple-400/30 backdrop-blur-xs shadow-inner transition-all">
+                      <input
+                        type="text"
+                        value={mechInput}
+                        onChange={(e) => setMechInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleMechSendMessage();
+                          }
+                        }}
+                        placeholder={language === 'ar' ? 'استفسر عن قطع الغيار أو اضغط المايك للتسجيل...' : 'Ask about parts or tap mic to record...'}
+                        className={`w-full bg-transparent border-0 outline-none text-white placeholder:text-purple-200/60 ${
+                          isRtl ? 'text-right' : 'text-left'
+                        }`}
+                      />
+                    </div>
+                  )}
 
                   {/* Circular Purple Brand Action Button (Send / Mic) */}
                   <button
                     type="button"
                     onClick={() => {
-                      if (mechInput.trim()) {
+                      if (isVoiceRecording && voiceRecordingTarget === 'mech') {
+                        handleStopRealVoiceRecording(true);
+                      } else if (mechInput.trim() || mechAttachedFile) {
                         handleMechSendMessage();
                       } else {
-                        handleStartVoiceDictation('mech');
+                        handleStartRealVoiceRecording('mech');
                       }
                     }}
-                    className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-600 hover:brightness-110 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-purple-950/50 border border-purple-300/30 transition-all shrink-0 cursor-pointer"
-                    title={mechInput.trim() ? (language === 'ar' ? 'إرسال' : 'Send') : (language === 'ar' ? 'تسجيل صوتي' : 'Voice')}
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-950/50 border transition-all shrink-0 cursor-pointer ${
+                      isVoiceRecording && voiceRecordingTarget === 'mech'
+                        ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400 animate-pulse'
+                        : (mechInput.trim() || mechAttachedFile)
+                        ? 'bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-600 hover:brightness-110 active:scale-95 text-white border-purple-300/30'
+                        : 'bg-white/10 hover:bg-white/20 active:scale-95 text-purple-100 hover:text-white border-purple-300/20'
+                    }`}
+                    title={
+                      isVoiceRecording && voiceRecordingTarget === 'mech'
+                        ? (language === 'ar' ? 'إنهاء وإرسال التسجيل' : 'Finish & Send Recording')
+                        : (mechInput.trim() || mechAttachedFile)
+                        ? (language === 'ar' ? 'إرسال' : 'Send')
+                        : (language === 'ar' ? 'بدء التسجيل الصوتي' : 'Start Voice Recording')
+                    }
                   >
-                    {mechInput.trim() ? (
+                    {isVoiceRecording && voiceRecordingTarget === 'mech' ? (
+                      <Check size={18} />
+                    ) : (mechInput.trim() || mechAttachedFile) ? (
                       <Send size={18} className={isRtl ? 'rotate-180' : ''} />
                     ) : (
-                      <Mic size={18} className={isDictating ? 'animate-pulse text-rose-500' : ''} />
+                      <Mic size={18} className={isVoiceRecording ? 'text-rose-500 animate-pulse' : ''} />
                     )}
                   </button>
                 </div>
@@ -3768,7 +4291,8 @@ Regarding: "${text}", live data metrics match our general parameters:
 
                         {isUser ? (
                           <div className={`p-4 md:p-5 max-w-[85%] md:max-w-[75%] border shadow-xs bg-emerald-600 text-white rounded-[32px] md:rounded-[40px] px-6 py-3.5 border-transparent text-right font-black ${getFontSizeClass(chatFontSize)}`}>
-                            {msg.text}
+                            <div>{msg.text}</div>
+                            {renderMessageAttachmentBadge(msg.attachment)}
                           </div>
                         ) : (
                           /* Render side-by-side advice cards */
@@ -3901,32 +4425,141 @@ Regarding: "${text}", live data metrics match our general parameters:
                   )}
                 </div>
 
+                {/* Attachment Preview Bar above CoPilot Input */}
+                {renderAttachmentPreviewBar(coPilotAttachedFile, () => setCoPilotAttachedFile(null))}
+
                 {/* Co-Pilot Input Bar */}
                 <div className="p-3 md:p-4 bg-gradient-to-r from-emerald-950/20 via-slate-900/40 to-emerald-950/20 dark:bg-[#0c101d] border-t border-emerald-500/20 dark:border-emerald-500/15 shrink-0 backdrop-blur-md">
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleCoPilotSendMessage();
-                    }}
-                    className="flex items-center gap-2 bg-white/80 dark:bg-[#121829]/90 border border-emerald-500/30 dark:border-emerald-500/20 p-2 rounded-2xl shadow-lg focus-within:ring-2 focus-within:ring-emerald-400/30 transition-all"
-                  >
-                    <input
-                      type="text"
-                      value={coPilotInput}
-                      onChange={(e) => setCoPilotInput(e.target.value)}
-                      disabled={coPilotLoading}
-                      placeholder={language === 'ar' ? 'اكتب سؤالاً موجهاً للمساعد المشترك...' : 'Ask the co-pilot joint command...'}
-                      className="flex-1 bg-transparent px-3 py-2 outline-hidden text-xs md:text-sm font-semibold text-slate-800 dark:text-white placeholder:text-slate-400"
-                    />
+                  <div className="flex items-center gap-2 bg-white/80 dark:bg-[#121829]/90 border border-emerald-500/30 dark:border-emerald-500/20 p-2 rounded-2xl shadow-lg focus-within:ring-2 focus-within:ring-emerald-400/30 transition-all">
+                    {/* Attachment Button & Menu */}
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setShowCoPilotAttachMenu(!showCoPilotAttachMenu)}
+                        className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                          coPilotAttachedFile
+                            ? 'bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-400/40'
+                            : 'bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/40'
+                        }`}
+                        title={language === 'ar' ? 'إرفاق ملف أو صورة' : 'Attach file'}
+                      >
+                        <Paperclip size={18} />
+                      </button>
+
+                      {showCoPilotAttachMenu && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setShowCoPilotAttachMenu(false)} />
+                          <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-60 bg-white dark:bg-[#131b30] rounded-2xl shadow-2xl p-2 z-40 border border-emerald-200 dark:border-emerald-800/60 space-y-1 text-xs font-bold animate-scale-in`}>
+                            <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 px-2.5 py-1 uppercase border-b border-slate-100 dark:border-slate-800">
+                              {language === 'ar' ? 'إرفاق مستند أو صورة' : 'Attach File'}
+                            </div>
+
+                            {/* Camera */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowCoPilotAttachMenu(false);
+                                handleTriggerCamera('copilot');
+                              }}
+                              className={`w-full p-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                            >
+                              <div className="w-7 h-7 rounded-lg bg-pink-100 dark:bg-pink-950/60 text-pink-600 flex items-center justify-center shrink-0">
+                                <Camera size={15} />
+                              </div>
+                              <span className="font-bold text-xs">{language === 'ar' ? 'التقاط بالكاميرا' : 'Camera'}</span>
+                            </button>
+
+                            {/* Gallery / Image */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowCoPilotAttachMenu(false);
+                                handleTriggerImageUpload('copilot');
+                              }}
+                              className={`w-full p-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                            >
+                              <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center shrink-0">
+                                <ImageIcon size={15} />
+                              </div>
+                              <span className="font-bold text-xs">{language === 'ar' ? 'رفع صورة / مخطط' : 'Upload Image'}</span>
+                            </button>
+
+                            {/* Document */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowCoPilotAttachMenu(false);
+                                handleTriggerDocumentUpload('copilot');
+                              }}
+                              className={`w-full p-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                            >
+                              <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
+                                <FileText size={15} />
+                              </div>
+                              <span className="font-bold text-xs">{language === 'ar' ? 'إرفاق ملف / PDF' : 'Upload Document'}</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* If voice recording is active */}
+                    {isVoiceRecording && voiceRecordingTarget === 'copilot' ? (
+                      renderVoiceRecordingBanner('copilot')
+                    ) : (
+                      <input
+                        type="text"
+                        value={coPilotInput}
+                        onChange={(e) => setCoPilotInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleCoPilotSendMessage();
+                          }
+                        }}
+                        disabled={coPilotLoading}
+                        placeholder={language === 'ar' ? 'اكتب سؤالاً موجهاً للمساعد المشترك أو اضغط المايك...' : 'Ask the co-pilot joint command or tap mic...'}
+                        className="flex-1 bg-transparent px-3 py-2 outline-hidden text-xs md:text-sm font-semibold text-slate-800 dark:text-white placeholder:text-slate-400"
+                      />
+                    )}
                     
+                    {/* Action button (Send / Mic / Confirm Recording) */}
                     <button 
-                      type="submit"
-                      disabled={coPilotLoading || !coPilotInput.trim()}
-                      className="p-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 active:scale-95 text-white rounded-xl shadow-md transition-all cursor-pointer shrink-0 disabled:opacity-50"
+                      type="button"
+                      onClick={() => {
+                        if (isVoiceRecording && voiceRecordingTarget === 'copilot') {
+                          handleStopRealVoiceRecording(true);
+                        } else if (coPilotInput.trim() || coPilotAttachedFile) {
+                          handleCoPilotSendMessage();
+                        } else {
+                          handleStartRealVoiceRecording('copilot');
+                        }
+                      }}
+                      disabled={coPilotLoading}
+                      className={`p-3 rounded-xl shadow-md transition-all cursor-pointer shrink-0 ${
+                        isVoiceRecording && voiceRecordingTarget === 'copilot'
+                          ? 'bg-rose-600 hover:bg-rose-500 text-white animate-pulse'
+                          : (coPilotInput.trim() || coPilotAttachedFile)
+                          ? 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 active:scale-95 text-white'
+                          : 'bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300'
+                      }`}
+                      title={
+                        isVoiceRecording && voiceRecordingTarget === 'copilot'
+                          ? (language === 'ar' ? 'إنهاء وإرسال التسجيل' : 'Finish & Send Recording')
+                          : (coPilotInput.trim() || coPilotAttachedFile)
+                          ? (language === 'ar' ? 'إرسال' : 'Send')
+                          : (language === 'ar' ? 'تسجيل صوتي' : 'Voice')
+                      }
                     >
-                      <Send size={16} className={isRtl ? 'rotate-180' : ''} />
+                      {isVoiceRecording && voiceRecordingTarget === 'copilot' ? (
+                        <Check size={16} />
+                      ) : (coPilotInput.trim() || coPilotAttachedFile) ? (
+                        <Send size={16} className={isRtl ? 'rotate-180' : ''} />
+                      ) : (
+                        <Mic size={16} className={isVoiceRecording ? 'text-rose-500 animate-pulse' : ''} />
+                      )}
                     </button>
-                  </form>
+                  </div>
                 </div>
 
               </div>
@@ -4550,6 +5183,86 @@ Regarding: "${text}", live data metrics match our general parameters:
             </div>
           );
         })()}
+      </AnimatePresence>
+
+      {/* Hidden File Inputs for Attachment / Camera */}
+      <input
+        type="file"
+        ref={pmFileInputRef}
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            handleFileSelected(e.target.files[0], 'pm');
+          }
+        }}
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={mechFileInputRef}
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            handleFileSelected(e.target.files[0], 'mech');
+          }
+        }}
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={coPilotFileInputRef}
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            handleFileSelected(e.target.files[0], 'copilot');
+          }
+        }}
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={cameraFileInputRef}
+        accept="image/*"
+        capture="environment"
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            handleFileSelected(e.target.files[0], cameraTarget);
+          }
+        }}
+        className="hidden"
+      />
+
+      {/* Image Zoom Lightbox Modal */}
+      <AnimatePresence>
+        {previewModalImage && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPreviewModalImage(null)}
+              className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-4xl max-h-[85vh] z-[201] flex flex-col items-center"
+            >
+              <button
+                type="button"
+                onClick={() => setPreviewModalImage(null)}
+                className="absolute -top-12 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all cursor-pointer"
+                title={language === 'ar' ? 'إغلاق' : 'Close'}
+              >
+                <X size={20} />
+              </button>
+              <img
+                src={previewModalImage}
+                alt="Enlarged preview"
+                className="max-h-[80vh] w-auto object-contain rounded-2xl border border-white/20 shadow-2xl"
+                referrerPolicy="no-referrer"
+              />
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );

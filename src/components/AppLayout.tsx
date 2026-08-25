@@ -1889,327 +1889,66 @@ export default function AppLayout({
           })}
         </nav>
 
-        {/* Subscription box - fully operational */}
-        {!collapsed && (
-          <div className="mx-2 mb-3 p-3 bg-brand-blue-50 dark:bg-brand-blue-900/10 border border-brand-blue-100/60 dark:border-slate-800/60 rounded-2xl shadow-xs select-none">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span className="text-xs">👑</span>
-              <p className="text-[10px] font-black text-brand-blue-700 dark:text-brand-blue-400 leading-none">
-                {t('menu.premiumClass')}
-              </p>
-            </div>
-            <p className="text-[10px] text-brand-blue-600/80 dark:text-brand-blue-500/80 mb-3">
-              {t('menu.daysRemaining')}
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button 
-                onClick={() => setActiveTab('saas-billing')}
-                className="bg-brand-blue-500 hover:bg-brand-blue-600 text-white text-[9.5px] py-1.5 px-1 rounded-lg font-black transition-all text-center cursor-pointer shadow-xs shadow-brand-blue-500/10"
-              >
-                {t('menu.renew')}
-              </button>
-              <button 
-                onClick={() => setIsSupportModalOpen(true)}
-                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-transparent text-[9.5px] py-1.5 px-1 rounded-lg font-black text-center transition-all cursor-pointer"
-              >
-                {t('menu.support')}
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="p-2 border-t border-slate-200 dark:border-slate-800">
+        {/* Sidebar Footer */}
+        <div className="p-2 border-t border-[#f1f5f9] dark:border-slate-800/80 space-y-1">
           <SidebarItem
-            icon={<Settings size={16} />}
+            icon={<Settings size={18} />}
             label={t('menu.settings')}
+            active={isSettingsModalOpen}
             onClick={() => setIsSettingsModalOpen(true)}
             collapsed={collapsed}
           />
           <SidebarItem
-            icon={<LogOut size={16} />}
-            label={t('menu.logout')}
+            icon={<LogOut size={18} />}
+            label={t('common.logout')}
             onClick={() => {
-              if (onLogout) {
-                onLogout();
-              }
+              if (onLogout) onLogout();
             }}
             collapsed={collapsed}
           />
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Header */}
-        <header className="min-h-[64px] py-2 px-3 sm:px-4 lg:px-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800/70 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 z-30 transition-all duration-300">
-          {/* Left: Mobile Menu & Search */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-[180px] sm:min-w-[220px] flex-1 sm:flex-initial max-w-full sm:max-w-xs md:max-w-sm">
-            <button 
-              className="md:hidden w-9.5 h-9.5 flex items-center justify-center text-slate-650 dark:text-slate-250 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-200/60 dark:border-slate-700/60 shadow-2xs cursor-pointer shrink-0 active:scale-95"
-              onClick={() => setMobileMenuOpen(true)}
-              title={language === 'ar' ? 'القائمة الرئيسية' : 'Main Menu'}
-            >
-              <Menu size={18} />
-            </button>
-            <div className="relative flex-1 transition-all">
-              <span className={`absolute inset-y-0 flex items-center text-slate-400 pointer-events-none ${dir === 'rtl' ? 'right-3' : 'left-3'}`}>
-                <Search size={14} />
-              </span>
-              <input 
-                id="header-search-input"
-                type="text"
-                placeholder={t('common.search')}
-                onChange={(e) => {
-                  window.dispatchEvent(new CustomEvent('barcode-scanned', { 
-                    detail: { plateNumber: e.target.value } 
-                  }));
-                  if (activeTab !== 'vehicles' && e.target.value.trim() !== '') {
-                    setActiveTab('vehicles');
-                  }
-                }}
-                className={`w-full h-9.5 py-1.5 bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-blue-500 rounded-xl transition-all outline-none text-xs font-semibold dark:text-white shadow-2xs ${
-                  dir === 'rtl' ? 'pr-9 pl-3' : 'pl-9 pr-3'
-                }`}
-              />
-            </div>
-          </div>
-
-          {/* Right: Actions & Tools with Organized Functional Groups & Flex Wrap */}
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5 flex-1 min-w-0">
-            {/* Group 1: Operational Action Tools */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* General Barcode Scanner Button */}
+        {/* Header - Structured into Two Clean Rows (Top Row & Bottom Row) */}
+        <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800/70 z-30 transition-all duration-300 shadow-2xs">
+          {/* Row 1 (Top Row): Mobile Menu + Search Bar & Profile Capsule + Notifications */}
+          <div className="py-2.5 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60">
+            {/* Left: Mobile Menu & Global Search */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-full sm:max-w-md">
               <button 
-                onClick={() => setIsBarcodeModalOpen(true)}
-                className="h-9.5 px-2.5 sm:px-3 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/80 dark:bg-brand-blue-950/30 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/40 border border-brand-blue-200/40 dark:border-brand-blue-900/50 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95"
-                title={t('common.barcodeScanner')}
+                className="md:hidden w-9.5 h-9.5 flex items-center justify-center text-slate-650 dark:text-slate-250 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-200/60 dark:border-slate-700/60 shadow-2xs cursor-pointer shrink-0 active:scale-95"
+                onClick={() => setMobileMenuOpen(true)}
+                title={language === 'ar' ? 'القائمة الرئيسية' : 'Main Menu'}
               >
-                <Scan size={14} className="shrink-0" />
-                <span className="text-[11px] font-black hidden lg:inline-block leading-none">
-                  {t('common.barcodeScanner').split(' ')[0]}
-                </span>
+                <Menu size={18} />
               </button>
-
-              {/* Video Tutorials / Academy Quick Action */}
-              <button 
-                id="topbar-video-tutorials-btn"
-                onClick={() => setActiveTab('video-tutorials')}
-                className={`h-9.5 px-2.5 sm:px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95 border ${
-                  activeTab === 'video-tutorials'
-                    ? 'bg-purple-600 text-white border-purple-500 shadow-purple-600/20'
-                    : 'text-purple-700 dark:text-purple-300 bg-purple-50/80 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border-purple-200/50 dark:border-purple-800/40'
-                }`}
-                title={language === 'ar' ? 'أكاديمية وشروحات الفيديو' : 'Video Tutorials & Academy'}
-              >
-                <Video size={14} className="shrink-0 text-purple-600 dark:text-purple-400" />
-                <span className="text-[11px] font-black hidden lg:inline-block leading-none">
-                  {language === 'ar' ? 'شروحات الفيديو' : 'Tutorials'}
+              <div className="relative flex-1 transition-all">
+                <span className={`absolute inset-y-0 flex items-center text-slate-400 pointer-events-none ${dir === 'rtl' ? 'right-3' : 'left-3'}`}>
+                  <Search size={14} />
                 </span>
-              </button>
-
-              {/* External Marketing Site Preview Action */}
-              <button 
-                id="topbar-marketing-site-btn"
-                onClick={() => {
-                  if (onNavigateToMarketing) {
-                    onNavigateToMarketing();
-                  } else {
-                    localStorage.setItem('saas_portal_mode', 'marketing');
-                    window.dispatchEvent(new Event('storage'));
-                    window.location.reload();
-                  }
-                }}
-                className="h-9.5 px-2.5 sm:px-3 text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 active:scale-95 border border-purple-400/30 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-xs shadow-purple-500/15"
-                title={language === 'ar' ? 'عرض وزيارة الموقع التسويقي العام' : 'Preview & Visit Public Marketing Site'}
-              >
-                <Globe size={13} className="text-purple-200 shrink-0" />
-                <span className="text-[11px] font-black leading-none whitespace-nowrap hidden sm:inline-block">
-                  {language === 'ar' ? 'الموقع التسويقي' : 'Marketing Site'}
-                </span>
-                <Sparkles size={11} className="text-amber-300 shrink-0 animate-pulse" />
-              </button>
-            </div>
-
-            {/* Group 2: User Preferences & Role */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Quick Language Toggle Button */}
-              <button 
-                onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-                className="h-9.5 px-2.5 sm:px-3 text-slate-700 dark:text-slate-200 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700 border border-slate-200/50 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95"
-                title={language === 'ar' ? 'تغيير اللغة إلى English' : 'تغيير اللغة إلى العربية'}
-              >
-                <Globe size={13} className="text-violet-500 shrink-0" />
-                <span className="text-[11px] font-black leading-none">
-                  {language === 'ar' ? 'EN' : 'عربي'}
-                </span>
-              </button>
-
-              {/* Quick Font Size Switcher Button */}
-              <div className="relative">
-                <button 
-                  onClick={() => setFontSizeDropdownOpen(!fontSizeDropdownOpen)}
-                  className="h-9.5 px-2.5 sm:px-3 text-purple-600 dark:text-purple-300 bg-purple-50/80 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200/50 dark:border-purple-800/40 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95"
-                  title={language === 'ar' ? 'مقياس حجم الخط والتكبير' : 'Font Size Scale'}
-                >
-                  <Type size={13} className="text-purple-600 dark:text-purple-400" />
-                  <span className="text-[11px] font-black leading-none">
-                    {fontSizeMode === 'normal' ? 'A' : fontSizeMode === 'large' ? 'A+' : fontSizeMode === 'xlarge' ? 'A++' : 'A+++'}
-                  </span>
-                  <ChevronDown size={10} className={`text-purple-400 transition-transform ${fontSizeDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                <AnimatePresence>
-                  {fontSizeDropdownOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setFontSizeDropdownOpen(false)} />
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className={`absolute top-12 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-1.5 overflow-hidden ${
-                          dir === 'rtl' ? 'left-0' : 'right-0'
-                        }`}
-                      >
-                        <p className={`px-2.5 py-1 text-[9.5px] uppercase font-black text-slate-400 dark:text-slate-550 ${
-                          dir === 'rtl' ? 'text-right' : 'text-left'
-                        }`}>
-                          {language === 'ar' ? 'مقياس حجم الخط' : 'Font Size'}
-                        </p>
-                        {[
-                          { id: 'normal', label: language === 'ar' ? 'A عادي (100%)' : 'A Normal (100%)' },
-                          { id: 'large', label: language === 'ar' ? 'A+ كبير (118%)' : 'A+ Large (118%)' },
-                          { id: 'xlarge', label: language === 'ar' ? 'A++ كبير جداً (135%)' : 'A++ Extra (135%)' },
-                          { id: 'huge', label: language === 'ar' ? 'A+++ فائق (155%)' : 'A+++ Max (155%)' },
-                        ].map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => {
-                              setFontSizeMode(item.id as 'normal' | 'large' | 'xlarge' | 'huge');
-                              setFontSizeDropdownOpen(false);
-                            }}
-                            className={`w-full px-2.5 py-1.5 text-xs font-bold rounded-xl transition-colors flex items-center justify-between cursor-pointer ${
-                              dir === 'rtl' ? 'text-right' : 'text-left'
-                            } ${
-                              fontSizeMode === item.id 
-                                ? 'bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-black' 
-                                : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
-                            }`}
-                          >
-                            <span>{item.label}</span>
-                            {fontSizeMode === item.id && <Check size={12} className="text-purple-600 shrink-0" />}
-                          </button>
-                        ))}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Quick Access / Mode Changer */}
-              <div className="relative">
-                <button 
-                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                  className="h-9.5 flex items-center justify-center gap-1 px-2.5 sm:px-3 bg-slate-100/90 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/50 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95"
-                  title={t('common.role')}
-                >
-                  <Shield size={13} className="text-brand-blue-600" />
-                  <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 hidden xl:block">
-                    {
-                      user.role === 'admin' 
-                        ? (language === 'ar' ? 'المدير' : 'Admin')
-                        : user.role === 'technician' 
-                          ? (language === 'ar' ? 'فني' : 'Tech')
-                          : user.role === 'viewer'
-                            ? (language === 'ar' ? 'مراقب' : 'Viewer')
-                            : (language === 'ar' ? 'سائق' : 'Driver')
+                <input 
+                  id="header-search-input"
+                  type="text"
+                  placeholder={t('common.search')}
+                  onChange={(e) => {
+                    window.dispatchEvent(new CustomEvent('barcode-scanned', { 
+                      detail: { plateNumber: e.target.value } 
+                    }));
+                    if (activeTab !== 'vehicles' && e.target.value.trim() !== '') {
+                      setActiveTab('vehicles');
                     }
-                  </span>
-                  <ChevronDown size={9} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                <AnimatePresence>
-                  {roleDropdownOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setRoleDropdownOpen(false)} />
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className={`absolute top-12 w-48 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-xl z-50 p-2 overflow-hidden ${
-                          dir === 'rtl' ? 'left-0' : 'right-0'
-                        }`}
-                      >
-                        <p className={`px-3 py-1.5 text-[9.5px] uppercase font-bold text-slate-400 dark:text-slate-550 ${
-                          dir === 'rtl' ? 'text-right' : 'text-left'
-                        }`}>
-                          {language === 'ar' ? 'تبديل الصلاحيات (تجريبي)' : 'Swap Roles (Walkthrough)'}
-                        </p>
-                        {[
-                          { id: 'admin', label: t('common.roleAdmin') || (language === 'ar' ? '🔑 مدير الصيانة (كامل)' : '🔑 Maintenance Admin (Full)') },
-                          { id: 'technician', label: t('common.roleTechnician') || (language === 'ar' ? '🔧 فني ميكانيك أول' : '🔧 Lead Technician') },
-                          { id: 'viewer', label: t('common.roleViewer') || (language === 'ar' ? '👁️ مراقب جودة ونظام (معاينة)' : '👁️ Quality Observer (Read-only)') },
-                          { id: 'driver', label: t('login.roleDriver') || (language === 'ar' ? '🚛 سائق نقل ثقيل' : '🚛 Heavy Driver') },
-                        ].map((r) => (
-                          <button
-                            key={r.id}
-                            onClick={() => {
-                              onRoleChange(r.id as UserRole);
-                              setRoleDropdownOpen(false);
-                            }}
-                            className={`w-full px-3 py-1.5 text-xs font-semibold rounded-xl transition-colors ${
-                              dir === 'rtl' ? 'text-right' : 'text-left'
-                            } ${
-                              user.role === r.id 
-                                ? 'bg-brand-blue-50 dark:bg-brand-blue-900/30 text-brand-blue-700 dark:text-brand-blue-400 font-black' 
-                                : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
-                            }`}
-                          >
-                            {r.label}
-                          </button>
-                        ))}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
+                  }}
+                  className={`w-full h-9 py-1.5 bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50 focus:bg-white dark:focus:bg-slate-800 focus:border-brand-blue-500 rounded-xl transition-all outline-none text-xs font-semibold dark:text-white shadow-2xs ${
+                    dir === 'rtl' ? 'pr-9 pl-3' : 'pl-9 pr-3'
+                  }`}
+                />
               </div>
             </div>
 
-            {/* Group 3: Live Status Indicators & Alerts */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Connection / Synchronization Status Badge */}
-              {isSyncing ? (
-                <div 
-                  className="h-9.5 px-2.5 flex items-center justify-center gap-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50 rounded-xl shadow-2xs shrink-0"
-                  title={language === 'ar' ? 'جاري مزامنة تعديلات الصيانة...' : 'Syncing local changes to server...'}
-                >
-                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping inline-block" />
-                  <span className="text-[10.5px] font-black leading-none text-amber-705 dark:text-amber-300 hidden 2xl:inline-block">
-                    {language === 'ar' ? 'جاري المزامنة...' : 'Syncing...'}
-                  </span>
-                </div>
-              ) : isOffline ? (
-                <div 
-                  className="h-9.5 px-2.5 flex items-center justify-center gap-1.5 bg-rose-50/90 dark:bg-rose-950/20 text-rose-650 dark:text-rose-400 border border-rose-200/50 dark:border-rose-900/40 rounded-xl shadow-2xs shrink-0"
-                  title={language === 'ar' ? 'وضعية العمل دون اتصال نشطة (تُحفظ التعديلات بالمتصفح)' : 'Running locally in offline cache mode'}
-                >
-                  <WifiOff size={13} className="text-rose-500 shrink-0 animate-bounce" />
-                  <span className="text-[10.5px] font-black leading-none text-rose-700 dark:text-rose-300 hidden 2xl:inline-block">
-                    {language === 'ar' ? `دون اتصال ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}` : `Offline ${syncQueueCount > 0 ? `(${syncQueueCount})` : ''}`}
-                  </span>
-                </div>
-              ) : (
-                <div 
-                  className="hidden xl:flex h-9.5 px-2.5 items-center justify-center gap-1.5 bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450 border border-emerald-200/40 rounded-xl shadow-2xs shrink-0"
-                  title={language === 'ar' ? 'الاتصال مستقر مع خادم الصيانة المركزي' : 'Stable server connection'}
-                >
-                  <Wifi size={13} className="text-emerald-500 shrink-0" />
-                  <span className="text-[10px] font-black leading-none text-emerald-700 dark:text-emerald-400 hidden 2xl:inline-block">
-                    {language === 'ar' ? 'متصل' : 'Online'}
-                  </span>
-                </div>
-              )}
-
+            {/* Right: Notifications, Alert Badge, and System Admin Profile */}
+            <div className="flex items-center gap-2 shrink-0">
               {/* Overdue Maintenance Warning Badge */}
               {overdueMaintenanceCount > 0 && (
                 <button
@@ -2222,28 +1961,28 @@ export default function AppLayout({
                       window.dispatchEvent(new CustomEvent('notification-navigate', { detail: { tab: 'periodic-maintenance', overdueOnly: true } }));
                     }, 150);
                   }}
-                  className="h-9.5 px-2.5 flex items-center justify-center gap-1 bg-red-50 hover:bg-red-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-red-650 dark:text-rose-400 border border-red-200/60 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-2xs shrink-0 animate-pulse active:scale-95"
+                  className="h-9 px-2.5 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-red-650 dark:text-rose-400 border border-red-200/60 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-2xs shrink-0 animate-pulse active:scale-95"
                   title={language === 'ar' ? `تنبيه: يوجد ${overdueMaintenanceCount} خدمات صيانة متأخرة!` : `System Alert: ${overdueMaintenanceCount} periodic maintenance services are overdue!`}
                 >
                   <AlertTriangle size={14} className="shrink-0 text-red-650 dark:text-rose-400" />
-                  <span className="text-[10.5px] font-black leading-none text-red-750 dark:text-rose-300">
+                  <span className="text-[11px] font-black leading-none text-red-750 dark:text-rose-300">
                     {overdueMaintenanceCount}
                   </span>
                 </button>
               )}
 
-              {/* Notifications */}
+              {/* Notifications Bell Button */}
               <div className="relative">
                 <button 
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                  className={`w-9.5 h-9.5 flex items-center justify-center hover:bg-slate-100/90 dark:hover:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-800/80 relative transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 ${
-                    isNotificationsOpen ? 'text-brand-blue-600 bg-slate-100 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400'
+                  className={`w-9 h-9 flex items-center justify-center hover:bg-slate-100/90 dark:hover:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-800/80 relative transition-all cursor-pointer shrink-0 shadow-2xs active:scale-95 ${
+                    isNotificationsOpen ? 'text-brand-blue-600 bg-slate-100 dark:bg-slate-800' : 'text-slate-600 dark:text-slate-300'
                   }`}
                   title={language === 'ar' ? 'الإشعارات الميدانية والتنبيهات' : 'Field Notifications & Alerts'}
                 >
                   <Bell size={16} />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-3.5 h-3.5 flex items-center justify-center text-[8.5px] font-black text-white bg-red-650 rounded-full border border-white dark:border-slate-900 shadow-sm animate-pulse">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[8.5px] font-black text-white bg-red-650 rounded-full border border-white dark:border-slate-900 shadow-xs animate-pulse">
                       {unreadCount}
                     </span>
                   )}
@@ -2258,7 +1997,7 @@ export default function AppLayout({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className={`absolute top-12 w-80 md:w-96 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden ${
+                        className={`absolute top-11 w-80 md:w-96 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden ${
                           dir === 'rtl' ? 'left-0' : 'right-0'
                         }`}
                       >
@@ -2495,39 +2234,240 @@ export default function AppLayout({
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* System Administrator / User Profile Capsule */}
+              <div 
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="h-9 flex items-center gap-2 ps-2 pe-1.5 py-0.5 rounded-xl hover:bg-slate-100/90 dark:hover:bg-slate-800/80 transition-all cursor-pointer shrink-0 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs active:scale-95"
+                title={language === 'ar' ? 'إعدادات الحساب والملف الشخصي (مدير النظام)' : 'Account & Profile Settings (System Admin)'}
+              >
+                <div className={`hidden sm:block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                  <p className="text-xs font-black text-slate-900 dark:text-white leading-none mb-0.5 max-w-[120px] truncate">{profileName}</p>
+                  <p className="text-[9.5px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0"></span>
+                    <span className="truncate max-w-[110px]">{user.title}</span>
+                  </p>
+                </div>
+                <div className="relative shrink-0">
+                  <div className="w-7.5 h-7.5 rounded-lg bg-brand-blue-100 dark:bg-brand-blue-900/50 border border-white dark:border-slate-800 overflow-hidden shadow-2xs flex items-center justify-center">
+                    {!hasHeaderAvatarError && user.avatar ? (
+                      <img 
+                        referrerPolicy="no-referrer"
+                        src={user.avatar} 
+                        alt="Avatar" 
+                        className="w-full h-full object-cover"
+                        onError={() => setHasHeaderAvatarError(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-tr from-brand-blue-600 via-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center select-none">
+                        <span>{profileName ? (profileName.startsWith('الفني ') ? profileName.substring(6, 7) : profileName.startsWith('المراقب ') ? profileName.substring(8, 9) : profileName.charAt(0)) : 'أ'}</span>
+                      </div>
+                    )}
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-white dark:border-slate-900 shadow-xs animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2 (Bottom Row): Dedicated Action & Preference Toolbar with Perfect Alignment */}
+          <div className="py-2 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 bg-slate-50/70 dark:bg-slate-950/40 relative z-20">
+            {/* Group A: Quick Action Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Barcode / QR Scanner Button */}
+              <button 
+                id="topbar-barcode-scanner-btn"
+                type="button"
+                onClick={() => setIsBarcodeModalOpen(true)}
+                className="h-8.5 px-2.5 sm:px-3 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/90 dark:bg-brand-blue-950/30 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/40 border border-brand-blue-200/60 dark:border-brand-blue-900/50 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95"
+                title={t('common.barcodeScanner')}
+              >
+                <Scan size={14} className="shrink-0" />
+                <span className="text-[11px] font-black leading-none whitespace-nowrap">
+                  {language === 'ar' ? 'الباركود' : 'Barcode'}
+                </span>
+              </button>
             </div>
 
-            {/* Group 4: User Profile Capsule */}
-            <div 
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="flex items-center gap-2 ps-1.5 pe-1 py-1 rounded-2xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-all cursor-pointer shrink-0 border border-transparent hover:border-slate-200/50 dark:hover:border-slate-700/50"
-              title={language === 'ar' ? 'إعدادات الحساب والملف الشخصي' : 'Account & Profile Settings'}
-            >
-              <div className={`hidden xl:block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
-                <p className="text-xs font-bold text-slate-900 dark:text-white leading-none mb-0.5 max-w-[110px] truncate">{profileName}</p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse shrink-0"></span>
-                  <span className="truncate max-w-[100px]">{user.title}</span>
-                </p>
-              </div>
-              <div className="relative shrink-0">
-                <div className="w-9 h-9 rounded-full bg-brand-blue-100 dark:bg-brand-blue-900/50 border-2 border-white dark:border-slate-800 overflow-hidden shadow-xs flex items-center justify-center">
-                  {!hasHeaderAvatarError && user.avatar ? (
-                    <img 
-                      referrerPolicy="no-referrer"
-                      src={user.avatar} 
-                      alt="Avatar" 
-                      className="w-full h-full object-cover"
-                      onError={() => setHasHeaderAvatarError(true)}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-tr from-brand-blue-600 via-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center select-none">
-                      <span>{profileName ? (profileName.startsWith('الفني ') ? profileName.substring(6, 7) : profileName.startsWith('المراقب ') ? profileName.substring(8, 9) : profileName.charAt(0)) : 'أ'}</span>
-                    </div>
+            {/* Group B: Preferences & System Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Language Toggle Button */}
+              <button 
+                type="button"
+                onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
+                className="h-8.5 px-2.5 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95"
+                title={language === 'ar' ? 'تغيير اللغة إلى English' : 'تغيير اللغة إلى العربية'}
+              >
+                <Globe size={13} className="text-violet-500 shrink-0" />
+                <span className="text-[11px] font-black leading-none">
+                  {language === 'ar' ? 'EN' : 'عربي'}
+                </span>
+              </button>
+
+              {/* Font Size Button */}
+              <div className="relative">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setFontSizeDropdownOpen(!fontSizeDropdownOpen);
+                    setRoleDropdownOpen(false);
+                  }}
+                  className={`h-8.5 px-2.5 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95 border ${
+                    fontSizeDropdownOpen
+                      ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700'
+                      : 'text-purple-600 dark:text-purple-300 bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 border-slate-200/60 dark:border-slate-700/60'
+                  }`}
+                  title={language === 'ar' ? 'مقياس حجم الخط والتكبير' : 'Font Size Scale'}
+                >
+                  <Type size={13} className="text-purple-600 dark:text-purple-400" />
+                  <span className="text-[10.5px] font-black leading-none">
+                    {fontSizeMode === 'normal' ? 'A' : fontSizeMode === 'large' ? 'A+' : fontSizeMode === 'xlarge' ? 'A++' : 'A+++'}
+                  </span>
+                </button>
+
+                <AnimatePresence>
+                  {fontSizeDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40 bg-black/5 dark:bg-black/20" onClick={() => setFontSizeDropdownOpen(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                        transition={{ duration: 0.15 }}
+                        className={`absolute top-10.5 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-1.5 overflow-hidden ${
+                          dir === 'rtl' ? 'left-0' : 'right-0'
+                        }`}
+                      >
+                        <p className={`px-2.5 py-1 text-[9.5px] uppercase font-black text-slate-400 dark:text-slate-550 ${
+                          dir === 'rtl' ? 'text-right' : 'text-left'
+                        }`}>
+                          {language === 'ar' ? 'مقياس حجم الخط' : 'Font Size'}
+                        </p>
+                        {[
+                          { id: 'normal', label: language === 'ar' ? 'A عادي (100%)' : 'A Normal (100%)' },
+                          { id: 'large', label: language === 'ar' ? 'A+ كبير (118%)' : 'A+ Large (118%)' },
+                          { id: 'xlarge', label: language === 'ar' ? 'A++ كبير جداً (135%)' : 'A++ Extra (135%)' },
+                          { id: 'huge', label: language === 'ar' ? 'A+++ فائق (155%)' : 'A+++ Max (155%)' },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setFontSizeMode(item.id as 'normal' | 'large' | 'xlarge' | 'huge');
+                              setFontSizeDropdownOpen(false);
+                            }}
+                            className={`w-full px-2.5 py-1.5 text-xs font-bold rounded-xl transition-colors flex items-center justify-between cursor-pointer ${
+                              dir === 'rtl' ? 'text-right' : 'text-left'
+                            } ${
+                              fontSizeMode === item.id 
+                                ? 'bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-black' 
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                            }`}
+                          >
+                            <span>{item.label}</span>
+                            {fontSizeMode === item.id && <Check size={12} className="text-purple-600 shrink-0" />}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
                   )}
-                </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
+                </AnimatePresence>
               </div>
+
+              {/* Role Switcher Button */}
+              <div className="relative">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setRoleDropdownOpen(!roleDropdownOpen);
+                    setFontSizeDropdownOpen(false);
+                  }}
+                  className={`h-8.5 flex items-center justify-center gap-1.5 px-2.5 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95 border ${
+                    roleDropdownOpen
+                      ? 'bg-brand-blue-50 dark:bg-brand-blue-900/50 border-brand-blue-300 dark:border-brand-blue-700'
+                      : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200/60 dark:border-slate-700/60'
+                  }`}
+                  title={t('common.role')}
+                >
+                  <Shield size={13} className="text-brand-blue-600" />
+                  <span className="text-[10.5px] font-black text-slate-700 dark:text-slate-200">
+                    {
+                      user.role === 'admin' 
+                        ? (language === 'ar' ? 'المدير' : 'Admin')
+                        : user.role === 'technician' 
+                          ? (language === 'ar' ? 'فني' : 'Tech')
+                          : user.role === 'viewer'
+                            ? (language === 'ar' ? 'مراقب' : 'Viewer')
+                            : (language === 'ar' ? 'سائق' : 'Driver')
+                    }
+                  </span>
+                  <ChevronDown size={10} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                <AnimatePresence>
+                  {roleDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40 bg-black/5 dark:bg-black/20" onClick={() => setRoleDropdownOpen(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                        transition={{ duration: 0.15 }}
+                        className={`absolute top-10.5 w-52 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden ${
+                          dir === 'rtl' ? 'left-0' : 'right-0'
+                        }`}
+                      >
+                        <p className={`px-3 py-1.5 text-[9.5px] uppercase font-bold text-slate-400 dark:text-slate-550 ${
+                          dir === 'rtl' ? 'text-right' : 'text-left'
+                        }`}>
+                          {language === 'ar' ? 'تبديل الصلاحيات (تجريبي)' : 'Swap Roles (Walkthrough)'}
+                        </p>
+                        {[
+                          { id: 'admin', label: t('common.roleAdmin') || (language === 'ar' ? '🔑 مدير الصيانة (كامل)' : '🔑 Maintenance Admin (Full)') },
+                          { id: 'technician', label: t('common.roleTechnician') || (language === 'ar' ? '🔧 فني ميكانيك أول' : '🔧 Lead Technician') },
+                          { id: 'viewer', label: t('common.roleViewer') || (language === 'ar' ? '👁️ مراقب جودة ونظام (معاينة)' : '👁️ Quality Observer (Read-only)') },
+                          { id: 'driver', label: t('login.roleDriver') || (language === 'ar' ? '🚛 سائق نقل ثقيل' : '🚛 Heavy Driver') },
+                        ].map((r) => (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() => {
+                              onRoleChange(r.id as UserRole);
+                              setRoleDropdownOpen(false);
+                            }}
+                            className={`w-full px-3 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
+                              dir === 'rtl' ? 'text-right' : 'text-left'
+                            } ${
+                              user.role === r.id 
+                                ? 'bg-brand-blue-50 dark:bg-brand-blue-900/30 text-brand-blue-700 dark:text-brand-blue-400 font-black' 
+                                : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                            }`}
+                          >
+                            {r.label}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Connection Status Badge (Sync / Offline) */}
+              {isSyncing ? (
+                <div 
+                  className="h-8.5 px-2 flex items-center justify-center gap-1.5 bg-amber-50 dark:bg-amber-950/20 text-amber-650 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50 rounded-xl shadow-2xs shrink-0"
+                  title={language === 'ar' ? 'جاري مزامنة تعديلات الصيانة...' : 'Syncing local changes to server...'}
+                >
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping inline-block" />
+                </div>
+              ) : isOffline ? (
+                <div 
+                  className="h-8.5 px-2 flex items-center justify-center gap-1 bg-rose-50/90 dark:bg-rose-950/20 text-rose-650 dark:text-rose-400 border border-rose-200/50 dark:border-rose-900/40 rounded-xl shadow-2xs shrink-0"
+                  title={language === 'ar' ? 'وضعية العمل دون اتصال نشطة (تُحفظ التعديلات بالمتصفح)' : 'Running locally in offline cache mode'}
+                >
+                  <WifiOff size={13} className="text-rose-500 shrink-0 animate-bounce" />
+                </div>
+              ) : null}
             </div>
           </div>
         </header>

@@ -22,8 +22,12 @@ import {
   X,
   Paperclip,
   Mic,
+  MicOff,
+  Image as ImageIcon,
+  File as FileIcon,
   Maximize2,
-  Minimize2
+  Minimize2,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -33,11 +37,20 @@ import {
   technicians as defaultTechnicians 
 } from '../data';
 
+export interface AttachedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  previewUrl?: string;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
+  attachments?: AttachedFile[];
 }
 
 interface MaintenanceBotProps {
@@ -60,8 +73,34 @@ export default function MaintenanceBot({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Check speech recognition support
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      // Speech recognition not supported in this browser
+    }
+  }, []);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, []);
 
   // Suggested preset questions styled with distinct subtle theme colors
   const arabicSuggestions = [
@@ -271,19 +310,149 @@ export default function MaintenanceBot({
     });
   };
 
+  // Speech to Text / Voice Recognition handler
+  const toggleListening = () => {
+    if (isLoading) return;
+    setVoiceNotice(null);
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceNotice(language === 'ar' 
+        ? '⚠️ المتصفح الحالي لا يدعم ميزة التعرف على الصوت المباشر.' 
+        : '⚠️ Live speech recognition is not supported in this browser.');
+      setTimeout(() => setVoiceNotice(null), 4000);
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
+      setIsListening(false);
+    } else {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = language === 'ar' ? 'ar-SA' : 'en-US';
+
+        recognition.onstart = () => {
+          setIsListening(true);
+          setVoiceNotice(null);
+        };
+
+        recognition.onresult = (event: any) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+
+          if (finalTranscript) {
+            setInputText(prev => prev ? `${prev.trim()} ${finalTranscript.trim()}` : finalTranscript.trim());
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.warn('Speech recognition error', event);
+          if (event.error === 'not-allowed') {
+            setVoiceNotice(language === 'ar' 
+              ? '⚠️ يرجى السماح بصلاحية الميكروفون من إعدادات المتصفح.' 
+              : '⚠️ Please allow microphone permission in your browser.');
+          } else {
+            setVoiceNotice(language === 'ar' 
+              ? `⚠️ خطأ في التسجيل الصوتي (${event.error})` 
+              : `⚠️ Voice error (${event.error})`);
+          }
+          setIsListening(false);
+          setTimeout(() => setVoiceNotice(null), 4000);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (err: any) {
+        setVoiceNotice(language === 'ar' ? '⚠️ تعذر تشغيل الميكروفون.' : '⚠️ Could not start microphone.');
+        setIsListening(false);
+        setTimeout(() => setVoiceNotice(null), 4000);
+      }
+    }
+  };
+
+  // File attachments handlers
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newFiles: AttachedFile[] = [];
+    Array.from(files).forEach((file: File) => {
+      const isImg = file.type.startsWith('image/');
+      const fileObj: AttachedFile = {
+        id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      };
+
+      if (isImg) {
+        const reader = new FileReader();
+        reader.onload = (re) => {
+          if (re.target?.result) {
+            setAttachedFiles(prev => prev.map(f => f.id === fileObj.id ? { ...f, previewUrl: re.target?.result as string } : f));
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+
+      newFiles.push(fileObj);
+    });
+
+    setAttachedFiles(prev => [...prev, ...newFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemoveFile = (fileId: string) => {
+    setAttachedFiles(prev => prev.filter(f => f.id !== fileId));
+  };
+
   const handleSendMessage = async (customText?: string) => {
     const textToSend = (customText || inputText).trim();
-    if (!textToSend || isLoading) return;
+    if ((!textToSend && attachedFiles.length === 0) || isLoading) return;
+
+    if (isListening && recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+      setIsListening(false);
+    }
 
     if (!customText) {
       setInputText('');
     }
 
+    const currentAttachments = [...attachedFiles];
+    setAttachedFiles([]);
+
     const newUserMessage: Message = {
       id: `msg-${Date.now()}`,
       role: 'user',
-      text: textToSend,
-      timestamp: new Date()
+      text: textToSend || (language === 'ar' ? '📎 مرفق ملف فني للصيانة' : '📎 Attached maintenance file'),
+      timestamp: new Date(),
+      attachments: currentAttachments.length > 0 ? currentAttachments : undefined
     };
 
     setMessages(prev => [...prev, newUserMessage]);
@@ -347,7 +516,9 @@ export default function MaintenanceBot({
           .filter(m => !m.id.startsWith('welcome'))
           .map(m => ({
             role: m.role,
-            text: m.text
+            text: m.attachments && m.attachments.length > 0 
+              ? `${m.text} [${m.attachments.map(a => `${a.name} (${Math.round(a.size/1024)}KB)`).join(', ')}]`
+              : m.text
           })),
         vehicles: sanitizedVehicles,
         orders: sanitizedOrders,
@@ -587,8 +758,36 @@ export default function MaintenanceBot({
                           ? 'bg-gradient-to-br from-indigo-50/70 to-white dark:from-[#11172b] dark:to-[#0c1020] text-slate-800 dark:text-slate-100 border-indigo-100/80 dark:border-indigo-950/40 rounded-tl-none border-l-4 border-l-indigo-650 dark:border-l-indigo-500 font-medium shadow-[0_4px_12px_rgba(99,102,241,0.04)]' 
                           : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-transparent rounded-tr-none text-right font-semibold shadow-lg shadow-indigo-600/10'
                       }`}>
+                        {/* Render attached files for user messages */}
+                        {!isModel && msg.attachments && msg.attachments.length > 0 && (
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            {msg.attachments.map((att) => (
+                              <div 
+                                key={att.id}
+                                className="flex items-center gap-2 p-2 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 text-white text-[11px] max-w-full"
+                              >
+                                {att.previewUrl ? (
+                                  <img 
+                                    src={att.previewUrl} 
+                                    alt={att.name} 
+                                    className="w-10 h-10 rounded-lg object-cover border border-white/40 shrink-0" 
+                                  />
+                                ) : (
+                                  <div className="p-1.5 rounded-lg bg-white/25 shrink-0">
+                                    <FileIcon size={14} className="text-white" />
+                                  </div>
+                                )}
+                                <div className="min-w-0 text-start">
+                                  <p className="font-bold truncate max-w-[140px] leading-tight">{att.name}</p>
+                                  <span className="text-[9.5px] opacity-80">{Math.round(att.size / 1024)} KB</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="whitespace-pre-wrap leading-relaxed select-text font-medium">
-                          {msg.text}
+                          {isModel ? renderMessageContent(msg.text) : msg.text}
                         </div>
                       </div>
 
@@ -625,7 +824,112 @@ export default function MaintenanceBot({
           </div>
 
           {/* User Text Input Area */}
-          <div className="p-4 md:p-5 bg-white dark:bg-[#0c101d] border-t border-slate-200/80 dark:border-slate-850 flex flex-col gap-3.5 relative z-10 shadow-lg">
+          <div className="p-4 md:p-5 bg-white dark:bg-[#0c101d] border-t border-slate-200/80 dark:border-slate-850 flex flex-col gap-3 relative z-10 shadow-lg">
+            
+            {/* Hidden File Input */}
+            <input 
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              multiple
+              accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+              className="hidden"
+            />
+
+            {/* Voice Notice Toast if any */}
+            <AnimatePresence>
+              {voiceNotice && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 text-[11px] font-bold"
+                >
+                  <AlertCircle size={14} className="shrink-0 text-amber-600" />
+                  <span className="flex-1">{voiceNotice}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setVoiceNotice(null)} 
+                    className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-lg cursor-pointer"
+                  >
+                    <X size={12} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Attached Files Badges Preview Bar */}
+            <AnimatePresence>
+              {attachedFiles.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-wrap gap-2 pb-1"
+                >
+                  {attachedFiles.map((file) => (
+                    <div 
+                      key={file.id}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-slate-750 text-slate-700 dark:text-slate-200 text-[11px] shadow-2xs group"
+                    >
+                      {file.previewUrl ? (
+                        <img 
+                          src={file.previewUrl} 
+                          alt={file.name} 
+                          className="w-6 h-6 rounded-md object-cover border border-slate-300 dark:border-slate-700 shrink-0" 
+                        />
+                      ) : (
+                        <FileIcon size={14} className="text-violet-500 shrink-0" />
+                      )}
+                      <span className="truncate max-w-[130px] font-bold">{file.name}</span>
+                      <span className="text-[9px] text-slate-400">({Math.round(file.size / 1024)} KB)</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(file.id)}
+                        className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                        title={language === 'ar' ? 'إزالة الملف' : 'Remove file'}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Active Voice Recording Indicator Bar */}
+            <AnimatePresence>
+              {isListening && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-300 shadow-2xs"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping inline-block" />
+                    <span className="text-xs font-black">
+                      {language === 'ar' ? 'جاري الاستماع لصوتك باللغة العربية...' : 'Listening to your voice note...'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-[3px] items-center h-3">
+                      <span className="w-[3px] h-3 bg-rose-500 rounded-full animate-[pulse_0.4s_infinite_alternate]" />
+                      <span className="w-[3px] h-4 bg-rose-500 rounded-full animate-[pulse_0.6s_infinite_alternate_0.1s]" />
+                      <span className="w-[3px] h-2 bg-rose-500 rounded-full animate-[pulse_0.5s_infinite_alternate_0.2s]" />
+                      <span className="w-[3px] h-5 bg-rose-500 rounded-full animate-[pulse_0.7s_infinite_alternate_0.3s]" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleListening}
+                      className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition-colors cursor-pointer ml-1"
+                    >
+                      {language === 'ar' ? 'إيقاف' : 'Stop'}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             {/* Horizontal scrollable chips shown ONLY on mobile (hidden on md and above) */}
             <div className="md:hidden flex overflow-x-auto gap-2 pb-1 scrollbar-none select-none justify-start" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -643,22 +947,41 @@ export default function MaintenanceBot({
             </div>
 
             <div className="flex gap-2 items-center">
-              {/* Paperclip button */}
+              {/* Paperclip button (File / Photo / Document Upload) */}
               <button
                 type="button"
-                title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}
-                className="p-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-all shrink-0 cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                title={language === 'ar' ? 'إرفاق ملف أو صورة أو مستند' : 'Attach file, photo or document'}
+                className={`relative p-3 rounded-xl transition-all shrink-0 cursor-pointer border ${
+                  attachedFiles.length > 0 
+                    ? 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800' 
+                    : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-slate-200/60 dark:border-slate-750/60'
+                }`}
               >
                 <Paperclip size={16} />
+                {attachedFiles.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-violet-600 text-white text-[9px] font-black flex items-center justify-center shadow-xs">
+                    {attachedFiles.length}
+                  </span>
+                )}
               </button>
 
-              {/* Mic button */}
+              {/* Mic button (Live Speech to Text Recognition) */}
               <button
                 type="button"
-                title={language === 'ar' ? 'رسالة صوتية' : 'Voice message'}
-                className="p-3 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-all shrink-0 cursor-pointer"
+                onClick={toggleListening}
+                title={
+                  isListening 
+                    ? (language === 'ar' ? 'إيقاف الاستماع الصوتي' : 'Stop voice recording')
+                    : (language === 'ar' ? 'تسجيل رسالة صوتية (تحويل الكلام إلى نص)' : 'Voice message (Speech to text)')
+                }
+                className={`p-3 rounded-xl transition-all shrink-0 cursor-pointer border ${
+                  isListening 
+                    ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-500/20 animate-pulse' 
+                    : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border-slate-200/60 dark:border-slate-750/60'
+                }`}
               >
-                <Mic size={16} />
+                {isListening ? <MicOff size={16} className="animate-bounce" /> : <Mic size={16} />}
               </button>
 
               {/* Main input container with logical properties */}
@@ -670,9 +993,11 @@ export default function MaintenanceBot({
                   onKeyDown={handleKeyPress}
                   disabled={isLoading}
                   placeholder={
-                    language === 'ar' 
-                      ? 'اكتب استفساراً (مثال: هل يتوفر وسادات فرامل أكتروس؟)...' 
-                      : 'Query inventory or fleet (e.g. status of Hilux)...'
+                    isListening 
+                      ? (language === 'ar' ? 'جاري تحويل صوتك إلى نص...' : 'Converting speech to text...')
+                      : (language === 'ar' 
+                          ? 'اكتب استفساراً (مثال: هل يتوفر وسادات فرامل أكتروس؟)...' 
+                          : 'Query inventory or fleet (e.g. status of Hilux)...')
                   }
                   className="w-full py-3.5 ps-11 pe-4 rounded-2xl bg-slate-50 dark:bg-slate-900/90 hover:bg-slate-100/30 dark:hover:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-150 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500 transition-all font-sans text-start"
                 />
@@ -685,7 +1010,7 @@ export default function MaintenanceBot({
               <button
                 type="button"
                 onClick={() => handleSendMessage()}
-                disabled={isLoading || !inputText.trim()}
+                disabled={isLoading || (!inputText.trim() && attachedFiles.length === 0)}
                 className="p-3.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 disabled:bg-slate-100 dark:disabled:bg-slate-900 disabled:text-slate-400 text-white rounded-2xl transition-all cursor-pointer hover:scale-[1.03] shrink-0 active:scale-[0.97] flex items-center justify-center border border-violet-500/10 shadow-md"
               >
                 <Send size={16} className="rtl:rotate-180" />

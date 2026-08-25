@@ -179,6 +179,91 @@ export interface SafetyInspection {
   signature?: string;
 }
 
+export interface DriverWaypoint {
+  id: string;
+  name: string;
+  nameEn: string;
+  type: 'origin' | 'checkpoint' | 'rest' | 'station' | 'workshop' | 'destination';
+  status: 'pending' | 'reached' | 'skipped';
+  time?: string;
+  lat: number;
+  lng: number;
+  notes?: string;
+}
+
+export interface DriverTrip {
+  id: string;
+  tripCode: string;
+  projectId: string;
+  projectName: string;
+  projectNameEn: string;
+  origin: string;
+  originEn: string;
+  destination: string;
+  destinationEn: string;
+  cargoType: string;
+  cargoTypeEn?: string;
+  cargoWeightTons: number;
+  vehiclePlate: string;
+  vehicleModel: string;
+  status: 'scheduled' | 'in_progress' | 'paused' | 'at_destination' | 'delivered' | 'completed' | 'cancelled';
+  departureTime: string;
+  estimatedArrival: string;
+  completedTime?: string;
+  startOdometer: number;
+  endOdometer?: number;
+  totalDistanceKm: number;
+  fuelConsumedLiters?: number;
+  driverNotes?: string;
+  clientSignature?: string;
+  recipientName?: string;
+  waypoints: DriverWaypoint[];
+  urgency?: 'normal' | 'express' | 'hazardous';
+  assignedDriverId?: string;
+  assignedDriverName?: string;
+  dispatchedBy?: string;
+  dispatchDate?: string;
+}
+
+export interface DriverAssignedProject {
+  id: string;
+  code: string;
+  name: string;
+  nameEn: string;
+  client: string;
+  clientEn: string;
+  location: string;
+  locationEn: string;
+  priority: 'high' | 'medium' | 'normal';
+  status: 'active' | 'upcoming' | 'completed';
+  description: string;
+  descriptionEn: string;
+  startDate: string;
+  endDate: string;
+  allocatedVehicle: string;
+  projectManagerName: string;
+  projectManagerPhone: string;
+  tasks: {
+    id: string;
+    title: string;
+    titleEn: string;
+    completed: boolean;
+    dueDate: string;
+  }[];
+}
+
+export interface DriverFuelLog {
+  id: string;
+  date: string;
+  vehiclePlate: string;
+  liters: number;
+  cost: number;
+  odometer: number;
+  stationName: string;
+  receiptPhoto?: string;
+  notes?: string;
+}
+
 export function hasGranularPermission(permissionId: string, userRole: string): boolean {
   try {
     // If Read-only mode is active, prevent all administrative and modifying actions

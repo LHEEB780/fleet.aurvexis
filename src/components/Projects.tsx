@@ -14,6 +14,7 @@ import { useLanguage } from '../services/LanguageContext';
 import { Vehicle, Driver, User as AppUser } from '../types';
 import { vehicles as staticVehicles } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
+import TripDispatchManagement from './TripDispatchManagement';
 
 // Interfaces for our Operational Projects
 export interface ProjectTask {
@@ -373,7 +374,7 @@ export default function Projects({ user }: ProjectsProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<OperationalProject | null>(null);
-  const [viewMode, setViewMode] = useState<'cards' | 'timeline'>('cards');
+  const [viewMode, setViewMode] = useState<'cards' | 'timeline' | 'dispatch'>('cards');
 
   // Modal States
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -809,7 +810,53 @@ export default function Projects({ user }: ProjectsProps) {
         </div>
       </div>
 
-      {/* SEARCH AND FILTERS ROW */}
+      {/* SECTION NAVIGATION TABS: Projects vs Driver Dispatch vs Stats */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-[#0f1422] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 w-full sm:w-fit">
+        <button
+          onClick={() => setViewMode('cards')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            viewMode === 'cards'
+              ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-sm'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+          }`}
+        >
+          <Briefcase size={15} />
+          <span>{isRtl ? 'المشاريع التشغيلية والمهام 🏗️' : 'Operational Projects & Tasks 🏗️'}</span>
+        </button>
+
+        <button
+          onClick={() => setViewMode('dispatch')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer relative ${
+            viewMode === 'dispatch'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/20'
+              : 'text-slate-600 hover:text-purple-600 dark:text-slate-300 dark:hover:text-purple-400'
+          }`}
+        >
+          <Truck size={15} />
+          <span>{isRtl ? 'إسناد وتوجيه الرحلات للسائقين 🚚' : 'Driver Dispatch & Scheduling 🚚'}</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        </button>
+
+        <button
+          onClick={() => setViewMode('timeline')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            viewMode === 'timeline'
+              ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-sm'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+          }`}
+        >
+          <BarChart3 size={15} />
+          <span>{isRtl ? 'التحليلات والمؤشرات المالية 📊' : 'Financials & KPI Charts 📊'}</span>
+        </button>
+      </div>
+
+      {/* DISPATCH MANAGEMENT VIEW */}
+      {viewMode === 'dispatch' && (
+        <TripDispatchManagement user={user} />
+      )}
+
+      {/* SEARCH AND FILTERS ROW (For Projects Cards) */}
+      {viewMode === 'cards' && (
       <div className="flex flex-col md:flex-row justify-between gap-3 p-4 bg-white dark:bg-[#0f1422] rounded-2xl border border-slate-100 dark:border-slate-800/80">
         <div className="flex-1 relative">
           <Search className="absolute right-3.5 top-3 text-slate-400 dark:text-slate-500" size={16} />
@@ -835,26 +882,9 @@ export default function Projects({ user }: ProjectsProps) {
             <option value="completed">{t.completed}</option>
             <option value="paused">{t.paused}</option>
           </select>
-
-          {/* Toggle View mode */}
-          <div className="flex items-center border border-slate-100 dark:border-slate-800/80 rounded-xl overflow-hidden p-0.5 shrink-0">
-            <button
-              onClick={() => setViewMode('cards')}
-              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'cards' ? 'bg-slate-100 dark:bg-slate-800/80 text-brand-blue-500' : 'text-slate-400'}`}
-              title={t.listView}
-            >
-              <LayoutGrid size={15} />
-            </button>
-            <button
-              onClick={() => setViewMode('timeline')}
-              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'timeline' ? 'bg-slate-100 dark:bg-slate-800/80 text-brand-blue-500' : 'text-slate-400'}`}
-              title={t.projectStats}
-            >
-              <BarChart3 size={15} />
-            </button>
-          </div>
         </div>
       </div>
+      )}
 
       {/* RENDER DYNAMIC VISUAL PERFORMANCE TIMELINE */}
       {viewMode === 'timeline' && (
@@ -919,6 +949,7 @@ export default function Projects({ user }: ProjectsProps) {
       )}
 
       {/* CORE PROJECTS CARDS INTERFACE GRID */}
+      {viewMode === 'cards' && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* PROJECTS CARDS CONTAINER (Left / Center major pane) */}
@@ -1419,6 +1450,7 @@ export default function Projects({ user }: ProjectsProps) {
           )}
         </div>
       </div>
+      )}
 
       {/* DETAILED DIALOG MODAL: PROJECT ADD / EDIT */}
       {isFormOpen && (

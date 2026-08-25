@@ -19,13 +19,22 @@ import {
   AlertCircle, 
   HelpCircle,
   Play,
+  Pause,
   RotateCcw,
   Sparkles,
   Camera,
   LogOut,
   Calendar,
   Shield,
-  ChevronDown
+  ChevronDown,
+  Navigation,
+  Building2,
+  Package,
+  Layers,
+  Phone,
+  ShieldAlert,
+  Fuel,
+  Compass
 } from 'lucide-react';
 import { 
   Radar, 
@@ -36,8 +45,11 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { useLanguage } from '../services/LanguageContext';
-import { User as AppUser, UserRole, Vehicle, Driver } from '../types';
+import { User as AppUser, UserRole, Vehicle, Driver, DriverTrip, DriverAssignedProject } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import DriverLiveMap from './driver/DriverLiveMap';
+import DriverTripsLog from './driver/DriverTripsLog';
+import DriverAssignedProjects from './driver/DriverAssignedProjects';
 
 interface DriverPortalProps {
   user: AppUser;
@@ -46,20 +58,223 @@ interface DriverPortalProps {
   onRoleChange?: (role: UserRole) => void;
 }
 
+// Initial Mock Trips for Driver
+const INITIAL_TRIPS: DriverTrip[] = [
+  {
+    id: 'TRIP-8821',
+    tripCode: 'TRIP-2026-8821',
+    projectId: 'PRJ-NEOM-01',
+    projectName: 'مشروع نيوم - البنية التحتية والممرات اللوجستية',
+    projectNameEn: 'Neom Infrastructure Logistics Corridor',
+    origin: 'مستودع الرياض المركزي اللوجستي',
+    originEn: 'Central Riyadh Freight Logistics Hub',
+    destination: 'مشروع نيوم - قطاع B-4 الإنشائي',
+    destinationEn: 'Neom Project Site B-4',
+    cargoType: 'حديد تسليح وخرسانة مسبقة الصنع',
+    cargoTypeEn: 'Rebar & Precast Concrete Elements',
+    cargoWeightTons: 22,
+    vehiclePlate: 'ب ل ط ٧٧٦',
+    vehicleModel: 'تويوتا هيلوكس HD بيك آب نقل ثقيل',
+    status: 'in_progress',
+    departureTime: '2026-05-30 07:30',
+    estimatedArrival: '2026-05-30 14:15',
+    startOdometer: 124850,
+    totalDistanceKm: 142,
+    waypoints: [
+      { id: 'wp-1', name: 'مستودع الرياض المركزي (تحميل الحمولة)', nameEn: 'Riyadh Central Depot', type: 'origin', status: 'reached', lat: 24.71, lng: 46.67 },
+      { id: 'wp-2', name: 'تقاطع طريق الخرج (مسار الشاحنات)', nameEn: 'Al-Kharj Freight Junction', type: 'checkpoint', status: 'reached', lat: 24.68, lng: 46.71 },
+      { id: 'wp-3', name: 'محطة الميزان المحوري ونقطة التفتيش', nameEn: 'Axle Weigh Station & Inspection', type: 'checkpoint', status: 'pending', lat: 24.63, lng: 46.78 },
+      { id: 'wp-4', name: 'مشروع نيوم - بوابة الاستلام والتفريغ B-4', nameEn: 'Neom Receiving Gate B-4', type: 'destination', status: 'pending', lat: 24.55, lng: 46.89 }
+    ]
+  },
+  {
+    id: 'TRIP-8822',
+    tripCode: 'TRIP-2026-8822',
+    projectId: 'PRJ-METRO-04',
+    projectName: 'مشروع مترو الرياض - خط الإمداد والمحطات المركزية',
+    projectNameEn: 'Riyadh Metro Supply Route',
+    origin: 'ميناء الجاف - مستودعات الإمداد',
+    originEn: 'Dry Port Logistics Warehouses',
+    destination: 'محطة العليا المركزية للمترو',
+    destinationEn: 'Olaya Metro Central Station Site',
+    cargoType: 'كابلات كهربائية ضغط عالي وأجهزة تحكم',
+    cargoTypeEn: 'High Voltage Cables & Controls',
+    cargoWeightTons: 14,
+    vehiclePlate: 'ب ل ط ٧٧٦',
+    vehicleModel: 'تويوتا هيلوكس HD بيك آب',
+    status: 'scheduled',
+    departureTime: '2026-05-31 08:00',
+    estimatedArrival: '2026-05-31 11:30',
+    startOdometer: 124992,
+    totalDistanceKm: 48,
+    waypoints: [
+      { id: 'wp-1', name: 'ميناء الجاف', nameEn: 'Dry Port', type: 'origin', status: 'pending', lat: 24.73, lng: 46.75 },
+      { id: 'wp-2', name: 'محطة العليا', nameEn: 'Olaya Station', type: 'destination', status: 'pending', lat: 24.70, lng: 46.68 }
+    ]
+  },
+  {
+    id: 'TRIP-8819',
+    tripCode: 'TRIP-2026-8819',
+    projectId: 'PRJ-REDSEA-02',
+    projectName: 'مشروع البحر الأحمر السياحي - نقل المواد الفندقية',
+    projectNameEn: 'Red Sea Destination Project',
+    origin: 'مستودع ينبع الإقليمي',
+    originEn: 'Yanbu Regional Depot',
+    destination: 'منتجع أمالا الفندقي الشمالي',
+    destinationEn: 'Amaala Northern Resort Gate',
+    cargoType: 'مواد عزل وتجهيزات معمارية',
+    cargoTypeEn: 'Architectural Supplies',
+    cargoWeightTons: 16,
+    vehiclePlate: 'ب ل ط ٧٧٦',
+    vehicleModel: 'تويوتا هيلوكس HD بيك آب',
+    status: 'completed',
+    departureTime: '2026-05-28 06:00',
+    estimatedArrival: '2026-05-28 13:00',
+    completedTime: '2026-05-28 12:45',
+    startOdometer: 124500,
+    endOdometer: 124850,
+    totalDistanceKm: 350,
+    fuelConsumedLiters: 42,
+    recipientName: 'م. فهد السديري (مدير موقع أمالا)',
+    waypoints: [
+      { id: 'wp-1', name: 'مستودع ينبع', nameEn: 'Yanbu Depot', type: 'origin', status: 'reached', lat: 24.08, lng: 38.06 },
+      { id: 'wp-2', name: 'منتجع أمالا', nameEn: 'Amaala Resort', type: 'destination', status: 'reached', lat: 25.12, lng: 37.20 }
+    ]
+  }
+];
+
+// Initial Mock Projects Assigned to Driver
+const INITIAL_PROJECTS: DriverAssignedProject[] = [
+  {
+    id: 'PRJ-NEOM-01',
+    code: 'NEOM-LOG-2026',
+    name: 'مشروع نيوم - البنية التحتية والممرات اللوجستية',
+    nameEn: 'Neom Infrastructure Logistics Corridor',
+    client: 'شركة نيوم المساهمة المغلقة',
+    clientEn: 'NEOM Joint Stock Co.',
+    location: 'منطقة تبوك - قطاع الإنشاءات B-4 اللوجستي',
+    locationEn: 'Tabuk Region - Sector B-4',
+    priority: 'high',
+    status: 'active',
+    description: 'توفير خدمات النقل الثقيل ونقل شحنات الحديد والخرسانة المسلحة والمعدات الخاصة بمشروعات البنية التحتية بالقطاع الشمالي.',
+    descriptionEn: 'Heavy logistics transport of rebar, precast units, and engineering machinery for North Infrastructure zone.',
+    startDate: '2026-01-15',
+    endDate: '2026-12-31',
+    allocatedVehicle: 'تويوتا هيلوكس HD [ب ل ط ٧٧٦]',
+    projectManagerName: 'م. راشد القحطاني',
+    projectManagerPhone: '+966 55 889 0011',
+    tasks: [
+      { id: 'tsk-1', title: 'استلام إذن النقل وبوليصة الشحن من مستودع الرياض', titleEn: 'Receive dispatch slip & consignment notes', completed: true, dueDate: '2026-05-30' },
+      { id: 'tsk-2', title: 'فحص ميزان المحاور بنقطة التفتيش المعتمدة', titleEn: 'Perform axle weight check at weigh station', completed: false, dueDate: '2026-05-30' },
+      { id: 'tsk-3', title: 'تسليم المواد لمسؤول الموقع والتوقيع على إشعار الاستلام', titleEn: 'Unload cargo & obtain signed proof of receipt', completed: false, dueDate: '2026-05-30' },
+      { id: 'tsk-4', title: 'إعادة شهادة الاستلام وتسجيل قراءة العداد بعد الإفراغ', titleEn: 'Return delivery receipt & log final odometer', completed: false, dueDate: '2026-05-30' }
+    ]
+  },
+  {
+    id: 'PRJ-METRO-04',
+    code: 'R-METRO-04',
+    name: 'مشروع مترو الرياض - خط الإمداد والمحطات المركزية',
+    nameEn: 'Riyadh Metro Supply Route',
+    client: 'الهيئة الملكية لمدينة الرياض',
+    clientEn: 'Royal Commission for Riyadh City',
+    location: 'طريق الملك فهد - تقاطع العليا',
+    locationEn: 'King Fahd Rd - Olaya Junction',
+    priority: 'medium',
+    status: 'active',
+    description: 'نقل التجهيزات الكهربائية ومستلزمات الصيانة الوقائية لمحطات المترو الرئيسية.',
+    descriptionEn: 'Transport electrical control equipment and spare inventory for major transit hubs.',
+    startDate: '2026-03-01',
+    endDate: '2026-10-30',
+    allocatedVehicle: 'تويوتا هيلوكس HD [ب ل ط ٧٧٦]',
+    projectManagerName: 'م. أحمد التميمي',
+    projectManagerPhone: '+966 50 334 7788',
+    tasks: [
+      { id: 'tsk-201', title: 'استلام صناديق الكابلات من ميناء الجاف', titleEn: 'Pick up cable crates from Dry Port', completed: false, dueDate: '2026-05-31' },
+      { id: 'tsk-202', title: 'التفريغ في المستودع الفرعي لمحطة العليا', titleEn: 'Offload at Olaya station sub-warehouse', completed: false, dueDate: '2026-05-31' }
+    ]
+  },
+  {
+    id: 'PRJ-REDSEA-02',
+    code: 'REDSEA-DEV',
+    name: 'مشروع البحر الأحمر السياحي - نقل المواد الإنشائية',
+    nameEn: 'Red Sea Destination Project',
+    client: 'شركة البحر الأحمر للتطوير (RSG)',
+    clientEn: 'Red Sea Global (RSG)',
+    location: 'الساحل الغربي - أمالا والوجه',
+    locationEn: 'West Coast - Amaala & Al Wajh',
+    priority: 'normal',
+    status: 'active',
+    description: 'نقل مواد التشطيب الصديقة للبيئة ومعدات الطاقة الشمسية لمنتجعات الجزر المستدامة.',
+    descriptionEn: 'Transport eco-friendly finishings and solar equipment for island resorts.',
+    startDate: '2026-02-10',
+    endDate: '2026-11-20',
+    allocatedVehicle: 'تويوتا هيلوكس HD [ب ل ط ٧٧٦]',
+    projectManagerName: 'م. فهد السديري',
+    projectManagerPhone: '+966 54 990 1212',
+    tasks: [
+      { id: 'tsk-301', title: 'إتمام دورة السلامة البيئية لنقل مواد مشروع البحر الأحمر', titleEn: 'Pass eco-safety freight compliance training', completed: true, dueDate: '2026-05-20' },
+      { id: 'tsk-302', title: 'تسليم شحنة الألواح الشمسية لمنتجع أمالا', titleEn: 'Deliver solar batch to Amaala Resort', completed: true, dueDate: '2026-05-28' }
+    ]
+  }
+];
+
 export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange }: DriverPortalProps) {
   const { language, t, dir } = useLanguage();
   
-  // Tabs: 'home' | 'checklist' | 'report' | 'history'
-  const [activeSubTab, setActiveSubTab] = useState<'home' | 'checklist' | 'report' | 'history'>('home');
+  // Tabs: 'home' | 'map' | 'trips' | 'projects' | 'checklist' | 'report' | 'history'
+  const [activeSubTab, setActiveSubTab] = useState<'home' | 'map' | 'trips' | 'projects' | 'checklist' | 'report' | 'history'>('home');
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   
+  // Driver Trips State (Persisted with Live Cross-Tab & Admin Sync)
+  const [trips, setTrips] = useState<DriverTrip[]>(() => {
+    const saved = localStorage.getItem('fleet_driver_trips');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { }
+    }
+    return INITIAL_TRIPS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fleet_driver_trips', JSON.stringify(trips));
+  }, [trips]);
+
+  // Real-time synchronization listener when Admin dispatches trips
+  useEffect(() => {
+    const handleStorageChange = (e?: StorageEvent) => {
+      const saved = localStorage.getItem('fleet_driver_trips');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setTrips(parsed);
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Driver Projects State (Persisted)
+  const [projects, setProjects] = useState<DriverAssignedProject[]>(() => {
+    const saved = localStorage.getItem('fleet_driver_projects');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { }
+    }
+    return INITIAL_PROJECTS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fleet_driver_projects', JSON.stringify(projects));
+  }, [projects]);
+
+  // Selected Active Trip (find in_progress or first scheduled)
+  const activeTrip = trips.find(t => t.status === 'in_progress') || trips[0] || null;
+
   // Mock Driver States
   const [safetyScore, setSafetyScore] = useState(94);
-  const [totalTrips, setTotalTrips] = useState(184);
   const [odometer, setOdometer] = useState(124850);
   const [fuelLevel, setFuelLevel] = useState(82);
-  const [isDriving, setIsDriving] = useState(false);
-  const [activeTripMinutes, setActiveTripMinutes] = useState(0);
+  const [isDriving, setIsDriving] = useState(activeTrip?.status === 'in_progress');
+  const [activeTripMinutes, setActiveTripMinutes] = useState(24);
   
   // Checklist State
   const [checklistType, setChecklistType] = useState<'pre' | 'post'>('pre');
@@ -87,7 +302,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
   const [selectedSymptom, setSelectedSymptom] = useState('');
   const [obdError, setObdError] = useState('');
   
-  // History of Submitted records (initialized with some mock logs)
+  // History of Submitted records (initialized with mock logs)
   const [submittedHandovers, setSubmittedHandovers] = useState<any[]>([
     {
       id: 'HO-9812',
@@ -140,13 +355,10 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
         if (Math.random() > 0.7) {
           setFuelLevel(prev => Math.max(prev - 1, 5));
         }
-        // Randomly simulate slight fluctuations in safety score as a fun dashboard mechanic
         if (Math.random() > 0.9) {
           setSafetyScore(prev => Math.max(70, Math.min(100, prev + (Math.random() > 0.5 ? 1 : -1))));
         }
-      }, 3000); // 3 seconds = 1 virtual minute
-    } else {
-      setActiveTripMinutes(0);
+      }, 3000);
     }
     return () => clearInterval(timer);
   }, [isDriving]);
@@ -162,10 +374,76 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
   ];
 
   const handleStartTrip = () => {
-    setIsDriving(prev => !prev);
-    if (!isDriving) {
-      setTotalTrips(prev => prev + 1);
+    const nextDrivingState = !isDriving;
+    setIsDriving(nextDrivingState);
+    if (activeTrip) {
+      handleUpdateTripStatus(activeTrip.id, nextDrivingState ? 'in_progress' : 'paused');
     }
+  };
+
+  const handleUpdateTripStatus = (tripId: string, status: DriverTrip['status'], note?: string) => {
+    setTrips(prev => prev.map(t => {
+      if (t.id === tripId) {
+        return {
+          ...t,
+          status,
+          driverNotes: note || t.driverNotes,
+          completedTime: (status === 'completed' || status === 'delivered') ? new Date().toISOString().replace('T', ' ').substring(0, 16) : t.completedTime
+        };
+      }
+      return t;
+    }));
+    if (status === 'in_progress') {
+      setIsDriving(true);
+    } else if (status === 'completed' || status === 'delivered' || status === 'paused') {
+      setIsDriving(false);
+    }
+  };
+
+  const handleAddNewTrip = (newTrip: DriverTrip) => {
+    setTrips(prev => [newTrip, ...prev]);
+  };
+
+  const handleToggleProjectTask = (projectId: string, taskId: string) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          tasks: p.tasks.map(tsk => tsk.id === taskId ? { ...tsk, completed: !tsk.completed } : tsk)
+        };
+      }
+      return p;
+    }));
+  };
+
+  const handleNavigateToProject = (project: DriverAssignedProject) => {
+    // Check if trip exists for this project, otherwise create or activate it
+    const existingTrip = trips.find(t => t.projectId === project.id);
+    if (existingTrip) {
+      handleUpdateTripStatus(existingTrip.id, 'in_progress');
+    }
+    setActiveSubTab('map');
+  };
+
+  const handleTriggerSOS = async (reason: string, location: string) => {
+    const sosTicket = {
+      id: 'SOS-' + Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      category: 'emergency',
+      vehicle: 'تويوتا هيلوكس HD - [ب ل ط ٧٧٦]',
+      priority: 'high',
+      status: 'pending',
+      desc: `[نداء استغاثة وطوارئ عاجل]: ${reason} - الموقع: ${location}`,
+      symptom: 'accident'
+    };
+
+    setSubmittedFaults(prev => [sosTicket, ...prev]);
+    try {
+      const { saveDocument, db: firestoreDb } = await import('../services/firebase');
+      if (firestoreDb) {
+        await saveDocument('fault_reports', sosTicket.id, sosTicket);
+      }
+    } catch (e) {}
   };
 
   const handleChecklistSubmit = (e: React.FormEvent) => {
@@ -175,7 +453,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
       date: new Date().toISOString().split('T')[0],
       type: checklistType,
       vehicle: inspectedVehicle === 'toyota-hilux' ? 'تويوتا هيلوكس HD - [ب ل ط ٧٧٦]' : 'مرسيدس أكتروس ثقيل - [م ط ر ٠١٢]',
-      status: 'pending',
+      status: 'approved',
       notes: checklistNotes || (language === 'ar' ? 'تم الفحص بنجاح بدون مشاكل حرجة.' : 'Inspected successfully with no critical issues.')
     };
     setSubmittedHandovers([newHO, ...submittedHandovers]);
@@ -183,7 +461,6 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
     setTimeout(() => {
       setChecklistSubmitted(false);
       setActiveSubTab('history');
-      // Reset form
       setChecklistNotes('');
     }, 2000);
   };
@@ -222,7 +499,6 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
       orderId: orderId
     };
 
-    // Construct MaintenanceOrder
     const newOrder: any = {
       id: orderId,
       vehicleId: reportVehicle,
@@ -241,7 +517,6 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
       photoUrl: attachedPhoto || undefined
     };
 
-    // Save maintenance order locally in fleet_maintenance_orders_v2
     const savedOrdersRaw = localStorage.getItem('fleet_maintenance_orders_v2');
     let currentOrders: any[] = [];
     if (savedOrdersRaw) {
@@ -254,28 +529,23 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
     const updatedOrders = [newOrder, ...currentOrders];
     localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(updatedOrders));
 
-    // Save to Firebase (Cloud Firestore) if available
     try {
       const { saveDocument, db: firestoreDb } = await import('../services/firebase');
       if (firestoreDb) {
         await saveDocument('maintenance_orders', orderId, newOrder);
         await saveDocument('fault_reports', faultId, newFault);
-        console.log('Successfully saved new maintenance order and fault report to Firebase Firestore');
       }
     } catch (err) {
-      console.warn('Firestore direct write failed, relies on auto-sync backup:', err);
+      console.warn('Firestore write backup:', err);
     }
     
     setSubmittedFaults([newFault, ...submittedFaults]);
     setReportSubmitted(true);
-
-    // Dispatch storage event to alert other components
     window.dispatchEvent(new Event('storage'));
 
     setTimeout(() => {
       setReportSubmitted(false);
       setActiveSubTab('history');
-      // Reset form
       setReportDesc('');
       setAttachedPhoto(null);
       setObdCode('');
@@ -284,7 +554,6 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
   };
 
   const simulatePhotoUpload = () => {
-    // Generate a beautiful mock base64/placeholder vector image for car maintenance
     const mockImages = [
       'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&q=80&w=300&h=200',
       'https://images.unsplash.com/photo-1517524206127-48bbd363f3d7?auto=format&fit=crop&q=80&w=300&h=200',
@@ -295,11 +564,11 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6fa] dark:bg-[#080b11] text-slate-900 dark:text-slate-100 pb-16 font-sans">
+    <div className="min-h-screen bg-[#f4f6fa] dark:bg-[#080b11] text-slate-900 dark:text-slate-100 pb-16 font-sans" dir={dir}>
       
       {/* Driver Portal Top Bar Header */}
       <div className="bg-white dark:bg-[#0f1422] border-b border-slate-100 dark:border-slate-850 px-4 py-4 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
               <img 
@@ -314,27 +583,27 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
               <h1 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                 <span>{user.name}</span>
                 <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[9px] font-black">
-                  {language === 'ar' ? 'سائق متاح' : 'Available Driver'}
+                  {language === 'ar' ? 'سائق نقل ثقيل معتمد' : 'Certified Heavy Driver'}
                 </span>
               </h1>
-              <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">{user.title}</p>
+              <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">{user.title || 'سائق أسطول النقل والمشاريع'}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="text-left hidden sm:block">
-              <span className="block text-[8px] text-slate-400 font-black uppercase tracking-wider">{language === 'ar' ? 'بوابة السائق الفنية' : 'Driver Portal Live'}</span>
-              <span className="block text-[10px] text-slate-600 dark:text-slate-400 font-mono font-bold">UTC: 2026-05-30</span>
+              <span className="block text-[8px] text-slate-400 font-black uppercase tracking-wider">{language === 'ar' ? 'بوابة السائق الميدانية' : 'Driver Portal Live'}</span>
+              <span className="block text-[10px] text-slate-600 dark:text-slate-400 font-mono font-bold">2026-05-30 • GPS Live</span>
             </div>
 
-            {/* Quick Access / Mode Changer (Demo Only inside Driver Portal) */}
+            {/* Quick Access / Mode Changer */}
             {onRoleChange && (
               <div className="relative">
                 <button 
                   onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
                   className="h-10 flex items-center justify-center gap-1.5 px-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-sm cursor-pointer shrink-0"
                 >
-                  <Shield size={14} className="text-brand-blue-600" />
+                  <Shield size={14} className="text-indigo-600 dark:text-indigo-400" />
                   <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 hidden md:block">
                     {language === 'ar' ? 'تبديل الصلاحية' : 'Change Role'}
                   </span>
@@ -359,10 +628,10 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                           {language === 'ar' ? 'تبديل الصلاحيات الفورية' : 'Instant Role Simulation'}
                         </p>
                         {[
-                          { id: 'admin', labelAr: '🔑 مدير الصيانة (كامل الصلاحيات)', labelEn: '🔑 Maintenance Admin (Full)' },
+                          { id: 'admin', labelAr: '🔑 مدير الصيانة والأسطول', labelEn: '🔑 Fleet Admin' },
                           { id: 'technician', labelAr: '🔧 فني ميكانيك أول', labelEn: '🔧 Lead Technician' },
-                          { id: 'viewer', labelAr: '👁️ مراقب جودة ونظام (معاينة)', labelEn: '👁️ Quality Observer (Read-only)' },
-                          { id: 'driver', labelAr: '🚛 سائق نقل ثقيل (البوابة الحالية)', labelEn: '🚛 Heavy Truck Driver (Active)' }
+                          { id: 'viewer', labelAr: '👁️ مراقب جودة ونظام (معاينة)', labelEn: '👁️ Quality Observer' },
+                          { id: 'driver', labelAr: '🚛 سائق نقل ثقيل (البوابة الحالية)', labelEn: '🚛 Heavy Driver (Active)' }
                         ].map((r) => (
                           <button
                             key={r.id}
@@ -374,7 +643,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                               dir === 'rtl' ? 'text-right' : 'text-left'
                             } ${
                               user.role === r.id 
-                                ? 'bg-brand-blue-50 dark:bg-brand-blue-900/30 text-brand-blue-700 dark:text-brand-blue-400' 
+                                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' 
                                 : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
                             }`}
                           >
@@ -400,74 +669,96 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
         </div>
       </div>
 
-      {/* Driver Welcome Banner */}
-      <div className="max-w-4xl mx-auto px-4 mt-6">
-        <div className="bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 rounded-[2rem] p-6 text-white shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-x-12 -translate-y-12" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/5 rounded-full -translate-x-6 translate-y-6" />
+      {/* Driver Welcome Hero Banner - Corporate FleetAurvexis Purple/Violet Gradient */}
+      <div className="max-w-6xl mx-auto px-4 mt-6">
+        <div className="bg-gradient-to-r from-[#0F172A] via-[#1E1B4B] to-[#0F172A] rounded-[2.5rem] p-6 text-white shadow-xl relative overflow-hidden border border-purple-500/30">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl -translate-y-12 translate-x-12 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl translate-y-12 -translate-x-12 pointer-events-none" />
           
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1 text-right">
-              <span className="px-2 py-0.5 bg-white/20 text-white rounded-full text-[9px] font-black uppercase tracking-wider">
-                {language === 'ar' ? 'نظام تفتيش الأسطول الفوري' : 'Fleet Inspect System'}
-              </span>
-              <h2 className="text-lg font-black mt-1">
-                {language === 'ar' ? `أهلاً بك مجدداً، خالد الكعبي` : `Welcome back, Khaled Al-Kaabi`}
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="space-y-1.5 text-right">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-300 rounded-full text-[10px] font-black uppercase tracking-wider border border-purple-400/30">
+                  {language === 'ar' ? 'بوابة النقل الثقيل والمشاريع' : 'Heavy Freight & Project Portal'}
+                </span>
+                <span className="px-2 py-0.5 bg-violet-500/20 text-violet-200 border border-violet-400/30 rounded-full text-[10px] font-black">
+                  {user.name}
+                </span>
+                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[9px] font-bold">
+                  {language === 'ar' ? 'متزامن مع الإدارة ✓' : 'Admin Synced ✓'}
+                </span>
+              </div>
+              <h2 className="text-xl font-black mt-1 text-white">
+                {language === 'ar' ? `مرحباً بك، الكابتن خالد الكعبي 🚛` : `Welcome, Captain Khaled Al-Kaabi 🚛`}
               </h2>
-              <p className="text-xs text-white/95 font-medium leading-relaxed max-w-md">
+              <p className="text-xs text-slate-300 font-medium leading-relaxed max-w-xl">
                 {language === 'ar' 
-                  ? 'بوابتك الذكية لإكمال فحوصات المركبة اليومية، الإبلاغ الفوري عن أعطال الطريق، ومتابعة مؤشر سلامة القيادة الخاص بك.' 
-                  : 'Your intelligent hub to complete daily vehicle handovers, report roadside maintenance issues, and track driving metrics.'}
+                  ? 'منصتك الميدانية المتكاملة: تتبع مسارك عبر الخريطة الحية، متابعة سجل الرحلات والمشاريع المسندة، إتمام الفحص اليومي وطلب الدعم الفوري.' 
+                  : 'Your live field cockpit: live GPS navigation, assigned project work orders, trip missions log, and digital safety checks.'}
               </p>
             </div>
             
             {/* Driving Session Control Widget */}
-            <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 flex items-center gap-4 shrink-0 text-right">
+            <div className="bg-slate-900/70 backdrop-blur-md p-4 rounded-3xl border border-purple-500/30 flex items-center gap-4 shrink-0 text-right shadow-lg">
               <div>
-                <span className="block text-[9px] text-white/80 font-black">{language === 'ar' ? 'الحالة الحركية' : 'Movement Status'}</span>
+                <span className="block text-[9.5px] text-purple-200 font-black">{language === 'ar' ? 'حالة القيادة الحالية' : 'Driving Status'}</span>
                 {isDriving ? (
                   <div className="flex items-center gap-1.5 mt-0.5 text-emerald-300 font-black text-xs">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                    <span>{language === 'ar' ? 'جاري قيادة الرحلة...' : 'Driving Route...'}</span>
+                    <span>{language === 'ar' ? 'الرحلة جارية على الطريق...' : 'Navigating on Route...'}</span>
                   </div>
                 ) : (
-                  <span className="block text-xs font-black text-slate-100 mt-0.5">{language === 'ar' ? 'متوقف / جاهز' : 'Parked / Ready'}</span>
+                  <span className="block text-xs font-black text-slate-200 mt-0.5">{language === 'ar' ? 'متوقف / في الاستراحة' : 'Parked / On Standby'}</span>
                 )}
                 {isDriving && (
-                  <span className="block text-[9px] font-mono text-emerald-200 mt-0.5">
-                    {language === 'ar' ? `المدة الحالية: ${activeTripMinutes} دقيقة` : `Duration: ${activeTripMinutes} min`}
+                  <span className="block text-[9px] font-mono text-purple-300 mt-0.5">
+                    {language === 'ar' ? `الوقت المنقضي: ${activeTripMinutes} دقيقة` : `Elapsed: ${activeTripMinutes} min`}
                   </span>
                 )}
               </div>
-              <button
-                onClick={handleStartTrip}
-                className={`px-4 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-md ${
-                  isDriving 
-                    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/10' 
-                    : 'bg-white text-indigo-950 hover:bg-indigo-50 shadow-white/10'
-                }`}
-              >
-                <Play size={12} className={isDriving ? 'animate-pulse' : ''} />
-                <span>
-                  {isDriving 
-                    ? (language === 'ar' ? 'إنهاء الرحلة' : 'End Route') 
-                    : (language === 'ar' ? 'ابدأ رحلة قيادة' : 'Start Route')
-                  }
-                </span>
-              </button>
+
+              <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={handleStartTrip}
+                  className={`px-4 py-2 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md ${
+                    isDriving 
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white' 
+                      : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/30'
+                  }`}
+                >
+                  {isDriving ? <Pause size={13} /> : <Play size={13} />}
+                  <span>
+                    {isDriving 
+                      ? (language === 'ar' ? 'أخذ استراحة ☕' : 'Pause / Break') 
+                      : (language === 'ar' ? 'بدء الرحلة 🟢' : 'Start Route')
+                    }
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setActiveSubTab('map')}
+                  className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/35 text-purple-200 border border-purple-500/30 rounded-xl text-[10px] font-black flex items-center justify-center gap-1 cursor-pointer transition-all"
+                >
+                  <Navigation size={11} className="text-purple-300" />
+                  <span>{language === 'ar' ? 'فتح الخريطة' : 'Open Map'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Driver Portal Sub Navigation Tabs */}
-      <div className="max-w-4xl mx-auto px-4 mt-6">
-        <div className="flex bg-white dark:bg-[#0f1422] p-1.5 rounded-2xl border border-slate-100 dark:border-slate-850/80 shadow-sm font-sans">
+      {/* Driver Portal 7 Sub-Navigation Tabs Bar */}
+      <div className="max-w-6xl mx-auto px-4 mt-6">
+        <div className="flex bg-white dark:bg-[#0f1422] p-2 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-sm font-sans overflow-x-auto no-scrollbar gap-1.5">
           {[
-            { id: 'home', labelAr: 'لوحة القيادة والمؤشرات', labelEn: 'Dashboard & Metrics', icon: <Award size={15} /> },
+            { id: 'home', labelAr: 'لوحة القيادة', labelEn: 'Dashboard', icon: <Award size={15} /> },
+            { id: 'map', labelAr: 'الخريطة والتتبع 🗺️', labelEn: 'Live Map 🗺️', icon: <Navigation size={15} /> },
+            { id: 'trips', labelAr: 'سجل الرحلات 🚚', labelEn: 'Trips Log 🚚', icon: <Truck size={15} /> },
+            { id: 'projects', labelAr: 'المشاريع المسندة 🏗️', labelEn: 'Assigned Projects 🏗️', icon: <Building2 size={15} /> },
             { id: 'checklist', labelAr: 'فحص واستلام الآلية', labelEn: 'Vehicle Inspection', icon: <ClipboardCheck size={15} /> },
-            { id: 'report', labelAr: 'إبلاغ عن عطل فني', labelEn: 'Report Vehicle Fault', icon: <Wrench size={15} /> },
-            { id: 'history', labelAr: 'سجل فحوصاتي وبلاغاتي', labelEn: 'My Activity Logs', icon: <FileText size={15} /> },
+            { id: 'report', labelAr: 'إبلاغ عن عطل', labelEn: 'Report Fault', icon: <Wrench size={15} /> },
+            { id: 'history', labelAr: 'سجل الأنشطة', labelEn: 'Activity History', icon: <FileText size={15} /> },
           ].map((tab) => {
             const isActive = activeSubTab === tab.id;
             return (
@@ -476,23 +767,22 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                 onClick={() => {
                   setActiveSubTab(tab.id as any);
                 }}
-                className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-[10px] sm:text-xs font-black transition-all cursor-pointer ${
+                className={`flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
                   isActive 
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-3xs' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900/60'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/25' 
+                    : 'text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20'
                 }`}
               >
                 {tab.icon}
-                <span className="hidden sm:inline">{language === 'ar' ? tab.labelAr : tab.labelEn}</span>
-                <span className="sm:hidden text-[9px]">{language === 'ar' ? tab.labelAr.split(' ')[0] : tab.labelEn.split(' ')[0]}</span>
+                <span>{language === 'ar' ? tab.labelAr : tab.labelEn}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Content Area Rendering with Animations */}
-      <div className="max-w-4xl mx-auto px-4 mt-6">
+      {/* Main Content Area */}
+      <div className="max-w-6xl mx-auto px-4 mt-6">
         <AnimatePresence mode="wait">
           
           {/* TAB 1: HOME & DRIVER DASHBOARD */}
@@ -512,184 +802,310 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                   <div className="bg-white dark:bg-[#0f1422] p-4 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs flex flex-col justify-between">
                     <div className="text-slate-400 dark:text-slate-500 flex items-center justify-between">
                       <span className="text-[10px] font-black">{language === 'ar' ? 'عداد المسافة' : 'Odometer'}</span>
-                      <Gauge size={14} className="text-indigo-500" />
+                      <Gauge size={14} className="text-purple-500" />
                     </div>
                     <div className="mt-3">
                       <span className="block text-base font-black font-mono text-slate-800 dark:text-white">
                         {odometer.toLocaleString()}
                       </span>
-                      <span className="block text-[8px] text-slate-400 font-bold uppercase mt-0.5">{language === 'ar' ? 'كيلومتر' : 'KM'}</span>
+                      <span className="block text-[8.5px] text-slate-450 font-bold uppercase tracking-wider">{language === 'ar' ? 'كيلومتر تراكمي' : 'Total KM'}</span>
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-[#0f1422] p-4 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs flex flex-col justify-between">
                     <div className="text-slate-400 dark:text-slate-500 flex items-center justify-between">
-                      <span className="text-[10px] font-black">{language === 'ar' ? 'مستوى الوقود' : 'Fuel Level'}</span>
-                      <Droplet size={14} className="text-amber-500" />
+                      <span className="text-[10px] font-black">{language === 'ar' ? 'مستوى خزان الوقود' : 'Fuel Tank'}</span>
+                      <Droplet size={14} className="text-indigo-500" />
                     </div>
                     <div className="mt-3">
-                      <div className="flex items-end justify-between">
-                        <span className="block text-base font-black font-mono text-slate-800 dark:text-white">{fuelLevel}%</span>
-                        <div className="w-1.5 h-6 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-1 flex flex-col justify-end">
-                          <div 
-                            className={`w-full rounded-full transition-all duration-500 ${fuelLevel < 20 ? 'bg-rose-500' : 'bg-emerald-500'}`} 
-                            style={{ height: `${fuelLevel}%` }}
-                          />
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-base font-black font-mono text-slate-800 dark:text-white">
+                          {fuelLevel}%
+                        </span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       </div>
-                      <span className="block text-[8px] text-slate-400 font-bold uppercase mt-0.5">
-                        {fuelLevel < 20 ? (language === 'ar' ? 'تزود بالوقود!' : 'Refuel Required!') : (language === 'ar' ? 'مستقر' : 'Stable')}
-                      </span>
+                      <span className="block text-[8.5px] text-slate-450 font-bold uppercase tracking-wider">{language === 'ar' ? 'ديزل نظيف' : 'Diesel Level'}</span>
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-[#0f1422] p-4 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs flex flex-col justify-between">
                     <div className="text-slate-400 dark:text-slate-500 flex items-center justify-between">
-                      <span className="text-[10px] font-black">{language === 'ar' ? 'الرحلات الكلية' : 'Total Trips'}</span>
-                      <TrendingUp size={14} className="text-emerald-500" />
+                      <span className="text-[10px] font-black">{language === 'ar' ? 'سجل الرحلات' : 'Total Trips'}</span>
+                      <Truck size={14} className="text-purple-500" />
                     </div>
                     <div className="mt-3">
-                      <span className="block text-base font-black font-mono text-slate-800 dark:text-white">{totalTrips}</span>
-                      <span className="block text-[8px] text-slate-400 font-bold uppercase mt-0.5">{language === 'ar' ? 'رحلة مأمنة' : 'Completed'}</span>
+                      <span className="block text-base font-black font-mono text-slate-800 dark:text-white">
+                        {trips.length}
+                      </span>
+                      <span className="block text-[8.5px] text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider">
+                        {language === 'ar' ? 'رحلات مسندة ومكتملة' : 'Missions'}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* 2. Driving performance radar chart */}
-                <div className="bg-white dark:bg-[#0f1422] p-5 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs">
-                  <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-850/80 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                        <Award size={16} />
+                {/* 2. Active Trip Quick Card & Map Shortcut */}
+                {activeTrip && (
+                  <div className="bg-white dark:bg-[#0f1422] p-5 rounded-3xl border border-purple-500/30 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-2xl">
+                          <Navigation size={18} />
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-black text-slate-900 dark:text-white">
+                            {language === 'ar' ? 'الرحلة النشطة الحالية' : 'Current Active Mission'}
+                          </h3>
+                          <p className="text-[10px] text-slate-400 font-semibold">{activeTrip.projectName}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-xs font-black text-slate-850 dark:text-white">
-                          {language === 'ar' ? 'تحليل سلوك القيادة الآمنة' : 'Safe Driving Behavior Analysis'}
-                        </h3>
-                        <p className="text-[9.5px] text-slate-400 font-semibold">{language === 'ar' ? 'مستخلص من تفاعلات الحساسات والتسارع' : 'Calculated from live telemetrics'}</p>
-                      </div>
+
+                      <button
+                        onClick={() => setActiveSubTab('map')}
+                        className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-purple-600/20"
+                      >
+                        <Compass size={13} />
+                        <span>{language === 'ar' ? 'عرض بالخريطة الحية' : 'View on Live Map'}</span>
+                      </button>
                     </div>
 
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-850 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="block text-[9px] text-slate-400 font-bold">{language === 'ar' ? 'خط السير المعتمد:' : 'Route:'}</span>
+                        <span className="font-black text-slate-800 dark:text-white mt-0.5 block">
+                          {activeTrip.origin} ➔ {activeTrip.destination}
+                        </span>
+                      </div>
+                      <div className="text-left">
+                        <span className="block text-[9px] text-slate-400 font-bold">{language === 'ar' ? 'الحمولة والوزن:' : 'Cargo:'}</span>
+                        <span className="font-black text-purple-600 dark:text-purple-400 mt-0.5 block">
+                          {activeTrip.cargoType} ({activeTrip.cargoWeightTons} طن)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Safety Performance Radar Chart */}
+                <div className="bg-white dark:bg-[#0f1422] p-5 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-850">
+                    <div>
+                      <h3 className="text-xs font-black text-slate-850 dark:text-white flex items-center gap-1.5">
+                        <TrendingUp size={15} className="text-purple-500" />
+                        <span>{language === 'ar' ? 'مؤشر كفاءة القيادة والسلامة الميدانية' : 'Driving & Field Safety Radar'}</span>
+                      </h3>
+                      <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">{language === 'ar' ? 'يتم التقييم آلياً عبر مجسات التتبع والسرعة والفرملة' : 'Telemetry calculated automatically via onboard sensors'}</p>
+                    </div>
                     <div className="text-left">
-                      <span className="block text-[9px] text-slate-400 font-black uppercase">{language === 'ar' ? 'مؤشر السلامة الكلي' : 'Safety Index Score'}</span>
-                      <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">{safetyScore}/100</span>
+                      <span className="text-lg font-black text-purple-600 dark:text-purple-400 font-mono">{safetyScore}%</span>
+                      <span className="block text-[8px] text-slate-400 font-black uppercase">{language === 'ar' ? 'الدرجة التراكمية' : 'Score'}</span>
                     </div>
                   </div>
 
-                  <div className="h-[250px] w-full flex items-center justify-center font-sans">
+                  <div className="h-64 w-full mt-2">
                     <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart cx="50%" cy="50%" outerRadius="80%" data={performanceData}>
-                        <PolarGrid stroke="#e2e8f0" />
-                        <PolarAngleAxis 
-                          dataKey="subject" 
-                          tick={{ fill: isDarkMode ? '#94a3b8' : '#475569', fontSize: 10, fontWeight: 'bold' }} 
-                        />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 8 }} />
-                        <Radar 
-                          name="Khaled" 
-                          dataKey="score" 
-                          stroke="#10b981" 
-                          fill="#10b981" 
-                          fillOpacity={0.25} 
-                        />
+                      <RadarChart cx="50%" cy="50%" outerRadius="75%" data={performanceData}>
+                        <PolarGrid stroke={isDarkMode ? '#1e293b' : '#e2e8f0'} />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: isDarkMode ? '#94a3b8' : '#64748b', fontSize: 10, fontWeight: 'bold' }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: isDarkMode ? '#64748b' : '#94a3b8', fontSize: 8 }} />
+                        <Radar name="Score" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.4} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
-
-                  <div className="bg-slate-50 dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-100 dark:border-slate-850 text-[10px] text-slate-550 dark:text-slate-400 font-semibold leading-relaxed mt-2 flex items-start gap-2">
-                    <Sparkles size={14} className="text-emerald-500 shrink-0 mt-0.5 animate-spin-slow" />
-                    <div>
-                      {language === 'ar' 
-                        ? 'مستوى قيادتك في المنطقة الخضراء الممتازة (A+). تم تسجيل التزام تام بحد السرعة القانونية في آخر ٤٥ رحلة. مكافأة السلامة الشهرية مستحقة تلقائياً.'
-                        : 'Your driving safety rating is in the excellent green zone (A+). No speeding or aggressive braking infractions recorded in your last 45 trips.'}
-                    </div>
-                  </div>
                 </div>
 
               </div>
 
-              {/* Column 3: Assigned Vehicle Information card */}
+              {/* Column 3: Vehicle Assigned Details & Quick Actions */}
               <div className="space-y-6">
                 
-                {/* Vehicle specifications card */}
-                <div className="bg-white dark:bg-[#0f1422] p-5 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs relative overflow-hidden">
-                  <div className="absolute top-0 right-0 left-0 h-1 bg-emerald-500" />
-                  
-                  <h3 className="text-xs font-black text-slate-850 dark:text-white flex items-center gap-1.5 pb-3 border-b border-slate-100 dark:border-slate-850/80 mb-4">
-                    <Truck size={14} className="text-slate-400" />
-                    <span>{language === 'ar' ? 'المركبة المخصصة لك' : 'Your Assigned Vehicle'}</span>
-                  </h3>
-
-                  <div className="text-center pb-4">
-                    <img 
-                      src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=300" 
-                      alt="Toyota Hilux" 
-                      className="w-full h-28 object-cover rounded-2xl border border-slate-100 dark:border-slate-850 mb-3"
-                    />
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white">
-                      {language === 'ar' ? 'تويوتا هيلوكس بيك آب HD' : 'Toyota Hilux Heavy Duty'}
-                    </h4>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg text-[9px] font-black mt-1">
-                      {language === 'ar' ? 'لوحة: ب ل ط ٧٧٦' : 'Plate: B-L-T 776'}
+                {/* Assigned Vehicle Card */}
+                <div className="bg-white dark:bg-[#0f1422] p-5 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-850">
+                    <h3 className="text-xs font-black text-slate-850 dark:text-white flex items-center gap-1.5">
+                      <Truck size={14} className="text-purple-500" />
+                      <span>{language === 'ar' ? 'المركبة المسندة حالياً' : 'Assigned Vehicle'}</span>
+                    </h3>
+                    <span className="px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded text-[9px] font-black">
+                      {language === 'ar' ? 'جاهزة للعمل' : 'Operational'}
                     </span>
                   </div>
 
-                  <div className="space-y-2.5 text-xs font-sans">
-                    <div className="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 dark:border-slate-900">
-                      <span className="text-slate-400 font-semibold">{language === 'ar' ? 'الحالة الميكانيكية' : 'Mechanical State'}</span>
-                      <span className="font-extrabold text-emerald-500 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        {language === 'ar' ? 'ممتازة' : 'Excellent'}
-                      </span>
+                  <div className="space-y-3">
+                    <div className="h-28 bg-slate-100 dark:bg-slate-900 rounded-2xl overflow-hidden relative border border-slate-200/50 dark:border-slate-800">
+                      <img 
+                        src="https://images.unsplash.com/photo-1559416523-140ddc3d238c?auto=format&fit=crop&q=80&w=400&h=200" 
+                        alt="Assigned vehicle" 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
+                        <div className="text-white">
+                          <h4 className="text-xs font-black">تويوتا هيلوكس HD بيك آب</h4>
+                          <span className="text-[9px] font-mono text-purple-300">لوحة: [ب ل ط ٧٧٦]</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex justify-between items-center text-[11px] pb-1.5 border-b border-slate-50 dark:border-slate-900">
-                      <span className="text-slate-400 font-semibold">{language === 'ar' ? 'تأمين الترخيص' : 'License Expiry'}</span>
-                      <span className="font-bold text-slate-700 dark:text-slate-300">2027-11-20</span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-slate-400 font-semibold">{language === 'ar' ? 'الصيانة الوقائية القادمة' : 'Next PM Limit'}</span>
-                      <span className="font-bold text-amber-500 font-mono">128,000 KM</span>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-850">
+                        <span className="text-slate-400 font-bold">{language === 'ar' ? 'الموقع الحالي:' : 'Location:'}</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">مستودع الرياض المركزي</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-850">
+                        <span className="text-slate-400 font-bold">{language === 'ar' ? 'تاريخ الفحص الدوري:' : 'Periodic Check:'}</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">2026-06-15</span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-slate-400 font-bold">{language === 'ar' ? 'إطارات وسوائل:' : 'Tires & Fluids:'}</span>
+                        <span className="font-bold text-purple-600 dark:text-purple-400">{language === 'ar' ? 'سليمة ومعايرة ✓' : 'Inspected OK ✓'}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Live System Safety notice card */}
-                <div className="bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/10 p-4 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-black text-xs">
-                    <ShieldCheck size={14} />
-                    <span>{language === 'ar' ? 'تعليمات السلامة الصيفية' : 'Summer Safety Mandate'}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-650 dark:text-slate-400 font-semibold leading-relaxed">
-                    {language === 'ar' 
-                      ? 'بسبب ارتفاع درجات الحرارة ميدانياً، يرجى فحص ضغط الإطارات يومياً قبل التحرك، والتحقق من عدم انخفاض سائل التبريد بالرادياتير لضمان سلامتك وسلاسة النقل.'
-                      : 'Due to high summer temperatures, please check tire pressure daily and ensure engine coolant levels are stable before commencing any intercity freight trip.'}
-                  </p>
+                {/* Quick Action Navigation Buttons */}
+                <div className="bg-white dark:bg-[#0f1422] p-5 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs space-y-2.5">
+                  <h3 className="text-xs font-black text-slate-850 dark:text-white mb-2">
+                    {language === 'ar' ? 'إجراءات السائق السريعة' : 'Driver Quick Operations'}
+                  </h3>
+
+                  <button
+                    onClick={() => setActiveSubTab('map')}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:text-white rounded-2xl text-xs font-black transition-all flex items-center justify-between group cursor-pointer border border-slate-100 dark:border-slate-850 shadow-3xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Navigation size={15} className="text-purple-500 group-hover:text-white" />
+                      <span>{language === 'ar' ? 'فتح خريطة الملاحة الحية' : 'Open Live GPS Map'}</span>
+                    </div>
+                    <span className="text-[9px] opacity-60">➔</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveSubTab('trips')}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:text-white rounded-2xl text-xs font-black transition-all flex items-center justify-between group cursor-pointer border border-slate-100 dark:border-slate-850 shadow-3xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Truck size={15} className="text-purple-500 group-hover:text-white" />
+                      <span>{language === 'ar' ? 'سجل الرحلات والمهمات' : 'Trips & Missions Log'}</span>
+                    </div>
+                    <span className="text-[9px] opacity-60">➔</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveSubTab('projects')}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:text-white rounded-2xl text-xs font-black transition-all flex items-center justify-between group cursor-pointer border border-slate-100 dark:border-slate-850 shadow-3xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Building2 size={15} className="text-purple-500 group-hover:text-white" />
+                      <span>{language === 'ar' ? 'المشاريع المسندة وأوامر العمل' : 'Assigned Projects'}</span>
+                    </div>
+                    <span className="text-[9px] opacity-60">➔</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveSubTab('checklist')}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:text-white rounded-2xl text-xs font-black transition-all flex items-center justify-between group cursor-pointer border border-slate-100 dark:border-slate-850 shadow-3xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ClipboardCheck size={15} className="text-purple-500 group-hover:text-white" />
+                      <span>{language === 'ar' ? 'فحص واستلام الآلية اليومي' : 'Vehicle Inspection Check'}</span>
+                    </div>
+                    <span className="text-[9px] opacity-60">➔</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveSubTab('report')}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-900 hover:bg-gradient-to-r hover:from-rose-600 hover:to-purple-600 hover:text-white rounded-2xl text-xs font-black transition-all flex items-center justify-between group cursor-pointer border border-slate-100 dark:border-slate-850 shadow-3xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Wrench size={15} className="text-rose-500 group-hover:text-white" />
+                      <span>{language === 'ar' ? 'الإبلاغ عن عطل فني طارئ' : 'Report Roadside Fault'}</span>
+                    </div>
+                    <span className="text-[9px] opacity-60">➔</span>
+                  </button>
                 </div>
 
               </div>
+
             </motion.div>
           )}
 
-          {/* TAB 2: DIGITAL VEHICLE HANDOVER CHECKLIST */}
+          {/* TAB 2: LIVE DRIVER MAP & NAVIGATION */}
+          {activeSubTab === 'map' && (
+            <motion.div
+              key="driver-map-pane"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <DriverLiveMap
+                activeTrip={activeTrip}
+                onUpdateTripStatus={(status, note) => {
+                  if (activeTrip) {
+                    handleUpdateTripStatus(activeTrip.id, status, note);
+                  }
+                }}
+                onTriggerSOS={handleTriggerSOS}
+                isDarkMode={isDarkMode}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 3: TRIPS & MISSIONS LOG */}
+          {activeSubTab === 'trips' && (
+            <motion.div
+              key="driver-trips-pane"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <DriverTripsLog
+                trips={trips}
+                activeTrip={activeTrip}
+                onSelectActiveTrip={(trip) => {
+                  handleUpdateTripStatus(trip.id, 'in_progress');
+                }}
+                onUpdateTripStatus={handleUpdateTripStatus}
+                onAddNewTrip={handleAddNewTrip}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 4: ASSIGNED PROJECTS & WORK ORDERS */}
+          {activeSubTab === 'projects' && (
+            <motion.div
+              key="driver-projects-pane"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <DriverAssignedProjects
+                projects={projects}
+                onToggleTask={handleToggleProjectTask}
+                onNavigateToProject={handleNavigateToProject}
+              />
+            </motion.div>
+          )}
+
+          {/* TAB 5: VEHICLE INSPECTION CHECKLIST */}
           {activeSubTab === 'checklist' && (
             <motion.div
               key="driver-checklist-pane"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="max-w-xl mx-auto bg-white dark:bg-[#0f1422] p-6 rounded-[2rem] border border-slate-100 dark:border-slate-850/80 shadow-sm text-right"
+              className="max-w-xl mx-auto bg-white dark:bg-[#0f1422] p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-850/80 shadow-sm text-right"
             >
-              <div className="flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-slate-850 mb-5">
-                <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                  <ClipboardCheck size={18} />
+              <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 dark:border-slate-850 mb-5">
+                <div className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-xl">
+                  <ClipboardCheck size={20} />
                 </div>
                 <div>
                   <h3 className="text-xs font-black text-slate-900 dark:text-white">
-                    {language === 'ar' ? 'طلب فحص وتسليم المركبة فنيّاً' : 'Digital Vehicle Inspection Checklist'}
+                    {language === 'ar' ? 'استمارة فحص واستلام المركبة الميدانية' : 'Vehicle Handover & Custody Inspection'}
                   </h3>
-                  <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">{language === 'ar' ? 'سجل الفحص قبل الرحلة (استلام العجلات) أو بعد الرحلة (إعادة)' : 'Log pre-trip or post-trip vehicle health report'}</p>
+                  <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">{language === 'ar' ? 'تأكد من سلامة المعايير قبل الانطلاق في نوبة العمل أو عند إعادتها' : 'Inspect critical points prior to dispatching or return'}</p>
                 </div>
               </div>
 
@@ -699,102 +1115,106 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                     <CheckCircle2 size={32} />
                   </div>
                   <h4 className="text-sm font-black text-slate-850 dark:text-white">
-                    {language === 'ar' ? 'تم تقديم سجل الفحص بنجاح!' : 'Inspection Log Submitted Successfully!'}
+                    {language === 'ar' ? 'تم اعتماد تقرير الفحص بنجاح!' : 'Inspection Certified Successfully!'}
                   </h4>
                   <p className="text-xs text-slate-450 font-semibold max-w-xs mx-auto">
-                    {language === 'ar' 
-                      ? 'تم تسجيل فحص العجلات في قاعدة البيانات وتم إخطار قسم الصيانة المركزية فوراً.' 
-                      : 'Your checklist is logged in our central database and transmitted to workshops dispatch.'}
+                    {language === 'ar' ? 'تم ترحيل البيانات وحفظ العهدة في السجل الرقمي المركزي للأسطول.' : 'Data recorded into central fleet management database.'}
                   </p>
                 </div>
               ) : (
                 <form onSubmit={handleChecklistSubmit} className="space-y-4 font-sans">
                   
-                  {/* Select parameters */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                        {language === 'ar' ? 'نوع الفحص المعتمد' : 'Inspection Timing'}
-                      </label>
-                      <div className="grid grid-cols-2 gap-1 bg-slate-50 dark:bg-slate-900 p-1 rounded-xl">
-                        <button
-                          type="button"
-                          onClick={() => setChecklistType('pre')}
-                          className={`py-1.5 rounded-lg text-[10px] font-black text-center transition-all ${checklistType === 'pre' ? 'bg-white dark:bg-[#0f1422] text-emerald-600 shadow-3xs' : 'text-slate-500'}`}
-                        >
-                          {language === 'ar' ? 'قبل الانطلاق' : 'Pre-Trip'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setChecklistType('post')}
-                          className={`py-1.5 rounded-lg text-[10px] font-black text-center transition-all ${checklistType === 'post' ? 'bg-white dark:bg-[#0f1422] text-amber-600 shadow-3xs' : 'text-slate-500'}`}
-                        >
-                          {language === 'ar' ? 'بعد العودة' : 'Post-Trip'}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                        {language === 'ar' ? 'المركبة المفحوصة' : 'Vehicle Selected'}
-                      </label>
-                      <select
-                        value={inspectedVehicle}
-                        onChange={(e) => setInspectedVehicle(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-[11px] font-black dark:text-white"
-                      >
-                        <option value="toyota-hilux">تويوتا هيلوكس HD [ب ل ط ٧٧٦]</option>
-                        <option value="mercedes-actros">مرسيدس أكتروس ثقيل [م ط ر ٠١٢]</option>
-                      </select>
-                    </div>
+                  {/* Type Selector (Pre-Trip / Post-Trip) */}
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setChecklistType('pre')}
+                      className={`py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                        checklistType === 'pre' ? 'bg-white dark:bg-[#0f1422] text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-400'
+                      }`}
+                    >
+                      {language === 'ar' ? '☀️ استلام قبل الانطلاق (Pre-Trip)' : '☀️ Pre-Trip Handover'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChecklistType('post')}
+                      className={`py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                        checklistType === 'post' ? 'bg-white dark:bg-[#0f1422] text-amber-500 shadow-sm' : 'text-slate-400'
+                      }`}
+                    >
+                      {language === 'ar' ? '🌙 تسليم بعد العودة (Post-Trip)' : '🌙 Post-Trip Return'}
+                    </button>
                   </div>
 
-                  {/* Checklist Items Table list */}
-                  <div className="space-y-2 border-t border-b border-slate-100 dark:border-slate-850 py-4 my-2">
-                    <span className="block text-[10.5px] font-black text-slate-500 dark:text-slate-400 pb-2">
-                      {language === 'ar' ? 'عناصر الفحص الإلزامية:' : 'Mandatory Inspection Checks:'}
+                  {/* Vehicle Selector */}
+                  <div className="space-y-1">
+                    <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
+                      {language === 'ar' ? 'حدد المركبة المراد فحصها' : 'Select Target Vehicle'}
+                    </label>
+                    <select
+                      value={inspectedVehicle}
+                      onChange={(e) => setInspectedVehicle(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-xs font-black dark:text-white"
+                    >
+                      <option value="toyota-hilux">تويوتا هيلوكس HD - [ب ل ط ٧٧٦] (مسندة لك)</option>
+                      <option value="mercedes-actros">مرسيدس أكتروس نقل ثقيل - [م ط ر ٠١٢]</option>
+                    </select>
+                  </div>
+
+                  {/* Inspection Points Grid */}
+                  <div className="space-y-2 pt-2">
+                    <span className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block">
+                      {language === 'ar' ? 'قائمة الفحص الميداني الإلزامي:' : 'Mandatory Inspection Items:'}
                     </span>
-                    
-                    {[
-                      { key: 'brakes', labelAr: 'الفرامل والفرامل اليدوية (Brakes)', labelEn: 'Brakes & Parking Brake' },
-                      { key: 'engine', labelAr: 'محرك المركبة وصوت التشغيل (Engine)', labelEn: 'Engine Sound & Driveability' },
-                      { key: 'tires', labelAr: 'ضغط الإطارات وسلامة العجلات (Tires)', labelEn: 'Tires & Wheels Pressure' },
-                      { key: 'lights', labelAr: 'المصابيح الأمامية والخلفية والإشارات (Lights)', labelEn: 'Lights & Indicators' },
-                      { key: 'fluids', labelAr: 'سائل التبريد وزيوت المحرك (Fluids/Oil)', labelEn: 'Coolant & Engine Oils' },
-                      { key: 'cleanliness', labelAr: 'نظافة الصالون الداخلي والهيكل (Clean)', labelEn: 'Interior Cleanliness' }
-                    ].map((item) => {
-                      const currentVal = (checklistValues as any)[item.key];
-                      return (
-                        <div key={item.key} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-850">
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {[
+                        { key: 'brakes', labelAr: '1. الفرامل ودواسة التوقف', labelEn: '1. Brake Pads & Pedal' },
+                        { key: 'tires', labelAr: '2. ضغط الإطارات والاحتياطي', labelEn: '2. Tire Pressure & Spare' },
+                        { key: 'fluids', labelAr: '3. زيت المحرك وسوائل التبريد', labelEn: '3. Engine Oil & Coolant' },
+                        { key: 'lights', labelAr: '4. الأضواء وإشارات الانعطاف', labelEn: '4. Headlights & Indicators' },
+                        { key: 'engine', labelAr: '5. سلامة صوت وعزم المحرك', labelEn: '5. Engine Performance' },
+                        { key: 'cleanliness', labelAr: '6. نظافة القمرة والزجاج', labelEn: '6. Cabin Cleanliness' },
+                      ].map((item) => (
+                        <div key={item.key} className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                           <span className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">
                             {language === 'ar' ? item.labelAr : item.labelEn}
                           </span>
-                          
-                          <div className="flex gap-1 bg-slate-200 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-300/40">
+
+                          <div className="flex gap-1">
                             <button
                               type="button"
                               onClick={() => setChecklistValues({ ...checklistValues, [item.key]: 'ok' })}
-                              className={`px-2 py-1 rounded-md text-[9px] font-black transition-all ${currentVal === 'ok' ? 'bg-emerald-500 text-white shadow-3xs' : 'text-slate-500'}`}
+                              className={`px-2 py-1 rounded-lg text-[9px] font-black transition-all cursor-pointer ${
+                                (checklistValues as any)[item.key] === 'ok'
+                                  ? 'bg-emerald-500 text-white shadow-3xs'
+                                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                              }`}
                             >
-                              {language === 'ar' ? 'سليم' : 'Pass'}
+                              {language === 'ar' ? 'سليم ✓' : 'OK'}
                             </button>
+
                             <button
                               type="button"
-                              onClick={() => setChecklistValues({ ...checklistValues, [item.key]: 'fail' })}
-                              className={`px-2 py-1 rounded-md text-[9px] font-black transition-all ${currentVal === 'fail' ? 'bg-rose-500 text-white shadow-3xs' : 'text-slate-500'}`}
+                              onClick={() => setChecklistValues({ ...checklistValues, [item.key]: 'issue' })}
+                              className={`px-2 py-1 rounded-lg text-[9px] font-black transition-all cursor-pointer ${
+                                (checklistValues as any)[item.key] === 'issue'
+                                  ? 'bg-rose-500 text-white shadow-3xs'
+                                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                              }`}
                             >
-                              {language === 'ar' ? 'خلل' : 'Fail'}
+                              {language === 'ar' ? 'ملاحظة ⚠️' : 'Issue'}
                             </button>
                           </div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Inspector Notes */}
+                  {/* Notes Area */}
                   <div className="space-y-1">
                     <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                      {language === 'ar' ? 'ملاحظات إضافية أو تلفيات جديدة' : 'Additional Notes / Reported Damage'}
+                      {language === 'ar' ? 'ملاحظات الفحص الإضافية (اختياري)' : 'Inspection Notes (Optional)'}
                     </label>
                     <textarea
                       rows={2}
@@ -807,7 +1227,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
 
                   {/* Digital Signature */}
                   <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-100 dark:border-slate-850/80 space-y-2">
-                    <div className="flex items-center gap-1.5 text-slate-505 dark:text-slate-300 font-black text-[10.5px]">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-300 font-black text-[10.5px]">
                       <Signature size={14} className="text-emerald-500" />
                       <span>{language === 'ar' ? 'التوقيع الرقمي وإقرار المسؤولية' : 'Digital Signature & Custody Agreement'}</span>
                     </div>
@@ -830,7 +1250,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                   {/* Submit Action */}
                   <button
                     type="submit"
-                    className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-emerald-500/15 flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <ClipboardCheck size={14} />
                     <span>{language === 'ar' ? 'تقديم تقرير الفحص والعهد' : 'Submit Checklist & Sign Custody'}</span>
@@ -841,16 +1261,16 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
             </motion.div>
           )}
 
-          {/* TAB 3: ROADSIDE FAULT REPORTING */}
+          {/* TAB 6: ROADSIDE FAULT REPORTING */}
           {activeSubTab === 'report' && (
             <motion.div
               key="driver-report-pane"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="max-w-xl mx-auto bg-white dark:bg-[#0f1422] p-6 rounded-[2rem] border border-slate-100 dark:border-slate-850/80 shadow-sm text-right"
+              className="max-w-xl mx-auto bg-white dark:bg-[#0f1422] p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-850/80 shadow-sm text-right"
             >
-              <div className="flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-slate-850 mb-5">
+              <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 dark:border-slate-850 mb-5">
                 <div className="p-2.5 bg-rose-500/10 text-rose-500 rounded-xl">
                   <AlertTriangle size={18} />
                 </div>
@@ -864,7 +1284,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
 
               {reportSubmitted ? (
                 <div className="py-8 text-center space-y-3">
-                  <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center justify-center text-rose-500 mx-auto animate-bounce">
+                  <div className="w-16 h-16 bg-purple-500/10 border border-purple-500/30 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400 mx-auto animate-bounce">
                     <CheckCircle2 size={32} />
                   </div>
                   <h4 className="text-sm font-black text-slate-850 dark:text-white">
@@ -918,7 +1338,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                     <div className="space-y-1">
                       <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5 flex items-center gap-1">
                         <Sparkles size={11} className="text-indigo-500 animate-pulse" />
-                        <span>{language === 'ar' ? 'كود عطل OBD-II الموحد (٥ خانات)' : 'OBD-II Fault Code (5 chars)'}</span>
+                        <span>{language === 'ar' ? 'كود عطل OBD-II (٥ خانات)' : 'OBD-II Fault Code'}</span>
                       </label>
                       <input
                         type="text"
@@ -941,31 +1361,28 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                         </span>
                       ) : (
                         <span className="block text-[8px] text-slate-450 font-semibold leading-normal mt-0.5">
-                          {language === 'ar' ? 'مثال: P0300 أو P0171 (اختياري)' : 'e.g., P0300 or P0171 (optional)'}
+                          {language === 'ar' ? 'مثال: P0300 (اختياري)' : 'e.g., P0300 (optional)'}
                         </span>
                       )}
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                        {language === 'ar' ? 'الأعراض المباشرة المشهودة (Direct Observed)' : 'Direct Observed Symptoms'}
+                        {language === 'ar' ? 'الأعراض المشهودة' : 'Observed Symptoms'}
                       </label>
                       <select
                         value={selectedSymptom}
                         onChange={(e) => setSelectedSymptom(e.target.value)}
                         className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl text-[11px] font-black text-slate-800 dark:text-white"
                       >
-                        <option value="" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '-- اختر العَرَض الرئيسي --' : '-- Select Symptom --'}</option>
+                        <option value="" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '-- اختر العَرَض --' : '-- Select Symptom --'}</option>
                         <option value="overheating" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '🔥 حرارة زائدة بالرادياتير' : '🔥 Engine Overheating'}</option>
                         <option value="noise" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '🔊 أصوات غريبة / طقطقة محرك' : '🔊 Strange Noise / Knocking'}</option>
                         <option value="vibration" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '📳 اهتزاز شديد أثناء الحركة' : '📳 Heavy Steering Vibration'}</option>
-                        <option value="leak" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '💧 تسريب سوائل/زيت أسفل المركبة' : '💧 Fluid/Oil Leakage'}</option>
-                        <option value="power_loss" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '📉 ضعف عزم وتسارع السيارة' : '📉 Severe Power Loss'}</option>
-                        <option value="battery" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '🔋 صعوبة تشغيل المحرك (ضعف بطارية)' : '🔋 Engine Crank Hesitation'}</option>
+                        <option value="leak" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '💧 تسريب سوائل/زيت' : '💧 Fluid/Oil Leakage'}</option>
+                        <option value="power_loss" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '📉 ضعف عزم وتسارع' : '📉 Severe Power Loss'}</option>
+                        <option value="battery" className="text-slate-900 dark:text-white bg-white dark:bg-slate-900 font-black">{language === 'ar' ? '🔋 صعوبة تشغيل المحرك' : '🔋 Engine Crank Hesitation'}</option>
                       </select>
-                      <span className="block text-[8px] text-slate-450 font-semibold leading-normal mt-0.5">
-                        {language === 'ar' ? 'حدد العرض لتسهيل الفحص الأولي' : 'Select to assist preliminary diagnostic'}
-                      </span>
                     </div>
                   </div>
 
@@ -976,9 +1393,9 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { id: 'low', labelAr: 'منخفضة (طبيعي)', labelEn: 'Low (Routine)', color: 'border-slate-200 text-slate-650' },
-                        { id: 'medium', labelAr: 'متوسطة (عاجل)', labelEn: 'Medium (Urgent)', color: 'border-amber-500/30 text-amber-600' },
-                        { id: 'high', labelAr: 'قصوى (توقف كلي!)', labelEn: 'High (Critical STOP)', color: 'border-rose-500/30 text-rose-600' },
+                        { id: 'low', labelAr: 'منخفضة (طبيعي)', labelEn: 'Low (Routine)' },
+                        { id: 'medium', labelAr: 'متوسطة (عاجل)', labelEn: 'Medium (Urgent)' },
+                        { id: 'high', labelAr: 'قصوى (توقف كلي!)', labelEn: 'High (Critical STOP)' },
                       ].map((item) => {
                         const isSelected = reportPriority === item.id;
                         return (
@@ -992,7 +1409,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                                   ? 'bg-rose-500 text-white border-rose-500 shadow-sm' 
                                   : item.id === 'medium'
                                   ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                                  : 'bg-brand-blue-500 text-white border-brand-blue-500 shadow-sm'
+                                  : 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                                 : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-slate-800'
                             }`}
                           >
@@ -1012,15 +1429,13 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                       required
                       rows={3}
                       value={reportDesc}
-                      onChange={(e) => {
-                        setReportDesc(e.target.value);
-                      }}
+                      onChange={(e) => setReportDesc(e.target.value)}
                       placeholder={language === 'ar' ? 'اشرح بالتفصيل ماذا حدث وموقعك التقريبي إن أمكن...' : 'Describe what happened and your current location...'}
                       className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none dark:text-white"
                     />
                   </div>
 
-                  {/* Capture/Attach Photo Simulator */}
+                  {/* Photo Attachment */}
                   <div className="space-y-1.5">
                     <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
                       {language === 'ar' ? 'إرفاق صورة للعطل فوتوغرافية (اختياري)' : 'Attach Fault Photograph (Optional)'}
@@ -1065,7 +1480,7 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
             </motion.div>
           )}
 
-          {/* TAB 4: MY ACTIVITY LOGS / HISTORY */}
+          {/* TAB 7: MY ACTIVITY LOGS / HISTORY */}
           {activeSubTab === 'history' && (
             <motion.div
               key="driver-history-pane"
