@@ -228,140 +228,122 @@ export default function DriverLiveMap({
   const truckPos = getTruckCoordinates(progressPercent);
 
   return (
-    <div className={isFullscreen ? "fixed inset-0 z-[999] w-screen h-screen bg-slate-950 flex flex-col overflow-hidden p-3 md:p-5" : "space-y-4"} dir={dir}>
-      {/* Top Map Control Bar */}
-      <div className={`bg-white dark:bg-[#0f1422] p-4 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs flex flex-wrap items-center justify-between gap-3 ${
-        isFullscreen ? 'mb-3 bg-slate-900/90 dark:bg-slate-900/90 backdrop-blur-md border-purple-500/30' : ''
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-2xl">
-            <Navigation size={20} className={isSimulatingDrive ? 'animate-spin-slow' : ''} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>{language === 'ar' ? 'خريطة التتبع والملاحة الحية' : 'Live Driver GPS & Route Navigator'}</span>
-                {isFullscreen && (
-                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md text-[9px] font-mono font-black border border-purple-500/40">
-                    {language === 'ar' ? 'وضع الشاشة الكاملة (HUD)' : 'FULLSCREEN HUD'}
-                  </span>
-                )}
-              </h2>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[9.5px] font-black">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping" />
-                <span>{isSimulatingDrive ? (language === 'ar' ? 'متصل ومتحرك' : 'Live In Motion') : (language === 'ar' ? 'متوقف / جاهز' : 'Standby / Parked')}</span>
-              </span>
+    <div id="map-container" className={isFullscreen ? "fixed inset-0 z-[99999] w-screen h-screen bg-slate-950 overflow-hidden m-0 p-0 rounded-none flex flex-col" : "space-y-4"} dir={dir}>
+      {/* Top Map Control Bar - ONLY shown in Normal (Non-Fullscreen) Mode */}
+      {!isFullscreen && (
+        <div className="bg-white dark:bg-[#0f1422] p-4 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-2xl">
+              <Navigation size={20} className={isSimulatingDrive ? 'animate-spin-slow' : ''} />
             </div>
-            <p className="text-[10.5px] text-slate-400 font-semibold mt-0.5">
-              {activeTrip 
-                ? (language === 'ar' ? `المسار: ${activeTrip.origin} ➔ ${activeTrip.destination}` : `Route: ${activeTrip.originEn} ➔ ${activeTrip.destinationEn}`)
-                : (language === 'ar' ? 'مسار نقل ثقيل: مستودع الرياض ➔ مشروع نيوم اللوجستي' : 'Heavy Freight: Riyadh Depot ➔ Neom Logistics Site')}
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>{language === 'ar' ? 'خريطة التتبع والملاحة الحية' : 'Live Driver GPS & Route Navigator'}</span>
+                </h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[9.5px] font-black">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping" />
+                  <span>{isSimulatingDrive ? (language === 'ar' ? 'متصل ومتحرك' : 'Live In Motion') : (language === 'ar' ? 'متوقف / جاهز' : 'Standby / Parked')}</span>
+                </span>
+              </div>
+              <p className="text-[10.5px] text-slate-400 font-semibold mt-0.5">
+                {activeTrip 
+                  ? (language === 'ar' ? `المسار: ${activeTrip.origin} ➔ ${activeTrip.destination}` : `Route: ${activeTrip.originEn} ➔ ${activeTrip.destinationEn}`)
+                  : (language === 'ar' ? 'مسار نقل ثقيل: مستودع الرياض ➔ مشروع نيوم اللوجستي' : 'Heavy Freight: Riyadh Depot ➔ Neom Logistics Site')}
+              </p>
+            </div>
+          </div>
+
+          {/* View Mode, Zoom & Fullscreen Toggles */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Zoom Controls */}
+            <div className="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/60 dark:border-slate-800">
+              <button
+                onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2.2))}
+                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
+                title={language === 'ar' ? 'تكبير (+)' : 'Zoom In (+)'}
+              >
+                <ZoomIn size={15} />
+              </button>
+              <span className="text-[9px] font-mono font-black text-slate-400 px-1">{Math.round(zoomLevel * 100)}%</span>
+              <button
+                onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.8))}
+                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
+                title={language === 'ar' ? 'تصغير (-)' : 'Zoom Out (-)'}
+              >
+                <ZoomOut size={15} />
+              </button>
+              <button
+                onClick={() => setZoomLevel(1)}
+                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
+                title={language === 'ar' ? 'إعادة ضبط العرض' : 'Reset Zoom'}
+              >
+                <Crosshair size={15} />
+              </button>
+            </div>
+
+            {/* Map Layer Switcher */}
+            <div className="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/60 dark:border-slate-800">
+              <button
+                onClick={() => setMapMode('standard')}
+                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+                  mapMode === 'standard' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
+                }`}
+              >
+                {language === 'ar' ? 'طرق' : 'Road'}
+              </button>
+              <button
+                onClick={() => setMapMode('satellite')}
+                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+                  mapMode === 'satellite' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
+                }`}
+              >
+                {language === 'ar' ? 'قمر صناعي' : 'Satellite'}
+              </button>
+              <button
+                onClick={() => setMapMode('night')}
+                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+                  mapMode === 'night' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
+                }`}
+              >
+                {language === 'ar' ? 'ليلي' : 'Night'}
+              </button>
+            </div>
+
+            {/* Voice Prompt Toggle */}
+            <button
+              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+              className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${
+                isVoiceEnabled 
+                  ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30 shadow-3xs' 
+                  : 'bg-slate-100 dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800'
+              }`}
+              title={language === 'ar' ? 'التوجيه الصوتي' : 'Voice Navigation'}
+            >
+              {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+
+            {/* SOS Emergency Button */}
+            <button
+              onClick={() => setSosModalOpen(true)}
+              className="px-3.5 py-2 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-rose-500/20 flex items-center gap-1.5 cursor-pointer animate-pulse"
+            >
+              <ShieldAlert size={15} />
+              <span>{language === 'ar' ? 'طوارئ SOS' : 'Emergency SOS'}</span>
+            </button>
+
+            {/* Fullscreen Expand Button */}
+            <button
+              onClick={() => setIsFullscreen(true)}
+              className="map-fullscreen-trigger px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-purple-600/20 flex items-center gap-1.5 cursor-pointer"
+              title={language === 'ar' ? 'تكبير الخريطة لكامل الشاشة' : 'Expand Fullscreen'}
+            >
+              <Maximize2 size={15} />
+              <span>{language === 'ar' ? 'ملء الشاشة ⛶' : 'Fullscreen ⛶'}</span>
+            </button>
           </div>
         </div>
-
-        {/* View Mode, Zoom & Fullscreen Toggles */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Zoom Controls (Active in all or fullscreen) */}
-          <div className="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/60 dark:border-slate-800">
-            <button
-              onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2.2))}
-              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-              title={language === 'ar' ? 'تكبير (+)' : 'Zoom In (+)'}
-            >
-              <ZoomIn size={15} />
-            </button>
-            <span className="text-[9px] font-mono font-black text-slate-400 px-1">{Math.round(zoomLevel * 100)}%</span>
-            <button
-              onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.8))}
-              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-              title={language === 'ar' ? 'تصغير (-)' : 'Zoom Out (-)'}
-            >
-              <ZoomOut size={15} />
-            </button>
-            <button
-              onClick={() => setZoomLevel(1)}
-              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-              title={language === 'ar' ? 'إعادة ضبط العرض' : 'Reset Zoom'}
-            >
-              <Crosshair size={15} />
-            </button>
-          </div>
-
-          {/* Map Layer Switcher */}
-          <div className="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/60 dark:border-slate-800">
-            <button
-              onClick={() => setMapMode('standard')}
-              className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
-                mapMode === 'standard' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
-              }`}
-            >
-              {language === 'ar' ? 'طرق' : 'Road'}
-            </button>
-            <button
-              onClick={() => setMapMode('satellite')}
-              className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
-                mapMode === 'satellite' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
-              }`}
-            >
-              {language === 'ar' ? 'قمر صناعي' : 'Satellite'}
-            </button>
-            <button
-              onClick={() => setMapMode('night')}
-              className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
-                mapMode === 'night' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
-              }`}
-            >
-              {language === 'ar' ? 'ليلي' : 'Night'}
-            </button>
-          </div>
-
-          {/* Voice Prompt Toggle */}
-          <button
-            onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-            className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${
-              isVoiceEnabled 
-                ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30 shadow-3xs' 
-                : 'bg-slate-100 dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800'
-            }`}
-            title={language === 'ar' ? 'التوجيه الصوتي' : 'Voice Navigation'}
-          >
-            {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-
-          {/* SOS Emergency Button */}
-          <button
-            onClick={() => setSosModalOpen(true)}
-            className="px-3.5 py-2 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-rose-500/20 flex items-center gap-1.5 cursor-pointer animate-pulse"
-          >
-            <ShieldAlert size={15} />
-            <span>{language === 'ar' ? 'طوارئ SOS' : 'Emergency SOS'}</span>
-          </button>
-
-          {/* Fullscreen Expand / Collapse Button */}
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95 ${
-              isFullscreen
-                ? 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
-                : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/20'
-            }`}
-            title={isFullscreen ? (language === 'ar' ? 'تصغير الخريطة (ESC)' : 'Exit Fullscreen (ESC)') : (language === 'ar' ? 'تكبير الخريطة لكامل الشاشة' : 'Expand Fullscreen')}
-          >
-            {isFullscreen ? (
-              <>
-                <Minimize2 size={15} />
-                <span>{language === 'ar' ? 'تصغير (ESC)' : 'Minimize (ESC)'}</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 size={15} />
-                <span>{language === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Main Interactive Map Screen & Canvas Frame */}
       <div 
@@ -376,19 +358,137 @@ export default function DriverLiveMap({
         }}
         onMouseEnter={() => setIsHoveringMap(true)}
         onMouseLeave={() => setIsHoveringMap(false)}
-        className={`relative rounded-[2.5rem] overflow-hidden border border-purple-500/20 shadow-xl bg-slate-950 select-none transition-all ${
+        className={`relative overflow-hidden bg-slate-950 select-none transition-all ${
           isFullscreen 
-            ? 'flex-1 w-full h-full min-h-0 rounded-3xl' 
-            : 'min-h-[460px] md:min-h-[520px] cursor-pointer group'
+            ? 'w-full h-full flex-1 rounded-none border-none' 
+            : 'h-[520px] md:h-[620px] w-full rounded-[2.5rem] border border-purple-500/20 shadow-xl cursor-pointer group'
         }`}
       >
         {/* Click to expand hint overlay when not in fullscreen */}
         {!isFullscreen && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity">
-            <span className="px-3 py-1.5 bg-slate-900/90 backdrop-blur-md text-white border border-purple-500/40 rounded-full text-[10.5px] font-black flex items-center gap-1.5 shadow-lg">
-              <Maximize2 size={12} className="text-purple-400 animate-pulse" />
-              <span>{language === 'ar' ? 'اضغط على الخريطة لعرضها على كامل الشاشة 🔍' : 'Click map to view Fullscreen 🔍'}</span>
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none opacity-85 group-hover:opacity-100 transition-opacity">
+            <span className="px-4 py-2 bg-slate-900/90 backdrop-blur-md text-white border border-purple-500/40 rounded-full text-[11px] font-black flex items-center gap-2 shadow-xl">
+              <Maximize2 size={13} className="text-purple-400 animate-pulse" />
+              <span>{language === 'ar' ? 'اضغط لتكبير الخريطة على كامل الشاشة 🔍' : 'Click to view Fullscreen 🔍'}</span>
             </span>
+          </div>
+        )}
+
+        {/* FULLSCREEN EXCLUSIVE FLOATING HEADER BAR & MINIMIZE BUTTON */}
+        {isFullscreen && (
+          <div className="absolute top-4 inset-x-4 z-40 flex items-center justify-between gap-3 pointer-events-none">
+            {/* Left/Start: Dedicated High-Visibility Minimize Button */}
+            <div className="pointer-events-auto flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsFullscreen(false);
+                }}
+                className="px-4 py-2.5 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-500 active:scale-95 text-white font-black text-xs md:text-sm rounded-2xl shadow-2xl shadow-rose-950/50 border border-rose-400/40 flex items-center gap-2 cursor-pointer transition-all"
+                title={language === 'ar' ? 'تصغير الخريطة والرجوع (ESC)' : 'Exit Fullscreen (ESC)'}
+              >
+                <Minimize2 size={18} />
+                <span>{language === 'ar' ? 'تصغير الشاشة ✕' : 'Minimize (ESC) ✕'}</span>
+              </button>
+
+              {/* Speed HUD on Fullscreen Top */}
+              <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 bg-slate-900/90 backdrop-blur-md border border-purple-500/30 rounded-2xl text-white shadow-xl">
+                <Gauge size={16} className="text-purple-400" />
+                <div>
+                  <span className="block text-[8.5px] text-slate-400 font-bold uppercase">{language === 'ar' ? 'السرعة الحالية' : 'Live Speed'}</span>
+                  <span className="block text-xs font-black text-emerald-400 font-mono">
+                    {currentSpeed} <span className="text-[9px] text-slate-300">KM/H</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right/End: Quick Floating Map Style & Zoom Toggles */}
+            <div className="pointer-events-auto flex items-center gap-2">
+              {/* Zoom In / Out */}
+              <div className="bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl flex items-center gap-1 border border-purple-500/30 shadow-xl">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomLevel(prev => Math.min(prev + 0.25, 2.2));
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
+                  title={language === 'ar' ? 'تكبير (+)' : 'Zoom In (+)'}
+                >
+                  <ZoomIn size={16} />
+                </button>
+                <span className="text-[9.5px] font-mono font-black text-purple-300 px-1">{Math.round(zoomLevel * 100)}%</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomLevel(prev => Math.max(prev - 0.25, 0.8));
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
+                  title={language === 'ar' ? 'تصغير (-)' : 'Zoom Out (-)'}
+                >
+                  <ZoomOut size={16} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomLevel(1);
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
+                  title={language === 'ar' ? 'إعادة ضبط' : 'Reset'}
+                >
+                  <Crosshair size={16} />
+                </button>
+              </div>
+
+              {/* Map Layer Switcher in Fullscreen */}
+              <div className="bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl flex items-center gap-1 border border-purple-500/30 shadow-xl hidden md:flex">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMapMode('standard');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-[10.5px] font-black transition-all cursor-pointer ${
+                    mapMode === 'standard' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {language === 'ar' ? 'طرق' : 'Road'}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMapMode('satellite');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-[10.5px] font-black transition-all cursor-pointer ${
+                    mapMode === 'satellite' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {language === 'ar' ? 'قمر صناعي' : 'Satellite'}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMapMode('night');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-[10.5px] font-black transition-all cursor-pointer ${
+                    mapMode === 'night' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {language === 'ar' ? 'ليلي' : 'Night'}
+                </button>
+              </div>
+
+              {/* Emergency SOS in Fullscreen */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSosModalOpen(true);
+                }}
+                className="px-3.5 py-2.5 bg-rose-500/90 hover:bg-rose-500 text-white rounded-2xl text-xs font-black transition-all shadow-xl flex items-center gap-1 cursor-pointer"
+              >
+                <ShieldAlert size={15} />
+                <span className="hidden sm:inline">{language === 'ar' ? 'طوارئ' : 'SOS'}</span>
+              </button>
+            </div>
           </div>
         )}
         
@@ -566,42 +666,34 @@ export default function DriverLiveMap({
           })}
         </div>
 
-        {/* Top-Right Weather & Road Condition Floating Pill */}
-        <div className="absolute top-4 right-4 z-20 bg-slate-900/80 backdrop-blur-md text-white px-3.5 py-2 rounded-2xl border border-purple-500/20 flex items-center gap-3 text-xs shadow-lg no-fullscreen-trigger">
-          <div className="flex items-center gap-1.5 text-amber-400 font-black">
-            <Sun size={15} />
-            <span>34°C</span>
+        {/* Top-Right Weather & Road Condition Floating Pill (Only in normal view) */}
+        {!isFullscreen && (
+          <div className="absolute top-4 right-4 z-20 bg-slate-900/80 backdrop-blur-md text-white px-3.5 py-2 rounded-2xl border border-purple-500/20 flex items-center gap-3 text-xs shadow-lg no-fullscreen-trigger">
+            <div className="flex items-center gap-1.5 text-amber-400 font-black">
+              <Sun size={15} />
+              <span>34°C</span>
+            </div>
+            <span className="w-1 h-3 bg-white/20 rounded-full" />
+            <div className="text-[10px] font-semibold text-slate-300 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              <span>{language === 'ar' ? 'الطريق سالك ومفتوح' : 'Highway Clear'}</span>
+            </div>
           </div>
-          <span className="w-1 h-3 bg-white/20 rounded-full" />
-          <div className="text-[10px] font-semibold text-slate-300 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-            <span>{language === 'ar' ? 'الطريق سالك ومفتوح' : 'Highway Clear'}</span>
-          </div>
-          {isFullscreen && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsFullscreen(false);
-              }}
-              className="p-1.5 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
-              title={language === 'ar' ? 'خروج من الشاشة الكاملة (ESC)' : 'Exit Fullscreen'}
-            >
-              <X size={15} />
-            </button>
-          )}
-        </div>
+        )}
 
-        {/* Top-Left Turn-by-Turn Instruction Banner (Interactive GPS style) */}
-        <div className="absolute top-4 left-4 z-20 max-w-sm bg-slate-900/90 backdrop-blur-md text-white p-3.5 rounded-2xl border border-purple-500/30 shadow-2xl space-y-1 no-fullscreen-trigger">
+        {/* Turn-by-Turn Instruction Banner (Interactive GPS style) */}
+        <div className={`absolute z-20 bg-slate-900/90 backdrop-blur-md text-white p-3 md:p-3.5 rounded-2xl border border-purple-500/30 shadow-2xl space-y-1 no-fullscreen-trigger ${
+          isFullscreen ? 'top-20 left-4 right-4 md:right-auto md:max-w-sm' : 'top-4 left-4 max-w-xs md:max-w-sm'
+        }`}>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-purple-500/20 text-purple-300 rounded-xl border border-purple-500/30">
+            <div className="p-2 bg-purple-500/20 text-purple-300 rounded-xl border border-purple-500/30 shrink-0">
               {currentNav.icon}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <span className="block text-[9px] text-purple-300 font-mono font-black uppercase tracking-wider">
                 {language === 'ar' ? `بعد ${currentNav.dist}` : `In ${currentNav.distEn}`}
               </span>
-              <p className="text-xs font-black leading-tight mt-0.5">
+              <p className="text-xs font-black leading-tight mt-0.5 truncate">
                 {language === 'ar' ? currentNav.textAr : currentNav.textEn}
               </p>
             </div>
