@@ -2100,11 +2100,11 @@ export function MarketingAdmin({
 
       {/* CRM NAV LIST STRUCTURE */}
             {/* MOBILE CRM TRIGGER BAR */}
-            <div className="block lg:hidden bg-[#0B132B] text-slate-100 p-4.5 rounded-3xl border border-slate-800 shadow-xl select-none mb-4">
+            <div className="block lg:hidden bg-white text-slate-900 p-4 rounded-3xl border border-slate-200 shadow-xs select-none mb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button 
-                    type="button"
+                    type="button" 
                     onClick={() => setIsMobileMenuOpen(true)}
                     className="p-2 px-3 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
                     style={{ backgroundColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}20` }}
@@ -2113,15 +2113,15 @@ export function MarketingAdmin({
                     <span>{language === 'ar' ? 'أقسام اللوحة' : 'Menu'}</span>
                   </button>
                   <div className="text-right">
-                    <span className="text-[8.5px] block text-slate-400 font-extrabold tracking-wide uppercase leading-none">متحكم الساس | CRM PANEL</span>
-                    <h4 className="text-[11px] font-black text-slate-100 mt-1">
+                    <span className="text-[8.5px] block text-slate-500 font-extrabold tracking-wide uppercase leading-none">متحكم الساس | CRM PANEL</span>
+                    <h4 className="text-[11px] font-black text-slate-900 mt-1">
                       {language === 'ar' ? 'تخصيص الموقع والهوية' : 'SaaS Customize Dashboard'}
                     </h4>
                   </div>
                 </div>
                 
                 <div className="text-left font-sans">
-                  <div className="bg-slate-950/60 border border-slate-800 px-3.5 py-1.5 rounded-2xl">
+                  <div className="bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-2xl">
                     <span className="text-[10px] font-black" style={{ color: brandPrimaryColor }}>
                       {activeSubTab === 'leads' ? 'المشتركون' :
                        activeSubTab === 'launch-planner' ? 'خطة الإطلاق' :
@@ -2146,7 +2146,7 @@ export function MarketingAdmin({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 lg:hidden"
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 lg:hidden"
                   />
                   {/* Sliding Drawer Container */}
                   <motion.div 
@@ -2154,21 +2154,21 @@ export function MarketingAdmin({
                     animate={{ x: 0 }}
                     exit={{ x: isRtl ? '100%' : '-100%' }}
                     transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-                    className={`fixed top-0 bottom-0 ${isRtl ? 'right-0' : 'left-0'} w-80 bg-[#0C1225] text-slate-100 border-l border-slate-800 p-5.5 shadow-2xl z-51 overflow-y-auto lg:hidden flex flex-col justify-between text-right`}
+                    className={`fixed top-0 bottom-0 ${isRtl ? 'right-0' : 'left-0'} w-80 bg-white text-slate-900 border-l border-slate-200 p-5.5 shadow-2xl z-51 overflow-y-auto lg:hidden flex flex-col justify-between text-right`}
                     dir={isRtl ? 'rtl' : 'ltr'}
                   >
                     <div className="space-y-5">
                       {/* Drawer Brand Header */}
-                      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                         <button 
                           onClick={() => setIsMobileMenuOpen(false)}
-                          className="p-1.5 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-slate-100 rounded-lg cursor-pointer transition-colors border border-slate-800"
+                          className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 rounded-lg cursor-pointer transition-colors border border-slate-200"
                         >
                           <X size={15} />
                         </button>
                         <div className="text-right">
                           <span className="text-[9px] font-black tracking-wider block leading-none" style={{ color: brandPrimaryColor }}>بوابة FleetAurvexis</span>
-                          <h3 className="text-xs font-black text-slate-100 mt-1">SaaS CRM Controller</h3>
+                          <h3 className="text-xs font-black text-slate-900 mt-1">SaaS CRM Controller</h3>
                         </div>
                       </div>
 
@@ -2179,9 +2179,9 @@ export function MarketingAdmin({
                           placeholder="بحث سريع في اللوحة..." 
                           value={searchMenuQuery}
                           onChange={(e) => setSearchMenuQuery(e.target.value)}
-                          className="w-full bg-slate-950/70 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl py-2 px-3.5 pr-9 text-[11px] font-sans text-right focus:outline-none focus:border-brand-blue-500 transition-colors"
+                          className="w-full bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 rounded-xl py-2 px-3.5 pr-9 text-[11px] font-sans text-right focus:outline-none focus:border-indigo-500 transition-colors"
                         />
-                        <Search size={12.5} className="absolute right-3.5 top-3 text-slate-500" />
+                        <Search size={12.5} className="absolute right-3.5 top-3 text-slate-400" />
                       </div>
 
                       {/* Filtered Tabs List */}
@@ -2199,14 +2199,14 @@ export function MarketingAdmin({
                                 className={`w-full text-right p-3 rounded-2xl transition-all duration-200 flex items-start gap-3 cursor-pointer group border ${
                                   isActive 
                                     ? 'text-white font-extrabold' 
-                                    : 'bg-transparent border-transparent text-slate-300 hover:text-white hover:bg-slate-900/60'
+                                    : 'bg-transparent border-transparent text-slate-700 hover:text-slate-900 hover:bg-slate-100/80'
                                 }`}
                                 style={isActive ? { backgroundColor: brandPrimaryColor, borderColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}20` } : {}}
                               >
                                 <span className={`p-2 rounded-xl transition-all shrink-0 mt-0.5 ${
                                   isActive 
-                                    ? 'bg-white/10 text-white' 
-                                    : 'bg-slate-900 text-slate-400 group-hover:text-slate-200 border border-slate-800'
+                                    ? 'bg-white/15 text-white' 
+                                    : 'bg-slate-100 text-slate-600 group-hover:text-slate-900 border border-slate-200'
                                 }`}>
                                   {t.icon}
                                 </span>
@@ -2214,7 +2214,7 @@ export function MarketingAdmin({
                                   <strong className="text-[11px] block transition-colors leading-tight font-black">
                                     {language === 'ar' ? t.label : t.id.toUpperCase()}
                                   </strong>
-                                  <span className={`text-[9px] truncate block leading-none font-medium ${isActive ? 'text-white/80' : 'text-slate-550'}`}>
+                                  <span className={`text-[9px] truncate block leading-none font-medium ${isActive ? 'text-white/80' : 'text-slate-500'}`}>
                                     {language === 'ar' ? t.subLabel : 'SaaS setup modules'}
                                   </span>
                                 </div>
@@ -2230,15 +2230,15 @@ export function MarketingAdmin({
                     </div>
 
                     {/* Dynamic Profile Card at Custom Sidebar bottom */}
-                    <div className="border-t border-slate-800 pt-4 mt-6">
+                    <div className="border-t border-slate-200 pt-4 mt-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-9 h-9 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-black shadow-md border border-orange-500/20">
+                          <div className="w-9 h-9 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-black shadow-xs border border-orange-500/20">
                             أ
                           </div>
                           <div className="text-right">
-                            <h4 className="text-[11px] font-black text-slate-200">أحمد المدير</h4>
-                            <span className="text-[8.5px] font-bold text-amber-500 block">مدير النظام الفائق</span>
+                            <h4 className="text-[11px] font-black text-slate-800">أحمد المدير</h4>
+                            <span className="text-[8.5px] font-bold text-amber-600 block">مدير النظام الفائق</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -2255,20 +2255,20 @@ export function MarketingAdmin({
             {/* SIDE-BY-SIDE CRM LAYOUT */}
             <div className="flex flex-col lg:flex-row gap-6 items-start font-sans">
               
-              {/* DESKTOP STICKY VERTICAL SIDEBAR (DARK & PREMIUM LOOK DESIGN) */}
+              {/* DESKTOP STICKY VERTICAL SIDEBAR (LIGHT & CLEAN THEME) */}
               <div className="hidden lg:block w-[325px] shrink-0 space-y-4 lg:sticky lg:top-6">
-                <div className="bg-[#0B132B] dark:bg-slate-950 border border-slate-800/80 p-5 rounded-3xl shadow-2xl text-right">
+                <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-xs text-right">
                   {/* Sidebar Header */}
-                  <div className="border-b border-slate-800/80 pb-3.5 mb-3.5 text-right flex items-center gap-2 justify-end">
+                  <div className="border-b border-slate-200 pb-3.5 mb-3.5 text-right flex items-center gap-2 justify-end">
                     <div className="text-right flex-1 min-w-0">
                       <span className="text-[9px] font-black tracking-wider block" style={{ color: brandPrimaryColor }}>
                         {language === 'ar' ? 'بوابة لوحة تحكم الساس' : 'SaaS Portal Customizer'}
                       </span>
-                      <h3 className="text-xs font-black text-slate-100 mt-1 truncate">
+                      <h3 className="text-xs font-black text-slate-900 mt-1 truncate">
                         {language === 'ar' ? 'الموقع والهوية والألوان' : 'SaaS Control Modules'}
                       </h3>
                     </div>
-                    <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 animate-pulse" style={{ backgroundColor: `${brandPrimaryColor}15`, borderColor: `${brandPrimaryColor}40`, color: brandPrimaryColor }}>
+                    <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${brandPrimaryColor}15`, borderColor: `${brandPrimaryColor}40`, color: brandPrimaryColor }}>
                       <SlidersHorizontal size={14} />
                     </span>
                   </div>
@@ -2280,9 +2280,9 @@ export function MarketingAdmin({
                       placeholder={language === 'ar' ? 'بحث سريع بالاعدادات...' : 'Quick CRM search...'} 
                       value={searchMenuQuery}
                       onChange={(e) => setSearchMenuQuery(e.target.value)}
-                      className="w-full bg-slate-950/50 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-xl py-2 px-3.5 pr-9 text-[11px] font-sans text-right focus:outline-none focus:border-brand-blue-500 transition-colors"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 rounded-xl py-2 px-3.5 pr-9 text-[11px] font-sans text-right focus:outline-none focus:border-indigo-500 transition-colors"
                     />
-                    <Search size={12.5} className="absolute right-3.5 top-3 text-slate-500" />
+                    <Search size={12.5} className="absolute right-3.5 top-3 text-slate-400" />
                   </div>
                   
                   {/* Items List */}
@@ -2297,14 +2297,14 @@ export function MarketingAdmin({
                             className={`w-full text-right p-3 rounded-2xl transition-all duration-200 flex items-start gap-3 cursor-pointer group border ${
                               isActive 
                                 ? 'text-white font-extrabold' 
-                                : 'bg-transparent border-transparent text-slate-350 hover:text-white hover:bg-slate-900/40'
+                                : 'bg-transparent border-transparent text-slate-700 hover:text-slate-900 hover:bg-slate-50'
                             }`}
                             style={isActive ? { backgroundColor: brandPrimaryColor, borderColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}20` } : {}}
                           >
                             <span className={`p-2 rounded-xl transition-all shrink-0 mt-0.5 ${
                               isActive 
-                                ? 'bg-white/10 text-white' 
-                                : 'bg-slate-900 text-slate-400 group-hover:text-slate-200 border border-slate-800'
+                                ? 'bg-white/15 text-white' 
+                                : 'bg-slate-100 text-slate-600 group-hover:text-slate-900 border border-slate-200'
                             }`}>
                               {t.icon}
                             </span>
@@ -2327,15 +2327,15 @@ export function MarketingAdmin({
                   </div>
 
                   {/* Profile section at bottom */}
-                  <div className="border-t border-slate-800-80 pt-4 mt-5">
+                  <div className="border-t border-slate-200 pt-4 mt-5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8.5 h-8.5 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-black shadow-md border border-orange-500/10">
+                        <div className="w-8.5 h-8.5 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-black shadow-xs border border-orange-500/10">
                           أ
                         </div>
                         <div className="text-right">
-                          <h4 className="text-[11px] font-black text-slate-200">أحمد المدير</h4>
-                          <span className="text-[8px] font-bold text-amber-500 block">مدير النظام الفائق</span>
+                          <h4 className="text-[11px] font-black text-slate-800">أحمد المدير</h4>
+                          <span className="text-[8px] font-bold text-amber-600 block">مدير النظام الفائق</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -2347,20 +2347,20 @@ export function MarketingAdmin({
                 </div>
                 
                 {/* QUICK GENERAL METRICS */}
-                <div className="bg-slate-55/40 dark:bg-slate-950/10 border border-slate-150/60 dark:border-slate-800/40 rounded-3xl p-4 text-right space-y-3 select-none">
+                <div className="bg-white border border-slate-200 rounded-3xl p-4 text-right space-y-3 select-none shadow-xs">
                   <div className="flex items-center gap-1.5 justify-end">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[9px] font-black text-slate-500 dark:text-slate-400">{language === 'ar' ? 'إحصائيات فورية للموقع' : 'Active stats'}</span>
+                    <span className="text-[9px] font-black text-slate-600">{language === 'ar' ? 'إحصائيات فورية للموقع' : 'Active stats'}</span>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 font-mono">
-                    <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 p-2.5 rounded-2xl text-center">
-                      <span className="text-[7.5px] text-slate-400 font-extrabold block mb-1">{language === 'ar' ? 'طلبات الاشتراك' : 'Requests'}</span>
-                      <span className="text-[11px] font-black text-slate-700 dark:text-slate-350">{leads.length}</span>
+                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-2xl text-center">
+                      <span className="text-[7.5px] text-slate-500 font-extrabold block mb-1">{language === 'ar' ? 'طلبات الاشتراك' : 'Requests'}</span>
+                      <span className="text-[11px] font-black text-slate-800">{leads.length}</span>
                     </div>
-                    <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800/80 p-2.5 rounded-2xl text-center">
-                      <span className="text-[7.5px] text-slate-400 font-extrabold block mb-1">{language === 'ar' ? 'سعر المقارنة باقة' : 'Main limit'}</span>
-                      <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">{leads.filter(l => l.status === 'won').length}</span>
+                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-2xl text-center">
+                      <span className="text-[7.5px] text-slate-500 font-extrabold block mb-1">{language === 'ar' ? 'الباقات المكتملة' : 'Main limit'}</span>
+                      <span className="text-[11px] font-black text-emerald-600">{leads.filter(l => l.status === 'won').length}</span>
                     </div>
                   </div>
                 </div>
@@ -2375,17 +2375,17 @@ export function MarketingAdmin({
           <div className="space-y-6">
               
               {/* FIREBASE SENSITIVE INTEGRATION DESK */}
-              <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-5 shadow-xl font-sans text-right">
+              <div className="bg-gradient-to-r from-indigo-50/80 via-sky-50/40 to-white border border-indigo-100 text-slate-900 rounded-3xl p-5 shadow-xs font-sans text-right">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   <div className="space-y-1 text-right w-full md:w-auto">
                     <div className="flex items-center gap-2 justify-end">
-                      <span className="p-1 px-2.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-black rounded-lg border border-indigo-400/10 flex items-center gap-1.5 direction-ltr">
-                        <Cloud size={11} className="animate-pulse text-indigo-400" />
+                      <span className="p-1 px-2.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded-lg border border-indigo-200/60 flex items-center gap-1.5 direction-ltr">
+                        <Cloud size={11} className="animate-pulse text-indigo-600" />
                         {language === 'ar' ? 'البوابة السحابية نشطة' : 'Cloud Portal Active'}
                       </span>
-                      <h3 className="text-xs font-black tracking-tight text-white">{language === 'ar' ? 'بوابة التحكم والربط السحابي بقاعدة Firebase' : 'SaaS Firebase Cloud Integration Core'}</h3>
+                      <h3 className="text-xs font-black tracking-tight text-slate-900">{language === 'ar' ? 'بوابة التحكم والربط السحابي بقاعدة Firebase' : 'SaaS Firebase Cloud Integration Core'}</h3>
                     </div>
-                    <p className="text-[10.5px] text-slate-400 mt-1 max-w-xl">
+                    <p className="text-[10.5px] text-slate-600 mt-1 max-w-xl">
                       {language === 'ar' 
                         ? 'يمكنك التبديل بين الذاكرة المحلية والاتصال السحابي بقاعدة Firestore الحية لحفظ وإثبات تسجيلات المشتركين ومزامنة هوية موقعك التسويقي.' 
                         : 'Toggle between clean local storage fallback and direct live Google Firebase Firestore connection.'}
@@ -2395,17 +2395,17 @@ export function MarketingAdmin({
                   {/* Switcher & Manual Sync button */}
                   <div className="flex flex-wrap gap-2 items-center justify-end">
                     {/* Toggle */}
-                    <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
-                      <span className="text-[9.5px] font-bold text-slate-400">{language === 'ar' ? 'وضع السحابة نشط:' : 'Cloud Mode:'}</span>
+                    <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                      <span className="text-[9.5px] font-bold text-slate-600">{language === 'ar' ? 'وضع السحابة نشط:' : 'Cloud Mode:'}</span>
                       <button
                         type="button"
                         onClick={() => handleToggleFirebaseMode(!useFirebase)}
                         className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          useFirebase ? 'bg-indigo-650' : 'bg-slate-800'
+                          useFirebase ? 'bg-indigo-600' : 'bg-slate-300'
                         }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                             useFirebase ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'
                           }`}
                         />
@@ -2417,7 +2417,7 @@ export function MarketingAdmin({
                       type="button"
                       disabled={isSyncingWithCloud}
                       onClick={pushBrandedDataToCloud}
-                      className="p-2 px-3 bg-indigo-650 hover:bg-indigo-700 disabled:opacity-50 text-white text-[10px] font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-indigo-500/20"
+                      className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-[10px] font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
                       <ArrowRightLeft size={12} className={isSyncingWithCloud ? 'animate-spin' : ''} />
                       <span>{language === 'ar' ? 'مزامنة السحابة يدوياً' : 'Force Cloud Sync'}</span>
@@ -2426,16 +2426,16 @@ export function MarketingAdmin({
                 </div>
 
                 {/* Live Connection Diagnostics bar */}
-                <div className="mt-4 p-3 bg-slate-950/60 rounded-2xl border border-slate-850 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="mt-4 p-3 bg-white/90 rounded-2xl border border-indigo-100 shadow-2xs flex flex-wrap items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2 font-mono text-[9px] select-all">
-                    <span className={`w-2 h-2 rounded-full ${isFirestoreConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-400'}`} />
-                    <span className="text-slate-400">STATUS:</span>
-                    <span className={isFirestoreConnected ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                    <span className={`w-2 h-2 rounded-full ${isFirestoreConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
+                    <span className="text-slate-500">STATUS:</span>
+                    <span className={isFirestoreConnected ? 'text-emerald-700 font-bold' : 'text-amber-700 font-bold'}>
                       {isFirestoreConnected ? 'LIVE_FIRESTORE_CONNECTED' : 'LOCAL_STORAGE_MODE'}
                     </span>
                   </div>
-                  <div className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5">
-                    <Database size={11} className="text-indigo-400" />
+                  <div className="text-[10px] font-bold text-slate-700 flex items-center gap-1.5">
+                    <Database size={11} className="text-indigo-600" />
                     <span>{cloudFeedbackLog}</span>
                   </div>
                 </div>
@@ -2445,68 +2445,68 @@ export function MarketingAdmin({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-right">
                 
                 {/* Metric 1: Total Opportunities */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-4 rounded-2xl shadow-soft space-y-2">
+                <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                    <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
                       <Users size={16} />
                     </span>
                     <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'فرص المبيعات' : 'CRM Opportunities'}</span>
                   </div>
                   <div className="space-y-0.5">
-                    <div className="text-xl font-black text-slate-850 dark:text-white font-mono">{totalLeadsCount}</div>
-                    <p className="text-[10px] text-slate-405 dark:text-slate-500">
+                    <div className="text-xl font-black text-slate-900 font-mono">{totalLeadsCount}</div>
+                    <p className="text-[10px] text-slate-500">
                       {language === 'ar' ? `حجم الأسطول الكلي المتراكم: ${totalFleetSize} شاحنة` : `Total target fleet units: ${totalFleetSize}`}
                     </p>
                   </div>
                 </div>
 
                 {/* Metric 2: Conversion Success Rate */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-4 rounded-2xl shadow-soft space-y-2">
+                <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                    <span className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
                       <BarChart2 size={16} />
                     </span>
                     <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'معدل نجاح الصفقات' : 'Conversion Success'}</span>
                   </div>
                   <div className="space-y-0.5">
-                    <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{conversionRatePercent}%</div>
-                    <p className="text-[10px] text-slate-405 dark:text-slate-500">
+                    <div className="text-xl font-black text-emerald-600 font-mono">{conversionRatePercent}%</div>
+                    <p className="text-[10px] text-slate-500">
                       {language === 'ar' ? `مقبول ومفعل: ${wonLeadsCount} • قيد التواصل: ${contactedLeadsCount}` : `Onboarded: ${wonLeadsCount} • Working: ${contactedLeadsCount}`}
                     </p>
                   </div>
                 </div>
 
                 {/* Metric 3: Active Monthly SaaS Value (MRR) */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-4 rounded-2xl shadow-soft space-y-2">
+                <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="p-2 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl">
+                    <span className="p-2 bg-amber-50 text-amber-600 rounded-xl">
                       <DollarSign size={16} />
                     </span>
                     <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'الإيراد الشهري الفعلي' : 'Monthly SaaS MRR'}</span>
                   </div>
                   <div className="space-y-0.5">
-                    <div className="text-xl font-black text-slate-850 dark:text-white font-mono">
+                    <div className="text-xl font-black text-slate-900 font-mono">
                       {saasMmrValueSAR.toLocaleString('ar-SA')} <span className="text-xs font-bold text-slate-400 font-sans">ر.س</span>
                     </div>
-                    <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <p className="text-[10px] font-semibold text-emerald-600">
                       {language === 'ar' ? '✓ اشتراكات مفعلة ومدفوعة تلقائياً' : '✓ Paid active licenses'}
                     </p>
                   </div>
                 </div>
 
                 {/* Metric 4: Potential Pipeline MMR */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-4 rounded-2xl shadow-soft space-y-2">
+                <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="p-2 bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 rounded-xl">
+                    <span className="p-2 bg-violet-50 text-violet-600 rounded-xl">
                       <TrendingUp size={16} />
                     </span>
                     <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest">{language === 'ar' ? 'الإيراد الإجمالي المتوقع' : 'Potential Pipeline'}</span>
                   </div>
                   <div className="space-y-0.5">
-                    <div className="text-xl font-black text-slate-850 dark:text-white font-mono">
+                    <div className="text-xl font-black text-slate-900 font-mono">
                       {potentialMmrValueSAR.toLocaleString('ar-SA')} <span className="text-xs font-bold text-slate-400 font-sans">ر.س</span>
                     </div>
-                    <p className="text-[10px] text-slate-405 dark:text-slate-500">
+                    <p className="text-[10px] text-slate-500">
                       {language === 'ar' ? 'القيمة التقديرية لكافة طلبات صفحة الهبوط' : 'Estimated worth of all registered leads'}
                     </p>
                   </div>
@@ -2518,14 +2518,14 @@ export function MarketingAdmin({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right select-none">
                 
                 {/* Panel 1: MRR Projected Revenue Engine */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-5 rounded-3xl shadow-soft space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-850 pb-3">
-                    <span className="p-1 px-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg text-[9.5px] font-black tracking-wider uppercase">
+                <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <span className="p-1 px-2.5 bg-indigo-50 text-indigo-600 rounded-lg text-[9.5px] font-black tracking-wider uppercase">
                       {language === 'ar' ? 'نموذج محاكاة التسعير' : 'MRR Forecaster'}
                     </span>
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5 justify-end">
+                    <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5 justify-end">
                       <span>{language === 'ar' ? 'حاسبة توقع الإيرادات والنمو التفاعلية' : 'Interactive MRR & Sales Forecaster'}</span>
-                      <TrendingUp size={14} className="text-indigo-650" />
+                      <TrendingUp size={14} className="text-indigo-600" />
                     </h4>
                   </div>
                   
@@ -2533,8 +2533,8 @@ export function MarketingAdmin({
                     {/* Slider 1: Target Subscribed Companies */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-[11px] font-bold">
-                        <span className="font-mono text-indigo-650 dark:text-indigo-400">{targetSubscribers} {language === 'ar' ? 'ورشة/شركة' : 'clients'}</span>
-                        <span className="text-slate-600 dark:text-slate-350">{language === 'ar' ? 'عدد العملاء والشركات النشطة المستهدفة:' : 'Target Customers:'}</span>
+                        <span className="font-mono text-indigo-600">{targetSubscribers} {language === 'ar' ? 'ورشة/شركة' : 'clients'}</span>
+                        <span className="text-slate-600">{language === 'ar' ? 'عدد العملاء والشركات النشطة المستهدفة:' : 'Target Customers:'}</span>
                       </div>
                       <input 
                         type="range" 
@@ -2542,15 +2542,15 @@ export function MarketingAdmin({
                         max="100" 
                         value={targetSubscribers} 
                         onChange={(e) => setTargetSubscribers(Number(e.target.value))}
-                        className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                       />
                     </div>
 
                     {/* Slider 2: Average Fleet size */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-[11px] font-bold">
-                        <span className="font-mono text-indigo-650 dark:text-indigo-400">{avgFleetUnits} {language === 'ar' ? 'شاحنة/معدة' : 'vehicles'}</span>
-                        <span className="text-slate-600 dark:text-slate-350">{language === 'ar' ? 'متوسط حجم أسطول المشترك الواحد:' : 'Avg Fleet Units Per Client:'}</span>
+                        <span className="font-mono text-indigo-600">{avgFleetUnits} {language === 'ar' ? 'شاحنة/معدة' : 'vehicles'}</span>
+                        <span className="text-slate-600">{language === 'ar' ? 'متوسط حجم أسطول المشترك الواحد:' : 'Avg Fleet Units Per Client:'}</span>
                       </div>
                       <input 
                         type="range" 
@@ -2558,15 +2558,15 @@ export function MarketingAdmin({
                         max="350" 
                         value={avgFleetUnits} 
                         onChange={(e) => setAvgFleetUnits(Number(e.target.value))}
-                        className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                       />
                     </div>
 
                     {/* Slider 3: Price per dynamic license */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-[11px] font-bold">
-                        <span className="font-mono text-indigo-650 dark:text-indigo-400">{mrrPricePerTruck} {language === 'ar' ? 'ر.س / مركبة شهرياً' : 'SAR'}</span>
-                        <span className="text-slate-600 dark:text-slate-350">{language === 'ar' ? 'قيمة الاشتراك الشهري لكل مركبة:' : 'SaaS Price per Vehicle/mo:'}</span>
+                        <span className="font-mono text-indigo-600">{mrrPricePerTruck} {language === 'ar' ? 'ر.س / مركبة شهرياً' : 'SAR'}</span>
+                        <span className="text-slate-600">{language === 'ar' ? 'قيمة الاشتراك الشهري لكل مركبة:' : 'SaaS Price per Vehicle/mo:'}</span>
                       </div>
                       <input 
                         type="range" 
@@ -2574,22 +2574,22 @@ export function MarketingAdmin({
                         max="100" 
                         value={mrrPricePerTruck} 
                         onChange={(e) => setMrrPricePerTruck(Number(e.target.value))}
-                        className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                       />
                     </div>
                   </div>
 
                   {/* Calculations visual feedback box */}
-                  <div className="p-3 bg-indigo-50/50 dark:bg-indigo-950/25 border border-indigo-100/30 dark:border-indigo-900/10 rounded-2xl grid grid-cols-2 gap-2 text-center">
-                    <div className="border-l border-indigo-100/30 pl-2">
-                      <span className="text-[8.5px] font-bold text-slate-500 dark:text-slate-400 block mb-0.5">{language === 'ar' ? 'الدخل السنوي المتوقع ARR' : 'Projected ARR'}</span>
-                      <strong className="text-[13px] font-mono text-indigo-700 dark:text-indigo-300">
+                  <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl grid grid-cols-2 gap-2 text-center">
+                    <div className="border-l border-indigo-100 pl-2">
+                      <span className="text-[8.5px] font-bold text-slate-500 block mb-0.5">{language === 'ar' ? 'الدخل السنوي المتوقع ARR' : 'Projected ARR'}</span>
+                      <strong className="text-[13px] font-mono text-indigo-700">
                         {((targetSubscribers * avgFleetUnits * mrrPricePerTruck) * 12).toLocaleString('ar-SA')} <span className="text-[9px] font-sans">ر.س</span>
                       </strong>
                     </div>
                     <div>
-                      <span className="text-[8.5px] font-bold text-slate-500 dark:text-slate-400 block mb-0.5">{language === 'ar' ? 'الإيراد الشهري المكرر MRR' : 'Projected MRR'}</span>
-                      <strong className="text-[13px] font-mono text-indigo-700 dark:text-indigo-300">
+                      <span className="text-[8.5px] font-bold text-slate-500 block mb-0.5">{language === 'ar' ? 'الإيراد الشهري المكرر MRR' : 'Projected MRR'}</span>
+                      <strong className="text-[13px] font-mono text-indigo-700">
                         {(targetSubscribers * avgFleetUnits * mrrPricePerTruck).toLocaleString('ar-SA')} <span className="text-[9px] font-sans">ر.س</span>
                       </strong>
                     </div>
@@ -2597,18 +2597,18 @@ export function MarketingAdmin({
                 </div>
 
                 {/* Panel 2: Interactive Sandbox & Simulations generator */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-5 rounded-3xl shadow-soft flex flex-col justify-between space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-850 pb-3">
-                    <span className="p-1 px-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg text-[9.5px] font-black">
+                <div className="bg-white border border-slate-200/80 p-5 rounded-3xl shadow-xs flex flex-col justify-between space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <span className="p-1 px-2.5 bg-amber-50 text-amber-700 rounded-lg text-[9.5px] font-black">
                       {language === 'ar' ? 'بوابة المحاكاة ومراقبة الأداء' : 'Simulation Sandbox'}
                     </span>
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5 justify-end">
+                    <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5 justify-end">
                       <span>{language === 'ar' ? 'مركز محاكاة المبيعات وأتمتة الـ Leads' : 'Sales Simulation Sandbox'}</span>
                       <Activity size={14} className="text-amber-500" />
                     </h4>
                   </div>
 
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed text-right">
+                  <p className="text-[10px] text-slate-500 leading-relaxed text-right">
                     {language === 'ar' 
                       ? 'وفر عناء تعبئة النماذج اليدوية لتجربة اللوحة! قم بتوليد سيناريوهات نمو فوري لقطاع الخدمات والنقل والخدمات البيئية بضغطة زر واحدة لمطابقة البيانات وتحليل الأداء.' 
                       : 'Generate realistic high-profile leads immediately to test analytics graphs, status progression, and cloud operations.'}
@@ -2619,7 +2619,7 @@ export function MarketingAdmin({
                     <button
                       type="button"
                       onClick={handleSimulateSaudiLeads}
-                      className="p-2.5 hover:-translate-y-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 dark:border-slate-850 dark:bg-slate-950 hover:border-indigo-200 dark:hover:bg-indigo-950/20 rounded-xl text-[10.5px] text-indigo-700 dark:text-indigo-300 font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      className="p-2.5 hover:-translate-y-0.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-xl text-[10.5px] text-indigo-700 font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                       title="توليد ٥ صفقات فوري"
                     >
                       <Plus size={12} />
@@ -2630,7 +2630,7 @@ export function MarketingAdmin({
                     <button
                       type="button"
                       onClick={handleSimulateMajorWonLead}
-                      className="p-2.5 hover:-translate-y-0.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 dark:border-slate-850 dark:bg-slate-950 hover:border-emerald-200 dark:hover:bg-emerald-950/20 rounded-xl text-[10.5px] text-emerald-700 dark:text-emerald-400 font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      className="p-2.5 hover:-translate-y-0.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-xl text-[10.5px] text-emerald-700 font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                       title="محاكاة عقد كود فائز رابح"
                     >
                       <Award size={12} />
@@ -2639,11 +2639,11 @@ export function MarketingAdmin({
                   </div>
 
                   {/* Clean up action */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-850 text-[9.5px]">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[9.5px]">
                     <button
                       type="button"
                       onClick={handleClearSimulatedLeads}
-                      className="text-rose-500 hover:text-rose-600 font-extrabold flex items-center gap-1 cursor-pointer"
+                      className="text-rose-600 hover:text-rose-700 font-extrabold flex items-center gap-1 cursor-pointer"
                       title="مسح الاشتراكات المحاكية"
                     >
                       <Trash2 size={11} />
@@ -2658,7 +2658,7 @@ export function MarketingAdmin({
               </div>
 
               {/* -------------------- SEARCH, FILTER, AND Bulk ACTIONS BAR -------------------- */}
-              <div className="bg-slate-50 dark:bg-slate-950/50 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl flex flex-col lg:flex-row gap-3 items-center justify-between select-none">
+              <div className="bg-slate-50/80 border border-slate-200/80 p-4 rounded-2xl flex flex-col lg:flex-row gap-3 items-center justify-between select-none">
                 
                 {/* Search & Filter Inputs combo */}
                 <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto text-right">
@@ -2673,12 +2673,12 @@ export function MarketingAdmin({
                       value={leadSearchQuery}
                       onChange={(e) => setLeadSearchQuery(e.target.value)}
                       placeholder={language === 'ar' ? 'البحث بالاسم، الشركة، الجوال، البريد، المنطقة...' : 'Search Name, Company, Email, Phone...'}
-                      className="w-full text-right p-2.5 pr-9 bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 focus:border-indigo-501 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800 dark:text-slate-100"
+                      className="w-full text-right p-2.5 pr-9 bg-white border border-slate-200 focus:border-indigo-500 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800"
                     />
                     {leadSearchQuery && (
                       <button
                         onClick={() => setLeadSearchQuery('')}
-                        className="absolute inset-y-0 left-3 flex items-center text-[10px] font-bold text-slate-400 hover:text-slate-650 transition-all cursor-pointer"
+                        className="absolute inset-y-0 left-3 flex items-center text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-all cursor-pointer"
                       >
                         مسح
                       </button>
@@ -2693,7 +2693,7 @@ export function MarketingAdmin({
                     <select
                       value={leadStatusFilter}
                       onChange={(e: any) => setLeadStatusFilter(e.target.value)}
-                      className="text-right p-2.5 pr-8 pl-8 bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 outline-none rounded-xl text-xs text-slate-700 dark:text-slate-300 cursor-pointer appearance-none min-w-[140px] font-black"
+                      className="text-right p-2.5 pr-8 pl-8 bg-white border border-slate-200 outline-none rounded-xl text-xs text-slate-700 cursor-pointer appearance-none min-w-[140px] font-black"
                     >
                       <option value="all">{language === 'ar' ? 'فلترة بكافة الحالات' : 'All Statuses'}</option>
                       <option value="new">{language === 'ar' ? 'جديدة (انتظار)' : 'New Leads'}</option>
@@ -2715,7 +2715,7 @@ export function MarketingAdmin({
                   <button
                     type="button"
                     onClick={exportLeadsToCsv}
-                    className="p-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-705 text-slate-700 dark:text-slate-300 font-black text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer select-none"
+                    className="p-2 px-3 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-black text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer select-none"
                   >
                     <Download size={13} />
                     <span>{language === 'ar' ? 'تصدير إكسل CSV' : 'Export Excel'}</span>
@@ -2725,7 +2725,7 @@ export function MarketingAdmin({
                   <button
                     type="button"
                     onClick={() => setShowAddLeadModal(true)}
-                    className="p-2 px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-soft select-none white-space-nowrap"
+                    className="p-2 px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-xs select-none white-space-nowrap"
                   >
                     <Plus size={14} />
                     <span>{language === 'ar' ? 'إضافة عميل مبيعات يدوياً' : 'Add Manual Deal'}</span>
@@ -2736,20 +2736,20 @@ export function MarketingAdmin({
               </div>
 
               {/* -------------------- MAIN DATA TABLE / CARDS LIST -------------------- */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl overflow-hidden shadow-soft">
-                <div className="p-5 border-b border-slate-100 dark:border-slate-850/60 bg-slate-50 dark:bg-slate-950/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-right select-none">
+              <div className="bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-xs">
+                <div className="p-5 border-b border-slate-100 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-right select-none">
                   <div>
-                    <h3 className="text-xs font-black text-slate-900 dark:text-white">قائمة الاشتراكات وتوجيه صفقات الهبوط</h3>
-                    <p className="text-[10px] text-slate-400 mt-0.5">انقر على أي كرت لتحليل كامل تفاصيل التواصل مع العميل، وإتمام التفعيل والتعميد السحابي للأسطول.</p>
+                    <h3 className="text-xs font-black text-slate-900">قائمة الاشتراكات وتوجيه صفقات الهبوط</h3>
+                    <p className="text-[10px] text-slate-500 mt-0.5">انقر على أي كرت لتحليل كامل تفاصيل التواصل مع العميل، وإتمام التفعيل والتعميد السحابي للأسطول.</p>
                   </div>
-                  <span className="p-1 px-2.5 bg-indigo-100/50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 rounded-xl text-[10px] font-black font-mono">
+                  <span className="p-1 px-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black font-mono border border-indigo-100">
                     {filteredLeads.length} Matches Found
                   </span>
                 </div>
 
                 {filteredLeads.length === 0 ? (
-                  <div className="p-16 text-center text-slate-400 dark:text-slate-505 text-xs font-semibold space-y-1.5">
-                    <Users size={28} className="mx-auto text-slate-300 dark:text-slate-700 block mb-1" />
+                  <div className="p-16 text-center text-slate-400 text-xs font-semibold space-y-1.5">
+                    <Users size={28} className="mx-auto text-slate-300 block mb-1" />
                     <p>{language === 'ar' ? 'لا توجد نتائج مطابقة لبحثك الجاري.' : 'No matching pipeline leads found.'}</p>
                     <button
                       onClick={() => { setLeadSearchQuery(''); setLeadStatusFilter('all'); }}
@@ -2759,45 +2759,45 @@ export function MarketingAdmin({
                     </button>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto divide-y divide-slate-100 dark:divide-slate-850 font-sans text-right">
+                  <div className="overflow-x-auto divide-y divide-slate-100 font-sans text-right">
                     {filteredLeads.map((l, idx) => (
                       <div 
                         key={l?.id || `lead-row-${idx}`} 
-                        className={`p-5 hover:bg-slate-50/70 dark:hover:bg-slate-850/30 transition-all grid grid-cols-1 md:grid-cols-12 gap-4 items-center group cursor-pointer ${
-                          selectedLeadForDetail?.id === l.id ? 'bg-indigo-50/15 dark:bg-indigo-950/15 border-r-4 border-indigo-500' : ''
+                        className={`p-5 hover:bg-slate-50/80 transition-all grid grid-cols-1 md:grid-cols-12 gap-4 items-center group cursor-pointer ${
+                          selectedLeadForDetail?.id === l.id ? 'bg-indigo-50/30 border-r-4 border-indigo-500' : ''
                         }`}
                       >
                         {/* Name & Contact Info */}
                         <div className="md:col-span-3 space-y-1.5" onClick={() => setSelectedLeadForDetail(l)}>
                           <div className="flex items-center gap-1.5 justify-end">
-                            <span className="text-[12px] font-black text-slate-850 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{l.name}</span>
-                            <span className="p-1 px-1.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono text-[8px]">
+                            <span className="text-[12px] font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{l.name}</span>
+                            <span className="p-1 px-1.5 rounded-md bg-slate-100 text-slate-600 font-mono text-[8px]">
                               {l?.id ? String(l.id).slice(0, 8) : 'LEAD'}
                             </span>
                           </div>
-                          <div className="space-y-1 text-[10.5px] text-slate-500 dark:text-slate-450 select-all font-mono leading-relaxed">
+                          <div className="space-y-1 text-[10.5px] text-slate-500 select-all font-mono leading-relaxed">
                             <div className="flex items-center justify-end gap-1.5">
                               <span>{l.phone}</span>
-                              <Phone size={10} className="text-slate-450 shrink-0" />
+                              <Phone size={10} className="text-slate-400 shrink-0" />
                             </div>
                             <div className="flex items-center justify-end gap-1.5">
                               <span>{l.email}</span>
-                              <Mail size={10} className="text-slate-450 shrink-0" />
+                              <Mail size={10} className="text-slate-400 shrink-0" />
                             </div>
                           </div>
                         </div>
 
                         {/* Company & Location */}
                         <div className="md:col-span-3 space-y-1.5" onClick={() => setSelectedLeadForDetail(l)}>
-                          <div className="flex items-center gap-1.5 justify-end text-slate-800 dark:text-slate-205">
+                          <div className="flex items-center gap-1.5 justify-end text-slate-800">
                             <span className="text-[12px] font-black">{l.company}</span>
-                            <Building2 size={12} className="text-indigo-500 shrink-0" />
+                            <Building2 size={12} className="text-indigo-600 shrink-0" />
                           </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5">
+                          <div className="text-[11px] text-slate-500 space-y-0.5">
                             <p>{l.province} • {l.country}</p>
-                            <p className="font-sans font-bold text-slate-655 dark:text-slate-300">
+                            <p className="font-sans font-bold text-slate-600">
                               {language === 'ar' ? 'حجم الأسطول المقدر:' : 'Fleet Size:'}{' '}
-                              <span className="text-indigo-650 dark:text-indigo-400 font-mono font-black">{l.fleetSize} {language === 'ar' ? 'سيارة' : 'units'}</span>
+                              <span className="text-indigo-600 font-mono font-black">{l.fleetSize} {language === 'ar' ? 'سيارة' : 'units'}</span>
                             </p>
                           </div>
                         </div>
@@ -2809,7 +2809,7 @@ export function MarketingAdmin({
                             value={l.notes || ''}
                             onChange={(e) => updateLeadNotes(l.id, e.target.value)}
                             placeholder={language === 'ar' ? 'اكتب تدوينة، كإشعار العقد أو تاريخ التواصل القادم...' : 'Write team follow up logs...'}
-                            className="w-full p-2 h-12 text-[10px] rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:border-indigo-501 text-slate-700 dark:text-slate-205 leading-snug"
+                            className="w-full p-2 h-12 text-[10px] rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-indigo-500 text-slate-800 leading-snug"
                           />
                         </div>
 
@@ -2826,7 +2826,7 @@ export function MarketingAdmin({
                           <div className="flex gap-1 flex-wrap justify-end">
                             <button
                               onClick={() => setSelectedLeadForDetail(l)}
-                              className="p-1 px-1.5 bg-indigo-55 bg-indigo-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-705 text-indigo-700 dark:text-slate-200 rounded-lg text-[9px] font-black cursor-pointer transition-all flex items-center gap-1 border border-indigo-100/30"
+                              className="p-1 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[9.5px] font-black cursor-pointer transition-all flex items-center gap-1 border border-indigo-100"
                               title="تحليل ملف العميل ومتابعة التواصل"
                             >
                               <Eye size={10} />
@@ -2835,7 +2835,7 @@ export function MarketingAdmin({
                             <button
                               type="button"
                               onClick={() => deleteLead(l.id)}
-                              className="p-1 px-1.5 bg-slate-100 hover:bg-rose-600 dark:bg-slate-800 hover:text-white text-slate-500 dark:text-slate-400 rounded-lg text-[9px] font-bold cursor-pointer transition-all border border-transparent"
+                              className="p-1 px-1.5 bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 rounded-lg text-[9px] font-bold cursor-pointer transition-all border border-transparent"
                               title="حذف الطلب نهائياً"
                             >
                               <Trash2 size={10} />
@@ -2851,24 +2851,24 @@ export function MarketingAdmin({
               {/* -------------------- MODAL: MANUALLY ADD TEAM LEAD -------------------- */}
               <AnimatePresence>
                 {showAddLeadModal && (
-                  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 overflow-y-auto">
+                  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95, y: 15 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                      className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl text-right font-sans"
+                      className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl text-right font-sans"
                     >
-                      <div className="p-4 px-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between">
+                      <div className="p-4 px-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                         <button
                           type="button"
                           onClick={() => setShowAddLeadModal(false)}
-                          className="p-1.5 text-slate-400 hover:text-slate-650 dark:hover:text-slate-100 rounded-lg text-xs font-bold cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg text-xs font-bold cursor-pointer"
                         >
                           ✕
                         </button>
-                        <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
                           <span>إضافة صفقة مبيعات / عميل مهتم بـ SaaS</span>
-                          <Users size={14} className="text-indigo-500" />
+                          <Users size={14} className="text-indigo-600" />
                         </h4>
                       </div>
 
@@ -2877,74 +2877,74 @@ export function MarketingAdmin({
                           
                           {/* Name Input */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">اسم الشخص المسؤول *</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">اسم الشخص المسؤول *</label>
                             <input
                               type="text"
                               required
                               placeholder="مثال: أ. فيصل الغامدي"
                               value={newLeadForm.name}
                               onChange={(e) => setNewLeadForm({ ...newLeadForm, name: e.target.value })}
-                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800"
                             />
                           </div>
 
                           {/* Company Input */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">اسم الشركة / الجهة *</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">اسم الشركة / الجهة *</label>
                             <input
                               type="text"
                               required
                               placeholder="مثال: شركة غامدي لنقل البترول"
                               value={newLeadForm.company}
                               onChange={(e) => setNewLeadForm({ ...newLeadForm, company: e.target.value })}
-                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800"
                             />
                           </div>
 
                           {/* Email */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">البريد الإلكتروني الرسمي</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">البريد الإلكتروني الرسمي</label>
                             <input
                               type="email"
                               placeholder="f.ghandi@ghandigroup.com"
                               value={newLeadForm.email}
                               onChange={(e) => setNewLeadForm({ ...newLeadForm, email: e.target.value })}
-                              className="w-full text-left p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none direction-ltr placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-left p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none direction-ltr placeholder-slate-400 text-slate-800"
                             />
                           </div>
 
                           {/* Phone */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">جوال الاتصال للتواصل *</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">جوال الاتصال للتواصل *</label>
                             <input
                               type="text"
                               required
                               placeholder="+966 54 112 0000"
                               value={newLeadForm.phone}
                               onChange={(e) => setNewLeadForm({ ...newLeadForm, phone: e.target.value })}
-                              className="w-full text-left p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none direction-ltr placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-left p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none direction-ltr placeholder-slate-400 text-slate-800"
                             />
                           </div>
 
                           {/* Fleet Size */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">حجم الأسطول المتوقع (معدة وشاحنة)</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">حجم الأسطول المتوقع (معدة وشاحنة)</label>
                             <input
                               type="number"
                               placeholder="25"
                               value={newLeadForm.fleetSize}
                               onChange={(e) => setNewLeadForm({ ...newLeadForm, fleetSize: Number(e.target.value) || 12 })}
-                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800"
                             />
                           </div>
 
                           {/* Province */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">المنطقة الجغرافية للفرع</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">المنطقة الجغرافية للفرع</label>
                             <select
                               value={newLeadForm.province}
                               onChange={(e) => setNewLeadForm({ ...newLeadForm, province: e.target.value })}
-                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none text-slate-700 dark:text-slate-100"
+                              className="w-full text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none text-slate-800"
                             >
                               <option value="المنطقة الشرقية">المنطقة الشرقية (الدمام والجبيل)</option>
                               <option value="المنطقة الوسطى">المنطقة الوسطى (الرياض)</option>
@@ -2958,12 +2958,12 @@ export function MarketingAdmin({
 
                         {/* Status Select */}
                         <div className="space-y-1">
-                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">حالة الصفقة المبدئية</label>
+                          <label className="text-[10.5px] font-black text-slate-700 block">حالة الصفقة المبدئية</label>
                           <div className="grid grid-cols-3 gap-2 select-none">
                             {[
-                              { id: 'new', label: 'جديدة / انتظار', color: 'border-indigo-200 text-indigo-700 bg-indigo-50/10' },
-                              { id: 'contacted', label: 'جاري التواصل', color: 'border-amber-200 text-amber-655 bg-amber-50/10' },
-                              { id: 'won', label: 'مقبول / تعميد', color: 'border-emerald-200 text-emerald-700 bg-emerald-50/10' }
+                              { id: 'new', label: 'جديدة / انتظار', color: 'border-indigo-200 text-indigo-700 bg-indigo-50/30' },
+                              { id: 'contacted', label: 'جاري التواصل', color: 'border-amber-200 text-amber-700 bg-amber-50/30' },
+                              { id: 'won', label: 'مقبول / تعميد', color: 'border-emerald-200 text-emerald-700 bg-emerald-50/30' }
                             ].map(st => (
                               <button
                                 key={st.id}
@@ -2971,8 +2971,8 @@ export function MarketingAdmin({
                                 onClick={() => setNewLeadForm({ ...newLeadForm, status: st.id as any })}
                                 className={`p-2 rounded-xl text-[10px] font-black border text-center transition-all cursor-pointer ${
                                   newLeadForm.status === st.id 
-                                    ? 'border-indigo-600 bg-indigo-650 text-white shadow-soft' 
-                                    : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:text-slate-350'
+                                    ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs' 
+                                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                                 }`}
                               >
                                 {st.label}
@@ -2983,16 +2983,16 @@ export function MarketingAdmin({
 
                         {/* Note area */}
                         <div className="space-y-1">
-                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">مذكرة وخلفية الصفقة المبيعية</label>
+                          <label className="text-[10.5px] font-black text-slate-700 block">مذكرة وخلفية الصفقة المبيعية</label>
                           <textarea
                             placeholder="تدوين أي مباحثات تمت مع العميل هاتفياً، تفضيلات الصيانة الفنية، المتطلبات الخاصة..."
                             value={newLeadForm.notes}
                             onChange={(e) => setNewLeadForm({ ...newLeadForm, notes: e.target.value })}
-                            className="w-full h-16 text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none text-slate-700 dark:text-slate-100 placeholder-slate-405"
+                            className="w-full h-16 text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none text-slate-800 placeholder-slate-400"
                           />
                         </div>
 
-                        <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                           <button
                             type="button"
                             onClick={() => setShowAddLeadModal(false)}
@@ -3002,7 +3002,7 @@ export function MarketingAdmin({
                           </button>
                           <button
                             type="submit"
-                            className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer"
+                            className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer shadow-xs"
                           >
                             حفظ وتسجيل الصفقة
                           </button>
@@ -3016,61 +3016,61 @@ export function MarketingAdmin({
               {/* -------------------- MODAL / DRAWER: SUBSCRIBER DETAILED FOLLOW-UP HUB & LIVE PROVISIONING -------------------- */}
               <AnimatePresence>
                 {selectedLeadForDetail && (
-                  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 overflow-y-auto">
+                  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95, y: 30 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                      className="bg-slate-55 dark:bg-[#0c0f16] border border-slate-150 dark:border-slate-800 bg-slate-50 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl text-right font-sans flex flex-col max-h-[85vh]"
+                      className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl text-right font-sans flex flex-col max-h-[85vh]"
                     >
                       {/* Header */}
-                      <div className="p-4 px-6 border-b border-slate-150 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0 select-none">
+                      <div className="p-4 px-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between shrink-0 select-none">
                         <button
                           type="button"
                           onClick={() => { setSelectedLeadForDetail(null); setProvisionSuccessInfo(null); }}
-                          className="p-1.5 text-slate-400 hover:text-slate-650 dark:hover:text-slate-100 rounded-lg text-xs font-bold cursor-pointer"
+                          className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                         >
                           ✕ إغلاق الملف
                         </button>
                         <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-black text-slate-900 dark:text-white">
-                            ملف متابعة العميل: <span className="text-indigo-600 dark:text-indigo-450">{selectedLeadForDetail.company}</span>
+                          <h4 className="text-xs font-black text-slate-900">
+                            ملف متابعة العميل: <span className="text-indigo-600 font-extrabold">{selectedLeadForDetail.company}</span>
                           </h4>
-                          <span className="p-1.5 bg-indigo-500/10 text-indigo-400 rounded-lg">
+                          <span className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">
                             <Briefcase size={13} />
                           </span>
                         </div>
                       </div>
 
                       {/* Split Panel Body */}
-                      <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+                      <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50/50">
                         
                         {/* LEFT COLUMN: Comm Activity Logs & Add FollowUp Note (5 Cols) */}
                         <div className="md:col-span-5 flex flex-col gap-4">
                           
                           {/* Log Follow-up Form */}
-                          <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-4 rounded-2xl shadow-soft space-y-3">
-                            <h5 className="text-[11px] font-black text-slate-800 dark:text-slate-200 flex items-center justify-end gap-1.5">
+                          <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs space-y-3">
+                            <h5 className="text-[11px] font-black text-slate-900 flex items-center justify-end gap-1.5">
                               <span>تسجيل مكالمة أو إجراء متابعة فنية</span>
-                              <PenTool size={11} className="text-indigo-500" />
+                              <PenTool size={11} className="text-indigo-600" />
                             </h5>
                             
                             <div className="space-y-2.5 text-right">
                               {/* Log Type presets */}
                               <div className="flex gap-1.5 justify-end text-[10px] select-none">
                                 {[
-                                  { type: 'call', label: 'اتصال هاتف', color: 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-205' },
-                                  { type: 'email', label: 'بريد إلكتروني', color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-205' },
-                                  { type: 'meeting', label: 'اجتماع عمل', color: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-205' },
-                                  { type: 'offer', label: 'تقديم عرض مالي', color: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-205' }
+                                  { type: 'call', label: 'اتصال هاتف', color: 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200' },
+                                  { type: 'email', label: 'بريد إلكتروني', color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200' },
+                                  { type: 'meeting', label: 'اجتماع عمل', color: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200' },
+                                  { type: 'offer', label: 'تقديم عرض مالي', color: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200' }
                                 ].map(p => (
                                   <button
                                     key={p.type}
                                     type="button"
                                     onClick={() => setNewLogType(p.type as any)}
-                                    className={`p-1 px-1.5 rounded-lg border text-[9.5px] font-bold cursor-pointer transition-all ${
+                                    className={`p-1 px-2 rounded-lg border text-[9.5px] font-bold cursor-pointer transition-all ${
                                       newLogType === p.type 
-                                        ? 'bg-slate-800 dark:bg-slate-700 text-white dark:text-white font-black scale-105 border-transparent' 
+                                        ? 'bg-slate-900 text-white font-black scale-105 border-transparent shadow-xs' 
                                         : `${p.color} border`
                                     }`}
                                   >
@@ -3080,16 +3080,16 @@ export function MarketingAdmin({
                               </div>
 
                               <textarea
-                                placeholder="اكتب في نقاط موضوع تواصلك: العميل مهتم بباقة الورش، يود اجتماع في فرجه بالجبيل، لديه ٣٠ شاحنة بحاجة لفحص..."
+                                placeholder="اكتب في نقاط موضوع تواصلك: العميل مهتم بباقة الورش، يود اجتماع في فرعه بالجبيل، لديه ٣٠ شاحنة بحاجة لفحص..."
                                 value={newLogNote}
                                 onChange={(e) => setNewLogNote(e.target.value)}
-                                className="w-full h-16 text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none text-slate-705 dark:text-slate-105"
+                                className="w-full h-16 text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none text-slate-800 placeholder-slate-400 focus:border-indigo-500 transition-colors"
                               />
 
                               <button
                                 type="button"
                                 onClick={() => addCommunicationLog(selectedLeadForDetail.id)}
-                                className="w-full p-2 bg-slate-800 hover:bg-slate-900 dark:bg-indigo-650 dark:hover:bg-indigo-700 text-white font-black text-[10.5px] rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                                className="w-full p-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10.5px] rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-xs"
                               >
                                 <Save size={12} />
                                 <span>إضافة تقرير المتابعة الحالية</span>
@@ -3098,28 +3098,28 @@ export function MarketingAdmin({
                           </div>
 
                           {/* Chronological Communication Timeline logs */}
-                          <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-4 rounded-2xl shadow-soft flex-1 flex flex-col min-h-[160px]">
-                            <h5 className="text-[11px] font-black text-slate-800 dark:text-slate-200 block mb-3">{language === 'ar' ? 'سجل المباحثات والبيانات والـ Logs:' : 'CRM Touch Timeline:'}</h5>
+                          <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs flex-1 flex flex-col min-h-[160px]">
+                            <h5 className="text-[11px] font-black text-slate-900 block mb-3">{language === 'ar' ? 'سجل المباحثات والبيانات والـ Logs:' : 'CRM Touch Timeline:'}</h5>
                             
                             <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 max-h-[220px]">
                               {(!selectedLeadForDetail.communicationLogs || selectedLeadForDetail.communicationLogs.length === 0) ? (
                                 <p className="text-[10px] text-slate-400 text-center py-8">{language === 'ar' ? 'لم يسجل لهذا العميل جهات متابعة حتى الآن.' : 'No communication logs logged.'}</p>
                               ) : (
                                 (selectedLeadForDetail.communicationLogs as any[]).map((log, idx) => (
-                                  <div key={log.id || idx} className="flex gap-2.5 items-start text-xs border-r border-slate-100 dark:border-slate-850 pr-2 pt-0.5 relative">
+                                  <div key={log.id || idx} className="flex gap-2.5 items-start text-xs border-r-2 border-slate-200 pr-2.5 pt-0.5 relative">
                                     {/* bullet icon depending on log type */}
-                                    <div className="p-1 rounded-md bg-slate-50 dark:bg-slate-950 shrink-0 border border-slate-100 dark:border-slate-850">
-                                      {log.type === 'call' && <Phone size={10} className="text-amber-500" />}
-                                      {log.type === 'email' && <Mail size={10} className="text-blue-500" />}
-                                      {log.type === 'meeting' && <Users size={10} className="text-indigo-500" />}
-                                      {log.type === 'offer' && <Award size={10} className="text-emerald-500" />}
+                                    <div className="p-1 rounded-md bg-slate-100 shrink-0 border border-slate-200">
+                                      {log.type === 'call' && <Phone size={10} className="text-amber-600" />}
+                                      {log.type === 'email' && <Mail size={10} className="text-blue-600" />}
+                                      {log.type === 'meeting' && <Users size={10} className="text-indigo-600" />}
+                                      {log.type === 'offer' && <Award size={10} className="text-emerald-600" />}
                                     </div>
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-[9.5px] font-bold text-slate-400">{log.date}</span>
-                                        <span className="p-0.5 px-1 rounded-md bg-slate-50 dark:bg-slate-950 font-mono text-[8px] text-slate-400 border border-slate-100 dark:border-slate-850">{log.agent || 'سيستم'}</span>
+                                        <span className="p-0.5 px-1.5 rounded-md bg-slate-100 font-mono text-[8.5px] text-slate-600 border border-slate-200">{log.agent || 'سيستم'}</span>
                                       </div>
-                                      <p className="text-[10px] text-slate-650 dark:text-slate-300 leading-normal font-medium">{log.note}</p>
+                                      <p className="text-[10.5px] text-slate-700 leading-normal font-medium">{log.note}</p>
                                     </div>
                                   </div>
                                 ))
@@ -3133,39 +3133,39 @@ export function MarketingAdmin({
                         <div className="md:col-span-7 flex flex-col gap-4">
                           
                           {/* Client Profile Card */}
-                          <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 p-5 rounded-2xl shadow-soft space-y-3.5">
-                            <h5 className="text-[11px] font-black text-slate-850 dark:text-slate-100 border-b border-slate-100 dark:border-slate-850 pb-2">{language === 'ar' ? 'البطاقة الفنية للشركة' : 'Business Card Context'}</h5>
+                          <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-xs space-y-3.5">
+                            <h5 className="text-[11px] font-black text-slate-900 border-b border-slate-100 pb-2">{language === 'ar' ? 'البطاقة الفنية للشركة' : 'Business Card Context'}</h5>
                             
-                            <div className="grid grid-cols-2 gap-x-2 gap-y-3 test-xs leading-normal">
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-3 text-xs leading-normal">
                               <div>
-                                <span className="text-[9px] text-slate-400 block font-bold">اسم العميل والمسؤول</span>
-                                <span className="text-[11px] font-black text-slate-700 dark:text-slate-205">{selectedLeadForDetail.name}</span>
+                                <span className="text-[9.5px] text-slate-400 block font-bold">اسم العميل والمسؤول</span>
+                                <span className="text-[11px] font-black text-slate-900">{selectedLeadForDetail.name}</span>
                               </div>
                               <div>
-                                <span className="text-[9px] text-slate-400 block font-bold">الجهة / المؤسسة</span>
-                                <span className="text-[11px] font-black text-slate-705 dark:text-slate-200">{selectedLeadForDetail.company}</span>
+                                <span className="text-[9.5px] text-slate-400 block font-bold">الجهة / المؤسسة</span>
+                                <span className="text-[11px] font-black text-slate-900">{selectedLeadForDetail.company}</span>
                               </div>
                               <div>
-                                <span className="text-[9px] text-slate-400 block font-bold block mb-0.5">البريد الإلكتروني للاتصال</span>
-                                <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300 select-all">{selectedLeadForDetail.email}</span>
+                                <span className="text-[9.5px] text-slate-400 block font-bold mb-0.5">البريد الإلكتروني للاتصال</span>
+                                <span className="text-[11px] font-mono text-slate-700 select-all font-semibold">{selectedLeadForDetail.email}</span>
                               </div>
                               <div>
-                                <span className="text-[9px] text-slate-400 block font-bold block mb-0.5">جوال التواصل الفني</span>
-                                <span className="text-[11px] font-mono text-slate-705 dark:text-slate-200 select-all">{selectedLeadForDetail.phone}</span>
+                                <span className="text-[9.5px] text-slate-400 block font-bold mb-0.5">جوال التواصل الفني</span>
+                                <span className="text-[11px] font-mono text-slate-700 select-all font-semibold">{selectedLeadForDetail.phone}</span>
                               </div>
                               <div>
-                                <span className="text-[9px] text-slate-400 block font-bold">الأسطول التقديري للمقارنة</span>
-                                <span className="text-[11px] font-bold text-indigo-600 font-mono">{selectedLeadForDetail.fleetSize} شاحنة ومعدة</span>
+                                <span className="text-[9.5px] text-slate-400 block font-bold">الأسطول التقديري للمقارنة</span>
+                                <span className="text-[11px] font-black text-indigo-600 font-mono">{selectedLeadForDetail.fleetSize} شاحنة ومعدة</span>
                               </div>
                               <div>
-                                <span className="text-[9px] text-slate-400 block font-bold">موقع المقر</span>
-                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-350">{selectedLeadForDetail.province}، {selectedLeadForDetail.country}</span>
+                                <span className="text-[9.5px] text-slate-400 block font-bold">موقع المقر</span>
+                                <span className="text-[11px] font-bold text-slate-700">{selectedLeadForDetail.province}، {selectedLeadForDetail.country}</span>
                               </div>
                             </div>
                           </div>
 
                           {/* Interactive SaaS Provisioning Engine panel */}
-                          <div className="bg-indigo-900 border border-indigo-950 text-white rounded-2xl p-5 shadow-inner space-y-4 relative overflow-hidden flex-1 flex flex-col justify-between">
+                          <div className="bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-950 border border-indigo-800 text-white rounded-2xl p-5 shadow-md space-y-4 relative overflow-hidden flex-1 flex flex-col justify-between">
                             
                             {/* Abstract glowing background layout */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full filter blur-[50px] opacity-20 pointer-events-none" />
@@ -3176,7 +3176,7 @@ export function MarketingAdmin({
                                 <span>محرك تفعيل وتدشين اشتراكات الـ SaaS</span>
                                 <Zap size={13} className="text-amber-400" />
                               </h5>
-                              <p className="text-[9.5px] text-slate-300 leading-relaxed">
+                              <p className="text-[9.5px] text-indigo-200 leading-relaxed">
                                 {language === 'ar' 
                                   ? 'صلاحيات هذا المحرك تحكم إطلاق النظام الإلكتروني للعميل بشكل فوري. عند الضغط على زر التفعيل السحابي، يتم تمثيل تشغيل قاعدة بيانات ومستودعات عجلات الأسطول وحجز الموارد ومساحة الإذن السحابية المخصصة لأوامر العمل.'
                                   : 'Provision isolated tenant environment with localized maintenance tables, mechanic credentials, and custom metrics.'}
@@ -3187,10 +3187,10 @@ export function MarketingAdmin({
                             <div className="space-y-3 z-10 font-sans">
                               {/* If already has provisioned specs, show database credentials */}
                               {selectedLeadForDetail.provisionedDetails ? (
-                                <div className="p-3 bg-slate-950/80 rounded-xl border border-indigo-400/10 space-y-2 font-mono text-[9.5px]">
-                                  <div className="flex items-center justify-between border-b border-slate-900 pb-1.5 text-right font-sans mb-1.5">
-                                    <span className="p-0.5 px-2 bg-emerald-100 text-emerald-750 text-[8px] rounded-md font-extrabold">✓ ACTIVE</span>
-                                    <span className="text-slate-400 font-extrabold">{language === 'ar' ? 'تفاصيل ترخيص المنصة:' : 'Provisioned SaaS Specs:'}</span>
+                                <div className="p-3 bg-slate-950/80 rounded-xl border border-indigo-400/20 space-y-2 font-mono text-[9.5px]">
+                                  <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 text-right font-sans mb-1.5">
+                                    <span className="p-0.5 px-2 bg-emerald-500/20 text-emerald-300 text-[8px] rounded-md font-extrabold border border-emerald-500/30">✓ ACTIVE</span>
+                                    <span className="text-slate-300 font-extrabold">{language === 'ar' ? 'تفاصيل ترخيص المنصة:' : 'Provisioned SaaS Specs:'}</span>
                                   </div>
                                   <div className="flex justify-between gap-1 select-all hover:text-white transition-colors direction-ltr">
                                     <span className="text-emerald-400">{selectedLeadForDetail.provisionedDetails.assignedSubdomain}</span>
@@ -3208,7 +3208,7 @@ export function MarketingAdmin({
                                     <span className="text-white font-extrabold">{selectedLeadForDetail.provisionedDetails.subscriptionExpires}</span>
                                     <span className="text-slate-400">EXPIRES_AT:</span>
                                   </div>
-                                  <div className="pt-2 text-[9px] text-slate-405 text-right font-sans border-t border-slate-900/60 leading-normal">
+                                  <div className="pt-2 text-[9px] text-slate-300 text-right font-sans border-t border-slate-800/60 leading-normal">
                                     {language === 'ar' 
                                       ? 'تم إرسال بريد التثبيت التلقائي للعميل ورابط الدخول الخاص بفنيي الورش.'
                                       : 'Onboarding complete. Setup mail generated and dispatched through secure server SMTP.'}
@@ -3222,7 +3222,7 @@ export function MarketingAdmin({
                                       <label className="text-[9px] font-bold text-slate-300 block">باقة الاشتراك</label>
                                       <select
                                         id="provision-package-type"
-                                        className="w-full text-right p-1.5 bg-indigo-950/70 border border-indigo-805 rounded-lg text-[10px] text-white outline-none cursor-pointer"
+                                        className="w-full text-right p-1.5 bg-indigo-950/90 border border-indigo-700/60 rounded-lg text-[10px] text-white outline-none cursor-pointer"
                                       >
                                         <option value="pro">Pro Fleet Admin (٢٥ ريال/مركبة)</option>
                                         <option value="enterprise">Corporate Enterprise (٥٠ ريال/مركبة)</option>
@@ -3233,7 +3233,7 @@ export function MarketingAdmin({
                                       <label className="text-[9px] font-bold text-slate-300 block">فترة الترخيص الأولي</label>
                                       <select
                                         id="provision-license-months"
-                                        className="w-full text-right p-1.5 bg-indigo-950/70 border border-indigo-805 rounded-lg text-[10px] text-white outline-none cursor-pointer"
+                                        className="w-full text-right p-1.5 bg-indigo-950/90 border border-indigo-700/60 rounded-lg text-[10px] text-white outline-none cursor-pointer"
                                       >
                                         <option value="12">١٢ شهراً (سنة اشتراك مقدم)</option>
                                         <option value="24">٢٤ شهراً (سنتين)</option>
@@ -3252,16 +3252,16 @@ export function MarketingAdmin({
                                       const mVal = mEl ? Number(mEl.value) : 12;
                                       simulateOnboardingProspect(selectedLeadForDetail, pVal, mVal);
                                     }}
-                                    className="w-full p-2.5 bg-white hover:bg-slate-100 text-indigo-900 disabled:opacity-50 font-black text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-md z-10"
+                                    className="w-full p-2.5 bg-white hover:bg-slate-100 text-indigo-950 disabled:opacity-50 font-black text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-md z-10"
                                   >
                                     {isProvisioning ? (
                                       <>
-                                        <span className="w-3.5 h-3.5 border-2 border-indigo-900 border-t-transparent rounded-full animate-spin" />
+                                        <span className="w-3.5 h-3.5 border-2 border-indigo-950 border-t-transparent rounded-full animate-spin" />
                                         <span>جاري فحص الموارد السحابية وبث الترخيص...</span>
                                       </>
                                     ) : (
                                       <>
-                                        <UserCheck size={14} className="text-indigo-900" />
+                                        <UserCheck size={14} className="text-indigo-950" />
                                         <span>تعميد عقد العميل وتفعيل المنصة السحابية</span>
                                       </>
                                     )}
@@ -3319,10 +3319,10 @@ export function MarketingAdmin({
             {/* MAIN ROBOTICS INTEGRATED PANEL GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start font-sans">
               
-              {/* LEFT NAVIGATION COLUMN: ROBOTS CATALOG (5 cols) */}
+              {/* LEFT NAVIGATION COLUMN: ROBOTS CATALOG (4 cols) */}
               <div className="lg:col-span-4 space-y-3.5">
-                <div className="bg-[#0B132B] border border-slate-800 p-4.5 rounded-3xl space-y-3 text-right">
-                  <h3 className="text-xs font-extrabold text-slate-200 flex items-center gap-2 justify-end">
+                <div className="bg-white border border-slate-200 p-4.5 rounded-3xl space-y-3 text-right shadow-xs">
+                  <h3 className="text-xs font-extrabold text-slate-800 flex items-center gap-2 justify-end">
                     <span>{language === 'ar' ? 'كتالوج معالجات الأوتوماتون' : 'Active Micro-Bots'}</span>
                     <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: brandPrimaryColor }} />
                   </h3>
@@ -3344,10 +3344,10 @@ export function MarketingAdmin({
                           key={bot?.id || `robot-${idx}`}
                           className={`p-3.5 rounded-2xl cursor-pointer transition-all border text-right relative group ${
                             isSelected 
-                              ? 'bg-slate-900' 
-                              : 'bg-transparent border-slate-800 hover:bg-slate-900/30'
+                              ? 'bg-slate-50 border-indigo-500 shadow-xs' 
+                              : 'bg-white border-slate-200 hover:bg-slate-50/80'
                           }`}
-                          style={isSelected ? { borderColor: brandPrimaryColor, boxShadow: `0 10px 15px -3px ${brandPrimaryColor}10` } : {}}
+                          style={isSelected ? { borderColor: brandPrimaryColor } : {}}
                           onClick={() => setSelectedRobotId(bot.id)}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -3356,10 +3356,10 @@ export function MarketingAdmin({
                               <button
                                 type="button"
                                 onClick={() => handleToggleRobotActive(bot.id)}
-                                className={`text-[9px] font-black p-1 px-2.5 rounded-lg border transition-all ${
+                                className={`text-[9px] font-black p-1 px-2.5 rounded-lg border transition-all cursor-pointer ${
                                   bot.isActive 
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                    : 'bg-slate-100 text-slate-500 border-slate-200'
                                 }`}
                               >
                                 {bot.isActive ? (language === 'ar' ? 'نشط' : 'Active') : (language === 'ar' ? 'معطل' : 'Paused')}
@@ -3369,7 +3369,7 @@ export function MarketingAdmin({
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteRobot(bot.id)}
-                                  className="p-1 px-1.5 text-slate-500 hover:text-rose-400 rounded transition-colors"
+                                  className="p-1 px-1.5 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
                                 >
                                   <Trash2 size={12} />
                                 </button>
@@ -3379,7 +3379,7 @@ export function MarketingAdmin({
                             {/* Bot Details */}
                             <div className="flex items-center gap-2.5 min-w-0 flex-1 justify-end">
                               <div className="text-right flex-1 min-w-0">
-                                <h4 className="text-[11px] font-black text-slate-100 truncate group-hover:text-brand-blue-450 transition-colors" style={isSelected ? { color: brandPrimaryColor } : {}}>
+                                <h4 className="text-[11px] font-black text-slate-900 truncate" style={isSelected ? { color: brandPrimaryColor } : {}}>
                                   {language === 'ar' ? bot.name : bot.nameEn}
                                 </h4>
                                 <span className="text-[9px] font-bold block mt-0.5 truncate uppercase" style={{ color: brandPrimaryColor }}>
@@ -3388,8 +3388,8 @@ export function MarketingAdmin({
                               </div>
                               <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
                                 bot.isActive 
-                                  ? '' 
-                                  : 'bg-slate-800 text-slate-500 border-slate-700'
+                                  ? 'bg-indigo-50 text-indigo-600 border-indigo-100' 
+                                  : 'bg-slate-100 text-slate-400 border-slate-200'
                               }`}
                               style={bot.isActive ? { backgroundColor: `${brandPrimaryColor}10`, color: brandPrimaryColor, borderColor: `${brandPrimaryColor}20` } : {}}
                               >
@@ -3409,30 +3409,30 @@ export function MarketingAdmin({
                 </div>
 
                 {/* Automation Quick Overview Card */}
-                <div className="bg-[#0B132B]/55 border border-slate-800/80 p-5 rounded-3xl text-right space-y-4">
-                  <h4 className="text-xs font-black text-slate-300">{language === 'ar' ? 'مؤشرات الأداء الكلية للمستودع' : 'Autonomous Performance Indicators'}</h4>
+                <div className="bg-white border border-slate-200 p-5 rounded-3xl text-right space-y-4 shadow-xs">
+                  <h4 className="text-xs font-black text-slate-800">{language === 'ar' ? 'مؤشرات الأداء الكلية للمستودع' : 'Autonomous Performance Indicators'}</h4>
                   <div className="grid grid-cols-2 gap-3 font-mono">
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl text-center">
+                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl text-center">
                       <span className="text-[8px] text-slate-500 font-extrabold block mb-1">{language === 'ar' ? 'إجمالي جولات الفحص' : 'Global Robo Runs'}</span>
-                      <strong className="text-base text-orange-400 font-extrabold block">
+                      <strong className="text-base text-amber-600 font-extrabold block">
                         {aiRobots.reduce((acc, b) => acc + b.stats.scansCount, 0)}
                       </strong>
                     </div>
-                    <div className="bg-slate-900 border border-slate-800 p-3 rounded-2xl text-center">
+                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl text-center">
                       <span className="text-[8px] text-slate-500 font-extrabold block mb-1">{language === 'ar' ? 'قرارات واجراءات مؤتمتة' : 'Decisions Triggered'}</span>
-                      <strong className="text-base text-emerald-400 font-extrabold block">
+                      <strong className="text-base text-emerald-600 font-extrabold block">
                         {aiRobots.reduce((acc, b) => acc + b.stats.actionsTaken, 0)}
                       </strong>
                     </div>
                   </div>
-                  <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 flex items-center justify-between text-right">
-                    <span className="text-[10px] text-slate-400 font-bold">{language === 'ar' ? 'معدل دقة الأتمتة الإجمالي' : 'Global Precision'}</span>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between text-right">
+                    <span className="text-[10px] text-slate-600 font-bold">{language === 'ar' ? 'معدل دقة الأتمتة الإجمالي' : 'Global Precision'}</span>
                     <strong className="text-xs font-extrabold font-mono" style={{ color: brandPrimaryColor }}>97.4%</strong>
                   </div>
                 </div>
               </div>
 
-              {/* RIGHT WORKBENCH COLUMN: WORK BENCH / TERMINAL LOGS / EMULATOR (7 cols) */}
+              {/* RIGHT WORKBENCH COLUMN: WORK BENCH / TERMINAL LOGS / EMULATOR (8 cols) */}
               <div className="lg:col-span-8">
                 {(() => {
                   const bot = aiRobots.find(b => b.id === selectedRobotId);
@@ -3450,12 +3450,12 @@ export function MarketingAdmin({
                   return (
                     <div className="space-y-6">
                       {/* Robo Focus Details Workbench */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl p-5 shadow-soft space-y-5 text-right">
+                      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-5 text-right">
                         {/* Upper Section */}
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                           <div className="flex items-center gap-3 w-full md:w-auto justify-end">
                             <div className="text-right">
-                              <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2 justify-end">
+                              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 justify-end">
                                 <span>{language === 'ar' ? bot.name : bot.nameEn}</span>
                                 <span className={`w-2 h-2 rounded-full ${bot.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                               </h3>
@@ -3472,10 +3472,10 @@ export function MarketingAdmin({
                             <button
                               type="button"
                               onClick={() => handleToggleRobotActive(bot.id)}
-                              className={`p-2 px-3.5 text-xs font-black rounded-xl cursor-pointer transition-all ${
+                              className={`p-2 px-3.5 text-xs font-black rounded-xl cursor-pointer transition-all border ${
                                 bot.isActive 
-                                  ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-450 border border-rose-200/50 dark:border-rose-900/30' 
-                                  : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/30'
+                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' 
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
                               }`}
                             >
                               {bot.isActive ? (language === 'ar' ? 'إيقاف مؤقت' : 'Pause Agent') : (language === 'ar' ? 'تفعيل الروبوت' : 'Resume Agent')}
@@ -3487,8 +3487,8 @@ export function MarketingAdmin({
                               onClick={() => handleSimulateRobotExecution(bot.id)}
                               className={`p-2 px-4 text-xs font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5 ${
                                 robotSimStatus.status !== 'idle' 
-                                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200' 
-                                  : 'text-white shadow-md hover:-translate-y-0.5'
+                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' 
+                                  : 'text-white shadow-xs hover:-translate-y-0.5'
                               }`}
                               style={robotSimStatus.status === 'idle' ? { backgroundColor: brandPrimaryColor, boxShadow: `0 4px 6px -1px ${brandPrimaryColor}20` } : {}}
                             >
@@ -3501,17 +3501,17 @@ export function MarketingAdmin({
                          {/* Description */}
                         <div>
                           <h4 className="text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">{language === 'ar' ? 'هدف ورسالة الروبوت الفنية' : 'Mission & Role Objective'}</h4>
-                          <p className="text-[12px] text-slate-600 dark:text-slate-300 leading-relaxed font-semibold font-sans">
+                          <p className="text-[12px] text-slate-700 leading-relaxed font-semibold font-sans">
                             {language === 'ar' ? bot.description : bot.descriptionEn}
                           </p>
                         </div>
 
                         {/* Special Custom Interactive Dashboard for System Integrity Agent */}
                         {bot.id === 'system-integrity' && (
-                          <div className="p-4 bg-gradient-to-br from-[#0e1628]/95 to-[#080d1a] border border-[#1e2a4a] rounded-2xl text-right space-y-4 shadow-md font-sans">
-                            <div className="flex items-center justify-between border-b border-[#1b253b] pb-2.5">
-                              <div className="flex items-center gap-1.5 font-mono text-[9px] text-[#22c55e]">
-                                <span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full animate-ping" />
+                          <div className="p-4 bg-gradient-to-br from-slate-900 to-indigo-950 border border-slate-800 rounded-2xl text-right space-y-4 shadow-md font-sans text-white">
+                            <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                              <div className="flex items-center gap-1.5 font-mono text-[9px] text-emerald-400">
+                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
                                 <span>100% ONLINE</span>
                               </div>
                               <h4 className="text-xs font-black text-white flex items-center gap-2">
@@ -3520,7 +3520,7 @@ export function MarketingAdmin({
                               </h4>
                             </div>
 
-                            <p className="text-[10px] text-slate-450 leading-relaxed max-w-xl">
+                            <p className="text-[10px] text-slate-300 leading-relaxed max-w-xl">
                               {language === 'ar'
                                 ? 'يقوم الوكيل الذكي بإنقاذ الكاش، فحص ريجسترات التخزين المحلي، واختبار الإتصال السحابي المباشر بقواعد بيانات Firestore وقياس زمن استجابة المنافذ الرقمية تذكرة الدعم والاتصال.'
                                 : 'Perform dynamic diagnostics on cloud tables, API endpoints, and clean local memory blocks.'}
@@ -3528,12 +3528,12 @@ export function MarketingAdmin({
 
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
                               {/* Remote AI Authorization Checkbox */}
-                              <label className="flex items-center gap-2.5 cursor-pointer select-none bg-[#131b2e] border border-[#202d4a] hover:border-indigo-505/50 p-2.5 rounded-xl transition-all w-full sm:w-auto text-right">
+                              <label className="flex items-center gap-2.5 cursor-pointer select-none bg-slate-800/80 border border-slate-700 hover:border-indigo-400 p-2.5 rounded-xl transition-all w-full sm:w-auto text-right">
                                 <input 
                                   type="checkbox"
                                   checked={isRemoteAuthAuthorized}
                                   onChange={handleToggleRemoteAuth}
-                                  className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-0 cursor-pointer shrink-0 accent-indigo-650"
+                                  className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-indigo-500 focus:ring-0 cursor-pointer shrink-0 accent-indigo-600"
                                 />
                                 <div className="text-right">
                                   <span className="text-[10.5px] font-black text-white block">
@@ -3554,7 +3554,7 @@ export function MarketingAdmin({
                                 onClick={() => handleSimulateRobotExecution('system-integrity')}
                                 className={`w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-black cursor-pointer shadow-md transition-all flex items-center justify-center gap-2 border ${
                                   robotSimStatus.status !== 'idle'
-                                    ? 'bg-[#1e2530] text-slate-500 border-transparent cursor-not-allowed'
+                                    ? 'bg-slate-800 text-slate-500 border-transparent cursor-not-allowed'
                                     : 'bg-emerald-600 hover:bg-emerald-700 border-emerald-500 text-white hover:scale-[1.015]'
                                 }`}
                               >
@@ -3566,17 +3566,17 @@ export function MarketingAdmin({
 
                         {/* Config Tab & Performance stats */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-850 text-right">
+                          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-right">
                             <span className="text-[8px] text-slate-400 block font-extrabold leading-none mb-1">{language === 'ar' ? 'عدد جولات الفحص' : 'Scans'}</span>
-                            <span className="text-sm font-black text-slate-800 dark:text-slate-200 font-mono leading-none">{bot.stats.scansCount}</span>
+                            <span className="text-sm font-black text-slate-800 font-mono leading-none">{bot.stats.scansCount}</span>
                           </div>
-                          <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-850 text-right">
+                          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-right">
                             <span className="text-[8px] text-slate-400 block font-extrabold leading-none mb-1">{language === 'ar' ? 'الإجراءات المؤتمتة الصادرة' : 'Actions Dispatched'}</span>
                             <span className="text-sm font-black font-mono leading-none" style={{ color: brandPrimaryColor }}>{bot.stats.actionsTaken}</span>
                           </div>
-                          <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-100 dark:border-slate-850 text-right">
+                          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-right">
                             <span className="text-[8px] text-slate-400 block font-extrabold leading-none mb-1">{language === 'ar' ? 'مؤشر كفاءة القرار' : 'Success Rate'}</span>
-                            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono leading-none">{bot.stats.efficiencyRating}</span>
+                            <span className="text-sm font-black text-emerald-600 font-mono leading-none">{bot.stats.efficiencyRating}</span>
                           </div>
                         </div>
 
@@ -3591,11 +3591,11 @@ export function MarketingAdmin({
                               rows={3}
                               defaultValue={bot.prompt}
                               onBlur={e => handleUpdateRobotPrompt(bot.id, e.target.value)}
-                              className="w-full bg-slate-50 dark:bg-slate-950/80 text-xs font-sans border border-slate-205 dark:border-slate-850 rounded-2xl p-3 text-right focus:outline-none focus:border-brand-blue-500 leading-relaxed text-slate-750 dark:text-slate-300"
+                              className="w-full bg-slate-50 focus:bg-white text-xs font-sans border border-slate-200 rounded-2xl p-3 text-right focus:outline-none focus:border-indigo-500 leading-relaxed text-slate-800 placeholder-slate-400 transition-colors"
                               placeholder={language === 'ar' ? 'اكتب تعليمات السلوك والهدف لهذا الروبوت البرمجى...' : 'Set the model directive...'}
                             />
                             <div className="absolute bottom-2.5 left-2.5">
-                              <span className="p-1 px-2 bg-slate-200 dark:bg-slate-800 text-slate-500 rounded text-[8px] font-black uppercase tracking-wider leading-none pointer-events-none">
+                              <span className="p-1 px-2 bg-slate-200 text-slate-600 rounded text-[8px] font-black uppercase tracking-wider leading-none pointer-events-none">
                                 {language === 'ar' ? 'يتم الحفظ تلقائياً' : 'Auto Saved'}
                               </span>
                             </div>
@@ -3604,15 +3604,15 @@ export function MarketingAdmin({
 
                         {/* SIMULATION VISUAL FEEDBACK BAR */}
                         {robotSimStatus.status !== 'idle' && robotSimStatus.robotId === bot.id && (
-                          <div className="bg-slate-50 dark:bg-slate-950 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-right space-y-3 animate-pulse">
+                          <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200 text-right space-y-3 animate-pulse">
                             <div className="flex items-center justify-between text-xs font-extrabold">
                               <span className="font-mono" style={{ color: brandPrimaryColor }}>{robotSimStatus.progress}%</span>
-                              <span className="text-slate-705 dark:text-slate-300 flex items-center gap-2">
+                              <span className="text-slate-800 flex items-center gap-2">
                                 <RefreshCw size={11.5} className="animate-spin" style={{ color: brandPrimaryColor }} />
                                 <span>{robotSimStatus.message}</span>
                               </span>
                             </div>
-                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                               <div 
                                 className="h-full rounded-full transition-all duration-300"
                                 style={{ width: `${robotSimStatus.progress}%`, backgroundColor: brandPrimaryColor }}
@@ -3628,37 +3628,36 @@ export function MarketingAdmin({
                               <button
                                 type="button"
                                 onClick={() => handleClearRobotLogs(bot.id)}
-                                className="p-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-450 text-[9.5px] font-black rounded-lg border border-slate-200/50 dark:border-slate-750/30 transition-colors cursor-pointer"
+                                className="p-1 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[9.5px] font-black rounded-lg border border-slate-200 transition-colors cursor-pointer"
                               >
                                 {language === 'ar' ? 'مسح سجل المخرجات' : 'Clear Terminal'}
                               </button>
                             </div>
-                            <h4 className="text-[10.5px] font-black text-slate-400 tracking-wider flex items-center gap-1.5 justify-end">
+                            <h4 className="text-[10.5px] font-black text-slate-500 tracking-wider flex items-center gap-1.5 justify-end">
                               <span>{language === 'ar' ? 'شاشة الرصد والتقارير الحية (Terminal)' : 'Live Agent Output Monitor'}</span>
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
                             </h4>
                           </div>
 
-                          <div className="bg-slate-950 text-slate-300 font-mono text-[10.5px] p-4 rounded-2xl border border-slate-850 h-[220px] overflow-y-auto space-y-2 px-4.5 text-right select-text text-right" style={{ direction: 'rtl' }}>
+                          <div className="bg-slate-950 text-slate-300 font-mono text-[10.5px] p-4 rounded-2xl border border-slate-800 h-[220px] overflow-y-auto space-y-2 px-4.5 text-right select-text shadow-inner" style={{ direction: 'rtl' }}>
                             {bot.logs && bot.logs.length > 0 ? (
                               bot.logs.map((logLine, idx) => {
-                                // Add beautiful color highlights based on brackets
                                 let logColor = 'text-slate-300';
                                 if (logLine.includes('[نظام]')) logColor = 'text-indigo-400';
                                 if (logLine.includes('[فحص]')) logColor = 'text-amber-400';
                                 if (logLine.includes('[تحديث]')) logColor = 'text-blue-400';
                                 if (logLine.includes('[تم]') || logLine.includes('[تأكيد]')) logColor = 'text-emerald-400 font-bold';
-                                if (logLine.includes('[أتمتة]') || logLine.includes('[صيانة]')) logColor = 'text-purple-405 font-medium';
-                                if (logLine.includes('[تواصل]')) logColor = 'text-sky-450';
+                                if (logLine.includes('[أتمتة]') || logLine.includes('[صيانة]')) logColor = 'text-purple-400 font-medium';
+                                if (logLine.includes('[تواصل]')) logColor = 'text-sky-400';
                                 if (logLine.includes('[تفتيش]')) logColor = 'text-yellow-400';
                                 if (logLine.includes('[تخزين]')) logColor = 'text-cyan-400';
                                 if (logLine.includes('[أمن]')) logColor = 'text-rose-400 font-semibold';
                                 if (logLine.includes('[مالي]')) logColor = 'text-emerald-400 font-black';
                                 if (logLine.includes('[ذكاء]')) logColor = 'text-fuchsia-400';
-                                if (logLine.includes('[توقع]')) logColor = 'text-indigo-450';
+                                if (logLine.includes('[توقع]')) logColor = 'text-indigo-400';
                                 if (logLine.includes('[توجيه]')) logColor = 'text-orange-400';
                                 if (logLine.includes('[استقبال]')) logColor = 'text-cyan-400';
-                                if (logLine.includes('[تأسيس]')) logColor = 'text-purple-500';
+                                if (logLine.includes('[تأسيس]')) logColor = 'text-purple-400';
 
                                 return (
                                   <div key={idx} className={`leading-relaxed tracking-wide ${logColor}`}>
@@ -3667,7 +3666,7 @@ export function MarketingAdmin({
                                 );
                               })
                             ) : (
-                              <div className="text-center text-slate-650 py-12 font-sans text-xs">
+                              <div className="text-center text-slate-500 py-12 font-sans text-xs">
                                 Ready to stream micro-bot signals.
                               </div>
                             )}
@@ -3685,22 +3684,22 @@ export function MarketingAdmin({
             {/* -------------------- MODAL: CREATE CUSTOM SMART ROBOT AGENT -------------------- */}
             <AnimatePresence>
               {showAddRobotModal && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 overflow-y-auto">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 15 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                    className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl text-right font-sans"
+                    className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl text-right font-sans"
                   >
-                    <div className="p-4 px-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between">
+                    <div className="p-4 px-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => setShowAddRobotModal(false)}
-                        className="p-1.5 text-slate-400 hover:text-slate-655 dark:hover:text-slate-100 rounded-lg text-xs font-bold cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                       >
                         ✕
                       </button>
-                      <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
                         <span>{language === 'ar' ? 'تصميم وإدراج روبوت ذكي جديد فى السحابة' : 'Configure New AI Robo Agent'}</span>
                         <Sparkles size={14} className="animate-spin duration-5000" style={{ color: brandPrimaryColor }} />
                       </h4>
@@ -3711,73 +3710,73 @@ export function MarketingAdmin({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                           {/* Name Ar */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'اسم الروبوت (بالعربية) *' : 'Agent Name (Arabic) *'}</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">{language === 'ar' ? 'اسم الروبوت (بالعربية) *' : 'Agent Name (Arabic) *'}</label>
                             <input
                               type="text"
                               required
                               placeholder="مثال: بوت تهنئة الأعياد والمناسبات"
                               value={newRobotForm.name}
                               onChange={(e) => setNewRobotForm({ ...newRobotForm, name: e.target.value })}
-                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800 transition-colors"
                             />
                           </div>
 
                           {/* Name En */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'اسم الروبوت (بالإنجليزية)' : 'Agent Name (English)'}</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">{language === 'ar' ? 'اسم الروبوت (بالإنجليزية)' : 'Agent Name (English)'}</label>
                             <input
                               type="text"
                               placeholder="e.g. Holidays Congratulator"
                               value={newRobotForm.nameEn}
                               onChange={(e) => setNewRobotForm({ ...newRobotForm, nameEn: e.target.value })}
-                              className="w-full text-left p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-left p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800 transition-colors"
                             />
                           </div>
                         </div>
 
                         {/* Description Ar */}
                         <div className="space-y-1">
-                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'الوصف ووظيفة الأوتوماتون (بالعربية) *' : 'Agent Objective (Arabic) *'}</label>
+                          <label className="text-[10.5px] font-black text-slate-700 block">{language === 'ar' ? 'الوصف ووظيفة الأوتوماتون (بالعربية) *' : 'Agent Objective (Arabic) *'}</label>
                           <textarea
                             rows={2}
                             required
                             placeholder="اشرح باختصار ووضوح: ماذا يفعل الروبوت ومتى يتدخل..."
                             value={newRobotForm.description}
                             onChange={(e) => setNewRobotForm({ ...newRobotForm, description: e.target.value })}
-                            className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                            className="w-full text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800 transition-colors"
                           />
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-right">
                           {/* Trigger event */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'الحدث المحفز (Trigger - بالعربية) *' : 'Trigger Event (Arabic) *'}</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">{language === 'ar' ? 'الحدث المحفز (Trigger - بالعربية) *' : 'Trigger Event (Arabic) *'}</label>
                             <input
                               type="text"
                               required
                               placeholder="مثال: عند إضافة مراجعة جديدة"
                               value={newRobotForm.triggerEventAr}
                               onChange={(e) => setNewRobotForm({ ...newRobotForm, triggerEventAr: e.target.value })}
-                              className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800 transition-colors"
                             />
                           </div>
 
                           {/* Trigger event En */}
                           <div className="space-y-1">
-                            <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'الحدث المحفز (بالإنجليزية)' : 'Trigger Event (English)'}</label>
+                            <label className="text-[10.5px] font-black text-slate-700 block">{language === 'ar' ? 'الحدث المحفز (بالإنجليزية)' : 'Trigger Event (English)'}</label>
                             <input
                               type="text"
                               placeholder="e.g. On New Review Submitted"
                               value={newRobotForm.triggerEvent}
                               onChange={(e) => setNewRobotForm({ ...newRobotForm, triggerEvent: e.target.value })}
-                              className="w-full text-left p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100"
+                              className="w-full text-left p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800 transition-colors"
                             />
                           </div>
                         </div>
 
                         {/* Icon Selection */}
                         <div className="space-y-1">
-                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'رمز / أيقونة الروبوت' : 'Select Representative Icon'}</label>
+                          <label className="text-[10.5px] font-black text-slate-700 block">{language === 'ar' ? 'رمز / أيقونة الروبوت' : 'Select Representative Icon'}</label>
                           <div className="grid grid-cols-4 gap-2">
                             {[
                               { id: 'users', label: language === 'ar' ? 'مستخدمين' : 'Users' },
@@ -3794,8 +3793,8 @@ export function MarketingAdmin({
                                 onClick={() => setNewRobotForm({ ...newRobotForm, icon: ic.id })}
                                 className={`p-2.5 rounded-xl text-[11px] font-black border transition-all cursor-pointer ${
                                   newRobotForm.icon === ic.id 
-                                    ? 'border' 
-                                    : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-850 text-slate-500 hover:bg-slate-100'
+                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700' 
+                                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                                 }`}
                                 style={newRobotForm.icon === ic.id ? { backgroundColor: `${brandPrimaryColor}10`, borderColor: brandPrimaryColor, color: brandPrimaryColor } : {}}
                               >
@@ -3807,30 +3806,30 @@ export function MarketingAdmin({
 
                         {/* Prompt instructions */}
                         <div className="space-y-1">
-                          <label className="text-[10.5px] font-black text-slate-700 dark:text-slate-200 block">{language === 'ar' ? 'موجه وتعليمات الذكاء الاصطناعي (Prompt Guide) *' : 'AI Agent Prompt Instructions *'}</label>
+                          <label className="text-[10.5px] font-black text-slate-700 block">{language === 'ar' ? 'موجه وتعليمات الذكاء الاصطناعي (Prompt Guide) *' : 'AI Agent Prompt Instructions *'}</label>
                           <textarea
                             rows={3}
                             required
                             placeholder="مثال: أنت وكيل مخصص لتحديد مناسبات العملاء وإرسال كروت خصم 10% لخدمات صيانة ميكانيك وسوائل الورش..."
                             value={newRobotForm.prompt}
                             onChange={(e) => setNewRobotForm({ ...newRobotForm, prompt: e.target.value })}
-                            className="w-full text-right p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-xl text-xs focus:outline-none placeholder-slate-405 text-slate-700 dark:text-slate-100 leading-relaxed font-sans"
+                            className="w-full text-right p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs focus:outline-none placeholder-slate-400 text-slate-800 leading-relaxed font-sans transition-colors"
                           />
                         </div>
                       </div>
 
-                      <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 text-right">
+                      <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 text-right">
                         <button
                           type="button"
                           onClick={() => setShowAddRobotModal(false)}
-                          className="px-4.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-350 text-xs font-black rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer"
+                          className="px-4.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black rounded-xl border border-slate-200 cursor-pointer transition-colors"
                         >
                           {language === 'ar' ? 'إلغاء الأمر' : 'Cancel'}
                         </button>
                         <button
                           type="submit"
-                          className="px-5 py-2.5 text-white text-xs font-black rounded-xl cursor-pointer shadow-md"
-                          style={{ backgroundColor: brandPrimaryColor, boxShadow: `0 4px 6px -1px ${brandPrimaryColor}20` }}
+                          className="px-5 py-2.5 text-white text-xs font-black rounded-xl cursor-pointer shadow-xs"
+                          style={{ backgroundColor: brandPrimaryColor }}
                         >
                           {language === 'ar' ? 'إدراج وتفعيل الروبوت' : 'Deploy Robo Agent'}
                         </button>
@@ -3849,14 +3848,14 @@ export function MarketingAdmin({
           <div className="space-y-6 text-right">
             
             {/* PM ROADMAP HEADER & PROGRESS */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl p-6 shadow-soft space-y-6 font-sans">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-6 font-sans">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="space-y-1.5 text-center md:text-right">
-                  <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 p-1 px-3 text-[10px] font-black rounded-lg border border-amber-200/20">
+                  <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-800 p-1 px-3 text-[10px] font-black rounded-lg border border-amber-200">
                     <Award size={12} />
                     <span>{language === 'ar' ? 'منهجية إدارة الأساطيل والـ SaaS الدولية' : 'SaaS Launch Methodology'}</span>
                   </div>
-                  <h3 className="text-[17px] font-black text-slate-900 dark:text-white">
+                  <h3 className="text-[17px] font-black text-slate-900">
                     {language === 'ar' ? 'خريطة طريق ودليل إطلاق مشروع SaaS المتكامل للشركات' : 'Enterprise SaaS Launch Master Roadmap'}
                   </h3>
                   <p className="text-[11px] text-slate-500 max-w-2xl leading-relaxed">
@@ -3867,14 +3866,14 @@ export function MarketingAdmin({
                 </div>
 
                 {/* Progress Circle/Pill */}
-                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850/60 text-center min-w-[150px]">
-                  <span className="text-[9px] text-slate-400 font-bold block mb-1">{language === 'ar' ? 'معدل جاهزية الإطلاق العام' : 'Launch Readiness Rate'}</span>
-                  <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center min-w-[150px]">
+                  <span className="text-[9px] text-slate-500 font-bold block mb-1">{language === 'ar' ? 'معدل جاهزية الإطلاق العام' : 'Launch Readiness Rate'}</span>
+                  <div className="text-2xl font-black text-indigo-600 font-mono">
                     {Math.round((launchSteps.filter(s => s.status === 'completed').length / launchSteps.length) * 100)}%
                   </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-805 h-1.5 rounded-full mt-2 overflow-hidden">
+                  <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
                     <div 
-                      className="bg-indigo-650 h-full rounded-full transition-all duration-550"
+                      className="bg-indigo-600 h-full rounded-full transition-all duration-500"
                       style={{ width: `${(launchSteps.filter(s => s.status === 'completed').length / launchSteps.length) * 100}%` }}
                     />
                   </div>
@@ -3882,13 +3881,13 @@ export function MarketingAdmin({
               </div>
 
               {/* FIRST STEP & KEY CONTEXT ADVICE */}
-              <div className="p-4 bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100/30 dark:border-indigo-900/10 rounded-2xl flex flex-col md:flex-row gap-4 items-start">
-                <div className="p-2.5 bg-indigo-100 dark:bg-indigo-905 text-indigo-700 dark:text-indigo-400 rounded-xl shrink-0">
+              <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl flex flex-col md:flex-row gap-4 items-start">
+                <div className="p-2.5 bg-indigo-100 text-indigo-700 rounded-xl shrink-0">
                   <BookOpen size={18} />
                 </div>
                 <div className="space-y-1.5 leading-relaxed">
-                  <h4 className="text-xs font-black text-indigo-900 dark:text-indigo-300">{language === 'ar' ? 'نصيحة المدير التنفيذي للمشروع لرفع الحصة السوقية:' : 'Executive PM Strategy Directive:'}</h4>
-                  <p className="text-[10px] text-slate-600 dark:text-slate-400">
+                  <h4 className="text-xs font-black text-indigo-900">{language === 'ar' ? 'نصيحة المدير التنفيذي للمشروع لرفع الحصة السوقية:' : 'Executive PM Strategy Directive:'}</h4>
+                  <p className="text-[10px] text-slate-700">
                     {language === 'ar'
                       ? 'لجعل الشركات تثق بمنتجك وتدفع اشتراكات سنوية عالية، ركّز على تقديم فحص الأمان الذكي للورش عبر نظام "الذكاء الاصطناعي" و "تحصين الأساطيل". هذا ما يبحث عنه صناع القرار ومسؤولو الصيانة. تأكد من تفعيل الاتصال بقاعدة بيانات Firebase لتوفير تجربة ديمو تفاعلية فورية خالية من فترات الانتظار لتجربتها أمام المسؤولين.'
                       : 'To win large logistics contracts, focus on demonstrating predictive workshop scheduling and enterprise security. Real-time Firebase synchronization ensures customer managers experience direct zero-latency fleet coordination on demo runs.'}
@@ -3904,10 +3903,10 @@ export function MarketingAdmin({
                 return (
                   <div 
                     key={s?.id || `launch-step-${index}`}
-                    className={`bg-white dark:bg-slate-900 border transition-all rounded-3xl p-5 shadow-soft flex flex-col justify-between gap-5 relative overflow-hidden ${
+                    className={`bg-white border transition-all rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 relative overflow-hidden ${
                       isDone 
-                        ? 'border-emerald-200/60 bg-emerald-50/5 dark:bg-emerald-950/5' 
-                        : 'border-slate-150 dark:border-slate-800'
+                        ? 'border-emerald-200 bg-emerald-50/20' 
+                        : 'border-slate-200'
                     }`}
                   >
                     {/* Phase Banner */}
@@ -3919,8 +3918,8 @@ export function MarketingAdmin({
                           onClick={() => toggleLaunchStep(s.id)}
                           className={`p-1 px-2.5 rounded-lg text-[9px] font-black cursor-pointer transition-all flex items-center gap-1.5 border ${
                             isDone 
-                              ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/20' 
-                              : 'bg-slate-50 dark:bg-slate-950 text-slate-500 border-slate-205'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+                              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                           }`}
                         >
                           <Check size={10} strokeWidth={3} />
@@ -3928,23 +3927,23 @@ export function MarketingAdmin({
                         </button>
                       </div>
 
-                      <h4 className="text-[12px] font-black text-slate-900 dark:text-white leading-snug">
+                      <h4 className="text-[12px] font-black text-slate-900 leading-snug">
                         {language === 'ar' ? s.titleAr : s.titleEn}
                       </h4>
-                      <p className="text-[10px] text-slate-400 font-bold">
+                      <p className="text-[10px] text-slate-500 font-bold">
                         {language === 'ar' ? s.phaseAr : s.phase}
                       </p>
                       
-                      <div className="h-px bg-slate-100 dark:bg-slate-850/65 my-2.5" />
+                      <div className="h-px bg-slate-100 my-2.5" />
 
-                      <p className="text-[10.5px] text-slate-550 dark:text-slate-400 leading-relaxed">
+                      <p className="text-[10.5px] text-slate-600 leading-relaxed">
                         {language === 'ar' ? s.descAr : s.descEn}
                       </p>
                     </div>
 
                     {/* Action Guideline details inside the bento item */}
-                    <div className="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-105 dark:border-slate-850/40 text-[9.5px] text-slate-500 leading-normal flex items-start gap-2">
-                      <Info size={12} className="text-indigo-500 mt-0.5 shrink-0" />
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-[9.5px] text-slate-600 leading-normal flex items-start gap-2">
+                      <Info size={12} className="text-indigo-600 mt-0.5 shrink-0" />
                       <div>
                         {index === 0 && (language === 'ar' ? 'الوضع السحابي لـ Firebase معد وجاهز للعمل بمجرد تكوينه ليكون العقد الفعلي آمن ومستدام.' : 'Firebase backend config is ready and fully tested inside local server configuration for production.')}
                         {index === 1 && (language === 'ar' ? 'عدّل اسم علامتك التجارية ونظام الألوان من التبويب المجاور للتحكم بما يظهر للمشتركين بصفحة الهبوط.' : 'Branding updates dynamically on public pages, establishing premium White-label authority immediately.')}
@@ -3960,23 +3959,23 @@ export function MarketingAdmin({
             </div>
 
             {/* STRATEGIC STEP BY STEP ACTION PLAN (A TO Z ADVICE FOR SAAS COMPANIES) */}
-            <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-6 shadow-soft space-y-6 text-right font-sans">
+            <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl p-6 shadow-sm space-y-6 text-right font-sans">
               <div>
                 <h3 className="text-sm font-black text-white flex items-center gap-2 justify-end">
                   <span>{language === 'ar' ? 'خطة تفعيل وإطلاق نموذج الساس (SaaS Go-To-Market Guide)' : 'SaaS Go-To-Market Execution Steps'}</span>
                   <Zap size={14} className="text-amber-400" />
                 </h3>
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-[10px] text-slate-300 mt-1">
                   {language === 'ar' ? 'الخطوات التشغيلية لمدير المشروع لإطلاق الخدمة للشركات الأخرى وإدارتها واحدةً تلو الأخرى:' : 'Chronological operational manual for managers to successfully onboard business clients.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans leading-relaxed">
                 {/* Step 1 Advice */}
-                <div className="p-4 bg-slate-950 rounded-2xl space-y-2 border border-slate-800/40">
+                <div className="p-4 bg-slate-950/80 rounded-2xl space-y-2 border border-slate-800">
                   <div className="flex items-center gap-2 justify-end">
                     <span className="text-[10px] font-black text-indigo-400">الخطوة الأولى / Step 1</span>
-                    <span className="w-5 h-5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">1</span>
+                    <span className="w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">1</span>
                   </div>
                   <h4 className="text-[11.5px] font-black text-slate-200">{language === 'ar' ? 'اعتماد الهوية والاسم التجاري الفريد' : 'Finalize the Custom Identity'}</h4>
                   <p className="text-[10px] text-slate-400">
@@ -3987,10 +3986,10 @@ export function MarketingAdmin({
                 </div>
 
                 {/* Step 2 Advice */}
-                <div className="p-4 bg-slate-950 rounded-2xl space-y-2 border border-slate-800/40">
+                <div className="p-4 bg-slate-950/80 rounded-2xl space-y-2 border border-slate-800">
                   <div className="flex items-center gap-2 justify-end">
                     <span className="text-[10px] font-black text-indigo-400">الخطوة الثانية / Step 2</span>
-                    <span className="w-5 h-5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">2</span>
+                    <span className="w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">2</span>
                   </div>
                   <h4 className="text-[11.5px] font-black text-slate-200">{language === 'ar' ? 'تفعيل الاتصال السحابي بقاعدة البيانات' : 'Enable Firebase Cloud Mode'}</h4>
                   <p className="text-[10px] text-slate-400">
@@ -4001,10 +4000,10 @@ export function MarketingAdmin({
                 </div>
 
                 {/* Step 3 Advice */}
-                <div className="p-4 bg-slate-950 rounded-2xl space-y-2 border border-slate-800/40">
+                <div className="p-4 bg-slate-950/80 rounded-2xl space-y-2 border border-slate-800">
                   <div className="flex items-center gap-2 justify-end">
                     <span className="text-[10px] font-black text-indigo-400">الخطوة الثالثة / Step 3</span>
-                    <span className="w-5 h-5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">3</span>
+                    <span className="w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">3</span>
                   </div>
                   <h4 className="text-[11.5px] font-black text-slate-200">{language === 'ar' ? 'تنفيذ عروض ديمو للمهتمين الميدانيين' : 'Execute Pilot Demos & Follow-up'}</h4>
                   <p className="text-[10px] text-slate-400">
@@ -4015,10 +4014,10 @@ export function MarketingAdmin({
                 </div>
 
                 {/* Step 4 Advice */}
-                <div className="p-4 bg-slate-950 rounded-2xl space-y-2 border border-slate-800/40">
+                <div className="p-4 bg-slate-950/80 rounded-2xl space-y-2 border border-slate-800">
                   <div className="flex items-center gap-2 justify-end">
                     <span className="text-[10px] font-black text-indigo-400">الخطوة الرابعة / Step 4</span>
-                    <span className="w-5 h-5 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">4</span>
+                    <span className="w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-[10px] font-bold">4</span>
                   </div>
                   <h4 className="text-[11.5px] font-black text-slate-200">{language === 'ar' ? 'ربط وإعلان بوابات الدفع الإلكتروني' : 'Deploy Stripe Checkout & Go Public'}</h4>
                   <p className="text-[10px] text-slate-400">
@@ -4036,53 +4035,53 @@ export function MarketingAdmin({
         {/* TAB 2: GENERAL IDENTITY SIZING BRAND SETTINGS */}
         {activeSubTab === 'identity' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-right">
-            <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-6 rounded-3xl space-y-5 shadow-soft">
-              <h3 className="text-xs font-black text-slate-900 dark:text-white">إعداد هوية وشعار منظومة الـ SaaS للورش</h3>
-              <p className="text-[10px] text-slate-400 -mt-3.5">هذه الخيارات تحكم مسمى وألوان المنصة في الموقع الخارجي وبوابة الفنيين المجمعة.</p>
+            <div className="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-3xl space-y-5 shadow-xs">
+              <h3 className="text-xs font-black text-slate-900">إعداد هوية وشعار منظومة الـ SaaS للورش</h3>
+              <p className="text-[10px] text-slate-500 -mt-3.5">هذه الخيارات تحكم مسمى وألوان المنصة في الموقع الخارجي وبوابة الفنيين المجمعة.</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-black text-slate-705 text-slate-700 dark:text-slate-200 block">اسم المنصة (العربية)</label>
+                  <label className="text-[11px] font-black text-slate-700 block">اسم المنصة (العربية)</label>
                   <input
                     type="text"
                     value={saasBrandName}
                     onChange={(e) => setSaasBrandName(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-sans text-slate-700 dark:text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-sans text-slate-800 transition-colors"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-black text-slate-700 dark:text-slate-200 block">نوع ومستوى اللون الأساسي للماركة</label>
+                  <label className="text-[11px] font-black text-slate-700 block">نوع ومستوى اللون الأساسي للماركة</label>
                   <div className="flex gap-2">
                     <input
                       type="color"
                       value={brandPrimaryColor}
                       onChange={(e) => setBrandPrimaryColor(e.target.value)}
-                      className="w-12 h-9 p-0.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 rounded-xl cursor-pointer"
+                      className="w-12 h-9 p-0.5 border border-slate-200 bg-white rounded-xl cursor-pointer"
                     />
                     <input
                       type="text"
                       value={brandPrimaryColor}
                       onChange={(e) => setBrandPrimaryColor(e.target.value)}
-                      className="flex-1 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono text-slate-700 dark:text-slate-100 text-center"
+                      className="flex-1 p-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-mono text-slate-800 text-center transition-colors"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-black text-slate-705 text-slate-700 dark:text-slate-200 block">وصف أو شعار المنصة التسويقي القصير</label>
+                <label className="text-[11px] font-black text-slate-700 block">وصف أو شعار المنصة التسويقي القصير</label>
                 <textarea
                   value={saasBrandDesc}
                   onChange={(e) => setSaasBrandDesc(e.target.value)}
-                  className="w-full p-2.5 h-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-700 dark:text-slate-100"
+                  className="w-full p-2.5 h-16 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs text-slate-800 transition-colors"
                   placeholder="شركة موثوقة لحل صيانة سيارات وأسطول ومخازن المؤسسات التجارية والصناعية..."
                 />
               </div>
 
               {/* Sample standard presets for color styling */}
               <div className="space-y-1.5 select-none">
-                <span className="text-[9.5px] uppercase tracking-wider text-slate-400 font-bold block">مجموعات ألوان مفترضة مقترحة:</span>
+                <span className="text-[9.5px] uppercase tracking-wider text-slate-500 font-bold block">مجموعات ألوان مفترضة مقترحة:</span>
                 <div className="flex gap-1.5 flex-wrap">
                   {[
                     { name: 'الملكي الأزرق', val: '#1e53e4' },
@@ -4095,7 +4094,7 @@ export function MarketingAdmin({
                     <button
                       key={idx}
                       onClick={() => setBrandPrimaryColor(p.val)}
-                      className="p-1 px-2 border border-slate-200 dark:border-slate-800 hover:border-slate-350 dark:hover:border-slate-505 rounded-xl text-[10px] text-slate-700 dark:text-slate-300 transition-all flex items-center gap-1.5 cursor-pointer bg-slate-50 dark:bg-slate-950"
+                      className="p-1 px-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-[10px] text-slate-700 transition-all flex items-center gap-1.5 cursor-pointer bg-slate-50 hover:bg-white"
                     >
                       <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: p.val }} />
                       <span>{p.name}</span>
@@ -4105,19 +4104,19 @@ export function MarketingAdmin({
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-6 rounded-3xl space-y-4 shadow-soft flex flex-col justify-between">
+            <div className="bg-white border border-slate-200 p-6 rounded-3xl space-y-4 shadow-xs flex flex-col justify-between">
               <div className="space-y-3">
-                <h3 className="text-xs font-black text-slate-900 dark:text-white">معاينة العلامة المخصصة</h3>
-                <p className="text-[10px] text-slate-400">كيف تظهر الهوية في ترويسة وعناصر النظام الإلكتروني:</p>
+                <h3 className="text-xs font-black text-slate-900">معاينة العلامة المخصصة</h3>
+                <p className="text-[10px] text-slate-500">كيف تظهر الهوية في ترويسة وعناصر النظام الإلكتروني:</p>
 
-                <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-850 space-y-3 text-center">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-center">
                   <div className="flex items-center justify-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl overflow-hidden border border-indigo-400/50 shadow-md bg-[#090D16] shrink-0 p-0.5">
+                    <div className="w-8 h-8 rounded-xl overflow-hidden border border-indigo-400/50 shadow-xs bg-[#090D16] shrink-0 p-0.5">
                       <FleetAurvexisVectorEmblem className="w-full h-full" />
                     </div>
-                    <span className="text-sm font-black text-slate-800 dark:text-white">{saasBrandName || 'FleetAurvexis'}</span>
+                    <span className="text-sm font-black text-slate-900">{saasBrandName || 'FleetAurvexis'}</span>
                   </div>
-                  <p className="text-[10.5px] text-slate-505 dark:text-slate-400 font-semibold truncate px-3">{saasBrandDesc || 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة'}</p>
+                  <p className="text-[10.5px] text-slate-600 font-semibold truncate px-3">{saasBrandDesc || 'المنظومة السحابية الذكية المتكاملة لحوكمة صيانة المركبات والمعدات الثقيلة'}</p>
                   <button 
                     className="w-full py-1.5 text-[10px] font-black text-white rounded-lg cursor-pointer"
                     style={{ backgroundColor: brandPrimaryColor }}
@@ -4127,12 +4126,12 @@ export function MarketingAdmin({
                 </div>
               </div>
 
-              <div className="p-3 bg-indigo-50/40 dark:bg-indigo-950/20 rounded-xl border border-indigo-100/40 dark:border-indigo-900/10 text-[10px] text-indigo-755 dark:text-indigo-400 space-y-2 select-text font-semibold">
-                <div className="flex gap-1 justify-end">
+              <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-[10px] text-indigo-900 space-y-2 select-text font-semibold">
+                <div className="flex gap-1 justify-end items-center">
                   <span>تم تفعيل ميزة مزامنة الهوية الحية مع صفحة التسويق</span>
-                  <Info size={11} className="shrink-0" />
+                  <Info size={11} className="shrink-0 text-indigo-600" />
                 </div>
-                <p className="leading-normal">عند تغيير الهوية أو تعديل منسوب التدرجات هنا، يتم تطبيق التناسق على صفحة الهبوط العمومية تلقائياً دون الحاجة لإعادة كتابة الأكواد برمجياً!</p>
+                <p className="leading-normal text-indigo-700">عند تغيير الهوية أو تعديل منسوب التدرجات هنا، يتم تطبيق التناسق على صفحة الهبوط العمومية تلقائياً دون الحاجة لإعادة كتابة الأكواد برمجياً!</p>
               </div>
             </div>
           </div>
@@ -4141,8 +4140,8 @@ export function MarketingAdmin({
         {/* TAB 3: FEATURES INVENTORY MANAGEMENT */}
         {activeSubTab === 'features' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl shadow-soft">
-              <span className="text-[10.5px] text-slate-500 font-bold dark:text-slate-405 text-right w-full sm:w-auto">أضف أو عدّل الميزات والعناصر الفنية المعروضة في الموقع التسويقي للمقارنة</span>
+            <div className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
+              <span className="text-[10.5px] text-slate-600 font-bold text-right w-full sm:w-auto">أضف أو عدّل الميزات والعناصر الفنية المعروضة في الموقع التسويقي للمقارنة</span>
               <button
                 onClick={() => setFeatureForm({ titleAr: '', titleEn: '', descAr: '', descEn: '', iconName: 'Wrench', badgeAr: '', badgeEn: '' })}
                 className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
@@ -4159,9 +4158,9 @@ export function MarketingAdmin({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl space-y-4 shadow-md text-right"
+                  className="bg-white border border-slate-200 p-6 rounded-2xl space-y-4 shadow-sm text-right"
                 >
-                  <h4 className="text-xs font-black text-slate-900 dark:text-white border-b border-slate-100 pb-2">
+                  <h4 className="text-xs font-black text-slate-900 border-b border-slate-100 pb-2">
                     {featureForm.id ? 'تعديل ميزة قائمة' : 'صياغة ميزة جديدة بالموقع'}
                   </h4>
 
@@ -4170,34 +4169,34 @@ export function MarketingAdmin({
                       
                       {/* Titles */}
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">العنوان في الموقع (عربي)</label>
+                        <label className="font-bold text-slate-700">العنوان في الموقع (عربي)</label>
                         <input
                           type="text"
                           required
                           value={featureForm.titleAr}
                           onChange={(e) => setFeatureForm({ ...featureForm, titleAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 text-slate-800 rounded-xl transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">العنوان في الموقع (English)</label>
+                        <label className="font-bold text-slate-700">العنوان في الموقع (English)</label>
                         <input
                           type="text"
                           required
                           value={featureForm.titleEn}
                           onChange={(e) => setFeatureForm({ ...featureForm, titleEn: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 text-slate-800 rounded-xl transition-colors"
                         />
                       </div>
 
                       {/* Icons & Badge */}
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">أيقونة العرض (الرمز الفني لـ Lucide)</label>
+                        <label className="font-bold text-slate-700">أيقونة العرض (الرمز الفني لـ Lucide)</label>
                         <select
                           value={featureForm.iconName}
                           onChange={(e) => setFeatureForm({ ...featureForm, iconName: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 text-slate-800 rounded-xl transition-colors"
                         >
                           <option value="Truck">شاحنة / Truck</option>
                           <option value="Wrench">ميكانيكي / Wrench</option>
@@ -4211,12 +4210,12 @@ export function MarketingAdmin({
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">وسام تشريفي (أمثلة: جديد، حصري، أساسي)</label>
+                        <label className="font-bold text-slate-700">وسام تشريفي (أمثلة: جديد، حصري، أساسي)</label>
                         <input
                           type="text"
                           value={featureForm.badgeAr}
                           onChange={(e) => setFeatureForm({ ...featureForm, badgeAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 text-slate-800 rounded-xl transition-colors"
                           placeholder="مثال: جديد بالكامل"
                         />
                       </div>
@@ -4225,22 +4224,22 @@ export function MarketingAdmin({
                     {/* Descriptions */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">الوصف بالتفصيل (عربي)</label>
+                        <label className="font-bold text-slate-700">الوصف بالتفصيل (عربي)</label>
                         <textarea
                           required
                           value={featureForm.descAr}
                           onChange={(e) => setFeatureForm({ ...featureForm, descAr: e.target.value })}
-                          className="w-full p-2.5 h-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                          className="w-full p-2.5 h-16 bg-slate-50 focus:bg-white border border-slate-200 text-slate-800 rounded-xl transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">الوصف بالتفصيل (English)</label>
+                        <label className="font-bold text-slate-700">الوصف بالتفصيل (English)</label>
                         <textarea
                           required
                           value={featureForm.descEn}
                           onChange={(e) => setFeatureForm({ ...featureForm, descEn: e.target.value })}
-                          className="w-full p-2.5 h-16 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-100 rounded-xl"
+                          className="w-full p-2.5 h-16 bg-slate-50 focus:bg-white border border-slate-200 text-slate-800 rounded-xl transition-colors"
                         />
                       </div>
                     </div>
@@ -4249,13 +4248,13 @@ export function MarketingAdmin({
                       <button
                         type="button"
                         onClick={() => setFeatureForm(null)}
-                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer"
+                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl cursor-pointer"
                       >
                         إلغاء الأمر
                       </button>
                       <button
                         type="submit"
-                        className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-black rounded-xl cursor-pointer flex items-center gap-1.5"
+                        className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl cursor-pointer flex items-center gap-1.5"
                       >
                         <Save size={13} />
                         <span>حفظ ومزامنة</span>
@@ -4269,37 +4268,37 @@ export function MarketingAdmin({
             {/* Real Grid Loop of Features */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {features.map((f, idx) => (
-                <div key={f.id || idx} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4.5 rounded-2xl flex items-start justify-between gap-3 text-right shadow-soft">
+                <div key={f.id || idx} className="bg-white border border-slate-200 p-4.5 rounded-2xl flex items-start justify-between gap-3 text-right shadow-xs">
                   <div className="flex items-start gap-3 justify-end flex-row-reverse text-right">
-                    <span className="p-3 bg-slate-50 dark:bg-slate-950 text-indigo-600 rounded-xl border border-slate-200 dark:border-slate-800 uppercase shrink-0">
+                    <span className="p-3 bg-slate-50 text-indigo-600 rounded-xl border border-slate-200 uppercase shrink-0">
                       {f.iconName}
                     </span>
 
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2 justify-end">
-                        <h4 className="text-[12.5px] font-black text-slate-855 dark:text-white">{f.titleAr}</h4>
+                        <h4 className="text-[12.5px] font-black text-slate-900">{f.titleAr}</h4>
                         {f.badgeAr && (
-                          <span className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-950/50 text-[8.5px] text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200/50 rounded">
+                          <span className="px-1.5 py-0.5 bg-indigo-50 text-[8.5px] text-indigo-700 font-bold border border-indigo-200 rounded">
                             {f.badgeAr}
                           </span>
                         )}
                       </div>
-                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">{f.titleEn}</p>
-                      <p className="text-[10.5px] text-slate-600 dark:text-slate-300 leading-normal line-clamp-2">{f.descAr}</p>
+                      <p className="text-[10.5px] text-slate-500 font-semibold">{f.titleEn}</p>
+                      <p className="text-[10.5px] text-slate-600 leading-normal line-clamp-2">{f.descAr}</p>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-1 shrink-0">
                     <button
                       onClick={() => startEditFeature(f)}
-                      className="p-1 px-1.5 bg-indigo-50 hover:bg-indigo-600 dark:bg-slate-800 hover:text-white text-indigo-700 dark:text-slate-300 rounded-lg text-[10px] cursor-pointer transition-colors"
+                      className="p-1 px-1.5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 rounded-lg text-[10px] cursor-pointer transition-colors"
                       title="تعديل الميزة"
                     >
                       <Edit3 size={11} />
                     </button>
                     <button
                       onClick={() => handleDeleteFeature(f.id)}
-                      className="p-1 px-1.5 bg-rose-50 hover:bg-rose-600 dark:bg-slate-800 hover:text-white text-rose-700 dark:text-slate-400 rounded-lg text-[10px] cursor-pointer transition-colors"
+                      className="p-1 px-1.5 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 rounded-lg text-[10px] cursor-pointer transition-colors"
                       title="حذف تشغيلي"
                     >
                       <Trash2 size={11} />
@@ -4314,8 +4313,8 @@ export function MarketingAdmin({
         {/* TAB 4: CLIENT COMPANIES CRUD */}
         {activeSubTab === 'clients' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl shadow-soft">
-              <span className="text-[10.5px] text-slate-550 dark:text-slate-400 font-bold text-right w-full sm:w-auto">أضف الشعارات والشركات والبلديات الكبرى المستفيدة والمعتمدة للموقع</span>
+            <div className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
+              <span className="text-[10.5px] text-slate-600 font-bold text-right w-full sm:w-auto">أضف الشعارات والشركات والبلديات الكبرى المستفيدة والمعتمدة للموقع</span>
               <button
                 onClick={() => setClientForm({ name: '', industryAr: '', industryEn: '', rating: 5, yearJoint: '2026', activeVehicles: '25', logoSeed: 'CL' })}
                 className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
@@ -4332,78 +4331,78 @@ export function MarketingAdmin({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl space-y-4 shadow-md text-right"
+                  className="bg-white border border-slate-200 p-6 rounded-2xl space-y-4 shadow-sm text-right"
                 >
-                  <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                  <h4 className="text-xs font-black text-slate-900">
                     {clientForm.id ? 'تعديل بيانات العميل الحالي' : 'إدراج عميل جديد للشركاء'}
                   </h4>
 
                   <form onSubmit={handleClientSubmit} className="space-y-4 font-sans text-xs">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">اسم الشركة/الهيئة التجارية</label>
+                        <label className="font-bold text-slate-700">اسم الشركة/الهيئة التجارية</label>
                         <input
                           type="text"
                           required
                           value={clientForm.name}
                           onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
                           placeholder="مثال: أرامكو للخدمات الأرضية"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">رمز الاختصار الثنائي (لشعار اللوتس التجريدي)</label>
+                        <label className="font-bold text-slate-700">رمز الاختصار الثنائي (لشعار اللوتس التجريدي)</label>
                         <input
                           type="text"
                           required
                           maxLength={2}
                           value={clientForm.logoSeed}
                           onChange={(e) => setClientForm({ ...clientForm, logoSeed: e.target.value.toUpperCase() })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center font-bold text-slate-850 dark:text-slate-100 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 text-center font-bold text-slate-800 rounded-xl transition-colors"
                           placeholder="مثال: AR"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">القطاع الصناعي (عربي)</label>
+                        <label className="font-bold text-slate-700">القطاع الصناعي (عربي)</label>
                         <input
                           type="text"
                           required
                           value={clientForm.industryAr}
                           onChange={(e) => setClientForm({ ...clientForm, industryAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">القطاع الصناعي (English)</label>
+                        <label className="font-bold text-slate-700">القطاع الصناعي (English)</label>
                         <input
                           type="text"
                           required
                           value={clientForm.industryEn}
                           onChange={(e) => setClientForm({ ...clientForm, industryEn: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">سنة الانضمام للتطبيق</label>
+                        <label className="font-bold text-slate-700">سنة الانضمام للتطبيق</label>
                         <input
                           type="text"
                           value={clientForm.yearJoint}
                           onChange={(e) => setClientForm({ ...clientForm, yearJoint: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-center"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl font-mono text-center transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">حجم المعدات/الشاحنات النشط لديهم</label>
+                        <label className="font-bold text-slate-700">حجم المعدات/الشاحنات النشط لديهم</label>
                         <input
                           type="text"
                           value={clientForm.activeVehicles}
                           onChange={(e) => setClientForm({ ...clientForm, activeVehicles: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-center"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl font-mono text-center transition-colors"
                           placeholder="مثال: 320 سيارة"
                         />
                       </div>
@@ -4413,13 +4412,13 @@ export function MarketingAdmin({
                       <button
                         type="button"
                         onClick={() => setClientForm(null)}
-                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-xl cursor-pointer"
+                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl cursor-pointer"
                       >
                         إلغاء الأمر
                       </button>
                       <button
                         type="submit"
-                        className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                        className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
                       >
                         <Save size={13} />
                         <span>حفظ الشريك</span>
@@ -4433,41 +4432,41 @@ export function MarketingAdmin({
             {/* Client Lists elements */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {clients.map((c, idx) => (
-                <div key={c.id || idx} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl text-center space-y-3 shadow-soft relative group">
+                <div key={c.id || idx} className="bg-white border border-slate-200 p-4 rounded-2xl text-center space-y-3 shadow-xs relative group">
                   <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                     <button
                       onClick={() => startEditClient(c)}
-                      className="p-1 bg-white hover:bg-indigo-650 hover:text-white border border-slate-200 text-slate-500 rounded-md cursor-pointer text-[9px]"
+                      className="p-1 bg-white hover:bg-indigo-600 hover:text-white border border-slate-200 text-slate-600 rounded-md cursor-pointer text-[9px]"
                       title="تحرير"
                     >
                       <Edit3 size={10} />
                     </button>
                     <button
                       onClick={() => handleDeleteClient(c.id)}
-                      className="p-1 bg-white hover:bg-rose-600 hover:text-white border border-slate-200 text-slate-500 rounded-md cursor-pointer text-[9px]"
+                      className="p-1 bg-white hover:bg-rose-600 hover:text-white border border-slate-200 text-slate-600 rounded-md cursor-pointer text-[9px]"
                       title="إزالة"
                     >
                       ✕
                     </button>
                   </div>
 
-                  <div className="w-11 h-11 rounded-full bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-705 dark:text-indigo-400 font-extrabold mx-auto flex items-center justify-center border border-indigo-100/50 dark:border-slate-800 font-mono text-sm leading-none shrink-0 select-none shadow-3xs">
+                  <div className="w-11 h-11 rounded-full bg-indigo-50 text-indigo-700 font-extrabold mx-auto flex items-center justify-center border border-indigo-100 font-mono text-sm leading-none shrink-0 select-none shadow-xs">
                     {c.logoSeed}
                   </div>
 
                   <div className="space-y-0.5">
-                    <h5 className="text-[11.5px] font-black text-slate-850 dark:text-slate-105 truncate px-1">{c.name}</h5>
-                    <p className="text-[9px] text-slate-500 dark:text-slate-400 truncate">{c.industryAr}</p>
+                    <h5 className="text-[11.5px] font-black text-slate-900 truncate px-1">{c.name}</h5>
+                    <p className="text-[9px] text-slate-500 truncate">{c.industryAr}</p>
                   </div>
 
-                  <div className="p-1.5 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-850 text-[9px] text-slate-600 dark:text-slate-405 font-mono space-y-0.5">
+                  <div className="p-1.5 bg-slate-50 rounded-xl border border-slate-100 text-[9px] text-slate-600 font-mono space-y-0.5">
                     <div className="flex justify-between flex-row-reverse">
                       <span>المركبات:</span>
-                      <span className="font-bold text-indigo-650 dark:text-[#a5b4fc]">{c.activeVehicles}</span>
+                      <span className="font-bold text-indigo-600">{c.activeVehicles}</span>
                     </div>
                     <div className="flex justify-between flex-row-reverse">
                       <span>انضمام:</span>
-                      <span className="font-bold text-slate-700 dark:text-slate-300">{c.yearJoint}</span>
+                      <span className="font-bold text-slate-700">{c.yearJoint}</span>
                     </div>
                   </div>
                 </div>
@@ -4479,8 +4478,8 @@ export function MarketingAdmin({
         {/* TAB 5: TESTIMONIALS / REVIEWS EDITORS & LISTING */}
         {activeSubTab === 'testimonials' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl shadow-soft">
-              <span className="text-[10.5px] text-slate-550 dark:text-slate-400 font-bold text-right w-full sm:w-auto">أضف وأدر التقييمات وآراء مهندسي أساطيل العملاء الفعليين المعتمدة</span>
+            <div className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
+              <span className="text-[10.5px] text-slate-600 font-bold text-right w-full sm:w-auto">أضف وأدر التقييمات وآراء مهندسي أساطيل العملاء الفعليين المعتمدة</span>
               <button
                 onClick={() => setReviewForm({ authorName: '', roleAr: '', roleEn: '', company: '', contentAr: '', contentEn: '', rating: 5 })}
                 className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
@@ -4497,65 +4496,65 @@ export function MarketingAdmin({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl space-y-4 shadow-md text-right"
+                  className="bg-white border border-slate-200 p-6 rounded-2xl space-y-4 shadow-sm text-right"
                 >
-                  <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                  <h4 className="text-xs font-black text-slate-900">
                     {reviewForm.id ? 'تحرير تقييم العميل المعتمد' : 'إنشاء تقييم فني وإضافته للواجهة'}
                   </h4>
 
                   <form onSubmit={handleReviewSubmit} className="space-y-4 font-sans text-xs">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">اسم المهندس/العميل المقيم</label>
+                        <label className="font-bold text-slate-700">اسم المهندس/العميل المقيم</label>
                         <input
                           type="text"
                           required
                           value={reviewForm.authorName}
                           onChange={(e) => setReviewForm({ ...reviewForm, authorName: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
                           placeholder="مثال: م. فهد عسيري"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">اسم المنشأة/الشركة التابع لها</label>
+                        <label className="font-bold text-slate-700">اسم المنشأة/الشركة التابع لها</label>
                         <input
                           type="text"
                           required
                           value={reviewForm.company}
                           onChange={(e) => setReviewForm({ ...reviewForm, company: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">المسمى الوظيفي للمقيم (عربي)</label>
+                        <label className="font-bold text-slate-700">المسمى الوظيفي للمقيم (عربي)</label>
                         <input
                           type="text"
                           required
                           value={reviewForm.roleAr}
                           onChange={(e) => setReviewForm({ ...reviewForm, roleAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">المسمى الوظيفي (English)</label>
+                        <label className="font-bold text-slate-700">المسمى الوظيفي (English)</label>
                         <input
                           type="text"
                           required
                           value={reviewForm.roleEn}
                           onChange={(e) => setReviewForm({ ...reviewForm, roleEn: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">تصنيف النجوم (1 - 5)</label>
+                        <label className="font-bold text-slate-700">تصنيف النجوم (1 - 5)</label>
                         <select
                           value={reviewForm.rating}
                           onChange={(e) => setReviewForm({ ...reviewForm, rating: parseFloat(e.target.value) })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
                         >
                           <option value="5">⭐⭐⭐⭐⭐ 5 نجوم كاملة</option>
                           <option value="4.5">⭐⭐⭐⭐ 4.5 نجمة</option>
@@ -4566,22 +4565,22 @@ export function MarketingAdmin({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">محتوى التقييم والقول المأثور (عربي)</label>
+                        <label className="font-bold text-slate-700">محتوى التقييم والقول المأثور (عربي)</label>
                         <textarea
                           required
                           value={reviewForm.contentAr}
                           onChange={(e) => setReviewForm({ ...reviewForm, contentAr: e.target.value })}
-                          className="w-full p-2.5 h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal"
+                          className="w-full p-2.5 h-20 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal transition-colors"
                         />
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300">محتوى التقييم والقول المأثور (English)</label>
+                        <label className="font-bold text-slate-700">محتوى التقييم والقول المأثور (English)</label>
                         <textarea
                           required
                           value={reviewForm.contentEn}
                           onChange={(e) => setReviewForm({ ...reviewForm, contentEn: e.target.value })}
-                          className="w-full p-2.5 h-20 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal"
+                          className="w-full p-2.5 h-20 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal transition-colors"
                         />
                       </div>
                     </div>
@@ -4590,13 +4589,13 @@ export function MarketingAdmin({
                       <button
                         type="button"
                         onClick={() => setReviewForm(null)}
-                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-xl cursor-pointer"
+                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl cursor-pointer"
                       >
                         إلغاء الأمر
                       </button>
                       <button
                         type="submit"
-                        className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                        className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
                       >
                         <Save size={13} />
                         <span>إضافة التقييم</span>
@@ -4610,20 +4609,20 @@ export function MarketingAdmin({
             {/* Render Reviews grid lists */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {reviews.map((r, idx) => (
-                <div key={r.id || idx} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-5 rounded-3xl space-y-4 text-right shadow-soft relative flex flex-col justify-between">
+                <div key={r.id || idx} className="bg-white border border-slate-200 p-5 rounded-3xl space-y-4 text-right shadow-xs relative flex flex-col justify-between">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-2 flex-row">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 flex-row">
                       <div className="flex gap-1 shrink-0">
                         <button
                           onClick={() => startEditReview(r)}
-                          className="p-1 px-1.5 bg-indigo-50 hover:bg-indigo-600 dark:bg-slate-800 hover:text-white text-indigo-700 dark:text-slate-300 rounded-lg text-[9px] cursor-pointer"
+                          className="p-1 px-1.5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 rounded-lg text-[9px] cursor-pointer"
                           title="تحرير"
                         >
                           <Edit3 size={11} />
                         </button>
                         <button
                           onClick={() => handleDeleteReview(r.id)}
-                          className="p-1 px-1.5 bg-rose-50 hover:bg-rose-600 dark:bg-slate-800 hover:text-white text-rose-700 dark:text-slate-400 rounded-lg text-[9px] cursor-pointer"
+                          className="p-1 px-1.5 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 rounded-lg text-[9px] cursor-pointer"
                           title="حذف"
                         >
                           ✕
@@ -4635,11 +4634,11 @@ export function MarketingAdmin({
                           src={r.avatar || 'https://picsum.photos/seed/face/150/150'}
                           alt={r.authorName}
                           referrerPolicy="no-referrer"
-                          className="w-10 h-10 rounded-full border border-slate-200 shadow-3xs object-cover"
+                          className="w-10 h-10 rounded-full border border-slate-200 shadow-xs object-cover"
                         />
                         <div>
-                          <strong className="text-[12px] font-black text-slate-800 dark:text-white block">{r.authorName}</strong>
-                          <span className="text-[9.5px] text-slate-500 dark:text-slate-450 block font-semibold">{r.roleAr} ({r.company})</span>
+                          <strong className="text-[12px] font-black text-slate-900 block">{r.authorName}</strong>
+                          <span className="text-[9.5px] text-slate-500 block font-semibold">{r.roleAr} ({r.company})</span>
                         </div>
                       </div>
                     </div>
@@ -4650,7 +4649,7 @@ export function MarketingAdmin({
                       ))}
                     </div>
 
-                    <p className="text-[11px] text-slate-600 dark:text-slate-300 italic leading-relaxed text-right">
+                    <p className="text-[11px] text-slate-600 italic leading-relaxed text-right">
                       &ldquo;{r.contentAr}&rdquo;
                     </p>
                   </div>
@@ -4665,30 +4664,30 @@ export function MarketingAdmin({
           <div className="space-y-6 animate-fade-in text-right">
             
             {/* Header Description block */}
-            <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="bg-slate-50 border border-slate-200 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="space-y-1">
-                <span className="p-1 px-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 rounded-lg text-[9px] font-bold">إقرار وتحكم فوري</span>
-                <h4 className="text-xs font-black text-slate-900 dark:text-white mt-1">تخصيص كامل تذييل المظهر وقوائم ومصادر أسفل الموقع الإلكتروني</h4>
-                <p className="text-[10px] text-slate-500">مقسمة طبقًا للقوائم المعروضة بمصادر الأنظمة الكبرى مع القدرة على تعديل النصوص بالعربية والإنجليزية.</p>
+                <span className="p-1 px-2.5 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-bold">إقرار وتحكم فوري</span>
+                <h4 className="text-xs font-black text-slate-900 mt-1">تخصيص كامل تذييل المظهر وقوائم ومصادر أسفل الموقع الإلكتروني</h4>
+                <p className="text-[10px] text-slate-600">مقسمة طبقًا للقوائم المعروضة بمصادر الأنظمة الكبرى مع القدرة على تعديل النصوص بالعربية والإنجليزية.</p>
               </div>
               <button
                 type="button"
                 onClick={handleResetFooterDefault}
-                className="p-2 px-3.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-700 dark:text-rose-450 text-[10.5px] font-black rounded-xl border border-rose-200/50 cursor-pointer transition-all"
+                className="p-2 px-3.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10.5px] font-black rounded-xl border border-rose-200 cursor-pointer transition-all"
               >
                 استعادة القوائم والروابط الافتراضية للشركة
               </button>
             </div>
 
             {/* Sub-tab selection menu */}
-            <div className="flex justify-end border-b border-slate-200 dark:border-slate-800 pb-2 gap-2">
+            <div className="flex justify-end border-b border-slate-200 pb-2 gap-2">
               <button
                 type="button"
                 onClick={() => setFooterSubTab('stories')}
                 className={`p-2 px-4 text-xs font-black rounded-xl cursor-pointer transition-all ${
                   footerSubTab === 'stories'
-                    ? 'bg-indigo-650 text-white shadow-soft'
-                    : 'bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
                 <span>قصص ودراسات نجاح العملاء</span>
@@ -4698,8 +4697,8 @@ export function MarketingAdmin({
                 onClick={() => setFooterSubTab('links')}
                 className={`p-2 px-4 text-xs font-black rounded-xl cursor-pointer transition-all ${
                   footerSubTab === 'links'
-                    ? 'bg-indigo-650 text-white shadow-soft'
-                    : 'bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
                 <span>روابط وقوائم التذييل العامة</span>
@@ -4711,108 +4710,108 @@ export function MarketingAdmin({
               
               {/* Left Column: Footer Meta (Inputs for Copyrights, Badges, Legal, Socials) */}
               <div className="lg:col-span-12 xl:col-span-5 space-y-4">
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl p-5 shadow-soft space-y-4">
-                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-850 pb-3 flex-row-reverse justify-between">
-                    <span className="p-1 px-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[9.5px] font-black">العلاقات العامة والهوية برمجياً</span>
-                    <strong className="text-[11px] font-black text-slate-800 dark:text-white">تفاصيل وملحقات التذييل العامة</strong>
+                <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3 flex-row-reverse justify-between">
+                    <span className="p-1 px-2 bg-slate-100 text-slate-700 rounded-lg text-[9.5px] font-black">العلاقات العامة والهوية برمجياً</span>
+                    <strong className="text-[11px] font-black text-slate-900">تفاصيل وملحقات التذييل العامة</strong>
                   </div>
 
                   <div className="space-y-3 font-sans text-xs">
                     
                     <div className="space-y-1">
-                      <label className="font-bold text-slate-700 dark:text-slate-300 block">نص حقوق الحفظ والنشر (عربي)</label>
+                      <label className="font-bold text-slate-700 block">نص حقوق الحفظ والنشر (عربي)</label>
                       <textarea
                         rows={2}
                         value={footerMeta.copyrightAr || ""}
                         onChange={(e) => saveFooterMeta({ ...footerMeta, copyrightAr: e.target.value })}
-                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl leading-normal text-right focus:ring-1 focus:ring-indigo-500 animate-none"
+                        className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal text-right focus:ring-1 focus:ring-indigo-500 animate-none transition-colors"
                         placeholder="حقوق النشر © ميكانيك ٣٦٠"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="font-bold text-slate-700 dark:text-slate-300 block">Copyright Legal Text (English)</label>
+                      <label className="font-bold text-slate-700 block">Copyright Legal Text (English)</label>
                       <textarea
                         rows={2}
                         value={footerMeta.copyrightEn || ""}
                         onChange={(e) => saveFooterMeta({ ...footerMeta, copyrightEn: e.target.value })}
-                        className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl leading-normal text-left focus:ring-1 focus:ring-indigo-500 animate-none"
+                        className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal text-left focus:ring-1 focus:ring-indigo-500 animate-none transition-colors"
                         placeholder="Copyright © FleetAurvexis"
                       />
                     </div>
 
-                    <hr className="border-slate-100 dark:border-slate-850" />
+                    <hr className="border-slate-100" />
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-right">ملصق سياسة الخصوصية (عربي)</label>
+                        <label className="font-bold text-slate-700 block text-right">ملصق سياسة الخصوصية (عربي)</label>
                         <input
                           type="text"
                           value={footerMeta.privacyLabelAr || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, privacyLabelAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-right font-black"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-right font-black transition-colors"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-left">Privacy Label (English)</label>
+                        <label className="font-bold text-slate-700 block text-left">Privacy Label (English)</label>
                         <input
                           type="text"
                           value={footerMeta.privacyLabelEn || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, privacyLabelEn: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-left font-black"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-left font-black transition-colors"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-right">ملصق شروط الخدمة (عربي)</label>
+                        <label className="font-bold text-slate-700 block text-right">ملصق شروط الخدمة (عربي)</label>
                         <input
                           type="text"
                           value={footerMeta.termsLabelAr || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, termsLabelAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-right font-black"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-right font-black transition-colors"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-left">Terms Label (English)</label>
+                        <label className="font-bold text-slate-700 block text-left">Terms Label (English)</label>
                         <input
                           type="text"
                           value={footerMeta.termsLabelEn || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, termsLabelEn: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-left font-black"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-left font-black transition-colors"
                         />
                       </div>
                     </div>
 
-                    <hr className="border-slate-100 dark:border-slate-850" />
+                    <hr className="border-slate-100" />
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-right">بوابة تطبيقات Google Play</label>
+                        <label className="font-bold text-slate-700 block text-right">بوابة تطبيقات Google Play</label>
                         <input
                           type="text"
                           value={footerMeta.playStoreUrl || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, playStoreUrl: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl select-all text-left font-mono text-[9px] font-black"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl select-all text-left font-mono text-[9px] font-black transition-colors"
                           placeholder="https://play.google.com/..."
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700 dark:text-slate-300 block text-left">بوابة iOS App Store</label>
+                        <label className="font-bold text-slate-700 block text-left">بوابة iOS App Store</label>
                         <input
                           type="text"
                           value={footerMeta.appStoreUrl || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, appStoreUrl: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl select-all text-left font-mono text-[9px] font-black"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl select-all text-left font-mono text-[9px] font-black transition-colors"
                           placeholder="https://apps.apple.com/..."
                         />
                       </div>
                     </div>
 
-                    <hr className="border-slate-100 dark:border-slate-850" />
+                    <hr className="border-slate-100" />
 
-                    <h5 className="font-black text-[10px] text-slate-800 dark:text-slate-200 flex items-center justify-end gap-1.5 pt-1 font-sans">
+                    <h5 className="font-black text-[10px] text-slate-900 flex items-center justify-end gap-1.5 pt-1 font-sans">
                       <span>روابط التواصل الاجتماعي وشركاء الأساطيل</span>
                       <Settings size={12} className="text-indigo-600" />
                     </h5>
@@ -4823,10 +4822,10 @@ export function MarketingAdmin({
                           type="text"
                           value={footerMeta.socialX || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, socialX: e.target.value })}
-                          className="flex-1 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-lg text-left text-[11px] font-mono"
+                          className="flex-1 p-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-left text-[11px] font-mono transition-colors"
                           placeholder="https://x.com/..."
                         />
-                        <span className="p-2 px-3 bg-slate-100 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-lg text-[10px] font-bold min-w-[70px] text-center">X (Twitter)</span>
+                        <span className="p-2 px-3 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-bold min-w-[70px] text-center">X (Twitter)</span>
                       </div>
 
                       <div className="flex gap-2 items-center flex-row">
@@ -4834,10 +4833,10 @@ export function MarketingAdmin({
                           type="text"
                           value={footerMeta.socialLinkedin || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, socialLinkedin: e.target.value })}
-                          className="flex-1 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-lg text-left text-[11px] font-mono"
+                          className="flex-1 p-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-left text-[11px] font-mono transition-colors"
                           placeholder="https://linkedin.com/company/..."
                         />
-                        <span className="p-2 px-3 bg-slate-100 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-lg text-[10px] font-bold min-w-[70px] text-center">LinkedIn</span>
+                        <span className="p-2 px-3 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-bold min-w-[70px] text-center">LinkedIn</span>
                       </div>
 
                       <div className="flex gap-2 items-center flex-row">
@@ -4845,10 +4844,10 @@ export function MarketingAdmin({
                           type="text"
                           value={footerMeta.socialInstagram || ""}
                           onChange={(e) => saveFooterMeta({ ...footerMeta, socialInstagram: e.target.value })}
-                          className="flex-1 p-2 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 text-left text-[11px] font-mono rounded-lg"
+                          className="flex-1 p-2 bg-slate-50 focus:bg-white border border-slate-200 text-left text-[11px] font-mono rounded-lg transition-colors"
                           placeholder="https://instagram.com/..."
                         />
-                        <span className="p-2 px-3 bg-slate-100 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-lg text-[10px] font-bold min-w-[70px] text-center">Instagram</span>
+                        <span className="p-2 px-3 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-bold min-w-[70px] text-center">Instagram</span>
                       </div>
                     </div>
 
@@ -4860,13 +4859,13 @@ export function MarketingAdmin({
               <div className="lg:col-span-12 xl:col-span-7 space-y-4">
                 
                 {/* Column tabs select */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl p-5 shadow-soft space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-3 flex-row-reverse">
-                    <span className="text-[11px] font-black text-slate-800 dark:text-white">أعمدة روابط أسفل الموقع ({footerColumns.length} قوائم)</span>
-                    <span className="text-[9.5px] p-1 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400 rounded-lg font-bold">بنية مرنة بالكامل</span>
+                <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-row-reverse">
+                    <span className="text-[11px] font-black text-slate-900">أعمدة روابط أسفل الموقع ({footerColumns.length} قوائم)</span>
+                    <span className="text-[9.5px] p-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold">بنية مرنة بالكامل</span>
                   </div>
 
-                  <div className="flex flex-row-reverse gap-1 overflow-x-auto pb-1 border-b border-slate-100 dark:border-slate-850 select-none">
+                  <div className="flex flex-row-reverse gap-1 overflow-x-auto pb-1 border-b border-slate-100 select-none">
                     {footerColumns.map((col, idx) => (
                       <button
                         key={col?.id || `footer-col-${idx}`}
@@ -4874,8 +4873,8 @@ export function MarketingAdmin({
                         onClick={() => setSelectedColId(col.id)}
                         className={`p-2 px-3 text-[11px] font-black whitespace-nowrap cursor-pointer rounded-xl transition-all ${
                           selectedColId === col.id 
-                            ? 'bg-indigo-600 text-white shadow-soft' 
-                            : 'bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                            ? 'bg-indigo-600 text-white shadow-xs' 
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                         }`}
                       >
                         {language === 'ar' ? col.titleAr : col.titleEn}
@@ -4891,46 +4890,46 @@ export function MarketingAdmin({
                       {/* Column Title inputs */}
                       <div className="grid grid-cols-2 gap-3 text-right">
                         <div className="space-y-1">
-                          <label className="font-bold text-slate-700 dark:text-slate-300 text-xs block">اسم هذه القائمة بالعربية</label>
+                          <label className="font-bold text-slate-700 text-xs block">اسم هذه القائمة بالعربية</label>
                           <input
                             type="text"
                             value={activeCol.titleAr}
                             onChange={(e) => handleUpdateColumnTitle(activeCol.id, e.target.value, activeCol.titleEn)}
-                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-right font-black text-xs"
+                            className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-right font-black text-xs transition-colors"
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="font-bold text-slate-700 dark:text-slate-300 text-xs block">Column Title (English)</label>
+                          <label className="font-bold text-slate-700 text-xs block">Column Title (English)</label>
                           <input
                             type="text"
                             value={activeCol.titleEn}
                             onChange={(e) => handleUpdateColumnTitle(activeCol.id, activeCol.titleAr, e.target.value)}
-                            className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-800 rounded-xl text-left font-black text-xs"
+                            className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-left font-black text-xs transition-colors"
                           />
                         </div>
                       </div>
 
                       {/* Add link Item to active column inline */}
-                      <div className="p-4 bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-950/20 rounded-2xl space-y-3">
-                        <strong className="text-[10.5px] font-black text-indigo-900 dark:text-indigo-300 block">إضافة رابط فرعي جديد للقائمة النشطة</strong>
+                      <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl space-y-3">
+                        <strong className="text-[10.5px] font-black text-indigo-900 block">إضافة رابط فرعي جديد للقائمة النشطة</strong>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-sans">
                           <div className="space-y-1 text-right">
-                            <label className="text-[10px] text-slate-500 font-bold block">عنوان الرابط (عربي)</label>
+                            <label className="text-[10px] text-slate-600 font-bold block">عنوان الرابط (عربي)</label>
                             <input
                               type="text"
                               value={newColItemAr}
                               onChange={(e) => setNewColItemAr(e.target.value)}
-                              className="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-right text-xs"
+                              className="w-full p-2 bg-white border border-slate-200 rounded-lg text-right text-xs"
                               placeholder="مثال: ورش المنطقة الوسطى"
                             />
                           </div>
                           <div className="space-y-1 text-right">
-                            <label className="text-[10px] text-slate-500 font-bold block">Link Label (English)</label>
+                            <label className="text-[10px] text-slate-600 font-bold block">Link Label (English)</label>
                             <input
                               type="text"
                               value={newColItemEn}
                               onChange={(e) => setNewColItemEn(e.target.value)}
-                              className="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-left text-xs"
+                              className="w-full p-2 bg-white border border-slate-200 rounded-lg text-left text-xs"
                               placeholder="e.g. Riyadh Central Workshop"
                             />
                           </div>
@@ -4939,7 +4938,7 @@ export function MarketingAdmin({
                           <button
                             type="button"
                             onClick={() => handleAddFooterItem(activeCol.id)}
-                            className="p-1.5 px-4 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg cursor-pointer flex items-center gap-1.5 transition-all"
+                            className="p-1.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg cursor-pointer flex items-center gap-1.5 transition-all"
                           >
                             <Plus size={12} />
                             <span>أضف للعمود النشط</span>
@@ -4949,30 +4948,30 @@ export function MarketingAdmin({
 
                       {/* Display items of active selected column list with delete keys */}
                       <div className="space-y-2 select-none font-sans">
-                        <span className="text-[10px] text-slate-400 block font-bold">الروابط المضافة والمنشورة حالياً ({activeCol.items.length} روابط):</span>
-                        <div className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-850">
+                        <span className="text-[10px] text-slate-500 block font-bold">الروابط المضافة والمنشورة حالياً ({activeCol.items.length} روابط):</span>
+                        <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
                           {activeCol.items.length === 0 ? (
-                            <div className="p-8 text-center text-[11px] text-slate-400 font-semibold bg-slate-50/50 dark:bg-slate-950/10">
+                            <div className="p-8 text-center text-[11px] text-slate-500 font-semibold bg-slate-50">
                               لا توجد روابط مضافة في هذا العمود حالياً. أضف روابط جديدة في الأعلى.
                             </div>
                           ) : (
                             activeCol.items.map((item: any, itemIdx: number) => (
-                              <div key={item.id || itemIdx} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between hover:bg-slate-50/55 dark:hover:bg-slate-850/20 transition-all flex-row-reverse">
+                              <div key={item.id || itemIdx} className="p-3 bg-white flex items-center justify-between hover:bg-slate-50 transition-all flex-row-reverse">
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteFooterItem(activeCol.id, item.id)}
-                                  className="p-1 px-2 border border-rose-200 hover:bg-rose-600 hover:text-white dark:border-rose-950/20 rounded-lg text-rose-600 text-[10px] cursor-pointer"
+                                  className="p-1 px-2 border border-rose-200 hover:bg-rose-600 hover:text-white rounded-lg text-rose-600 text-[10px] cursor-pointer transition-colors"
                                   title="حذف هذا الرابط"
                                 >
                                   ✕
                                 </button>
                                 <div className="text-right flex items-center gap-3 flex-row-reverse">
-                                  <div className="p-1 px-1.5 bg-slate-50 dark:bg-slate-800 text-[9px] text-slate-400 font-mono rounded">
+                                  <div className="p-1 px-1.5 bg-slate-100 text-[9px] text-slate-500 font-mono rounded">
                                     {itemIdx + 1}
                                   </div>
                                   <div className="text-right">
-                                    <strong className="text-xs text-slate-800 dark:text-slate-200 block text-right">{item.labelAr}</strong>
-                                    <span className="text-[10px] text-slate-400 block font-mono text-right">{item.labelEn}</span>
+                                    <strong className="text-xs text-slate-800 block text-right">{item.labelAr}</strong>
+                                    <span className="text-[10px] text-slate-500 block font-mono text-right">{item.labelEn}</span>
                                   </div>
                                 </div>
                               </div>
@@ -4991,8 +4990,8 @@ export function MarketingAdmin({
             ) : (
               /* TAB 6-B: CUSTOMER SUCCESS STORIES CRUD PANEL */
               <div className="space-y-4 animate-fade-in text-right">
-                <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl shadow-soft">
-                  <span className="text-[10.5px] text-slate-550 dark:text-slate-400 font-bold text-right w-full sm:w-auto">أضف وأدر دراسات وحالات النجاح المترجمة لعملائنا في تذييل الموقع</span>
+                <div className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
+                  <span className="text-[10.5px] text-slate-600 font-bold text-right w-full sm:w-auto">أضف وأدر دراسات وحالات النجاح المترجمة لعملائنا في تذييل الموقع</span>
                   <button
                     type="button"
                     onClick={() => setSuccessStoryForm({ titleAr: '', titleEn: '', contentAr: '', contentEn: '', companyAr: '', companyEn: '', metricAr: '', metricEn: '', imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800' })}
@@ -5010,98 +5009,98 @@ export function MarketingAdmin({
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl space-y-4 shadow-md text-right"
+                      className="bg-white border border-slate-200 p-6 rounded-2xl space-y-4 shadow-sm text-right"
                     >
-                      <h4 className="text-xs font-black text-slate-900 dark:text-white">
+                      <h4 className="text-xs font-black text-slate-900">
                         {successStoryForm.id ? 'تحرير بيانات قصة النجاح الحالية' : 'إدراج حالة دراسة نجاح جديدة للعملاء'}
                       </h4>
 
                       <form onSubmit={handleSuccessStorySubmit} className="space-y-4 font-sans text-xs">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
                           <div className="space-y-1">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">اسم الجهة/الشركة المستفيدة (عربي)</label>
+                            <label className="font-bold text-slate-700">اسم الجهة/الشركة المستفيدة (عربي)</label>
                             <input
                               type="text"
                               required
                               value={successStoryForm.companyAr || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, companyAr: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-right"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-right transition-colors"
                               placeholder="مثال: الشركة الوطنية للخدمات اللوجستية"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">Beneficiary Company Name (English)</label>
+                            <label className="font-bold text-slate-700">Beneficiary Company Name (English)</label>
                             <input
                               type="text"
                               required
                               value={successStoryForm.companyEn || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, companyEn: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-left"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-left transition-colors"
                               placeholder="e.g. National Logistics Services Corp."
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">عنوان قصة النجاح (عربي)</label>
+                            <label className="font-bold text-slate-700">عنوان قصة النجاح (عربي)</label>
                             <input
                               type="text"
                               required
                               value={successStoryForm.titleAr || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, titleAr: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-right"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-right transition-colors"
                               placeholder="عنوان المبادرة والتحول الرقمي"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">Success Story Title (English)</label>
+                            <label className="font-bold text-slate-700">Success Story Title (English)</label>
                             <input
                               type="text"
                               required
                               value={successStoryForm.titleEn || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, titleEn: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-left"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-left transition-colors"
                               placeholder="Digital Transformation and Fleet PM"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">الرقم القياسي أو الإنجاز الهام (عربي)</label>
+                            <label className="font-bold text-slate-700">الرقم القياسي أو الإنجاز الهام (عربي)</label>
                             <input
                               type="text"
                               required
                               value={successStoryForm.metricAr || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, metricAr: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-right"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-right transition-colors"
                               placeholder="مثال: تقليل تكاليف الصيانة بنسبة 25%"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">Key Metric Highlighted (English)</label>
+                            <label className="font-bold text-slate-700">Key Metric Highlighted (English)</label>
                             <input
                               type="text"
                               required
                               value={successStoryForm.metricEn || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, metricEn: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-left"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-left transition-colors"
                               placeholder="e.g. 25% Preventive PM Cost Savings"
                             />
                           </div>
 
                           <div className="space-y-1 md:col-span-2">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">رابط صورة احترافية معبرة (صورة عالية الدقة)</label>
+                            <label className="font-bold text-slate-700">رابط صورة احترافية معبرة (صورة عالية الدقة)</label>
                             <input
                               type="text"
                               required
                               value={successStoryForm.imageUrl || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, imageUrl: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-left font-mono"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-left font-mono transition-colors"
                               placeholder="https://images.unsplash.com/photo-..."
                             />
                             {successStoryForm.imageUrl && (
-                              <div className="mt-2 rounded-lg overflow-hidden border border-slate-100 max-w-xs aspect-video">
+                              <div className="mt-2 rounded-lg overflow-hidden border border-slate-200 max-w-xs aspect-video">
                                 <img src={successStoryForm.imageUrl} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
                               </div>
                             )}
@@ -5110,24 +5109,24 @@ export function MarketingAdmin({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-1">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">تفاصيل وسرد القصة (عربي)</label>
+                            <label className="font-bold text-slate-700">تفاصيل وسرد القصة (عربي)</label>
                             <textarea
                               required
                               rows={4}
                               value={successStoryForm.contentAr || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, contentAr: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-right"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal text-right transition-colors"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <label className="font-bold text-slate-700 dark:text-slate-300">Full Case Content (English)</label>
+                            <label className="font-bold text-slate-700">Full Case Content (English)</label>
                             <textarea
                               required
                               rows={4}
                               value={successStoryForm.contentEn || ''}
                               onChange={(e) => setSuccessStoryForm({ ...successStoryForm, contentEn: e.target.value })}
-                              className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-left"
+                              className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal text-left transition-colors"
                             />
                           </div>
                         </div>
@@ -5136,13 +5135,13 @@ export function MarketingAdmin({
                           <button
                             type="button"
                             onClick={() => setSuccessStoryForm(null)}
-                            className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-750 dark:text-slate-300 rounded-xl cursor-pointer"
+                            className="p-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl cursor-pointer"
                           >
                             إلغاء الأمر
                           </button>
                           <button
                             type="submit"
-                            className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                            className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
                           >
                             <Save size={13} />
                             <span>حفظ قصة النجاح</span>
@@ -5156,33 +5155,33 @@ export function MarketingAdmin({
                 {/* Grid Loop of stories */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {successStories.map((story, idx) => (
-                    <div key={story.id || idx} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-3xl overflow-hidden shadow-soft flex flex-col justify-between text-right border-t-2 border-t-indigo-600">
+                    <div key={story.id || idx} className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs flex flex-col justify-between text-right border-t-2 border-t-indigo-600">
                       
                       <div className="relative aspect-video">
                         <img src={story.imageUrl} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
-                        <div className="absolute top-2 right-2 bg-indigo-900/90 text-indigo-300 text-[9px] font-bold p-1 px-2.5 rounded-lg border border-indigo-500/20">
+                        <div className="absolute top-2 right-2 bg-indigo-900/90 text-indigo-100 text-[9px] font-bold p-1 px-2.5 rounded-lg border border-indigo-400/30">
                           {story.metricAr}
                         </div>
                       </div>
 
                       <div className="p-4.5 space-y-2 flex-1 flex flex-col justify-between">
                         <div className="space-y-1">
-                          <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">
+                          <div className="text-[10px] text-indigo-600 font-extrabold">
                             {story.companyAr}
                           </div>
-                          <h5 className="text-[12px] font-black text-slate-900 dark:text-white leading-snug">
+                          <h5 className="text-[12px] font-black text-slate-900 leading-snug">
                             {story.titleAr}
                           </h5>
-                          <p className="text-[10.5px] text-slate-550 dark:text-slate-400 leading-relaxed line-clamp-3">
+                          <p className="text-[10.5px] text-slate-600 leading-relaxed line-clamp-3">
                             {story.contentAr}
                           </p>
                         </div>
 
-                        <div className="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-850">
+                        <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
                           <button
                             type="button"
                             onClick={() => startEditSuccessStory(story)}
-                            className="p-1 px-2 bg-indigo-50 hover:bg-indigo-600 dark:bg-slate-800 hover:text-white text-indigo-700 dark:text-slate-300 rounded-lg text-[10px] cursor-pointer flex items-center gap-1"
+                            className="p-1 px-2 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 rounded-lg text-[10px] cursor-pointer flex items-center gap-1 transition-colors"
                           >
                             <Edit3 size={11} />
                             <span>تعديل</span>
@@ -5190,7 +5189,7 @@ export function MarketingAdmin({
                           <button
                             type="button"
                             onClick={() => handleDeleteSuccessStory(story.id)}
-                            className="p-1 px-2 bg-rose-50 hover:bg-rose-600 dark:bg-slate-800 hover:text-white text-rose-700 dark:text-slate-400 rounded-lg text-[10px] cursor-pointer flex items-center gap-1"
+                            className="p-1 px-2 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 rounded-lg text-[10px] cursor-pointer flex items-center gap-1 transition-colors"
                           >
                             <Trash2 size={11} />
                             <span>حذف</span>
@@ -5213,17 +5212,17 @@ export function MarketingAdmin({
           <div className="space-y-6 animate-fade-in text-right">
             
             {/* Header description block */}
-            <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-850 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="bg-slate-50 border border-slate-200 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="space-y-1">
-                <span className="p-1 px-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 rounded-lg text-[9px] font-bold">📸 معرض صيانة المعدات الثقيلة</span>
-                <h4 className="text-xs font-black text-slate-900 dark:text-white mt-1">تخصيص معرض الصور وإدارة المظاهر الفنية المعروضة</h4>
-                <p className="text-[10px] text-slate-550 dark:text-slate-400">إضافة صور صيانة المعدات الهيدروليكية، الديزل والأساطيل وتفعيلها لتظهر فورا بالموقع التسويقي.</p>
+                <span className="p-1 px-2.5 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-bold">📸 معرض صيانة المعدات الثقيلة</span>
+                <h4 className="text-xs font-black text-slate-900 mt-1">تخصيص معرض الصور وإدارة المظاهر الفنية المعروضة</h4>
+                <p className="text-[10px] text-slate-600">إضافة صور صيانة المعدات الهيدروليكية، الديزل والأساطيل وتفعيلها لتظهر فورا بالموقع التسويقي.</p>
               </div>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleResetGalleryDefault}
-                  className="p-2 px-3.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/20 text-rose-700 dark:text-rose-450 text-[10.5px] font-black rounded-xl border border-rose-200/50 cursor-pointer transition-all"
+                  className="p-2 px-3.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10.5px] font-black rounded-xl border border-rose-200 cursor-pointer transition-all"
                 >
                   استعادة الافتراضي
                 </button>
@@ -5237,7 +5236,7 @@ export function MarketingAdmin({
                     descEn: '',
                     category: 'heavy'
                   })}
-                  className="p-2 px-4 bg-indigo-650 hover:bg-indigo-700 text-white text-[10.5px] font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
+                  className="p-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-[10.5px] font-black rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
                 >
                   <Plus size={13} />
                   <span>إضافة صورة مخصصة</span>
@@ -5246,12 +5245,12 @@ export function MarketingAdmin({
             </div>
 
             {/* AI Image Generation Simulator Box */}
-            <div className="bg-gradient-to-r from-violet-600/10 to-indigo-600/10 dark:from-violet-950/30 dark:to-indigo-950/30 border border-violet-100 dark:border-violet-900/30 p-5 rounded-3xl space-y-4">
+            <div className="bg-indigo-50/60 border border-indigo-100 p-5 rounded-3xl space-y-4">
               <div className="flex items-center gap-2">
-                <Sparkles className="text-violet-600 dark:text-violet-400 animate-pulse" size={18} />
-                <h4 className="text-xs font-black text-slate-900 dark:text-white">مولد الصور الذكي المدمج (صيانة المعدات الثقيلة)</h4>
+                <Sparkles className="text-indigo-600 animate-pulse" size={18} />
+                <h4 className="text-xs font-black text-slate-900">مولد الصور الذكي المدمج (صيانة المعدات الثقيلة)</h4>
               </div>
-              <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-[10.5px] text-slate-600 leading-relaxed">
                 اكتب تفاصيل المعدات الثقيلة أو نوع الصيانة لتوليد صور فوتوغرافية احترافية فائقة الدقة وإدراجها فوراً في لوحة المعرض التسويقي.
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
@@ -5259,7 +5258,7 @@ export function MarketingAdmin({
                   type="text"
                   placeholder="مثال: صيانة نظام الفرامل لشاحنة التعدين العملاقة في ورشة حديثة..."
                   id="ai-image-prompt"
-                  className="flex-1 p-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px] font-medium"
+                  className="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl text-[11px] font-medium"
                 />
                 <button
                   type="button"
@@ -5308,7 +5307,7 @@ export function MarketingAdmin({
                     }, 1800);
                   }}
                   id="ai-gen-btn"
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 hover:opacity-90 text-white font-bold text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2 shadow-md shrink-0"
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2 shadow-xs shrink-0"
                 >
                   <Sparkles size={13} />
                   <span>توليد الصورة</span>
@@ -5323,16 +5322,16 @@ export function MarketingAdmin({
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 15 }}
-                  className="bg-white dark:bg-slate-900 border border-indigo-150 dark:border-indigo-950 p-6 rounded-3xl shadow-xl space-y-4 text-right"
+                  className="bg-white border border-slate-200 p-6 rounded-3xl shadow-lg space-y-4 text-right"
                 >
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                    <h4 className="text-xs font-black text-indigo-700 dark:text-indigo-400">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h4 className="text-xs font-black text-indigo-700">
                       {galleryImageForm.id ? 'تعديل تفاصيل صورة المعرض' : 'إضافة صورة جديدة للمعرض'}
                     </h4>
                     <button
                       type="button"
                       onClick={() => setGalleryImageForm(null)}
-                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                      className="p-1 hover:bg-slate-100 rounded-lg cursor-pointer"
                     >
                       <X size={15} />
                     </button>
@@ -5341,22 +5340,22 @@ export function MarketingAdmin({
                   <form onSubmit={handleGalleryImageSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">رابط الصورة (URL)</label>
+                        <label className="text-[10.5px] font-bold text-slate-700">رابط الصورة (URL)</label>
                         <input
                           type="text"
                           required
                           value={galleryImageForm.url || ''}
                           onChange={(e) => setGalleryImageForm({ ...galleryImageForm, url: e.target.value })}
                           placeholder="مثال: /src/assets/images/... أو رابط خارجي"
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-left font-mono text-[10.5px]"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal text-left font-mono text-[10.5px] transition-colors"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">تصنيف الصورة</label>
+                        <label className="text-[10.5px] font-bold text-slate-700">تصنيف الصورة</label>
                         <select
                           value={galleryImageForm.category || 'heavy'}
                           onChange={(e) => setGalleryImageForm({ ...galleryImageForm, category: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px] font-bold"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-[11px] font-bold transition-colors"
                         >
                           <option value="heavy">معدات ثقيلة هيدروليكية (Heavy)</option>
                           <option value="diesel">محركات ديزل وصيانة (Diesel)</option>
@@ -5368,46 +5367,46 @@ export function MarketingAdmin({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">عنوان الصورة (عربي)</label>
+                        <label className="text-[10.5px] font-bold text-slate-700">عنوان الصورة (عربي)</label>
                         <input
                           type="text"
                           required
                           value={galleryImageForm.titleAr || ''}
                           onChange={(e) => setGalleryImageForm({ ...galleryImageForm, titleAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px]"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-[11px] transition-colors"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">Image Title (English)</label>
+                        <label className="text-[10.5px] font-bold text-slate-700">Image Title (English)</label>
                         <input
                           type="text"
                           required
                           value={galleryImageForm.titleEn || ''}
                           onChange={(e) => setGalleryImageForm({ ...galleryImageForm, titleEn: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-[11px] text-left"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-[11px] text-left transition-colors"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">شرح الصورة بالتفصيل (عربي)</label>
+                        <label className="text-[10.5px] font-bold text-slate-700">شرح الصورة بالتفصيل (عربي)</label>
                         <textarea
                           required
                           rows={3}
                           value={galleryImageForm.descAr || ''}
                           onChange={(e) => setGalleryImageForm({ ...galleryImageForm, descAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-right text-[11px]"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal text-right text-[11px] transition-colors"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10.5px] font-bold text-slate-700 dark:text-slate-300">Description details (English)</label>
+                        <label className="text-[10.5px] font-bold text-slate-700">Description details (English)</label>
                         <textarea
                           required
                           rows={3}
                           value={galleryImageForm.descEn || ''}
                           onChange={(e) => setGalleryImageForm({ ...galleryImageForm, descEn: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl leading-normal text-left text-[11px]"
+                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl leading-normal text-left text-[11px] transition-colors"
                         />
                       </div>
                     </div>
@@ -5416,13 +5415,13 @@ export function MarketingAdmin({
                       <button
                         type="button"
                         onClick={() => setGalleryImageForm(null)}
-                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 text-slate-700 dark:text-slate-300 text-xs rounded-xl cursor-pointer"
+                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-xl cursor-pointer"
                       >
                         إلغاء الأمر
                       </button>
                       <button
                         type="submit"
-                        className="p-2 px-5 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl cursor-pointer flex items-center gap-1.5"
+                        className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl cursor-pointer flex items-center gap-1.5"
                       >
                         <Save size={13} />
                         <span>حفظ بيانات الصورة</span>
@@ -5438,10 +5437,10 @@ export function MarketingAdmin({
               {galleryImages.map((img, idx) => (
                 <div
                   key={img.id || idx}
-                  className={`bg-white dark:bg-slate-900 border rounded-3xl overflow-hidden shadow-soft flex flex-col justify-between text-right transition-all group ${
+                  className={`bg-white border rounded-3xl overflow-hidden shadow-xs flex flex-col justify-between text-right transition-all group ${
                     img.isSelected
-                      ? 'border-indigo-500 ring-2 ring-indigo-500/10'
-                      : 'border-slate-150 dark:border-slate-800 opacity-75 hover:opacity-100'
+                      ? 'border-indigo-500 ring-2 ring-indigo-500/20'
+                      : 'border-slate-200 opacity-75 hover:opacity-100'
                   }`}
                 >
                   <div className="relative aspect-video">
@@ -5451,10 +5450,10 @@ export function MarketingAdmin({
                     <button
                       type="button"
                       onClick={() => handleToggleGalleryImageSelect(img.id)}
-                      className={`absolute top-2.5 right-2.5 p-1.5 rounded-full border shadow-sm transition-all cursor-pointer ${
+                      className={`absolute top-2.5 right-2.5 p-1.5 rounded-full border shadow-xs transition-all cursor-pointer ${
                         img.isSelected
                           ? 'bg-emerald-500 text-white border-emerald-400'
-                          : 'bg-white/80 dark:bg-slate-900/80 text-slate-400 border-slate-200 dark:border-slate-750'
+                          : 'bg-white/90 text-slate-400 border-slate-200'
                       }`}
                       title={img.isSelected ? 'نشط في الموقع التسويقي' : 'غير معروض حالياً'}
                     >
@@ -5462,7 +5461,7 @@ export function MarketingAdmin({
                     </button>
 
                     {/* Category Label */}
-                    <div className="absolute bottom-2.5 right-2.5 bg-indigo-950/80 border border-indigo-500/20 text-indigo-300 text-[8.5px] font-black p-1 px-2.5 rounded-lg font-mono">
+                    <div className="absolute bottom-2.5 right-2.5 bg-slate-900/80 border border-white/20 text-white text-[8.5px] font-black p-1 px-2.5 rounded-lg font-mono">
                       {img.category === 'heavy' ? 'HEAVY MACHINERY' :
                        img.category === 'diesel' ? 'DIESEL ENGINE' :
                        img.category === 'workshop' ? 'WORKSHOP OPS' : 'FLEET SUPPORT'}
@@ -5472,27 +5471,27 @@ export function MarketingAdmin({
                   <div className="p-4.5 space-y-3 flex-1 flex flex-col justify-between">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <h5 className="text-[12px] font-black text-slate-900 dark:text-white leading-snug">
+                        <h5 className="text-[12px] font-black text-slate-900 leading-snug">
                           {language === 'ar' ? img.titleAr : img.titleEn}
                         </h5>
                         <span className={`text-[8px] font-black p-0.5 px-2 rounded-md ${
                           img.isSelected 
-                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
-                            : 'bg-slate-100 text-slate-500 dark:bg-slate-800'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-500 border border-slate-200'
                         }`}>
                           {img.isSelected ? 'نشط' : 'مسودة'}
                         </span>
                       </div>
-                      <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">
+                      <p className="text-[10.5px] text-slate-600 leading-relaxed line-clamp-2">
                         {language === 'ar' ? img.descAr : img.descEn}
                       </p>
                     </div>
 
-                    <div className="flex gap-2 justify-end pt-3 border-t border-slate-100 dark:border-slate-850">
+                    <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => setGalleryImageForm({ ...img })}
-                        className="p-1.5 px-3 bg-indigo-50 hover:bg-indigo-650 dark:bg-slate-800 hover:text-white text-indigo-700 dark:text-slate-300 rounded-lg text-[10.5px] font-bold cursor-pointer flex items-center gap-1.5 transition-all"
+                        className="p-1.5 px-3 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 rounded-lg text-[10.5px] font-bold cursor-pointer flex items-center gap-1.5 transition-all"
                       >
                         <Edit3 size={11} />
                         <span>تعديل</span>
@@ -5500,7 +5499,7 @@ export function MarketingAdmin({
                       <button
                         type="button"
                         onClick={() => handleDeleteGalleryImage(img.id)}
-                        className="p-1.5 px-3 bg-rose-50 hover:bg-rose-600 dark:bg-slate-850 hover:text-white text-rose-700 dark:text-slate-400 rounded-lg text-[10.5px] font-bold cursor-pointer flex items-center gap-1.5 transition-all"
+                        className="p-1.5 px-3 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 rounded-lg text-[10.5px] font-bold cursor-pointer flex items-center gap-1.5 transition-all"
                       >
                         <Trash2 size={11} />
                         <span>حذف</span>

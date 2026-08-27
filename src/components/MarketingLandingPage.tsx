@@ -57,12 +57,13 @@ import mechanicTruckWorkshop from '../assets/images/mechanic_truck_workshop_1782
 interface MarketingLandingPageProps {
   onNavigateToCRM?: () => void;
   onNavigateToSaaS: (autoLogin?: boolean) => void;
+  onNavigateToSuperAdmin?: () => void;
   brandPrimaryColor?: string;
   brandName?: string;
   brandDesc?: string;
   isInsideApp?: boolean;
   onNavigateToTab?: (tab: string) => void;
-  portalMode?: 'marketing' | 'saas';
+  portalMode?: 'marketing' | 'saas' | 'super-admin';
 }
 
 // Reconstructed high-fidelity default lists from MarketingAdmin
@@ -307,6 +308,7 @@ const getReviewInitials = (name: string) => {
 
 export default function MarketingLandingPage({
   onNavigateToSaaS,
+  onNavigateToSuperAdmin,
   brandPrimaryColor = '#6d28d9',
   brandName = '',
   brandDesc = '',
@@ -1719,7 +1721,18 @@ export default function MarketingLandingPage({
               </span>
             </div>
 
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-4 items-center flex-wrap">
+              {onNavigateToSuperAdmin && (
+                <button 
+                  type="button"
+                  onClick={onNavigateToSuperAdmin}
+                  className="hover:text-white transition-all font-bold text-slate-300 border border-purple-500/40 rounded-full px-3 py-1 bg-purple-950/60 hover:bg-purple-900/80 shadow-xs flex items-center gap-1.5 cursor-pointer text-[10.5px]"
+                  title={language === 'ar' ? 'بوابة مدير المنصة والمالك (Super Admin)' : 'Platform Super Admin Gateway'}
+                >
+                  <Shield size={12} className="text-purple-400" />
+                  <span>{language === 'ar' ? 'بوابة مدير المنصة (Super Admin)' : 'Super Admin Portal'}</span>
+                </button>
+              )}
               <a 
                 href="#/" 
                 onClick={(e) => {

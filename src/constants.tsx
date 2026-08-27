@@ -57,5 +57,4 @@ export const MENU_ITEMS: MenuItem[] = [
   { id: 'security-audit', label: 'صلاحيات الموظفين والامتثال', icon: <ShieldCheck size={16} />, roles: ['admin'], group: 'governance' },
   { id: 'firebase-sync', label: 'بوابة المزامنة والربط السحابي (Firebase)', icon: <Cloud size={16} />, roles: ['admin'], group: 'governance' },
   { id: 'saas-billing', label: 'إدارة الاشتراك والفوترة', icon: <CreditCard size={16} />, roles: ['admin'], group: 'governance' },
-  { id: 'marketing-admin', label: 'لوحة تحكم الموقع', icon: <Globe2 size={16} />, roles: ['admin'], group: 'governance' },
 ];

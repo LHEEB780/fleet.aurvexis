@@ -27,6 +27,7 @@ import { Shield, Key, Eye, EyeOff, Wrench, Languages, Fingerprint, Layers, WifiO
 import { motion, AnimatePresence } from 'motion/react';
 import MarketingLandingPage from './components/MarketingLandingPage';
 import { MarketingAdmin } from './components/MarketingAdmin';
+import SuperAdminPortal from './components/SuperAdminPortal';
 import VideoTutorialsModal from './components/VideoTutorialsModal';
 
 const adjustColorBrightness = (hex: string, percent: number): string => {
@@ -145,9 +146,9 @@ function useBrowserLanguageDetector(language: 'ar' | 'en', setLanguage: (lang: '
 }
 
 export default function App() {
-  const [portalMode, setPortalMode] = useState<'marketing' | 'saas'>(() => {
+  const [portalMode, setPortalMode] = useState<'marketing' | 'saas' | 'super-admin'>(() => {
     const saved = localStorage.getItem('saas_portal_mode');
-    return (saved === 'marketing' || saved === 'saas' ? saved : 'marketing') as 'marketing' | 'saas';
+    return (saved === 'marketing' || saved === 'saas' || saved === 'super-admin' ? saved : 'marketing') as 'marketing' | 'saas' | 'super-admin';
   });
   const [activeTab, setActiveTabState] = useState(() => {
     return localStorage.getItem('saas_active_tab') || 'dashboard';
@@ -1360,6 +1361,48 @@ export default function App() {
   };
 
   // --- MULTI-PORTAL ROUTER GATES ---
+  if (portalMode === 'super-admin') {
+    return (
+      <>
+        <style>{`
+          :root, .dark, body, html {
+            --color-brand-blue-50: ${adjustColorBrightness(brandPrimaryColor, 92)} !important;
+            --color-brand-blue-100: ${adjustColorBrightness(brandPrimaryColor, 80)} !important;
+            --color-brand-blue-250: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
+            --color-brand-blue-200: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
+            --color-brand-blue-300: ${adjustColorBrightness(brandPrimaryColor, 40)} !important;
+            --color-brand-blue-400: ${adjustColorBrightness(brandPrimaryColor, 20)} !important;
+            --color-brand-blue-500: ${brandPrimaryColor} !important;
+            --color-brand-blue-600: ${adjustColorBrightness(brandPrimaryColor, -15)} !important;
+            --color-brand-blue-700: ${adjustColorBrightness(brandPrimaryColor, -30)} !important;
+            --color-brand-blue-800: ${adjustColorBrightness(brandPrimaryColor, -45)} !important;
+            --color-brand-blue-900: ${adjustColorBrightness(brandPrimaryColor, -60)} !important;
+          }
+        `}</style>
+        <SuperAdminPortal
+          brandPrimaryColor={brandPrimaryColor}
+          setBrandPrimaryColor={setBrandPrimaryColor}
+          saasBrandName={saasBrandName}
+          setSaasBrandName={setSaasBrandName}
+          saasBrandDesc={saasBrandDesc}
+          setSaasBrandDesc={setSaasBrandDesc}
+          onNavigateToMarketing={() => {
+            setPortalMode('marketing');
+            localStorage.setItem('saas_portal_mode', 'marketing');
+          }}
+          onNavigateToSaaS={() => {
+            setPortalMode('saas');
+            localStorage.setItem('saas_portal_mode', 'saas');
+            setIsLoggedIn(true);
+            localStorage.setItem('saas_is_logged_in', 'true');
+            setCurrentUser(USERS.admin);
+            saveCurrentUserToStorage(USERS.admin, true);
+          }}
+        />
+      </>
+    );
+  }
+
   if (portalMode === 'marketing') {
     return (
       <>
@@ -1388,6 +1431,10 @@ export default function App() {
               setCurrentUser(USERS.admin);
               saveCurrentUserToStorage(USERS.admin, true);
             }
+          }}
+          onNavigateToSuperAdmin={() => {
+            setPortalMode('super-admin');
+            localStorage.setItem('saas_portal_mode', 'super-admin');
           }}
           brandPrimaryColor={brandPrimaryColor}
           brandName={saasBrandName}

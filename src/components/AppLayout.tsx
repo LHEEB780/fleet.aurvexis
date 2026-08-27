@@ -2985,29 +2985,13 @@ export default function AppLayout({
                           tagAr: 'تهيئة العملة والصرف',
                           tagEn: 'Currency & Rates',
                           color: 'emerald'
-                        },
-                        {
-                          id: 'marketing-admin',
-                          labelAr: 'إدارة الموقع العام والتسويق',
-                          labelEn: 'Public Website & Marketing Admin',
-                          descAr: 'تخصيص الواجهة التسويقية العامة للموقع، تعديل النصوص الترحيبية، وضبط ألوان العلامة التجارية ومميزاتها الأساسية.',
-                          descEn: 'Customize the public marketing homepage, update showcase headers, brand colors, and configure product features.',
-                          icon: <Globe size={24} className="text-indigo-500" />,
-                          tagAr: 'إدارة الموقع والتسويق',
-                          tagEn: 'Marketing & Site Builder',
-                          color: 'indigo'
                         }
                       ].map((item) => (
                         <button
                           key={item.id}
                           type="button"
                           onClick={() => {
-                            if (item.id === 'marketing-admin') {
-                              setActiveTab('marketing-admin');
-                              setIsSettingsModalOpen(false);
-                            } else {
-                              setSelectedSettingsTab(item.id as any);
-                            }
+                            setSelectedSettingsTab(item.id as any);
                           }}
                           className={`w-full p-6 sm:p-8 bg-white dark:bg-[#0c101d]/90 rounded-[2rem] border border-slate-150 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-800/80 hover:scale-[1.018] hover:shadow-xl hover:shadow-violet-500/5 transition-all text-right outline-none cursor-pointer flex flex-col justify-between h-[210px] group ${dir === 'rtl' ? 'flex-col text-right' : 'flex-col text-left'}`}
                         >

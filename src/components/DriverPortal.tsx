@@ -27,6 +27,10 @@ import {
   Calendar,
   Shield,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeftRight,
+  MoveHorizontal,
   Navigation,
   Building2,
   Package,
@@ -268,6 +272,54 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
 
   // Selected Active Trip (find in_progress or first scheduled)
   const activeTrip = trips.find(t => t.status === 'in_progress') || trips[0] || null;
+
+  // Tabs scroll & horizontal indicator state
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [hasInteractedWithTabs, setHasInteractedWithTabs] = useState(false);
+
+  const updateTabScrollIndicators = () => {
+    if (tabsContainerRef.current) {
+      const el = tabsContainerRef.current;
+      const scrollLeft = Math.abs(el.scrollLeft);
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < maxScroll - 10);
+    }
+  };
+
+  useEffect(() => {
+    updateTabScrollIndicators();
+    const el = tabsContainerRef.current;
+    if (el) {
+      el.addEventListener('scroll', updateTabScrollIndicators);
+      window.addEventListener('resize', updateTabScrollIndicators);
+      return () => {
+        el.removeEventListener('scroll', updateTabScrollIndicators);
+        window.removeEventListener('resize', updateTabScrollIndicators);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tabsContainerRef.current) {
+      const activeEl = tabsContainerRef.current.querySelector(`[data-tab-id="${activeSubTab}"]`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [activeSubTab]);
+
+  const scrollTabs = (direction: 'prev' | 'next') => {
+    setHasInteractedWithTabs(true);
+    if (tabsContainerRef.current) {
+      const isRtl = dir === 'rtl';
+      const offset = (direction === 'next' ? (isRtl ? -180 : 180) : (isRtl ? 180 : -180));
+      tabsContainerRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
 
   // Mock Driver States
   const [safetyScore, setSafetyScore] = useState(94);
@@ -748,36 +800,103 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
         </div>
       </div>
 
-      {/* Driver Portal 7 Sub-Navigation Tabs Bar */}
+      {/* Driver Portal 7 Sub-Navigation Tabs Bar with Horizontal Scroll Hints */}
       <div className="max-w-6xl mx-auto px-4 mt-6">
-        <div className="flex bg-white dark:bg-[#0f1422] p-2 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-sm font-sans overflow-x-auto no-scrollbar gap-1.5">
-          {[
-            { id: 'home', labelAr: 'لوحة القيادة', labelEn: 'Dashboard', icon: <Award size={15} /> },
-            { id: 'map', labelAr: 'الخريطة والتتبع 🗺️', labelEn: 'Live Map 🗺️', icon: <Navigation size={15} /> },
-            { id: 'trips', labelAr: 'سجل الرحلات 🚚', labelEn: 'Trips Log 🚚', icon: <Truck size={15} /> },
-            { id: 'projects', labelAr: 'المشاريع المسندة 🏗️', labelEn: 'Assigned Projects 🏗️', icon: <Building2 size={15} /> },
-            { id: 'checklist', labelAr: 'فحص واستلام الآلية', labelEn: 'Vehicle Inspection', icon: <ClipboardCheck size={15} /> },
-            { id: 'report', labelAr: 'إبلاغ عن عطل', labelEn: 'Report Fault', icon: <Wrench size={15} /> },
-            { id: 'history', labelAr: 'سجل الأنشطة', labelEn: 'Activity History', icon: <FileText size={15} /> },
-          ].map((tab) => {
-            const isActive = activeSubTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveSubTab(tab.id as any);
-                }}
-                className={`flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-3 px-3 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-                  isActive 
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/25' 
-                    : 'text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-purple-50/50 dark:hover:bg-purple-950/20'
-                }`}
-              >
-                {tab.icon}
-                <span>{language === 'ar' ? tab.labelAr : tab.labelEn}</span>
-              </button>
-            );
-          })}
+        {/* Helper Header & Animated Swipe Indicator */}
+        <div className="flex items-center justify-between px-2 mb-2 text-xs">
+          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-bold">
+            <Layers size={13} className="text-purple-500" />
+            <span>{language === 'ar' ? 'المهام والأقسام الميدانية' : 'Field Mission Sections'}</span>
+            <span className="px-1.5 py-0.2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded text-[9.5px] font-mono font-black">
+              7
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 rounded-full text-[10px] font-black border border-purple-500/20">
+            <ChevronsLeftRight size={13} className="animate-pulse text-purple-500" />
+            <span>{language === 'ar' ? 'اسحب الشريط للمزيد من الخيارات ↔' : 'Swipe bar for more tabs ↔'}</span>
+          </div>
+        </div>
+
+        {/* Scrollable Tabs Wrapper with Edge Fades & Action Controls */}
+        <div className="relative group">
+          
+          {/* Right Scroll Arrow Button */}
+          {canScrollRight && (
+            <button
+              onClick={() => scrollTabs(dir === 'rtl' ? 'prev' : 'next')}
+              className={`absolute top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/95 dark:bg-slate-900/95 text-purple-600 dark:text-purple-300 shadow-lg border border-purple-500/30 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all ${
+                dir === 'rtl' ? '-left-2' : '-right-2'
+              }`}
+              title={language === 'ar' ? 'تمرير للمزيد' : 'Scroll right'}
+            >
+              {dir === 'rtl' ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+            </button>
+          )}
+
+          {/* Left Scroll Arrow Button */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scrollTabs(dir === 'rtl' ? 'next' : 'prev')}
+              className={`absolute top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/95 dark:bg-slate-900/95 text-purple-600 dark:text-purple-300 shadow-lg border border-purple-500/30 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all ${
+                dir === 'rtl' ? '-right-2' : '-left-2'
+              }`}
+              title={language === 'ar' ? 'تمرير للسابق' : 'Scroll left'}
+            >
+              {dir === 'rtl' ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            </button>
+          )}
+
+          {/* Left Edge Fade Gradient */}
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white dark:from-[#0f1422] to-transparent rounded-l-3xl z-10 opacity-70" />
+
+          {/* Right Edge Fade Gradient */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-[#0f1422] to-transparent rounded-r-3xl z-10 opacity-70" />
+
+          {/* Scrollable Container with Smooth Touch Scrolling & Snap */}
+          <div 
+            ref={tabsContainerRef}
+            onScroll={() => {
+              updateTabScrollIndicators();
+              if (!hasInteractedWithTabs) setHasInteractedWithTabs(true);
+            }}
+            className="flex bg-white dark:bg-[#0f1422] p-2 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-sm font-sans overflow-x-auto no-scrollbar gap-2 scroll-smooth snap-x snap-mandatory"
+          >
+            {[
+              { id: 'home', labelAr: 'لوحة القيادة', labelEn: 'Dashboard', icon: <Award size={15} /> },
+              { id: 'map', labelAr: 'الخريطة والتتبع 🗺️', labelEn: 'Live Map 🗺️', icon: <Navigation size={15} /> },
+              { id: 'trips', labelAr: 'سجل الرحلات 🚚', labelEn: 'Trips Log 🚚', icon: <Truck size={15} /> },
+              { id: 'projects', labelAr: 'المشاريع المسندة 🏗️', labelEn: 'Assigned Projects 🏗️', icon: <Building2 size={15} /> },
+              { id: 'checklist', labelAr: 'فحص واستلام الآلية', labelEn: 'Vehicle Inspection', icon: <ClipboardCheck size={15} /> },
+              { id: 'report', labelAr: 'إبلاغ عن عطل', labelEn: 'Report Fault', icon: <Wrench size={15} /> },
+              { id: 'history', labelAr: 'سجل الأنشطة', labelEn: 'Activity History', icon: <FileText size={15} /> },
+            ].map((tab) => {
+              const isActive = activeSubTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  data-tab-id={tab.id}
+                  onClick={() => {
+                    setActiveSubTab(tab.id as any);
+                    setHasInteractedWithTabs(true);
+                  }}
+                  className={`shrink-0 snap-start min-w-[130px] md:min-w-[145px] flex items-center justify-center gap-2 py-3 px-3.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap active:scale-95 ${
+                    isActive 
+                      ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/30' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-purple-50/70 dark:hover:bg-purple-950/30 border border-transparent hover:border-purple-200/50 dark:hover:border-purple-800/30'
+                  }`}
+                >
+                  <span className={isActive ? 'text-purple-200' : 'text-slate-400 dark:text-slate-500'}>
+                    {tab.icon}
+                  </span>
+                  <span>{language === 'ar' ? tab.labelAr : tab.labelEn}</span>
+                  {isActive && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
