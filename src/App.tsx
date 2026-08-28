@@ -29,6 +29,7 @@ import MarketingLandingPage from './components/MarketingLandingPage';
 import { MarketingAdmin } from './components/MarketingAdmin';
 import SuperAdminPortal from './components/SuperAdminPortal';
 import VideoTutorialsModal from './components/VideoTutorialsModal';
+import HelpCenter from './components/HelpCenter';
 
 const adjustColorBrightness = (hex: string, percent: number): string => {
   try {
@@ -1346,6 +1347,17 @@ export default function App() {
             isDarkMode={isDarkMode} 
             isTabMode={true}
             initialVideoId={activeTutorialVideoId}
+          />
+        );
+      case 'help-center':
+        return (
+          <HelpCenter 
+            user={currentUser} 
+            onNavigateToTab={setActiveTab} 
+            onOpenTutorials={(vidId) => {
+              setActiveTutorialVideoId(vidId || 'vid-1');
+              setActiveTab('video-tutorials');
+            }} 
           />
         );
       default:

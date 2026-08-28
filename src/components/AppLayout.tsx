@@ -446,6 +446,10 @@ export default function AppLayout({
             parsed.push('video-tutorials');
             hasUpdates = true;
           }
+          if (!parsed.includes('help-center')) {
+            parsed.push('help-center');
+            hasUpdates = true;
+          }
           if (!parsed.includes('firebase-sync')) {
             parsed.push('firebase-sync');
             hasUpdates = true;
@@ -507,6 +511,7 @@ export default function AppLayout({
       item.id === 'dashboard' || 
       item.id === 'maintenance-bot' || 
       item.id === 'video-tutorials' || 
+      item.id === 'help-center' || 
       item.id === 'firebase-sync' || 
       item.id === 'saas-billing' || 
       item.id === 'marketing-portal' || 
