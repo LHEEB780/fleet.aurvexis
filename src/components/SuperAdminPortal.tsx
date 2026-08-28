@@ -307,7 +307,8 @@ export default function SuperAdminPortal({
     setTenantsList(updatedList);
     localStorage.setItem('saas_superadmin_tenants_v1', JSON.stringify(updatedList));
 
-    // Show Certificate details screen
+    // Close the creation modal & show Certificate details screen
+    setIsLicenseModalOpen(false);
     setCreatedTenantCertificate(newTenantObj);
   };
 

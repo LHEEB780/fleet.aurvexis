@@ -60,7 +60,11 @@ import {
   ArrowRight,
   Link2,
   Edit3,
-  Tv
+  Tv,
+  Plus,
+  PlusCircle,
+  Trash2,
+  Save
 } from 'lucide-react';
 import { useLanguage } from '../services/LanguageContext';
 
@@ -336,6 +340,11 @@ export interface VideoTutorial {
 export const formatEmbedUrl = (rawUrl: string): string => {
   if (!rawUrl) return '';
   const trimmed = rawUrl.trim();
+  
+  // If not starting with http:// or https://, do not return it to prevent recursive embedding of relative routes
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return '';
+  }
   
   // YouTube watch format: youtube.com/watch?v=ID or youtu.be/ID or youtube.com/shorts/ID
   const ytMatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
@@ -963,6 +972,174 @@ export const VIDEO_TUTORIALS_DATA: VideoTutorial[] = [
   }
 ];
 
+export const normalizeTutorial = (raw: any): VideoTutorial => {
+  if (!raw || typeof raw !== 'object') {
+    return VIDEO_TUTORIALS_DATA[0];
+  }
+
+  const id = String(raw.id || `tut_${Date.now()}`);
+  const titleAr = String(raw.titleAr || raw.title || 'شرح فيديو تدريبي');
+  const titleEn = String(raw.titleEn || raw.title || titleAr);
+  const descriptionAr = String(raw.descriptionAr || raw.description || 'شرح تشغيلي وتدريبي لإجراءات العمل في المنظومة.');
+  const descriptionEn = String(raw.descriptionEn || raw.description || descriptionAr);
+  const category = (raw.category && ['fleet_setup', 'inspection_qr', 'work_orders', 'inventory', 'pm_schedules', 'ai_analytics'].includes(raw.category))
+    ? raw.category
+    : 'fleet_setup';
+  
+  const categoryLabelAr = String(raw.categoryLabelAr || 'الأسطول والعمليات');
+  const categoryLabelEn = String(raw.categoryLabelEn || 'Fleet & Operations');
+  const duration = String(raw.duration || '05:00');
+  const videoUrl = raw.videoUrl ? String(raw.videoUrl) : undefined;
+  const levelAr = raw.levelAr || 'متوسط';
+  const levelEn = raw.levelEn || 'Intermediate';
+  const badgeAr = raw.badgeAr ? String(raw.badgeAr) : 'شرح معتمد ⭐';
+  const badgeEn = raw.badgeEn ? String(raw.badgeEn) : 'VERIFIED';
+  const gradient = String(raw.gradient || 'from-purple-950 via-slate-900 to-indigo-950');
+  const accentColor = String(raw.accentColor || '#8b5cf6');
+  const iconName = String(raw.iconName || 'Video');
+
+  const applicableVehicles = Array.isArray(raw.applicableVehicles) && raw.applicableVehicles.length > 0
+    ? raw.applicableVehicles
+    : ['heavy_trucks', 'light_commercial'];
+
+  const applicableMaintenanceTypes = Array.isArray(raw.applicableMaintenanceTypes) && raw.applicableMaintenanceTypes.length > 0
+    ? raw.applicableMaintenanceTypes
+    : (Array.isArray(raw.applicableMaintenance) ? raw.applicableMaintenance : ['preventative_pm', 'daily_inspection']);
+
+  const tagsAr = Array.isArray(raw.tagsAr) && raw.tagsAr.length > 0
+    ? raw.tagsAr
+    : (Array.isArray(raw.tags) ? raw.tags : ['شروحات', 'أسطول', 'تشغيل']);
+
+  const tagsEn = Array.isArray(raw.tagsEn) && raw.tagsEn.length > 0
+    ? raw.tagsEn
+    : ['Tutorials', 'Fleet', 'Operations'];
+
+  const primaryVehicleAr = String(raw.primaryVehicleAr || 'كافة فئات الأسطول');
+  const primaryVehicleEn = String(raw.primaryVehicleEn || 'All Fleet Classes');
+  const primaryMaintenanceAr = String(raw.primaryMaintenanceAr || 'إجراءات تشغيلية معتمدة');
+  const primaryMaintenanceEn = String(raw.primaryMaintenanceEn || 'Standard Operations');
+
+  // Normalize chapters
+  let chapters: any[] = [];
+  if (Array.isArray(raw.chapters) && raw.chapters.length > 0) {
+    chapters = raw.chapters.map((chap: any, idx: number) => ({
+      time: String(chap.time || `0${idx}:00`),
+      seconds: typeof chap.seconds === 'number' ? chap.seconds : idx * 60,
+      titleAr: String(chap.titleAr || chap.title || `الجزء ${idx + 1}`),
+      titleEn: String(chap.titleEn || chap.title || `Chapter ${idx + 1}`),
+      descAr: String(chap.descAr || chap.desc || 'شرح تفصيلي لهذا المحور.'),
+      descEn: String(chap.descEn || chap.desc || 'Detailed chapter guide.')
+    }));
+  } else {
+    chapters = [
+      { time: '00:00', seconds: 0, titleAr: 'مقدمة ونظرة عامة', titleEn: 'Overview & Objectives', descAr: 'مقدمة عن محاور الشرح وأهدافه.', descEn: 'Overview of lesson scope.' },
+      { time: '02:00', seconds: 120, titleAr: 'التطبيق والخطوات العملية', titleEn: 'Hands-on Execution', descAr: 'خطوات التنفيذ والإجراء الميداني.', descEn: 'Practical workflow execution.' }
+    ];
+  }
+
+  // Normalize steps
+  let steps: any[] = [];
+  if (Array.isArray(raw.steps) && raw.steps.length > 0) {
+    steps = raw.steps.map((step: any, idx: number) => ({
+      stepNumber: typeof step.stepNumber === 'number' ? step.stepNumber : (typeof step.number === 'number' ? step.number : idx + 1),
+      titleAr: String(step.titleAr || step.title || `الخطوة ${idx + 1}`),
+      titleEn: String(step.titleEn || step.title || `Step ${idx + 1}`),
+      detailAr: String(step.detailAr || step.descAr || step.detail || 'مراجعة وتطبيق الخطوة بدقة وفق معايير النظام.'),
+      detailEn: String(step.detailEn || step.descEn || step.detail || 'Review and execute this step according to standards.'),
+      actionTipAr: step.actionTipAr ? String(step.actionTipAr) : 'التأكد من توثيق كافة البيانات قبل الانتقال للخطوة التالية.',
+      actionTipEn: step.actionTipEn ? String(step.actionTipEn) : 'Verify record accuracy before proceeding.'
+    }));
+  } else {
+    steps = [
+      {
+        stepNumber: 1,
+        titleAr: 'تسجيل الدخول واختيار الوحدة',
+        titleEn: 'Access Portal & Select Target Asset',
+        detailAr: 'فتح الشاشة المخصصة واختيار المركبة أو السجل المطلوب للبدء.',
+        detailEn: 'Open relevant dashboard module and locate target record.',
+        actionTipAr: 'يمكن استخدام البحث السريع للوصول الفوري.',
+        actionTipEn: 'Use quick search for fast lookup.'
+      },
+      {
+        stepNumber: 2,
+        titleAr: 'تطبيق الإجراء وحفظ التغييرات',
+        titleEn: 'Execute Action & Save Changes',
+        detailAr: 'إدخال التحديثات والتأكد من مطابقتها ثم الضغط على زر الحفظ.',
+        detailEn: 'Update parameters and confirm compliance prior to saving.',
+        actionTipAr: 'تأكد من اكتمال كافة الحقول الإلزامية.',
+        actionTipEn: 'Ensure all mandatory fields are provided.'
+      }
+    ];
+  }
+
+  // Normalize Key Takeaways
+  const keyTakeawaysAr = Array.isArray(raw.keyTakeawaysAr) && raw.keyTakeawaysAr.length > 0
+    ? raw.keyTakeawaysAr.map(String)
+    : [
+        'رفع كفاءة التشغيل الميداني وخفض الأخطاء البشرية.',
+        'الامتثال الكامل للمعايير والاشتراطات التشغيلية المعتمدة.',
+        'توفير التكاليف عبر سرعة الإنجاز والتوثيق الرقمي.'
+      ];
+
+  const keyTakeawaysEn = Array.isArray(raw.keyTakeawaysEn) && raw.keyTakeawaysEn.length > 0
+    ? raw.keyTakeawaysEn.map(String)
+    : [
+        'Boost operational efficiency and eliminate human errors.',
+        'Ensure full compliance with verified fleet protocols.',
+        'Reduce downtime through instant digital records.'
+      ];
+
+  // Normalize FAQs
+  const faqsAr = Array.isArray(raw.faqsAr) && raw.faqsAr.length > 0
+    ? raw.faqsAr.map((f: any) => ({ q: String(f.q || ''), a: String(f.a || '') }))
+    : [
+        { q: 'من يملك صلاحية تنفيذ هذا الإجراء؟', a: 'المشرفون ومدراء الحركة والفنيون المعتمدون بحسب مصفوفة الصلاحيات.' },
+        { q: 'هل يعمل هذا الإجراء دون اتصال بالإنترنت (Offline)؟', a: 'نعم، في تطبيق السائق يتم حفظ الفحوصات ومزامنتها تلقائياً عند عودة الاتصال.' }
+      ];
+
+  const faqsEn = Array.isArray(raw.faqsEn) && raw.faqsEn.length > 0
+    ? raw.faqsEn.map((f: any) => ({ q: String(f.q || ''), a: String(f.a || '') }))
+    : [
+        { q: 'Who has permissions to execute this?', a: 'Authorized fleet managers, supervisors, and certified technicians.' },
+        { q: 'Does this function in offline mode?', a: 'Yes, driver checklists cache locally and sync upon reconnection.' }
+      ];
+
+  return {
+    id,
+    titleAr,
+    titleEn,
+    descriptionAr,
+    descriptionEn,
+    category,
+    categoryLabelAr,
+    categoryLabelEn,
+    duration,
+    videoUrl,
+    levelAr,
+    levelEn,
+    badgeAr,
+    badgeEn,
+    gradient,
+    accentColor,
+    iconName,
+    applicableVehicles,
+    applicableMaintenanceTypes,
+    tagsAr,
+    tagsEn,
+    primaryVehicleAr,
+    primaryVehicleEn,
+    primaryMaintenanceAr,
+    primaryMaintenanceEn,
+    chapters,
+    steps,
+    keyTakeawaysAr,
+    keyTakeawaysEn,
+    faqsAr,
+    faqsEn,
+    downloadableTemplate: raw.downloadableTemplate
+  };
+};
+
 export const TUTORIAL_MENU_SECTIONS = [
   {
     id: 'strategic',
@@ -1003,6 +1180,7 @@ interface VideoTutorialsModalProps {
   initialVideoId?: string;
   isTabMode?: boolean;
   isDarkMode?: boolean;
+  isAdmin?: boolean;
 }
 
 export default function VideoTutorialsModal({
@@ -1013,7 +1191,8 @@ export default function VideoTutorialsModal({
   brandName = 'FleetAurvexis',
   initialVideoId,
   isTabMode = false,
-  isDarkMode: propIsDarkMode
+  isDarkMode: propIsDarkMode,
+  isAdmin = false
 }: VideoTutorialsModalProps) {
   const { language: contextLang } = useLanguage();
   const lang = propLanguage || contextLang || 'ar';
@@ -1022,12 +1201,84 @@ export default function VideoTutorialsModal({
   const [internalDarkMode, setInternalDarkMode] = useState(true);
   const isDarkMode = propIsDarkMode !== undefined ? propIsDarkMode : internalDarkMode;
 
+  // Custom user tutorials from localStorage with guaranteed normalization
+  const [customTutorials, setCustomTutorials] = useState<VideoTutorial[]>(() => {
+    try {
+      const saved = localStorage.getItem('fms_custom_user_tutorials');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.map(normalizeTutorial);
+        }
+      }
+      return [];
+    } catch (e) {
+      console.warn('Failed to parse custom user tutorials:', e);
+      return [];
+    }
+  });
+
+  const [hiddenTutorialIds, setHiddenTutorialIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('fms_hidden_tutorial_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [tutorialToDelete, setTutorialToDelete] = useState<VideoTutorial | null>(null);
+
+  // Sync state across window/tabs/admin updates
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const savedCustoms = localStorage.getItem('fms_custom_user_tutorials');
+        if (savedCustoms) {
+          const parsed = JSON.parse(savedCustoms);
+          if (Array.isArray(parsed)) {
+            setCustomTutorials(parsed.map(normalizeTutorial));
+          }
+        }
+        const savedHidden = localStorage.getItem('fms_hidden_tutorial_ids');
+        if (savedHidden) {
+          setHiddenTutorialIds(JSON.parse(savedHidden));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('fms_tutorials_updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('fms_tutorials_updated', handleSync);
+    };
+  }, []);
+
+  // Save custom tutorials to localStorage whenever updated
+  useEffect(() => {
+    try {
+      localStorage.setItem('fms_custom_user_tutorials', JSON.stringify(customTutorials));
+    } catch (e) {
+      console.error('Failed to save custom tutorials:', e);
+    }
+  }, [customTutorials]);
+
+  // Combined video list containing default + custom user tutorials (excluding deleted ones)
+  const allVideos = useMemo(() => {
+    return [...VIDEO_TUTORIALS_DATA, ...customTutorials]
+      .filter(v => !hiddenTutorialIds.includes(v.id))
+      .map(normalizeTutorial);
+  }, [customTutorials, hiddenTutorialIds]);
+
   const [selectedVideo, setSelectedVideo] = useState<VideoTutorial>(() => {
     if (initialVideoId) {
       const found = VIDEO_TUTORIALS_DATA.find(v => v.id === initialVideoId);
-      if (found) return found;
+      if (found) return normalizeTutorial(found);
     }
-    return VIDEO_TUTORIALS_DATA[0];
+    return normalizeTutorial(VIDEO_TUTORIALS_DATA[0]);
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -1047,13 +1298,13 @@ export default function VideoTutorialsModal({
   // Synchronize with initialVideoId when passed from parent/navigation
   useEffect(() => {
     if (initialVideoId) {
-      const found = VIDEO_TUTORIALS_DATA.find(v => v.id === initialVideoId);
+      const found = allVideos.find(v => v.id === initialVideoId);
       if (found) {
         setSelectedVideo(found);
         setExpandedSectionIds([getSectionIdForVideo(found)]);
       }
     }
-  }, [initialVideoId]);
+  }, [initialVideoId, allVideos]);
 
   // Favorites System State & Persistence
   const [favoriteVideoIds, setFavoriteVideoIds] = useState<string[]>(() => {
@@ -1094,8 +1345,8 @@ export default function VideoTutorialsModal({
   const isVideoFavorite = (videoId: string) => favoriteVideoIds.includes(videoId);
 
   const favoriteVideos = useMemo(() => {
-    return VIDEO_TUTORIALS_DATA.filter(v => favoriteVideoIds.includes(v.id));
-  }, [favoriteVideoIds]);
+    return allVideos.filter(v => favoriteVideoIds.includes(v.id));
+  }, [favoriteVideoIds, allVideos]);
 
   // Video Mode & URL Customization State
   const [videoMode, setVideoMode] = useState<'video' | 'interactive'>('video');
@@ -1110,6 +1361,44 @@ export default function VideoTutorialsModal({
   const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [urlSavedSuccess, setUrlSavedSuccess] = useState(false);
+
+  // Add/Edit Custom Video Tutorial Modal State
+  const [isCreateTutorialModalOpen, setIsCreateTutorialModalOpen] = useState(false);
+  const [editingTutorialId, setEditingTutorialId] = useState<string | null>(null);
+  const [tutorialSavedSuccess, setTutorialSavedSuccess] = useState(false);
+  const [newTutorialForm, setNewTutorialForm] = useState<{
+    titleAr: string;
+    titleEn: string;
+    descriptionAr: string;
+    descriptionEn: string;
+    videoUrl: string;
+    category: 'fleet_setup' | 'inspection_qr' | 'work_orders' | 'inventory' | 'pm_schedules' | 'ai_analytics';
+    duration: string;
+    levelAr: 'مبتدئ' | 'متوسط' | 'متقدم' | 'للمدراء والتنفيذيين' | 'فني وميداني';
+    badgeAr: string;
+    primaryVehicleAr: string;
+    primaryMaintenanceAr: string;
+    applicableVehicles: VehicleCategoryType[];
+    applicableMaintenanceTypes: MaintenanceCategoryType[];
+    tags: string;
+    stepsText: string;
+  }>({
+    titleAr: '',
+    titleEn: '',
+    descriptionAr: '',
+    descriptionEn: '',
+    videoUrl: '',
+    category: 'fleet_setup',
+    duration: '05:00',
+    levelAr: 'متوسط',
+    badgeAr: 'شرح مخصص ⭐',
+    primaryVehicleAr: 'شاحنات ثقيلة وفانات',
+    primaryMaintenanceAr: 'صيانة وقائية وفحص دوري',
+    applicableVehicles: ['heavy_trucks', 'light_commercial'],
+    applicableMaintenanceTypes: ['preventative_pm', 'daily_inspection'],
+    tags: 'شروحات, صيانة, أسطول, فيديو',
+    stepsText: '1. الخطوة الأولى: الدخول إلى واجهة النظام\n2. الخطوة الثانية: تطبيق الإجراءات المحددة\n3. الخطوة الثالثة: التحقق والاعتماد الرقمي'
+  });
 
   // Interactive Player State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -1191,6 +1480,303 @@ export default function VideoTutorialsModal({
     setUrlInput(currentRawUrl);
     setUrlSavedSuccess(false);
     setIsUrlModalOpen(true);
+  };
+
+  const handleSaveUrl = () => {
+    const trimmed = urlInput.trim();
+    const updated = {
+      ...customVideoUrls,
+      [selectedVideo.id]: trimmed
+    };
+    setCustomVideoUrls(updated);
+    try {
+      localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+    setUrlSavedSuccess(true);
+    setTimeout(() => {
+      setIsUrlModalOpen(false);
+      setUrlSavedSuccess(false);
+    }, 800);
+  };
+
+  const handleResetUrl = () => {
+    const updated = { ...customVideoUrls };
+    delete updated[selectedVideo.id];
+    setCustomVideoUrls(updated);
+    try {
+      localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+    setUrlInput(selectedVideo.videoUrl || '');
+    setUrlSavedSuccess(true);
+    setTimeout(() => {
+      setIsUrlModalOpen(false);
+      setUrlSavedSuccess(false);
+    }, 800);
+  };
+
+  const handleOpenCreateTutorialModal = (tutorialToEdit?: VideoTutorial) => {
+    if (tutorialToEdit) {
+      setEditingTutorialId(tutorialToEdit.id);
+      setNewTutorialForm({
+        titleAr: tutorialToEdit.titleAr,
+        titleEn: tutorialToEdit.titleEn,
+        descriptionAr: tutorialToEdit.descriptionAr,
+        descriptionEn: tutorialToEdit.descriptionEn,
+        videoUrl: customVideoUrls[tutorialToEdit.id] || tutorialToEdit.videoUrl || '',
+        category: tutorialToEdit.category,
+        duration: tutorialToEdit.duration,
+        levelAr: tutorialToEdit.levelAr,
+        badgeAr: tutorialToEdit.badgeAr || 'شرح مخصص ⭐',
+        primaryVehicleAr: tutorialToEdit.primaryVehicleAr || 'شاحنات ومعدات الأسطول',
+        primaryMaintenanceAr: tutorialToEdit.primaryMaintenanceAr || 'صيانة وقائية وتشغيلية',
+        applicableVehicles: tutorialToEdit.applicableVehicles || ['heavy_trucks', 'light_commercial'],
+        applicableMaintenanceTypes: tutorialToEdit.applicableMaintenanceTypes || ['preventative_pm', 'daily_inspection'],
+        tags: tutorialToEdit.tagsAr?.join(', ') || 'شروحات, صيانة, أسطول',
+        stepsText: tutorialToEdit.steps?.map(s => `${s.stepNumber}. ${s.titleAr}: ${s.detailAr}`).join('\n') || ''
+      });
+    } else {
+      setEditingTutorialId(null);
+      setNewTutorialForm({
+        titleAr: '',
+        titleEn: '',
+        descriptionAr: '',
+        descriptionEn: '',
+        videoUrl: '',
+        category: 'fleet_setup',
+        duration: '05:00',
+        levelAr: 'متوسط',
+        badgeAr: 'شرح مخصص ⭐',
+        primaryVehicleAr: 'شاحنات ثقيلة وفانات',
+        primaryMaintenanceAr: 'صيانة وقائية وفحص دوري',
+        applicableVehicles: ['heavy_trucks', 'light_commercial'],
+        applicableMaintenanceTypes: ['preventative_pm', 'daily_inspection'],
+        tags: 'شروحات, صيانة, أسطول, فيديو',
+        stepsText: '1. الخطوة الأولى: الدخول إلى واجهة النظام\n2. الخطوة الثانية: تطبيق الإجراءات المحددة\n3. الخطوة الثالثة: التحقق والاعتماد الرقمي'
+      });
+    }
+    setTutorialSavedSuccess(false);
+    setIsCreateTutorialModalOpen(true);
+  };
+
+  const handleSaveNewTutorial = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const categoryLabels: Record<string, { ar: string; en: string }> = {
+      fleet_setup: { ar: 'إدارة وتأسيس الأسطول', en: 'Fleet Setup & Operations' },
+      inspection_qr: { ar: 'الفحص اليومي ورموز QR', en: 'Daily QR Inspection' },
+      work_orders: { ar: 'أوامر العمل والورش', en: 'Work Orders & Repairs' },
+      inventory: { ar: 'المستودع وقطع الغيار', en: 'Inventory & Parts' },
+      pm_schedules: { ar: 'الصيانة الوقائية والجداول', en: 'Preventative PM Schedules' },
+      ai_analytics: { ar: 'الذكاء الاصطناعي والتحليلات', en: 'AI Diagnostics & Insights' }
+    };
+
+    const finalTitleAr = newTutorialForm.titleAr.trim() || `شرح فيديو ${categoryLabels[newTutorialForm.category]?.ar || 'الأسطول والعمليات'}`;
+    const finalTitleEn = newTutorialForm.titleEn.trim() || categoryLabels[newTutorialForm.category]?.en || finalTitleAr;
+
+    const parsedTags = newTutorialForm.tags
+      .split(/[,،]/)
+      .map(t => t.trim())
+      .filter(Boolean);
+
+    const parsedSteps = newTutorialForm.stepsText
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map((line, idx) => {
+        const clean = line.replace(/^\d+[\.\-\)]\s*/, '');
+        const parts = clean.split(/[:：]/);
+        return {
+          stepNumber: idx + 1,
+          titleAr: parts[0]?.trim() || `الخطوة ${idx + 1}`,
+          titleEn: `Step ${idx + 1}`,
+          detailAr: parts[1]?.trim() || parts[0]?.trim() || `تفاصيل الخطوة ${idx + 1}`,
+          detailEn: `Details of step ${idx + 1}`,
+          actionTipAr: 'تأكد من مراجعة البيانات قبل الاعتماد النهائي.',
+          actionTipEn: 'Ensure reviewing all records prior to confirmation.'
+        };
+      });
+
+    if (editingTutorialId) {
+      // Update existing custom tutorial
+      setCustomTutorials(prev => prev.map(t => {
+        if (t.id !== editingTutorialId) return t;
+        return {
+          ...t,
+          titleAr: finalTitleAr,
+          titleEn: finalTitleEn,
+          descriptionAr: newTutorialForm.descriptionAr.trim(),
+          descriptionEn: newTutorialForm.descriptionEn.trim() || newTutorialForm.descriptionAr.trim(),
+          category: newTutorialForm.category,
+          categoryLabelAr: categoryLabels[newTutorialForm.category]?.ar || 'شروحات المنظومة',
+          categoryLabelEn: categoryLabels[newTutorialForm.category]?.en || 'System Tutorials',
+          duration: newTutorialForm.duration.trim() || '05:00',
+          videoUrl: newTutorialForm.videoUrl.trim(),
+          levelAr: newTutorialForm.levelAr,
+          badgeAr: newTutorialForm.badgeAr || 'شرح مخصص ⭐',
+          tagsAr: parsedTags.length > 0 ? parsedTags : ['شروحات مخصصة'],
+          primaryVehicleAr: newTutorialForm.primaryVehicleAr,
+          primaryMaintenanceAr: newTutorialForm.primaryMaintenanceAr,
+          applicableVehicles: newTutorialForm.applicableVehicles,
+          applicableMaintenanceTypes: newTutorialForm.applicableMaintenanceTypes,
+          steps: parsedSteps.length > 0 ? parsedSteps : t.steps
+        };
+      }));
+
+      if (newTutorialForm.videoUrl.trim()) {
+        const updatedUrls = {
+          ...customVideoUrls,
+          [editingTutorialId]: newTutorialForm.videoUrl.trim()
+        };
+        setCustomVideoUrls(updatedUrls);
+        try {
+          localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updatedUrls));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      try {
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('fms_tutorials_updated'));
+      } catch {}
+
+      setTutorialSavedSuccess(true);
+      setTimeout(() => {
+        setIsCreateTutorialModalOpen(false);
+        setTutorialSavedSuccess(false);
+        setEditingTutorialId(null);
+      }, 900);
+    } else {
+      // Create brand new tutorial
+      const newId = `custom-vid-${Date.now()}`;
+      const newTutorial: VideoTutorial = {
+        id: newId,
+        titleAr: finalTitleAr,
+        titleEn: finalTitleEn,
+        descriptionAr: newTutorialForm.descriptionAr.trim() || 'شرح تدريبي مخصص لتشغيل وإدارة أسطول المركبات والعمليات.',
+        descriptionEn: newTutorialForm.descriptionEn.trim() || 'Custom operational walkthrough tutorial.',
+        category: newTutorialForm.category,
+        categoryLabelAr: categoryLabels[newTutorialForm.category]?.ar || 'شروحات مخصصة',
+        categoryLabelEn: categoryLabels[newTutorialForm.category]?.en || 'Custom Tutorials',
+        duration: newTutorialForm.duration.trim() || '05:00',
+        videoUrl: newTutorialForm.videoUrl.trim(),
+        levelAr: newTutorialForm.levelAr,
+        levelEn: 'Intermediate',
+        badgeAr: newTutorialForm.badgeAr || 'مخصص ⭐',
+        badgeEn: 'Custom ⭐',
+        gradient: 'from-purple-950 via-slate-900 to-indigo-950',
+        accentColor: '#8b5cf6',
+        iconName: 'Video',
+        applicableVehicles: newTutorialForm.applicableVehicles,
+        applicableMaintenanceTypes: newTutorialForm.applicableMaintenanceTypes,
+        tagsAr: parsedTags.length > 0 ? parsedTags : ['شروحات مخصصة', 'أسطول', 'صيانة'],
+        tagsEn: ['Custom Video', 'Fleet PM', 'Operations'],
+        primaryVehicleAr: newTutorialForm.primaryVehicleAr,
+        primaryVehicleEn: 'Custom Fleet Assets',
+        primaryMaintenanceAr: newTutorialForm.primaryMaintenanceAr,
+        primaryMaintenanceEn: 'Custom Maintenance Protocol',
+        chapters: [
+          { time: '00:00', seconds: 0, titleAr: 'مقدمة ونظرة عامة', titleEn: 'Overview', descAr: 'مقدمة عن محاور الشرح وأهدافه.', descEn: 'Tutorial overview.' },
+          { time: '02:00', seconds: 120, titleAr: 'التطبيق العملي والخطوات', titleEn: 'Hands-on Execution', descAr: 'خطوات التنفيذ على النظام.', descEn: 'Execution steps.' }
+        ],
+        steps: parsedSteps.length > 0 ? parsedSteps : [
+          {
+            stepNumber: 1,
+            titleAr: 'مراجعة بيانات الشرح',
+            titleEn: 'Review Tutorial Scope',
+            detailAr: 'التأكد من تنفيذ متطلبات الصيانة بحسب إرشادات الفيديو المرفق.',
+            detailEn: 'Follow maintenance protocols in accordance with attached video walkthrough.',
+            actionTipAr: 'التأكد من حفظ التغييرات وتوثيق العملية في سجل المركبة.',
+            actionTipEn: 'Save all operational updates to asset digital file.'
+          }
+        ],
+        keyTakeawaysAr: [
+          'توثيق مرئي يسهل تدريب الفنيين والسائقين الجدد.',
+          'الامتثال لمعايير الجودة والصيانة المعتمدة للمنظومة.'
+        ],
+        keyTakeawaysEn: [
+          'Visual guides streamline onboarding for drivers and workshop crews.',
+          'Standardizes workflow compliance across the organization.'
+        ],
+        faqsAr: [
+          { q: 'كيف يمكن تعديل هذا الشرح لاحقاً؟', a: 'يمكنك النقر على زر التعديل بجانب اسم الفيديو في أي وقت لتحديث الرابط أو الوصف.' }
+        ],
+        faqsEn: [
+          { q: 'How to update this tutorial later?', a: 'Click the edit icon next to the video in playlist to adjust URL or details.' }
+        ]
+      };
+
+      setCustomTutorials(prev => [newTutorial, ...prev]);
+      if (newTutorialForm.videoUrl.trim()) {
+        const updatedUrls = {
+          ...customVideoUrls,
+          [newId]: newTutorialForm.videoUrl.trim()
+        };
+        setCustomVideoUrls(updatedUrls);
+        try {
+          localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updatedUrls));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      try {
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('fms_tutorials_updated'));
+      } catch {}
+
+      setSelectedVideo(newTutorial);
+      setTutorialSavedSuccess(true);
+      setTimeout(() => {
+        setIsCreateTutorialModalOpen(false);
+        setTutorialSavedSuccess(false);
+      }, 900);
+    }
+  };
+
+  const handleDeleteCustomTutorial = (tut: VideoTutorial, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setTutorialToDelete(tut);
+  };
+
+  const confirmDeleteTutorial = () => {
+    if (!tutorialToDelete) return;
+    const id = tutorialToDelete.id;
+
+    setCustomTutorials(prev => prev.filter(t => t.id !== id));
+
+    const updatedHidden = Array.from(new Set([...hiddenTutorialIds, id]));
+    setHiddenTutorialIds(updatedHidden);
+    try {
+      localStorage.setItem('fms_hidden_tutorial_ids', JSON.stringify(updatedHidden));
+    } catch (e) {
+      console.error(e);
+    }
+
+    const updatedUrls = { ...customVideoUrls };
+    delete updatedUrls[id];
+    setCustomVideoUrls(updatedUrls);
+    try {
+      localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updatedUrls));
+    } catch (err) {
+      console.error('Failed to save custom video url:', err);
+    }
+
+    if (selectedVideo?.id === id) {
+      const remaining = allVideos.filter(v => v.id !== id);
+      setSelectedVideo(remaining[0] || VIDEO_TUTORIALS_DATA[0]);
+    }
+
+    setTutorialToDelete(null);
+
+    try {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('fms_tutorials_updated', { detail: { deletedId: id } }));
+    } catch {}
   };
 
   const handleSaveCustomUrl = (e?: React.FormEvent) => {
@@ -1330,7 +1916,7 @@ export default function VideoTutorialsModal({
 
   // Filter videos with vehicle classification, maintenance classification, tags, category and search
   const filteredVideos = useMemo(() => {
-    return VIDEO_TUTORIALS_DATA.filter(v => {
+    return allVideos.filter(v => {
       const matchesCategory = selectedCategory === 'all' || v.category === selectedCategory;
       const matchesVehicleType = selectedVehicleType === 'all' || 
         (v.applicableVehicles && v.applicableVehicles.includes(selectedVehicleType));
@@ -1363,12 +1949,12 @@ export default function VideoTutorialsModal({
 
       return matchesCategory && matchesVehicleType && matchesMaintenanceType && matchesTag && matchesSearch;
     });
-  }, [selectedCategory, selectedVehicleType, selectedMaintenanceType, selectedTag, searchQuery, favoriteVideoIds]);
+  }, [selectedCategory, selectedVehicleType, selectedMaintenanceType, selectedTag, searchQuery, favoriteVideoIds, allVideos]);
 
   // Extract all unique popular tags
   const allPopularTags = useMemo(() => {
     const tagCountMap = new Map<string, number>();
-    VIDEO_TUTORIALS_DATA.forEach(v => {
+    allVideos.forEach(v => {
       const list = lang === 'ar' ? v.tagsAr : v.tagsEn;
       list?.forEach(t => {
         tagCountMap.set(t, (tagCountMap.get(t) || 0) + 1);
@@ -1377,18 +1963,18 @@ export default function VideoTutorialsModal({
     return Array.from(tagCountMap.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([tag]) => tag);
-  }, [lang]);
+  }, [lang, allVideos]);
 
   // Count helper for vehicle filter pills
   const getVehicleTypeCount = (vType: VehicleCategoryType) => {
-    if (vType === 'all') return VIDEO_TUTORIALS_DATA.length;
-    return VIDEO_TUTORIALS_DATA.filter(v => v.applicableVehicles && v.applicableVehicles.includes(vType)).length;
+    if (vType === 'all') return allVideos.length;
+    return allVideos.filter(v => v.applicableVehicles && v.applicableVehicles.includes(vType)).length;
   };
 
   // Count helper for maintenance type filter pills
   const getMaintenanceTypeCount = (mType: MaintenanceCategoryType) => {
-    if (mType === 'all') return VIDEO_TUTORIALS_DATA.length;
-    return VIDEO_TUTORIALS_DATA.filter(v => v.applicableMaintenanceTypes && v.applicableMaintenanceTypes.includes(mType)).length;
+    if (mType === 'all') return allVideos.length;
+    return allVideos.filter(v => v.applicableMaintenanceTypes && v.applicableMaintenanceTypes.includes(mType)).length;
   };
 
   const categories = [
@@ -1429,11 +2015,24 @@ export default function VideoTutorialsModal({
             </p>
           </div>
         </div>
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono ${
-          isDarkMode ? 'bg-slate-900 text-slate-300 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200'
-        }`}>
-          {filteredVideos.length}/{VIDEO_TUTORIALS_DATA.length}
-        </span>
+        <div className="flex items-center gap-1.5">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => handleOpenCreateTutorialModal()}
+              className="px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold flex items-center gap-1 transition shadow-xs cursor-pointer"
+              title={lang === 'ar' ? 'إضافة شرح أو فيديو جديد' : 'Add New Tutorial'}
+            >
+              <Plus size={11} />
+              <span>{lang === 'ar' ? 'إضافة شرح' : 'Add'}</span>
+            </button>
+          )}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border font-mono ${
+            isDarkMode ? 'bg-slate-900 text-slate-300 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200'
+          }`}>
+            {filteredVideos.length}/{allVideos.length}
+          </span>
+        </div>
       </div>
 
       {/* Instant Search Bar */}
@@ -2067,6 +2666,32 @@ export default function VideoTutorialsModal({
                                   }`}>
                                     <Clock size={10} /> {video.duration}
                                   </span>
+                                  {isAdmin && customTutorials.some(c => c.id === video.id) && (
+                                    <div className="flex items-center gap-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenCreateTutorialModal(video);
+                                        }}
+                                        className="p-1 rounded-md text-purple-400 hover:text-purple-300 hover:bg-purple-500/20 transition cursor-pointer"
+                                        title={lang === 'ar' ? 'تعديل هذا الشرح' : 'Edit Tutorial'}
+                                      >
+                                        <Edit3 size={11} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteCustomTutorial(video, e);
+                                        }}
+                                        className="p-1 rounded-md text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 transition cursor-pointer"
+                                        title={lang === 'ar' ? 'حذف هذا الشرح' : 'Delete Tutorial'}
+                                      >
+                                        <Trash2 size={11} />
+                                      </button>
+                                    </div>
+                                  )}
                                   <button
                                     id={`btn-fav-card-${video.id}`}
                                     type="button"
@@ -2263,6 +2888,19 @@ export default function VideoTutorialsModal({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {/* Add New Tutorial Button (Only for Admins / CMS) */}
+          {isAdmin && (
+            <button
+              id="btn-add-new-tutorial-topbar"
+              onClick={() => handleOpenCreateTutorialModal()}
+              className="px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-sm shadow-purple-500/20 cursor-pointer"
+              title={lang === 'ar' ? 'إضافة شرح أو فيديو جديد للمكتبة' : 'Add New Video Tutorial'}
+            >
+              <PlusCircle size={14} />
+              <span>{lang === 'ar' ? 'إضافة شرح جديد' : 'Add Tutorial'}</span>
+            </button>
+          )}
+
           {/* Mobile Drawer Button to browse other videos */}
           <button
             id="btn-toggle-mobile-video-drawer"
@@ -2283,7 +2921,7 @@ export default function VideoTutorialsModal({
                 ? 'bg-white/20 text-white' 
                 : (isDarkMode ? 'bg-purple-900/60 text-purple-200' : 'bg-indigo-200 text-indigo-800')
             }`}>
-              {VIDEO_TUTORIALS_DATA.length}
+              {allVideos.length}
             </span>
           </button>
 
@@ -2410,20 +3048,22 @@ export default function VideoTutorialsModal({
 
             {/* Right controls: Custom URL & External Link */}
             <div className="flex items-center gap-2 flex-wrap ms-auto">
-              <button
-                type="button"
-                id="btn-edit-video-url"
-                onClick={handleOpenUrlModal}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                  isDarkMode
-                    ? 'bg-slate-900 hover:bg-slate-800 text-purple-300 border-purple-500/30 hover:border-purple-500/60'
-                    : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200'
-                }`}
-                title={lang === 'ar' ? 'تعديل أو إدراج رابط الفيديو' : 'Edit or Insert Video URL'}
-              >
-                <Link2 size={13} className="text-purple-500" />
-                <span>{lang === 'ar' ? 'إدراج / تعديل الرابط' : 'Insert / Edit Link'}</span>
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  id="btn-edit-video-url"
+                  onClick={handleOpenUrlModal}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                    isDarkMode
+                      ? 'bg-slate-900 hover:bg-slate-800 text-purple-300 border-purple-500/30 hover:border-purple-500/60'
+                      : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200'
+                  }`}
+                  title={lang === 'ar' ? 'تعديل أو إدراج رابط الفيديو' : 'Edit or Insert Video URL'}
+                >
+                  <Link2 size={13} className="text-purple-500" />
+                  <span>{lang === 'ar' ? 'إدراج / تعديل الرابط' : 'Insert / Edit Link'}</span>
+                </button>
+              )}
 
               {currentRawUrl && (
                 <a
@@ -2483,19 +3123,25 @@ export default function VideoTutorialsModal({
                     </h3>
                     <p className="text-slate-400 text-xs leading-relaxed">
                       {lang === 'ar' 
-                        ? 'يمكنك إدراج رابط يوتيوب أو فيديو MP4 مباشر لمشاهدته فوراً هنا، أو التبديل للمحاكي التفاعلي.'
-                        : 'You can insert a YouTube link or direct MP4 URL to watch it here, or switch to the interactive stage.'}
+                        ? (isAdmin 
+                            ? 'يمكنك إدراج رابط يوتيوب أو فيديو MP4 مباشر لمشاهدته فوراً هنا، أو التبديل للمحاكي التفاعلي.' 
+                            : 'يمكنك استخدام المحاكي التفاعلي أدناه لمشاهدة وتجربة خطوات هذا الدرس عملياً.')
+                        : (isAdmin 
+                            ? 'You can insert a YouTube link or direct MP4 URL to watch it here, or switch to the interactive stage.'
+                            : 'You can launch the interactive stage below to experience the lesson steps interactively.')}
                     </p>
                   </div>
                   <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleOpenUrlModal}
-                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/30 cursor-pointer"
-                    >
-                      <Link2 size={14} />
-                      <span>{lang === 'ar' ? 'إدراج رابط الفيديو الآن' : 'Insert Video URL Now'}</span>
-                    </button>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={handleOpenUrlModal}
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-purple-600/30 cursor-pointer"
+                      >
+                        <Link2 size={14} />
+                        <span>{lang === 'ar' ? 'إدراج رابط الفيديو الآن' : 'Insert Video URL Now'}</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setVideoMode('interactive')}
@@ -3225,7 +3871,7 @@ export default function VideoTutorialsModal({
                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
                       activeTab === 'steps' ? 'bg-white/20 text-white' : (isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-700')
                     }`}>
-                      {selectedVideo.steps.length}
+                      {selectedVideo?.steps?.length || 0}
                     </span>
                   </button>
 
@@ -3243,7 +3889,7 @@ export default function VideoTutorialsModal({
                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
                       activeTab === 'chapters' ? 'bg-white/20 text-white' : (isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-700')
                     }`}>
-                      {selectedVideo.chapters.length}
+                      {selectedVideo?.chapters?.length || 0}
                     </span>
                   </button>
 
@@ -3267,9 +3913,9 @@ export default function VideoTutorialsModal({
                   {activeTab === 'steps' && (
                     <div className="space-y-3">
                       <div className="grid grid-cols-1 gap-2.5">
-                        {selectedVideo.steps.map((step) => (
+                        {(selectedVideo?.steps || []).map((step, idx) => (
                           <div
-                            key={step.stepNumber}
+                            key={step.stepNumber || idx + 1}
                             className={`border rounded-2xl p-3.5 space-y-1.5 transition ${
                               isDarkMode 
                                 ? 'bg-slate-950/60 border-slate-800/80 hover:border-purple-500/40 text-slate-200' 
@@ -3278,7 +3924,7 @@ export default function VideoTutorialsModal({
                           >
                             <div className="flex items-center gap-2.5">
                               <span className="w-5 h-5 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 text-white text-[11px] font-black flex items-center justify-center shrink-0">
-                                {step.stepNumber}
+                                {step.stepNumber || idx + 1}
                               </span>
                               <h4 className={`text-xs sm:text-sm font-bold ${
                                 isDarkMode ? 'text-white' : 'text-slate-900'
@@ -3320,7 +3966,7 @@ export default function VideoTutorialsModal({
                         <ul className={`space-y-1 text-xs ps-4 list-disc ${
                           isDarkMode ? 'text-slate-300' : 'text-slate-700'
                         }`}>
-                          {(lang === 'ar' ? selectedVideo.keyTakeawaysAr : selectedVideo.keyTakeawaysEn).map((point, idx) => (
+                          {(lang === 'ar' ? (selectedVideo?.keyTakeawaysAr || []) : (selectedVideo?.keyTakeawaysEn || [])).map((point, idx) => (
                             <li key={idx}>{point}</li>
                           ))}
                         </ul>
@@ -3331,8 +3977,9 @@ export default function VideoTutorialsModal({
                   {/* Chapters Tab */}
                   {activeTab === 'chapters' && (
                     <div className="space-y-2">
-                      {selectedVideo.chapters.map((chap, idx) => {
-                        const isCurrentChapter = currentTime >= chap.seconds && (idx === selectedVideo.chapters.length - 1 || currentTime < selectedVideo.chapters[idx + 1].seconds);
+                      {(selectedVideo?.chapters || []).map((chap, idx) => {
+                        const chaptersList = selectedVideo?.chapters || [];
+                        const isCurrentChapter = currentTime >= chap.seconds && (idx === chaptersList.length - 1 || currentTime < (chaptersList[idx + 1]?.seconds ?? Infinity));
                         return (
                           <div
                             key={idx}
@@ -3374,7 +4021,7 @@ export default function VideoTutorialsModal({
                   {/* FAQs Tab */}
                   {activeTab === 'faqs' && (
                     <div className="space-y-2.5">
-                      {(lang === 'ar' ? selectedVideo.faqsAr : selectedVideo.faqsEn).map((faq, idx) => (
+                      {(lang === 'ar' ? (selectedVideo?.faqsAr || []) : (selectedVideo?.faqsEn || [])).map((faq, idx) => (
                         <div 
                           key={idx} 
                           className={`p-3 rounded-xl border space-y-1 ${
@@ -3478,6 +4125,562 @@ export default function VideoTutorialsModal({
               </button>
             )}
           </div>
+
+          {/* ------------------------------------------------------------- */}
+          {/* DIALOG 1: INSERT / EDIT VIDEO URL MODAL                       */}
+          {/* ------------------------------------------------------------- */}
+          <AnimatePresence>
+            {isUrlModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                  className={`w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden flex flex-col ${
+                    isDarkMode ? 'bg-slate-900 border-purple-500/30 text-white' : 'bg-white border-slate-200 text-slate-900'
+                  }`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className={`p-4 border-b flex items-center justify-between ${
+                    isDarkMode ? 'border-slate-800 bg-slate-950/70' : 'border-slate-100 bg-slate-50'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
+                        <Link2 size={16} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold">
+                          {lang === 'ar' ? 'إدراج وتعديل رابط الفيديو' : 'Insert / Edit Video URL'}
+                        </h3>
+                        <p className={`text-[11px] truncate max-w-[280px] sm:max-w-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {lang === 'ar' ? selectedVideo.titleAr : selectedVideo.titleEn}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsUrlModalOpen(false)}
+                      className={`p-1.5 rounded-lg border transition ${
+                        isDarkMode ? 'border-slate-800 text-slate-400 hover:text-white' : 'border-slate-200 text-slate-500 hover:text-slate-900'
+                      }`}
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+
+                  <div className="p-4 space-y-4 max-h-[75vh] overflow-y-auto">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold">
+                        {lang === 'ar' ? 'رابط الفيديو (YouTube، MP4، Loom، Vimeo):' : 'Video URL (YouTube, MP4, Loom, Vimeo):'}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="url"
+                          value={urlInput}
+                          onChange={(e) => {
+                            setUrlInput(e.target.value);
+                            setUrlSavedSuccess(false);
+                          }}
+                          placeholder="https://www.youtube.com/watch?v=... أو https://example.com/video.mp4"
+                          className={`w-full text-xs px-3 py-2.5 rounded-xl border font-mono focus:outline-none transition ${
+                            isDarkMode
+                              ? 'bg-slate-950 border-slate-800 text-white placeholder-slate-500 focus:border-purple-500'
+                              : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500'
+                          }`}
+                        />
+                        {urlInput && (
+                          <button
+                            onClick={() => setUrlInput('')}
+                            className={`absolute top-1/2 -translate-y-1/2 p-1 text-xs ${isRtl ? 'left-2' : 'right-2'} text-slate-400 hover:text-white`}
+                          >
+                            <X size={13} />
+                          </button>
+                        )}
+                      </div>
+                      <p className={`text-[10px] leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {lang === 'ar'
+                          ? 'يدعم النظام: روابط يوتيوب (العادية والقواطع Shorts)، روابط MP4 المباشرة، روابط التخزين السحابي، وEmbeds.'
+                          : 'Supports standard YouTube links, YouTube Shorts, direct MP4 video links, and video embeds.'}
+                      </p>
+                    </div>
+
+                    {/* Quick Presets / Examples */}
+                    <div className="space-y-1.5">
+                      <span className={`text-[11px] font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {lang === 'ar' ? 'نماذج سريعة وروابط تجريبية:' : 'Quick Sample URLs:'}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setUrlInput('https://www.youtube.com/watch?v=dQw4w9WgXcQ')}
+                          className={`text-[10.5px] px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                            isDarkMode ? 'bg-slate-800 border-slate-700 text-purple-300 hover:bg-slate-700' : 'bg-slate-100 border-slate-200 text-indigo-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          ▶ YouTube Sample
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUrlInput('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4')}
+                          className={`text-[10.5px] px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                            isDarkMode ? 'bg-slate-800 border-slate-700 text-purple-300 hover:bg-slate-700' : 'bg-slate-100 border-slate-200 text-indigo-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          🎬 Direct MP4 Video
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Live Preview Box */}
+                    {urlInput.trim() && (
+                      <div className="space-y-1.5">
+                        <span className={`text-[11px] font-bold flex items-center gap-1 ${isDarkMode ? 'text-purple-300' : 'text-indigo-600'}`}>
+                          <Tv size={13} />
+                          <span>{lang === 'ar' ? 'معاينة الفيديو المباشرة:' : 'Live Video Preview:'}</span>
+                        </span>
+                        <div className="aspect-video w-full rounded-xl overflow-hidden bg-black border border-slate-800">
+                          {formatEmbedUrl(urlInput)?.endsWith('.mp4') ? (
+                            <video controls src={formatEmbedUrl(urlInput)!} className="w-full h-full object-contain" />
+                          ) : (
+                            <iframe
+                              src={formatEmbedUrl(urlInput) || urlInput}
+                              title="Preview"
+                              className="w-full h-full border-0"
+                              allowFullScreen
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {urlSavedSuccess && (
+                      <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-emerald-400" />
+                        <span>{lang === 'ar' ? 'تم حفظ رابط الفيديو وتحديث الدرس بنجاح!' : 'Video URL saved and updated successfully!'}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={`p-4 border-t flex items-center justify-between gap-2 ${
+                    isDarkMode ? 'border-slate-800 bg-slate-950/70' : 'border-slate-100 bg-slate-50'
+                  }`}>
+                    <button
+                      type="button"
+                      onClick={handleResetUrl}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                        isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {lang === 'ar' ? 'استعادة الافتراضي' : 'Reset Default'}
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsUrlModalOpen(false)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                          isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveUrl}
+                        className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-purple-600/30 cursor-pointer"
+                      >
+                        <Save size={13} />
+                        <span>{lang === 'ar' ? 'حفظ وتطبيق الرابط' : 'Save & Apply'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* ------------------------------------------------------------- */}
+          {/* DIALOG 2: CREATE / EDIT CUSTOM TUTORIAL FULL MODAL            */}
+          {/* ------------------------------------------------------------- */}
+          <AnimatePresence>
+            {isCreateTutorialModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.96, y: 20 }}
+                  className={`w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl border overflow-hidden flex flex-col my-auto ${
+                    isDarkMode ? 'bg-slate-900 border-purple-500/30 text-white' : 'bg-white border-slate-200 text-slate-900'
+                  }`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Modal Header */}
+                  <div className={`px-4 sm:px-6 py-3.5 border-b flex items-center justify-between ${
+                    isDarkMode ? 'border-slate-800 bg-slate-950/80' : 'border-slate-100 bg-slate-50'
+                  }`}>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                        <Video size={17} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm sm:text-base font-black">
+                          {editingTutorialId 
+                            ? (lang === 'ar' ? 'تعديل الشرح التدريبي' : 'Edit Tutorial')
+                            : (lang === 'ar' ? 'إضافة شرح فيديو جديد للمكتبة' : 'Add New Video Tutorial')}
+                        </h3>
+                        <p className={`text-[11px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {lang === 'ar' ? 'أدخل تفاصيل الشرح ورابط الفيديو وفئات الأسطول المتوافقة' : 'Fill in tutorial details, video link, and fleet classifications'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsCreateTutorialModalOpen(false)}
+                      className={`p-1.5 rounded-xl border transition ${
+                        isDarkMode ? 'border-slate-800 text-slate-400 hover:text-white' : 'border-slate-200 text-slate-500 hover:text-slate-900'
+                      }`}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  {/* Modal Form Content */}
+                  <form onSubmit={handleSaveNewTutorial} className="p-4 sm:p-6 space-y-4 max-h-[72vh] overflow-y-auto">
+                    {/* Row 1: Titles */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold">
+                          {lang === 'ar' ? 'عنوان الشرح (بالعربية) *' : 'Tutorial Title (Arabic) *'}
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newTutorialForm.titleAr}
+                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, titleAr: e.target.value })}
+                          placeholder="مثال: دليل فحص ناقل الحركة والمكابح"
+                          className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-none transition ${
+                            isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                          }`}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold">
+                          {lang === 'ar' ? 'عنوان الشرح (بالإنجليزية)' : 'Tutorial Title (English)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={newTutorialForm.titleEn}
+                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, titleEn: e.target.value })}
+                          placeholder="e.g. Transmission & Brake Inspection Guide"
+                          className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-none transition ${
+                            isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 2: Video URL & Live Preview */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold flex items-center justify-between">
+                        <span>{lang === 'ar' ? 'رابط الفيديو (YouTube، MP4، Vimeo، Loom)' : 'Video URL'}</span>
+                        <span className={`text-[10px] font-normal ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {lang === 'ar' ? '(اختياري - في حال تركه فارغاً يعمل بالمحاكي التفاعلي)' : '(Optional)'}
+                        </span>
+                      </label>
+                      <input
+                        type="url"
+                        value={newTutorialForm.videoUrl}
+                        onChange={(e) => setNewTutorialForm({ ...newTutorialForm, videoUrl: e.target.value })}
+                        placeholder="https://www.youtube.com/watch?v=... أو https://domain.com/video.mp4"
+                        className={`w-full text-xs px-3 py-2 rounded-xl border font-mono focus:outline-none transition ${
+                          isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                        }`}
+                      />
+                      {newTutorialForm.videoUrl && (
+                        <div className="mt-2 aspect-video w-full max-w-sm mx-auto rounded-xl overflow-hidden bg-black border border-slate-800">
+                          {formatEmbedUrl(newTutorialForm.videoUrl)?.endsWith('.mp4') ? (
+                            <video controls src={formatEmbedUrl(newTutorialForm.videoUrl)!} className="w-full h-full object-contain" />
+                          ) : (
+                            <iframe
+                              src={formatEmbedUrl(newTutorialForm.videoUrl) || newTutorialForm.videoUrl}
+                              title="Preview"
+                              className="w-full h-full border-0"
+                              allowFullScreen
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Row 3: Category, Duration, Level */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold">
+                          {lang === 'ar' ? 'تصنيف المنظومة' : 'Category'}
+                        </label>
+                        <select
+                          value={newTutorialForm.category}
+                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, category: e.target.value })}
+                          className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-none transition ${
+                            isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                          }`}
+                        >
+                          <option value="fleet_setup">{lang === 'ar' ? 'إدارة وتأسيس الأسطول' : 'Fleet Setup'}</option>
+                          <option value="inspection_qr">{lang === 'ar' ? 'الفحص اليومي ورموز QR' : 'QR Inspection'}</option>
+                          <option value="work_orders">{lang === 'ar' ? 'أوامر العمل والورش' : 'Work Orders'}</option>
+                          <option value="inventory">{lang === 'ar' ? 'المستودع وقطع الغيار' : 'Inventory & Parts'}</option>
+                          <option value="pm_schedules">{lang === 'ar' ? 'الصيانة الوقائية والجداول' : 'PM Schedules'}</option>
+                          <option value="ai_analytics">{lang === 'ar' ? 'الذكاء الاصطناعي والتحليلات' : 'AI Diagnostics'}</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold">
+                          {lang === 'ar' ? 'المدة الزمنية (مثال: 05:40)' : 'Duration (e.g. 05:40)'}
+                        </label>
+                        <input
+                          type="text"
+                          value={newTutorialForm.duration}
+                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, duration: e.target.value })}
+                          placeholder="05:30"
+                          className={`w-full text-xs px-3 py-2 rounded-xl border font-mono focus:outline-none transition ${
+                            isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                          }`}
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold">
+                          {lang === 'ar' ? 'المستوى المستهدف' : 'Level'}
+                        </label>
+                        <select
+                          value={newTutorialForm.levelAr}
+                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, levelAr: e.target.value })}
+                          className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-none transition ${
+                            isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                          }`}
+                        >
+                          <option value="مبتدئ">مبتدئ / تأسيسي</option>
+                          <option value="متوسط">متوسط / تشغيلي</option>
+                          <option value="متقدم">متقدم / احترافي</option>
+                          <option value="للمدراء">للمدراء والمشرفين</option>
+                          <option value="فني وميداني">فني وميداني</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Row 4: Fleet Vehicle Class Badges Toggle */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold">
+                        {lang === 'ar' ? 'فئات الأسطول المتوافقة (انقر للاختيار):' : 'Applicable Vehicle Classes:'}
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {VEHICLE_TYPE_FILTERS.filter(f => f.id !== 'all').map(vObj => {
+                          const isSelected = newTutorialForm.applicableVehicles.includes(vObj.id as VehicleCategoryType);
+                          return (
+                            <button
+                              type="button"
+                              key={vObj.id}
+                              onClick={() => {
+                                const current = newTutorialForm.applicableVehicles;
+                                const updated = isSelected
+                                  ? current.filter(x => x !== vObj.id)
+                                  : [...current, vObj.id as VehicleCategoryType];
+                                setNewTutorialForm({ ...newTutorialForm, applicableVehicles: updated });
+                              }}
+                              className={`text-[11px] px-2.5 py-1 rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
+                                isSelected
+                                  ? (isDarkMode ? 'bg-purple-600 text-white border-purple-500 font-bold' : 'bg-indigo-600 text-white border-indigo-600 font-bold')
+                                  : (isDarkMode ? 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200')
+                              }`}
+                            >
+                              <span>{vObj.emoji}</span>
+                              <span>{lang === 'ar' ? vObj.shortLabelAr : vObj.shortLabelEn}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Row 5: Maintenance Type Badges Toggle */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold">
+                        {lang === 'ar' ? 'أنواع الصيانة المتوافقة (انقر للاختيار):' : 'Applicable Maintenance Types:'}
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {MAINTENANCE_TYPE_FILTERS.filter(f => f.id !== 'all').map(mObj => {
+                          const isSelected = newTutorialForm.applicableMaintenanceTypes.includes(mObj.id as MaintenanceCategoryType);
+                          return (
+                            <button
+                              type="button"
+                              key={mObj.id}
+                              onClick={() => {
+                                const current = newTutorialForm.applicableMaintenanceTypes;
+                                const updated = isSelected
+                                  ? current.filter(x => x !== mObj.id)
+                                  : [...current, mObj.id as MaintenanceCategoryType];
+                                setNewTutorialForm({ ...newTutorialForm, applicableMaintenanceTypes: updated });
+                              }}
+                              className={`text-[11px] px-2.5 py-1 rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
+                                isSelected
+                                  ? (isDarkMode ? 'bg-amber-600 text-white border-amber-500 font-bold' : 'bg-amber-600 text-white border-amber-600 font-bold')
+                                  : (isDarkMode ? 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200')
+                              }`}
+                            >
+                              <span>{mObj.emoji}</span>
+                              <span>{lang === 'ar' ? mObj.shortLabelAr : mObj.shortLabelEn}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Row 6: Operational Tags */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold">
+                        {lang === 'ar' ? 'الوسوم التشغيلية (مفصولة بفاصلة)' : 'Tags (comma separated)'}
+                      </label>
+                      <input
+                        type="text"
+                        value={newTutorialForm.tags}
+                        onChange={(e) => setNewTutorialForm({ ...newTutorialForm, tags: e.target.value })}
+                        placeholder="فحص دوري, صيانة شاحنات, باركود, زيت ومكابح"
+                        className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-none transition ${
+                          isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                        }`}
+                      />
+                    </div>
+
+                    {/* Row 7: Description */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold">
+                        {lang === 'ar' ? 'وصف ومستهدفات الشرح' : 'Summary & Description'}
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={newTutorialForm.descriptionAr}
+                        onChange={(e) => setNewTutorialForm({ ...newTutorialForm, descriptionAr: e.target.value })}
+                        placeholder="شرح إجرائي وتطبيقي لفحص الأسطول وجدولة الصيانات..."
+                        className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-none transition ${
+                          isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                        }`}
+                      />
+                    </div>
+
+                    {/* Row 8: Steps Text */}
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold">
+                        {lang === 'ar' ? 'خطوات التنفيذ والإجراءات (سطر لكل خطوة)' : 'Execution Steps (One per line)'}
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={newTutorialForm.stepsText}
+                        onChange={(e) => setNewTutorialForm({ ...newTutorialForm, stepsText: e.target.value })}
+                        placeholder="1. الخطوة الأولى: تفاصيل الإجراء\n2. الخطوة الثانية: التحقق والاعتماد"
+                        className={`w-full text-xs px-3 py-2 rounded-xl border font-mono focus:outline-none transition ${
+                          isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
+                        }`}
+                      />
+                    </div>
+
+                    {tutorialSavedSuccess && (
+                      <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2">
+                        <CheckCircle2 size={16} className="text-emerald-400" />
+                        <span>{lang === 'ar' ? 'تم نشر الشرح وحفظه في المكتبة بنجاح!' : 'Tutorial saved and published to the library successfully!'}</span>
+                      </div>
+                    )}
+
+                    {/* Modal Footer Actions */}
+                    <div className={`pt-3 border-t flex items-center justify-end gap-2 ${
+                      isDarkMode ? 'border-slate-800' : 'border-slate-200'
+                    }`}>
+                      <button
+                        type="button"
+                        onClick={() => setIsCreateTutorialModalOpen(false)}
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                          isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-purple-600/30 cursor-pointer"
+                      >
+                        <Save size={14} />
+                        <span>
+                          {editingTutorialId 
+                            ? (lang === 'ar' ? 'حفظ التعديلات' : 'Save Changes') 
+                            : (lang === 'ar' ? 'حفظ ونشر الشرح في المكتبة' : 'Save & Publish Tutorial')}
+                        </span>
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* Delete Tutorial Confirmation Modal */}
+          <AnimatePresence>
+            {tutorialToDelete && (
+              <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className={`w-full max-w-md rounded-3xl p-6 shadow-2xl border ${
+                    isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5 mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center shrink-0">
+                      <Trash2 size={24} />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black">
+                        {lang === 'ar' ? 'تأكيد حذف الشرح التدريبي' : 'Confirm Delete Tutorial'}
+                      </h4>
+                      <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {lang === 'ar'
+                          ? 'هل أنت متأكد من رغبتك في حذف هذا الشرح نهائياً من المكتبة؟'
+                          : 'Are you sure you want to delete this tutorial from the library?'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={`p-3.5 rounded-2xl border mb-5 ${
+                    isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    <span className="text-[10px] font-bold text-purple-400 block mb-1">
+                      {lang === 'ar' ? tutorialToDelete.categoryLabelAr : tutorialToDelete.categoryLabelEn}
+                    </span>
+                    <p className="text-xs font-black">
+                      {lang === 'ar' ? tutorialToDelete.titleAr : tutorialToDelete.titleEn}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setTutorialToDelete(null)}
+                      className={`px-4 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                        isDarkMode ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                      }`}
+                    >
+                      {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmDeleteTutorial}
+                      className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md shadow-rose-600/30 flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                      <span>{lang === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}</span>
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
 
         </motion.div>
   );

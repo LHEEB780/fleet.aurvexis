@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Globe2, 
   Settings, 
@@ -47,14 +47,40 @@ import {
   UserCheck,
   BarChart2,
   RefreshCw,
+  RotateCcw,
   Menu,
-  X
+  X,
+  Video,
+  Link2,
+  Tv,
+  Play,
+  PlaySquare,
+  Layers,
+  ExternalLink,
+  PlusCircle,
+  QrCode,
+  Boxes,
+  FileSpreadsheet,
+  Snowflake,
+  HardHat,
+  Car,
+  CheckCircle2,
+  Share2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 import { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
+import VideoTutorialsModal, { 
+  VIDEO_TUTORIALS_DATA, 
+  VideoTutorial, 
+  VEHICLE_TYPE_FILTERS, 
+  MAINTENANCE_TYPE_FILTERS, 
+  VehicleCategoryType, 
+  MaintenanceCategoryType,
+  formatEmbedUrl
+} from './VideoTutorialsModal';
 import { 
   db, 
   saveDocument, 
@@ -370,12 +396,13 @@ export function MarketingAdmin({
   const isRtl = dir === 'rtl';
 
   // Sub-navigation tabs
-  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots' | 'gallery'>('leads');
+  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots' | 'gallery' | 'tutorials'>('leads');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchMenuQuery, setSearchMenuQuery] = useState('');
 
   const menuItems = [
     { id: 'leads', label: 'المشتركون والطلبات المتلقاة', subLabel: 'متابعة الـ Leads وتحديث حالة الحسابات والمبيعات', icon: <Users size={15} /> },
+    { id: 'tutorials', label: 'مكتبة الفيديوهات والشروحات التدريبية', subLabel: 'إدارة وإضافة الشروحات المعتمدة وروابط الفيديو لكافة المشتركين', icon: <Video size={15} className="text-purple-600" /> },
     { id: 'launch-planner', label: 'دليل وخطة إطلاق الساس متكامل', subLabel: 'الخطة والتحقق ودليل التشغيل بالتفصيل', icon: <CheckSquare size={15} className="text-amber-500" /> },
     { id: 'robots', label: 'مكتبة الروبوتات والذكاء الاصطناعي', subLabel: 'أوتوماتونات ذكية ومعالجات خلفية لأتمتة النظام', icon: <Sparkles size={15} style={{ color: brandPrimaryColor }} className="animate-pulse" /> },
     { id: 'identity', label: 'إعدادات الهوية والألوان', subLabel: 'تعديل شعار، ودرجات السحابة وسير اللوفر', icon: <Settings size={15} /> },
@@ -600,6 +627,425 @@ export function MarketingAdmin({
   // Gallery Management States
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [galleryImageForm, setGalleryImageForm] = useState<any>(null);
+
+  // Video Tutorials CMS & Knowledge Academy Management States
+  const [customTutorials, setCustomTutorials] = useState<VideoTutorial[]>(() => {
+    try {
+      const saved = localStorage.getItem('fms_custom_user_tutorials');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [customVideoUrls, setCustomVideoUrls] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('fms_custom_tutorial_video_urls');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const [hiddenTutorialIds, setHiddenTutorialIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('fms_hidden_tutorial_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [tutorialToDelete, setTutorialToDelete] = useState<VideoTutorial | null>(null);
+
+  const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
+  const [tutorialCategoryFilter, setTutorialCategoryFilter] = useState<string>('all');
+  const [tutorialVehicleFilter, setTutorialVehicleFilter] = useState<VehicleCategoryType>('all');
+  const [tutorialMaintenanceFilter, setTutorialMaintenanceFilter] = useState<MaintenanceCategoryType>('all');
+  const [selectedTutorialForPreview, setSelectedTutorialForPreview] = useState<VideoTutorial | null>(null);
+  const [showTenantPreviewModal, setShowTenantPreviewModal] = useState(false);
+  const [showAddOrEditTutorialModal, setShowAddOrEditTutorialModal] = useState(false);
+  const [editingTutorial, setEditingTutorial] = useState<VideoTutorial | null>(null);
+  const [tutorialFormError, setTutorialFormError] = useState<string | null>(null);
+
+  // Form state for creating/editing tutorial
+  const [tutorialForm, setTutorialForm] = useState<{
+    id?: string;
+    titleAr: string;
+    titleEn: string;
+    descriptionAr: string;
+    descriptionEn: string;
+    category: 'fleet_setup' | 'inspection_qr' | 'work_orders' | 'inventory' | 'pm_schedules' | 'ai_analytics';
+    categoryLabelAr: string;
+    categoryLabelEn: string;
+    duration: string;
+    videoUrl: string;
+    levelAr: 'مبتدئ' | 'متوسط' | 'متقدم' | 'للمدراء والتنفيذيين' | 'فني وميداني';
+    levelEn: 'Beginner' | 'Intermediate' | 'Advanced' | 'Executive' | 'Field & Tech';
+    badgeAr: string;
+    badgeEn: string;
+    gradient: string;
+    applicableVehicles: VehicleCategoryType[];
+    applicableMaintenance: MaintenanceCategoryType[];
+    stepsTextAr: string;
+    stepsTextEn: string;
+    takeawaysTextAr: string;
+    takeawaysTextEn: string;
+  }>({
+    titleAr: '',
+    titleEn: '',
+    descriptionAr: '',
+    descriptionEn: '',
+    category: 'fleet_setup',
+    categoryLabelAr: 'تأسيس الأسطول والبيانات',
+    categoryLabelEn: 'Fleet Setup & Assets',
+    duration: '5:00',
+    videoUrl: '',
+    levelAr: 'مبتدئ',
+    levelEn: 'Beginner',
+    badgeAr: 'جديد',
+    badgeEn: 'NEW',
+    gradient: 'from-purple-600 via-indigo-600 to-blue-700',
+    applicableVehicles: ['heavy_trucks', 'light_commercial'],
+    applicableMaintenance: ['preventative_pm'],
+    stepsTextAr: 'تسجيل الدخول للنظام بصلاحية المشرف\nفتح تبويب إدارة المركبات وتوثيق بيانات الهيكل\nحفظ وتصدير باركود الاستجابة السريعة QR',
+    stepsTextEn: 'Login to system with administrative privileges\nOpen Fleet Assets table and register chassis\nSave and export digital QR inspection code',
+    takeawaysTextAr: 'تمكين الربط الفوري بين السائقين والورشة\nخفض زمن الاستجابة للأعطال',
+    takeawaysTextEn: 'Instant mechanic-to-driver workflow\nReduced mean-time-to-repair MTTR'
+  });
+
+  // Quick URL edit modal state
+  const [quickUrlModalTutorial, setQuickUrlModalTutorial] = useState<VideoTutorial | null>(null);
+  const [quickUrlInput, setQuickUrlInput] = useState('');
+
+  // Combined video list containing defaults + custom (excluding hidden/deleted ones)
+  const allPlatformTutorials = useMemo(() => {
+    return [...VIDEO_TUTORIALS_DATA, ...customTutorials].filter(
+      tut => !hiddenTutorialIds.includes(tut.id)
+    );
+  }, [customTutorials, hiddenTutorialIds]);
+
+  // Open modal to add or edit
+  const handleOpenTutorialEditor = (tut?: VideoTutorial) => {
+    setTutorialFormError(null);
+    if (tut) {
+      setEditingTutorial(tut);
+      setTutorialForm({
+        id: tut.id,
+        titleAr: tut.titleAr,
+        titleEn: tut.titleEn,
+        descriptionAr: tut.descriptionAr,
+        descriptionEn: tut.descriptionEn,
+        category: tut.category,
+        categoryLabelAr: tut.categoryLabelAr,
+        categoryLabelEn: tut.categoryLabelEn,
+        duration: tut.duration,
+        videoUrl: customVideoUrls[tut.id] || tut.videoUrl || '',
+        levelAr: tut.levelAr,
+        levelEn: tut.levelEn,
+        badgeAr: tut.badgeAr || 'معتمد',
+        badgeEn: tut.badgeEn || 'VERIFIED',
+        gradient: tut.gradient || 'from-purple-600 via-indigo-600 to-blue-700',
+        applicableVehicles: (tut as any).applicableVehicles || ['heavy_trucks', 'light_commercial'],
+        applicableMaintenance: (tut as any).applicableMaintenance || ['preventative_pm'],
+        stepsTextAr: (tut as any).steps ? (tut as any).steps.map((s: any) => s.titleAr || s).join('\n') : 'الخطوة الأولى\nالخطوة الثانية',
+        stepsTextEn: (tut as any).steps ? (tut as any).steps.map((s: any) => s.titleEn || s).join('\n') : 'First Step\nSecond Step',
+        takeawaysTextAr: (tut as any).keyTakeawaysAr ? (tut as any).keyTakeawaysAr.join('\n') : '',
+        takeawaysTextEn: (tut as any).keyTakeawaysEn ? (tut as any).keyTakeawaysEn.join('\n') : ''
+      });
+    } else {
+      setEditingTutorial(null);
+      setTutorialForm({
+        titleAr: '',
+        titleEn: '',
+        descriptionAr: '',
+        descriptionEn: '',
+        category: 'fleet_setup',
+        categoryLabelAr: 'تأسيس الأسطول والبيانات',
+        categoryLabelEn: 'Fleet Setup & Assets',
+        duration: '5:00',
+        videoUrl: '',
+        levelAr: 'مبتدئ',
+        levelEn: 'Beginner',
+        badgeAr: 'جديد',
+        badgeEn: 'NEW',
+        gradient: 'from-purple-600 via-indigo-600 to-blue-700',
+        applicableVehicles: ['heavy_trucks', 'light_commercial'],
+        applicableMaintenance: ['preventative_pm'],
+        stepsTextAr: 'تسجيل الدخول للنظام بصلاحية المشرف\nفتح تبويب إدارة المركبات وتوثيق بيانات الهيكل\nحفظ وتصدير باركود الاستجابة السريعة QR',
+        stepsTextEn: 'Login to system with administrative privileges\nOpen Fleet Assets table and register chassis\nSave and export digital QR inspection code',
+        takeawaysTextAr: 'تمكين الربط الفوري بين السائقين والورشة\nخفض زمن الاستجابة للأعطال',
+        takeawaysTextEn: 'Instant mechanic-to-driver workflow\nReduced mean-time-to-repair MTTR'
+      });
+    }
+    setShowAddOrEditTutorialModal(true);
+  };
+
+  // Save tutorial handler (Guaranteed robust execution)
+  const handleSaveTutorial = () => {
+    setTutorialFormError(null);
+
+    // Auto-generate title fallback if left empty to avoid blocking saving
+    let finalTitleAr = tutorialForm.titleAr.trim();
+    if (!finalTitleAr) {
+      finalTitleAr = `شرح فيديو ${tutorialForm.categoryLabelAr || 'الأسطول والعمليات'}`;
+    }
+
+    let finalTitleEn = tutorialForm.titleEn.trim();
+    if (!finalTitleEn) {
+      finalTitleEn = tutorialForm.categoryLabelEn ? `${tutorialForm.categoryLabelEn} - Video Guide` : finalTitleAr;
+    }
+
+    let finalDescAr = tutorialForm.descriptionAr.trim();
+    if (!finalDescAr) {
+      finalDescAr = `شرح تشغيلي وتدريبي معتمد من منصة ${saasBrandName} لتوضيح خطوات وإجراءات العمل.`;
+    }
+    let finalDescEn = tutorialForm.descriptionEn.trim() || finalDescAr;
+
+    const rawVideoUrl = tutorialForm.videoUrl.trim();
+    let cleanVideoUrl: string | undefined = undefined;
+    if (rawVideoUrl) {
+      if (/^https?:\/\//i.test(rawVideoUrl)) {
+        cleanVideoUrl = rawVideoUrl;
+      } else if (rawVideoUrl.includes('youtube.com') || rawVideoUrl.includes('youtu.be') || rawVideoUrl.includes('.mp4') || rawVideoUrl.includes('vimeo.com')) {
+        cleanVideoUrl = `https://${rawVideoUrl}`;
+      } else {
+        cleanVideoUrl = rawVideoUrl;
+      }
+    }
+
+    const steps = tutorialForm.stepsTextAr.split('\n').filter(s => s.trim().length > 0).map((stepText, idx) => ({
+      stepNumber: idx + 1,
+      number: idx + 1,
+      time: `0${idx + 1}:00`,
+      titleAr: stepText.trim(),
+      titleEn: tutorialForm.stepsTextEn.split('\n')[idx] || stepText.trim(),
+      detailAr: `إجراء تشغيلي تدريبي رقم ${idx + 1} معتمد من منصة ${saasBrandName}.`,
+      detailEn: `Standard operating procedure step ${idx + 1} verified for ${saasBrandName}.`,
+      descAr: `إجراء تشغيلي تدريبي رقم ${idx + 1} معتمد من منصة ${saasBrandName}.`,
+      descEn: `Standard operating procedure step ${idx + 1} verified for ${saasBrandName}.`,
+      actionTipAr: 'التأكد من توثيق كافة البيانات قبل الانتقال للخطوة التالية.',
+      actionTipEn: 'Verify record accuracy before proceeding.'
+    }));
+
+    const keyTakeawaysAr = tutorialForm.takeawaysTextAr.split('\n').filter(t => t.trim().length > 0);
+    const keyTakeawaysEn = tutorialForm.takeawaysTextEn.split('\n').filter(t => t.trim().length > 0);
+
+    const newTutObj: VideoTutorial = {
+      id: tutorialForm.id || `custom_tut_${Date.now()}`,
+      titleAr: finalTitleAr,
+      titleEn: finalTitleEn,
+      descriptionAr: finalDescAr,
+      descriptionEn: finalDescEn,
+      category: tutorialForm.category,
+      categoryLabelAr: tutorialForm.categoryLabelAr,
+      categoryLabelEn: tutorialForm.categoryLabelEn,
+      duration: tutorialForm.duration || '5:00',
+      videoUrl: cleanVideoUrl,
+      levelAr: tutorialForm.levelAr,
+      levelEn: tutorialForm.levelEn,
+      badgeAr: tutorialForm.badgeAr || 'جديد',
+      badgeEn: tutorialForm.badgeEn || 'NEW',
+      gradient: tutorialForm.gradient || 'from-purple-950 via-slate-900 to-indigo-950',
+      accentColor: '#8b5cf6',
+      iconName: 'Video',
+      applicableVehicles: tutorialForm.applicableVehicles || ['heavy_trucks', 'light_commercial'],
+      applicableMaintenanceTypes: tutorialForm.applicableMaintenance || ['preventative_pm', 'daily_inspection'],
+      applicableMaintenance: tutorialForm.applicableMaintenance || ['preventative_pm', 'daily_inspection'],
+      tagsAr: ['شروحات', 'أسطول', 'تشغيل'],
+      tagsEn: ['Tutorials', 'Fleet', 'Operations'],
+      primaryVehicleAr: 'كافة فئات الأسطول',
+      primaryVehicleEn: 'All Fleet Classes',
+      primaryMaintenanceAr: 'إجراءات تشغيلية معتمدة',
+      primaryMaintenanceEn: 'Standard Operations',
+      chapters: [
+        { time: '00:00', seconds: 0, titleAr: 'مقدمة ونظرة عامة', titleEn: 'Overview & Objectives', descAr: 'مقدمة عن محاور الشرح وأهدافه.', descEn: 'Overview of lesson scope.' },
+        { time: '02:00', seconds: 120, titleAr: 'التطبيق والخطوات العملية', titleEn: 'Hands-on Execution', descAr: 'خطوات التنفيذ والإجراء الميداني.', descEn: 'Practical workflow execution.' }
+      ],
+      steps: steps.length > 0 ? steps : [
+        {
+          stepNumber: 1,
+          number: 1,
+          time: '01:00',
+          titleAr: 'تسجيل الدخول واختيار الوحدة',
+          titleEn: 'Access Portal & Select Target Asset',
+          detailAr: 'فتح الشاشة المخصصة واختيار المركبة أو السجل المطلوب للبدء.',
+          detailEn: 'Open relevant dashboard module and locate target record.',
+          descAr: 'فتح الشاشة المخصصة واختيار المركبة أو السجل المطلوب للبدء.',
+          descEn: 'Open relevant dashboard module and locate target record.',
+          actionTipAr: 'يمكن استخدام البحث السريع للوصول الفوري.',
+          actionTipEn: 'Use quick search for fast lookup.'
+        }
+      ],
+      keyTakeawaysAr: keyTakeawaysAr.length > 0 ? keyTakeawaysAr : [
+        'رفع كفاءة التشغيل الميداني وخفض الأخطاء البشرية.',
+        'الامتثال الكامل للمعايير والاشتراطات التشغيلية المعتمدة.'
+      ],
+      keyTakeawaysEn: keyTakeawaysEn.length > 0 ? keyTakeawaysEn : [
+        'Boost operational efficiency and eliminate human errors.',
+        'Ensure full compliance with verified fleet protocols.'
+      ],
+      faqsAr: [
+        { q: 'من يملك صلاحية تنفيذ هذا الإجراء؟', a: 'المشرفون ومدراء الحركة والفنيون المعتمدون بحسب مصفوفة الصلاحيات.' }
+      ],
+      faqsEn: [
+        { q: 'Who has permissions to execute this?', a: 'Authorized fleet managers, supervisors, and certified technicians.' }
+      ]
+    } as any;
+
+    let updatedCustoms: VideoTutorial[];
+    if (tutorialForm.id && customTutorials.some(c => c.id === tutorialForm.id)) {
+      updatedCustoms = customTutorials.map(c => c.id === tutorialForm.id ? newTutObj : c);
+    } else if (tutorialForm.id && VIDEO_TUTORIALS_DATA.some(v => v.id === tutorialForm.id)) {
+      if (cleanVideoUrl) {
+        const updatedUrls = { ...customVideoUrls, [tutorialForm.id]: cleanVideoUrl };
+        setCustomVideoUrls(updatedUrls);
+        localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updatedUrls));
+      }
+      updatedCustoms = [newTutObj, ...customTutorials.filter(c => c.id !== tutorialForm.id)];
+    } else {
+      updatedCustoms = [newTutObj, ...customTutorials];
+    }
+
+    if (cleanVideoUrl) {
+      const updatedUrls = { ...customVideoUrls, [newTutObj.id]: cleanVideoUrl };
+      setCustomVideoUrls(updatedUrls);
+      localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updatedUrls));
+    }
+
+    setCustomTutorials(updatedCustoms);
+    localStorage.setItem('fms_custom_user_tutorials', JSON.stringify(updatedCustoms));
+
+    // Broadcast across windows & tabs
+    try {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('fms_tutorials_updated', { detail: newTutObj }));
+    } catch {}
+
+    triggerSaveNotification();
+    setShowAddOrEditTutorialModal(false);
+
+    if (useFirebase && isFirestoreConnected) {
+      saveDocument('saas_tutorials', newTutObj.id, newTutObj).catch(e => console.error("Firestore tutorial save err:", e));
+    }
+  };
+
+  // Delete tutorial trigger (opens modal safely without window.confirm)
+  const handleDeleteTutorial = (tut: VideoTutorial) => {
+    setTutorialToDelete(tut);
+  };
+
+  // Execute actual tutorial deletion
+  const executeDeleteTutorial = (id: string) => {
+    const updatedCustoms = customTutorials.filter(c => c.id !== id);
+    setCustomTutorials(updatedCustoms);
+    try {
+      localStorage.setItem('fms_custom_user_tutorials', JSON.stringify(updatedCustoms));
+    } catch (e) {
+      console.error('Failed to update custom tutorials:', e);
+    }
+
+    const updatedHidden = Array.from(new Set([...hiddenTutorialIds, id]));
+    setHiddenTutorialIds(updatedHidden);
+    try {
+      localStorage.setItem('fms_hidden_tutorial_ids', JSON.stringify(updatedHidden));
+    } catch (e) {
+      console.error('Failed to update hidden tutorials:', e);
+    }
+
+    const updatedUrls = { ...customVideoUrls };
+    delete updatedUrls[id];
+    setCustomVideoUrls(updatedUrls);
+    try {
+      localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updatedUrls));
+    } catch (e) {
+      console.error('Failed to update video urls:', e);
+    }
+
+    try {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('fms_tutorials_updated', { detail: { deletedId: id } }));
+    } catch {}
+
+    triggerSaveNotification();
+    setTutorialToDelete(null);
+    setShowAddOrEditTutorialModal(false);
+  };
+
+  // Restore all hidden default tutorials
+  const handleRestoreAllTutorials = () => {
+    setHiddenTutorialIds([]);
+    try {
+      localStorage.removeItem('fms_hidden_tutorial_ids');
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('fms_tutorials_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+    triggerSaveNotification();
+  };
+
+  // Quick URL save handler
+  const handleSaveQuickUrl = () => {
+    if (!quickUrlModalTutorial) return;
+    const tutId = quickUrlModalTutorial.id;
+    let url = quickUrlInput.trim();
+    if (url && !/^https?:\/\//i.test(url) && (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('.mp4') || url.includes('vimeo.com'))) {
+      url = `https://${url}`;
+    }
+
+    const updatedUrls = { ...customVideoUrls };
+    if (url) {
+      updatedUrls[tutId] = url;
+    } else {
+      delete updatedUrls[tutId];
+    }
+
+    setCustomVideoUrls(updatedUrls);
+    localStorage.setItem('fms_custom_tutorial_video_urls', JSON.stringify(updatedUrls));
+
+    try {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('fms_tutorials_updated'));
+    } catch {}
+
+    triggerSaveNotification();
+    setQuickUrlModalTutorial(null);
+    setQuickUrlInput('');
+  };
+
+  // Filtered list for the Tutorials CMS Tab
+  const filteredAdminTutorials = useMemo(() => {
+    return allPlatformTutorials.filter(tut => {
+      // Search query filter
+      if (tutorialSearchQuery.trim()) {
+        const q = tutorialSearchQuery.toLowerCase();
+        const matchTitle = (tut.titleAr || '').toLowerCase().includes(q) || (tut.titleEn || '').toLowerCase().includes(q);
+        const matchDesc = (tut.descriptionAr || '').toLowerCase().includes(q) || (tut.descriptionEn || '').toLowerCase().includes(q);
+        const matchCat = (tut.categoryLabelAr || '').toLowerCase().includes(q) || (tut.categoryLabelEn || '').toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc && !matchCat) return false;
+      }
+      // Category filter
+      if (tutorialCategoryFilter !== 'all' && tut.category !== tutorialCategoryFilter) {
+        return false;
+      }
+      // Vehicle filter
+      if (tutorialVehicleFilter !== 'all') {
+        const vehs = (tut as any).applicableVehicles;
+        if (vehs && Array.isArray(vehs) && !vehs.includes(tutorialVehicleFilter)) {
+          return false;
+        }
+      }
+      // Maintenance filter
+      if (tutorialMaintenanceFilter !== 'all') {
+        const maints = (tut as any).applicableMaintenance;
+        if (maints && Array.isArray(maints) && !maints.includes(tutorialMaintenanceFilter)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [allPlatformTutorials, tutorialSearchQuery, tutorialCategoryFilter, tutorialVehicleFilter, tutorialMaintenanceFilter]);
 
   // AI Agents & Robots state and handlers
   interface AIRobot {
@@ -2124,12 +2570,14 @@ export function MarketingAdmin({
                   <div className="bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-2xl">
                     <span className="text-[10px] font-black" style={{ color: brandPrimaryColor }}>
                       {activeSubTab === 'leads' ? 'المشتركون' :
+                       activeSubTab === 'tutorials' ? 'مكتبة الفيديوهات' :
                        activeSubTab === 'launch-planner' ? 'خطة الإطلاق' :
                        activeSubTab === 'identity' ? 'الهوية والألوان' :
                        activeSubTab === 'features' ? 'المميزات' :
                        activeSubTab === 'clients' ? 'العملاء والشعارات' :
                        activeSubTab === 'testimonials' ? 'المراجعات' : 
-                       activeSubTab === 'robots' ? 'مكتبة الروبوتات الذكية' : 'التذييل'}
+                       activeSubTab === 'robots' ? 'مكتبة الروبوتات الذكية' : 
+                       activeSubTab === 'gallery' ? 'معرض الصور' : 'التذييل'}
                     </span>
                   </div>
                 </div>
@@ -5513,7 +5961,788 @@ export function MarketingAdmin({
           </div>
         )}
 
-        {/* End of display panel */}
+        {/* ----------------- TAB 10: VIDEO TUTORIALS & ACADEMY CMS ----------------- */}
+        {activeSubTab === 'tutorials' && (
+          <div className="space-y-6">
+            {/* Header Title & Actions */}
+            <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/30 text-xs font-bold mb-3">
+                    <Video size={14} className="text-purple-300" />
+                    <span>{language === 'ar' ? 'إدارة أكاديمية المنصة ومركز الشروحات التدريبية' : 'Platform Academy & Video Tutorials CMS'}</span>
+                  </div>
+                  <h3 className="text-2xl font-black tracking-tight">
+                    {language === 'ar' ? 'مكتبة الفيديوهات والشروحات المعتمدة' : 'Verified Video Tutorials & Knowledge Base'}
+                  </h3>
+                  <p className="text-purple-200/80 text-xs sm:text-sm mt-1.5 max-w-2xl leading-relaxed">
+                    {language === 'ar'
+                      ? 'تحكم بكافة مقاطع الفيديو الإرشادية، وروابط يوتيوب/MP4، والمحاكيات التفاعلية المعروضة للمشتركين والعملاء في كافة أنحاء المنصة.'
+                      : 'Manage instructional video links, YouTube/MP4 streaming assets, and interactive simulations provided to subscribers.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {hiddenTutorialIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleRestoreAllTutorials}
+                      className="px-3.5 py-2.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs font-bold border border-amber-500/30 flex items-center gap-1.5 transition cursor-pointer backdrop-blur-md"
+                      title={language === 'ar' ? 'استعادة كافة الشروحات الافتراضية المحذوفة' : 'Restore Hidden Default Tutorials'}
+                    >
+                      <RotateCcw size={14} />
+                      <span>{language === 'ar' ? `استعادة المحذوفات (${hiddenTutorialIds.length})` : `Restore (${hiddenTutorialIds.length})`}</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setShowTenantPreviewModal(true)}
+                    className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-black border border-white/20 flex items-center gap-2 transition backdrop-blur-md cursor-pointer"
+                    title={language === 'ar' ? 'معاينة تجربة المشتركين الحية بدون أدوات الإدارة' : 'Live Tenant Mode Preview'}
+                  >
+                    <Eye size={15} className="text-purple-300" />
+                    <span>{language === 'ar' ? 'معاينة واجهة المشتركين' : 'Tenant Preview'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenTutorialEditor()}
+                    className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white text-xs font-black shadow-lg shadow-purple-900/40 flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Plus size={16} strokeWidth={2.5} />
+                    <span>{language === 'ar' ? 'إضافة شرح تدريبي جديد' : 'Add New Tutorial'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Metrics Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/10">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                  <span className="text-[11px] text-purple-200 font-bold block">{language === 'ar' ? 'إجمالي الشروحات' : 'Total Tutorials'}</span>
+                  <span className="text-2xl font-black text-white">{allPlatformTutorials.length}</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                  <span className="text-[11px] text-purple-200 font-bold block">{language === 'ar' ? 'شروحات أضافها المشرف' : 'Custom Added'}</span>
+                  <span className="text-2xl font-black text-amber-300">{customTutorials.length}</span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                  <span className="text-[11px] text-purple-200 font-bold block">{language === 'ar' ? 'فيديوهات برابط مخصص' : 'Custom Video Links'}</span>
+                  <span className="text-2xl font-black text-emerald-300">
+                    {allPlatformTutorials.filter(t => customVideoUrls[t.id] || t.videoUrl).length}
+                  </span>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                  <span className="text-[11px] text-purple-200 font-bold block">{language === 'ar' ? 'محاكيات تفاعلية نشطة' : 'Interactive Stages'}</span>
+                  <span className="text-2xl font-black text-cyan-300">
+                    {allPlatformTutorials.filter(t => (t as any).steps && (t as any).steps.length > 0).length}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters and Search Bar */}
+            <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                {/* Search Input */}
+                <div className="relative flex-1 w-full">
+                  <Search size={15} className="absolute top-1/2 -translate-y-1/2 start-3.5 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={tutorialSearchQuery}
+                    onChange={(e) => setTutorialSearchQuery(e.target.value)}
+                    placeholder={language === 'ar' ? 'بحث بالعنوان، الوصف، أو التصنيف التشغيلي...' : 'Search tutorial titles, topics or categories...'}
+                    className="w-full ps-10 pe-9 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition"
+                  />
+                  {tutorialSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setTutorialSearchQuery('')}
+                      className="absolute top-1/2 -translate-y-1/2 end-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Category Dropdown Filter */}
+                <select
+                  value={tutorialCategoryFilter}
+                  onChange={(e) => setTutorialCategoryFilter(e.target.value)}
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 cursor-pointer"
+                >
+                  <option value="all">{language === 'ar' ? '📂 كل التصنيفات التشغيلية' : 'All Categories'}</option>
+                  <option value="fleet_setup">{language === 'ar' ? '🚗 تأسيس الأسطول والبيانات' : 'Fleet Setup'}</option>
+                  <option value="inspection_qr">{language === 'ar' ? '📱 الفحص اليومي QR' : 'QR Inspection'}</option>
+                  <option value="work_orders">{language === 'ar' ? '🛠️ أوامر العمل والصيانة' : 'Work Orders'}</option>
+                  <option value="inventory">{language === 'ar' ? '📦 المستودع وقطع الغيار' : 'Inventory & Parts'}</option>
+                  <option value="pm_schedules">{language === 'ar' ? '📅 الصيانة الوقائية والمجدولة' : 'PM Schedules'}</option>
+                  <option value="ai_analytics">{language === 'ar' ? '🤖 الذكاء الاصطناعي والتحليلات' : 'AI Analytics'}</option>
+                </select>
+              </div>
+
+              {/* Vehicle Category Chips Filter */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs pt-1 border-t border-slate-100">
+                <span className="text-[11px] font-bold text-slate-400 shrink-0 me-1">
+                  {language === 'ar' ? 'نوع المركبة:' : 'Vehicle:'}
+                </span>
+                {VEHICLE_TYPE_FILTERS.map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setTutorialVehicleFilter(f.id)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition cursor-pointer ${
+                      tutorialVehicleFilter === f.id
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {language === 'ar' ? f.labelAr : f.labelEn}
+                  </button>
+                ))}
+              </div>
+
+              {/* Maintenance Category Chips Filter */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs pt-1 border-t border-slate-100">
+                <span className="text-[11px] font-bold text-slate-400 shrink-0 me-1">
+                  {language === 'ar' ? 'نوع الصيانة:' : 'Maintenance:'}
+                </span>
+                {MAINTENANCE_TYPE_FILTERS.map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setTutorialMaintenanceFilter(f.id)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition cursor-pointer ${
+                      tutorialMaintenanceFilter === f.id
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {language === 'ar' ? f.labelAr : f.labelEn}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tutorials List Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredAdminTutorials.map((tut) => {
+                const activeUrl = customVideoUrls[tut.id] || tut.videoUrl;
+                const isCustom = customTutorials.some(c => c.id === tut.id);
+                const stepsCount = (tut as any).steps?.length || 0;
+
+                return (
+                  <div
+                    key={tut.id}
+                    className="bg-white rounded-3xl border border-slate-200 hover:border-purple-300 shadow-xs hover:shadow-md transition flex flex-col justify-between overflow-hidden group"
+                  >
+                    {/* Top gradient banner */}
+                    <div className={`p-4 bg-gradient-to-r ${tut.gradient || 'from-purple-600 to-indigo-700'} text-white relative`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs border border-white/20">
+                          {language === 'ar' ? tut.categoryLabelAr : tut.categoryLabelEn}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-xs flex items-center gap-1">
+                            <Clock size={10} />
+                            <span>{tut.duration}</span>
+                          </span>
+                          {isCustom ? (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
+                              {language === 'ar' ? 'مخصص' : 'Custom'}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">
+                              {tut.badgeAr || 'معتمد'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <h4 className="text-base font-black text-white mt-3 leading-snug line-clamp-1">
+                        {language === 'ar' ? tut.titleAr : tut.titleEn}
+                      </h4>
+                      <p className="text-[11px] text-white/80 font-medium line-clamp-1 mt-0.5">
+                        {language === 'ar' ? tut.titleEn : tut.titleAr}
+                      </p>
+                    </div>
+
+                    {/* Middle Card Content */}
+                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                          {language === 'ar' ? tut.descriptionAr : tut.descriptionEn}
+                        </p>
+
+                        {/* Video URL or Interactive Stage status */}
+                        <div className="mt-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-bold text-slate-500 flex items-center gap-1">
+                              <Video size={12} className={activeUrl ? 'text-emerald-500' : 'text-purple-500'} />
+                              <span>{language === 'ar' ? 'مصدر العرض:' : 'Display Source:'}</span>
+                            </span>
+                            {activeUrl ? (
+                              <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[10px]">
+                                {language === 'ar' ? 'فيديو سحابي نشط' : 'Active Video URL'}
+                              </span>
+                            ) : (
+                              <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 text-[10px]">
+                                {language === 'ar' ? 'محاكي تفاعلي حي' : 'Interactive Stage'}
+                              </span>
+                            )}
+                          </div>
+                          {activeUrl && (
+                            <div className="text-[10px] font-mono text-slate-500 truncate bg-white px-2 py-1 rounded-lg border border-slate-200 flex items-center justify-between">
+                              <span className="truncate">{activeUrl}</span>
+                              <a
+                                href={activeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ms-1.5 text-purple-600 hover:text-purple-800 shrink-0"
+                              >
+                                <ExternalLink size={10} />
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Feature Badges */}
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                            {language === 'ar' ? `المستوى: ${tut.levelAr}` : `Level: ${tut.levelEn}`}
+                          </span>
+                          {stepsCount > 0 && (
+                            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                              {language === 'ar' ? `${stepsCount} خطوات تشغيل` : `${stepsCount} SOP Steps`}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Action Buttons */}
+                      <div className="pt-3 border-t border-slate-100 space-y-2 mt-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTutorialForPreview(tut)}
+                            className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border border-purple-100"
+                            title={language === 'ar' ? 'تشغيل ومعاينة الشرح في المشغل التفاعلي' : 'Live Preview in Player'}
+                          >
+                            <Play size={12} />
+                            <span>{language === 'ar' ? 'معاينة وتشغيل' : 'Preview'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickUrlModalTutorial(tut);
+                              setQuickUrlInput(customVideoUrls[tut.id] || tut.videoUrl || '');
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            title={language === 'ar' ? 'ربط أو تعديل رابط يوتيوب أو MP4' : 'Edit Video URL'}
+                          >
+                            <Link2 size={12} />
+                            <span>{language === 'ar' ? 'ربط الرابط' : 'Set Link'}</span>
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTutorialEditor(tut)}
+                            className="flex-1 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 transition border border-slate-200 cursor-pointer"
+                          >
+                            <Edit3 size={12} />
+                            <span>{language === 'ar' ? 'تعديل الشرح والخطوات' : 'Edit Tutorial'}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTutorial(tut)}
+                            className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white text-xs font-bold transition border border-rose-200 hover:border-rose-600 cursor-pointer flex items-center gap-1 shrink-0"
+                            title={language === 'ar' ? 'حذف هذا الشرح التدريبي' : 'Delete Tutorial'}
+                          >
+                            <Trash2 size={12} />
+                            <span className="hidden sm:inline">{language === 'ar' ? 'حذف' : 'Delete'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredAdminTutorials.length === 0 && (
+              <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-3">
+                <div className="w-16 h-16 rounded-3xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
+                  <Video size={28} />
+                </div>
+                <h4 className="text-base font-black text-slate-800">
+                  {language === 'ar' ? 'لم يتم العثور على شروحات مطابقة' : 'No matching tutorials found'}
+                </h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {language === 'ar'
+                    ? 'جرب تغيير عبارة البحث أو الفلاتر المختارة، أو أضف شرحاً تدريبياً جديداً.'
+                    : 'Try clearing your search query or add a new video tutorial.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTutorialSearchQuery('');
+                    setTutorialCategoryFilter('all');
+                    setTutorialVehicleFilter('all');
+                    setTutorialMaintenanceFilter('all');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                >
+                  {language === 'ar' ? 'إعادة ضبط الفلاتر' : 'Reset Filters'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ----------------- MODAL 1: ADD OR EDIT VIDEO TUTORIAL ----------------- */}
+        {showAddOrEditTutorialModal && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {/* Modal Header */}
+              <div className="p-5 bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300">
+                    <Video size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black">
+                      {editingTutorial
+                        ? (language === 'ar' ? 'تعديل الشرح التدريبي' : 'Edit Video Tutorial')
+                        : (language === 'ar' ? 'إضافة شرح تدريبي وفيديو جديد' : 'Add New Video Tutorial')}
+                    </h3>
+                    <p className="text-purple-200/80 text-xs">
+                      {language === 'ar' ? 'سيتاح هذا الشرح مباشرة لكافة المشتركين عبر الأكاديمية' : 'This tutorial will be available across the platform'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddOrEditTutorialModal(false)}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+                {/* Titles */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">
+                      {language === 'ar' ? 'عنوان الشرح (بالعربية) *' : 'Title (Arabic) *'}
+                    </label>
+                    <input
+                      type="text"
+                      value={tutorialForm.titleAr}
+                      onChange={(e) => setTutorialForm({ ...tutorialForm, titleAr: e.target.value })}
+                      placeholder="مثال: كيفية إجراء الفحص اليومي للمركبة عبر الـ QR"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition"
+                      dir="rtl"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">
+                      {language === 'ar' ? 'عنوان الشرح (بالإنجليزية)' : 'Title (English)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={tutorialForm.titleEn}
+                      onChange={(e) => setTutorialForm({ ...tutorialForm, titleEn: e.target.value })}
+                      placeholder="e.g. How to complete daily vehicle QR inspection"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                {/* Video URL with Instant Live Check */}
+                <div className="space-y-2 bg-purple-50/60 border border-purple-100 p-4 rounded-2xl">
+                  <label className="text-xs font-bold text-purple-950 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Link2 size={13} className="text-purple-600" />
+                      <span>{language === 'ar' ? 'رابط الفيديو (YouTube، Vimeo، أو رابط MP4 مباشر):' : 'Video URL (YouTube, Vimeo, MP4 direct):'}</span>
+                    </span>
+                    <span className="text-[10px] text-purple-600 font-normal">
+                      {language === 'ar' ? 'اختياري (سيعمل المحاكي التفاعلي تلقائياً إن تُرِك فارغاً)' : 'Optional (interactive stage is default)'}
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={tutorialForm.videoUrl}
+                    onChange={(e) => setTutorialForm({ ...tutorialForm, videoUrl: e.target.value })}
+                    placeholder="https://www.youtube.com/watch?v=... أو https://.../video.mp4"
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-purple-200 text-xs font-mono font-semibold text-slate-800 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition"
+                    dir="ltr"
+                  />
+
+                  {/* Warning if text entered is not a valid URL */}
+                  {tutorialForm.videoUrl && !/^https?:\/\//i.test(tutorialForm.videoUrl.trim()) && (
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-1.5">
+                      <Info size={14} className="shrink-0 text-amber-600" />
+                      <span>
+                        {language === 'ar' 
+                          ? 'تنبيه: يرجى إدخال رابط يبدأ بـ https:// (مثل: https://www.youtube.com/watch?v=... أو رابط مباشر .mp4) ليعمل مشغل الفيديو بشكل سليم.' 
+                          : 'Notice: Please ensure URL begins with https:// (e.g. YouTube or direct .mp4) for video playback.'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Live Video Preview Box */}
+                  {tutorialForm.videoUrl && formatEmbedUrl(tutorialForm.videoUrl) && (
+                    <div className="pt-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-bold text-slate-600 flex items-center gap-1">
+                          <Tv size={12} className="text-purple-600" />
+                          {language === 'ar' ? 'معاينة مشغل الفيديو الحي:' : 'Live Video Preview:'}
+                        </span>
+                        <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                          <CheckCircle2 size={11} />
+                          {language === 'ar' ? 'رابط متصل وصالح' : 'Connected Link'}
+                        </span>
+                      </div>
+                      <div className="aspect-video max-h-52 rounded-xl overflow-hidden bg-black border border-slate-300 shadow-inner">
+                        {formatEmbedUrl(tutorialForm.videoUrl).endsWith('.mp4') || formatEmbedUrl(tutorialForm.videoUrl).endsWith('.webm') ? (
+                          <video controls src={formatEmbedUrl(tutorialForm.videoUrl)} className="w-full h-full object-contain" />
+                        ) : (
+                          <iframe
+                            src={formatEmbedUrl(tutorialForm.videoUrl)}
+                            className="w-full h-full border-0"
+                            allowFullScreen
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Category & Meta */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">
+                      {language === 'ar' ? 'التصنيف التشغيلي' : 'Category'}
+                    </label>
+                    <select
+                      value={tutorialForm.category}
+                      onChange={(e) => {
+                        const cat = e.target.value as any;
+                        const labels: Record<string, { ar: string; en: string }> = {
+                          fleet_setup: { ar: 'تأسيس الأسطول والبيانات', en: 'Fleet Setup & Assets' },
+                          inspection_qr: { ar: 'الفحص اليومي وتطبيق السائق', en: 'Driver QR Inspections' },
+                          work_orders: { ar: 'أوامر العمل وإصلاح الورشة', en: 'Work Orders & Workshop' },
+                          inventory: { ar: 'إدارة قطع الغيار والمستودع', en: 'Inventory & Spare Parts' },
+                          pm_schedules: { ar: 'الصيانة الوقائية والمجدولة', en: 'Preventative PM Schedules' },
+                          ai_analytics: { ar: 'التحليلات والتنبؤ بالذكاء الاصطناعي', en: 'AI Diagnostics & Insights' }
+                        };
+                        setTutorialForm({
+                          ...tutorialForm,
+                          category: cat,
+                          categoryLabelAr: labels[cat]?.ar || cat,
+                          categoryLabelEn: labels[cat]?.en || cat
+                        });
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800"
+                    >
+                      <option value="fleet_setup">🚗 تأسيس الأسطول والبيانات</option>
+                      <option value="inspection_qr">📱 الفحص اليومي QR</option>
+                      <option value="work_orders">🛠️ أوامر العمل والصيانة</option>
+                      <option value="inventory">📦 المستودع وقطع الغيار</option>
+                      <option value="pm_schedules">📅 الصيانة الوقائية والمجدولة</option>
+                      <option value="ai_analytics">🤖 الذكاء الاصطناعي والتحليلات</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">
+                      {language === 'ar' ? 'المدة التقديرية' : 'Duration'}
+                    </label>
+                    <input
+                      type="text"
+                      value={tutorialForm.duration}
+                      onChange={(e) => setTutorialForm({ ...tutorialForm, duration: e.target.value })}
+                      placeholder="5:00"
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">
+                      {language === 'ar' ? 'المستوى المستهدف' : 'Target Level'}
+                    </label>
+                    <select
+                      value={tutorialForm.levelAr}
+                      onChange={(e) => {
+                        const lvl = e.target.value as any;
+                        const map: Record<string, string> = {
+                          'مبتدئ': 'Beginner',
+                          'متوسط': 'Intermediate',
+                          'متقدم': 'Advanced',
+                          'للمدراء والتنفيذيين': 'Executive',
+                          'فني وميداني': 'Field & Tech'
+                        };
+                        setTutorialForm({
+                          ...tutorialForm,
+                          levelAr: lvl,
+                          levelEn: map[lvl] as any || 'Beginner'
+                        });
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800"
+                    >
+                      <option value="مبتدئ">مبتدئ (Beginner)</option>
+                      <option value="متوسط">متوسط (Intermediate)</option>
+                      <option value="متقدم">متقدم (Advanced)</option>
+                      <option value="للمدراء والتنفيذيين">للمدراء والتنفيذيين (Executive)</option>
+                      <option value="فني وميداني">فني وميداني (Field & Tech)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Descriptions */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">
+                      {language === 'ar' ? 'الوصف ومخرجات التعلم (بالعربية)' : 'Description (Arabic)'}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={tutorialForm.descriptionAr}
+                      onChange={(e) => setTutorialForm({ ...tutorialForm, descriptionAr: e.target.value })}
+                      placeholder="شرح موجز لأهمية هذا الإجراء في النظام وكيفية الاستفادة منه..."
+                      className="w-full px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                      dir="rtl"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 block">
+                      {language === 'ar' ? 'الوصف (بالإنجليزية)' : 'Description (English)'}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={tutorialForm.descriptionEn}
+                      onChange={(e) => setTutorialForm({ ...tutorialForm, descriptionEn: e.target.value })}
+                      placeholder="Brief overview of operational goals..."
+                      className="w-full px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                {/* SOP Steps Checklist */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span>{language === 'ar' ? 'خطوات التنفيذ التشغيلي S.O.P (اكتب كل خطوة بسطر منفصل)' : 'Standard Operating Steps (one per line)'}</span>
+                    <span className="text-[10px] text-purple-600 font-bold">
+                      {tutorialForm.stepsTextAr.split('\n').filter(s => s.trim().length > 0).length} {language === 'ar' ? 'خطوات مسجلة' : 'steps registered'}
+                    </span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={tutorialForm.stepsTextAr}
+                    onChange={(e) => setTutorialForm({ ...tutorialForm, stepsTextAr: e.target.value })}
+                    placeholder="الخطوة 1: تسجيل الدخول واختيار المركبة&#10;الخطوة 2: فحص قراءات العداد والوقود&#10;الخطوة 3: توثيق الصور والاعتماد"
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 font-mono leading-relaxed"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2.5 shrink-0">
+                {editingTutorial ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleDeleteTutorial(editingTutorial);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white text-xs font-bold transition border border-rose-200 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Trash2 size={14} />
+                    <span>{language === 'ar' ? 'حذف هذا الشرح' : 'Delete Tutorial'}</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddOrEditTutorialModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer"
+                  >
+                    {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveTutorial}
+                    className="px-6 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-purple-600/30 flex items-center gap-2 cursor-pointer"
+                  >
+                    <Save size={15} />
+                    <span>{language === 'ar' ? 'حفظ وتحديث المكتبة' : 'Save Tutorial'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- MODAL 2: QUICK VIDEO URL UPDATE ----------------- */}
+        {quickUrlModalTutorial && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                    <Link2 size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800">
+                      {language === 'ar' ? 'ربط رابط فيديو للشرح' : 'Link Video URL'}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 truncate max-w-[200px]">
+                      {language === 'ar' ? quickUrlModalTutorial.titleAr : quickUrlModalTutorial.titleEn}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setQuickUrlModalTutorial(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 block">
+                  {language === 'ar' ? 'رابط الفيديو المباشر أو اليوتيوب:' : 'Direct Video or YouTube URL:'}
+                </label>
+                <input
+                  type="url"
+                  value={quickUrlInput}
+                  onChange={(e) => setQuickUrlInput(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=... أو MP4"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono font-semibold text-slate-800 focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                  dir="ltr"
+                />
+                <p className="text-[10px] text-slate-400">
+                  {language === 'ar'
+                    ? 'سيتم عرض هذا الفيديو فوراً للمشتركين عند فتح هذا الدرس في مكتبة الشروحات.'
+                    : 'This video will stream directly to subscribers when opening this tutorial.'}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                {quickUrlInput && (
+                  <button
+                    type="button"
+                    onClick={() => setQuickUrlInput('')}
+                    className="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer"
+                  >
+                    {language === 'ar' ? 'مسح الرابط' : 'Clear Link'}
+                  </button>
+                )}
+                <div className="flex items-center gap-2 ms-auto">
+                  <button
+                    type="button"
+                    onClick={() => setQuickUrlModalTutorial(null)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer"
+                  >
+                    {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveQuickUrl}
+                    className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold cursor-pointer shadow-xs"
+                  >
+                    {language === 'ar' ? 'حفظ الرابط' : 'Save URL'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- MODAL 3: LIVE ADMIN PLAYER PREVIEW ----------------- */}
+        {selectedTutorialForPreview && (
+          <VideoTutorialsModal
+            isOpen={true}
+            onClose={() => setSelectedTutorialForPreview(null)}
+            isDarkMode={false}
+            initialVideoId={selectedTutorialForPreview.id}
+            isAdmin={true}
+          />
+        )}
+
+        {/* ----------------- MODAL 4: TENANT MODE PREVIEW (CLEAN USER VIEW) ----------------- */}
+        {showTenantPreviewModal && (
+          <VideoTutorialsModal
+            isOpen={true}
+            onClose={() => setShowTenantPreviewModal(false)}
+            isDarkMode={false}
+            isAdmin={false}
+          />
+        )}
+
+        {/* ----------------- MODAL 5: DELETE TUTORIAL CONFIRMATION DIALOG ----------------- */}
+        {tutorialToDelete && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <Trash2 size={24} />
+                </div>
+                <div>
+                  <h4 className="text-base font-black text-slate-900">
+                    {language === 'ar' ? 'تأكيد حذف الشرح التدريبي' : 'Confirm Delete Tutorial'}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {language === 'ar'
+                      ? 'هل أنت متأكد من رغبتك في حذف هذا الشرح من المنصة؟'
+                      : 'Are you sure you want to delete this tutorial from the library?'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 block">
+                  {language === 'ar' ? tutorialToDelete.categoryLabelAr : tutorialToDelete.categoryLabelEn}
+                </span>
+                <p className="text-xs font-black text-slate-800">
+                  {language === 'ar' ? tutorialToDelete.titleAr : tutorialToDelete.titleEn}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setTutorialToDelete(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                >
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeDeleteTutorial(tutorialToDelete.id)}
+                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md shadow-rose-600/30 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Trash2 size={14} />
+                  <span>{language === 'ar' ? 'تأكيد الحذف النهائي' : 'Yes, Delete'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
       {/* End of side-by-side wrapper */}
       </div>
