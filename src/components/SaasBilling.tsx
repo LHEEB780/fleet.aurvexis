@@ -21,11 +21,20 @@ import {
   Clock,
   ShieldCheck,
   RefreshCw,
-  X
+  X,
+  Copy,
+  CheckCheck,
+  Building2,
+  Landmark,
+  Phone,
+  Send,
+  ExternalLink,
+  Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { loadStripe } from '@stripe/stripe-js';
 import { formatCurrency } from '../services/formatters';
+import { generateInvoicePDF } from '../utils/pdfGenerator';
 
 interface BillingInvoice {
   id: string;
@@ -48,6 +57,29 @@ export default function SaasBilling({ user }: { user?: User }) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [modalTargetPlan, setModalTargetPlan] = useState<'basic' | 'pro' | 'enterprise' | null>(null);
   
+  // Payment Method Selection in Checkout Modal ('card' | 'bank_transfer')
+  const [checkoutPaymentMethod, setCheckoutPaymentMethod] = useState<'card' | 'bank_transfer'>('card');
+  
+  // Bank Transfer Form States
+  const [senderCompanyName, setSenderCompanyName] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [transferReference, setTransferReference] = useState('');
+  const [copiedIban, setCopiedIban] = useState(false);
+  const [bankTransferSuccess, setBankTransferSuccess] = useState(false);
+
+  // Live Gateway Status state from server
+  const [gatewayStatus, setGatewayStatus] = useState<{
+    stripeConfigured: boolean;
+    hasPublishableKey: boolean;
+    mode: string;
+    message: string;
+  }>({
+    stripeConfigured: false,
+    hasPublishableKey: false,
+    mode: 'sandbox_simulator',
+    message: 'جاري فحص حالة البوابة...'
+  });
+
   // Simulated subscription quotas
   const [quotas, setQuotas] = useState(() => {
     const saved = localStorage.getItem('saas_quotas');
@@ -94,7 +126,17 @@ export default function SaasBilling({ user }: { user?: User }) {
   const [cardName, setCardName] = useState('');
   const [cardError, setCardError] = useState('');
 
-  const isStripeConfigured = !!(import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY;
+  const isStripeConfigured = !!(import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY || gatewayStatus.stripeConfigured;
+
+  // Check server gateway status on load
+  useEffect(() => {
+    fetch('/api/payment/status')
+      .then(r => r.json())
+      .then(data => {
+        if (data) setGatewayStatus(data);
+      })
+      .catch(() => {});
+  }, []);
 
   // Sync state mutations to LocalStorage
   useEffect(() => {
@@ -220,17 +262,123 @@ export default function SaasBilling({ user }: { user?: User }) {
     setCardCvc('');
     setCardName('');
     setCardError('');
+    setSenderCompanyName('');
+    setSenderPhone('');
+    setTransferReference('');
+    setCopiedIban(false);
+    setBankTransferSuccess(false);
     setCheckoutStep('details');
     setShowUpgradeModal(true);
   };
 
+  // Helper to fill demo sandbox test card
+  const handleAutofillTestCard = () => {
+    setCardNumber('4242 4242 4242 4242');
+    setCardExpiry('12/28');
+    setCardCvc('888');
+    setCardName('شركة إدارة الأسطول المتقدمة');
+    setCardError('');
+  };
+
+  // Copy IBAN handler
+  const handleCopyIban = (ibanText: string) => {
+    navigator.clipboard.writeText(ibanText);
+    setCopiedIban(true);
+    setTimeout(() => setCopiedIban(false), 2500);
+  };
+
+  // Bank Transfer Submission handler
+  const handleBankTransferSubmit = async () => {
+    if (!modalTargetPlan) return;
+    if (!senderCompanyName.trim()) {
+      setCardError('يرجى إدخال اسم المنشأة أو الشركة المحولة.');
+      return;
+    }
+    if (!transferReference.trim()) {
+      setCardError('يرجى كتابة رقم الحوالة البنكية أو الرقم المرجعي للإيداع.');
+      return;
+    }
+
+    setCardError('');
+    setCheckoutStep('processing');
+    setCheckoutMessage('جاري تسجيل طلب التحويل البنكي وإرسال إشعار للمطابقة المالية...');
+
+    const amountToBilled = getPlanPrice(modalTargetPlan, billingCycle);
+
+    try {
+      const response = await fetch('/api/bank-transfer/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: modalTargetPlan,
+          billingCycle,
+          amount: amountToBilled,
+          companyName: senderCompanyName,
+          contactPhone: senderPhone,
+          transferReference
+        })
+      });
+
+      const data = await response.json();
+
+      setTimeout(() => {
+        // Upgrade active plan and quotas
+        setActivePlan(modalTargetPlan);
+        const limits = {
+          basic: { vehicles: 5, workshops: 2, technicians: 3, inventoryParts: 50, aiAssistantQueries: 20 },
+          pro: { vehicles: 15, workshops: 5, technicians: 10, inventoryParts: 250, aiAssistantQueries: 120 },
+          enterprise: { vehicles: 150, workshops: 20, technicians: 50, inventoryParts: 1000, aiAssistantQueries: 1000 },
+        };
+
+        setQuotas({
+          vehicles: { current: quotas.vehicles.current, limit: limits[modalTargetPlan].vehicles },
+          workshops: { current: quotas.workshops.current, limit: limits[modalTargetPlan].workshops },
+          technicians: { current: quotas.technicians.current, limit: limits[modalTargetPlan].technicians },
+          inventoryParts: { current: quotas.inventoryParts.current, limit: limits[modalTargetPlan].inventoryParts },
+          aiAssistantQueries: { current: quotas.aiAssistantQueries.current, limit: limits[modalTargetPlan].aiAssistantQueries },
+        });
+
+        const newInvoiceNo = data.requestNo || `TRF-2026-${Math.floor(100 + Math.random() * 900)}`;
+        const newInvoiceDate = new Date().toISOString().split('T')[0];
+
+        const newInvoice: BillingInvoice = {
+          id: `inv-${Date.now()}`,
+          invoiceNo: newInvoiceNo,
+          date: newInvoiceDate,
+          amount: amountToBilled,
+          status: 'paid',
+          plan: modalTargetPlan === 'basic' ? 'الباقة الأساسية (تحويل بنكي)' : modalTargetPlan === 'pro' ? 'الباقة المتقدمة (تحويل بنكي)' : 'باقة المؤسسات (تحويل بنكي)'
+        };
+
+        setInvoices(prev => [newInvoice, ...prev]);
+        setCheckoutStep('done');
+        
+        setSuccessCelebration({
+          plan: modalTargetPlan === 'basic' ? 'الأساسية (Basic)' : modalTargetPlan === 'pro' ? 'المتقدمة (Pro)' : 'المؤسسات (Enterprise)',
+          amount: amountToBilled,
+          invoiceNo: newInvoiceNo
+        });
+
+        window.dispatchEvent(new Event('storage'));
+      }, 1800);
+
+    } catch (err: any) {
+      setCardError(err.message || 'فشل إرسال طلب التحويل البنكي.');
+      setCheckoutStep('details');
+    }
+  };
+
   const executeCheckoutPayment = async () => {
     if (!modalTargetPlan) return;
+
+    if (checkoutPaymentMethod === 'bank_transfer') {
+      return handleBankTransferSubmit();
+    }
     
     // Validate inputs if we are in Sandbox Simulator Mode (API keys missing)
     if (!isStripeConfigured) {
       if (!cardNumber || cardNumber.replace(/\s/g, '').length < 16) {
-        setCardError('يرجى إدخال رقم بطاقة صالح يتألف من 16 خانة.');
+        setCardError('يرجى إدخال رقم بطاقة صالح يتألف من 16 خانة (أو اضغط زر تعبئة بطاقة الاختبار).');
         return;
       }
       if (!cardExpiry || !cardExpiry.includes('/')) {
@@ -381,13 +529,34 @@ export default function SaasBilling({ user }: { user?: User }) {
                 </p>
               </div>
             </div>
-            <button 
-              type="button"
-              onClick={() => setSuccessCelebration(null)}
-              className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-xs rounded-xl transition-all shadow-md cursor-pointer text-center whitespace-nowrap"
-            >
-              متابعة لوحة المستأجر
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                type="button"
+                onClick={() => {
+                  generateInvoicePDF({
+                    invoiceNo: successCelebration.invoiceNo,
+                    date: new Date().toISOString().split('T')[0],
+                    plan: successCelebration.plan,
+                    amount: successCelebration.amount,
+                    currency: 'USD ($)',
+                    status: 'paid',
+                    companyName: user?.name || 'مؤسسة إدارة الأسطول المتقدمة',
+                    billingCycle: billingCycle
+                  });
+                }}
+                className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Download size={14} />
+                <span>تحميل الفاتورة PDF</span>
+              </button>
+              <button 
+                type="button"
+                onClick={() => setSuccessCelebration(null)}
+                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black text-xs rounded-xl transition-all shadow-md cursor-pointer text-center whitespace-nowrap"
+              >
+                متابعة لوحة المستأجر
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -852,6 +1021,120 @@ export default function SaasBilling({ user }: { user?: User }) {
         </div>
       </div>
 
+      {/* Payment Gateway & Payout Architecture Guide Card for SaaS Admins */}
+      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/20 rounded-3xl p-5 md:p-6 text-white shadow-xl space-y-5 font-sans relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10 border-b border-white/10 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+              <Landmark size={24} className="text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-white">
+                  {language === 'ar' ? 'تهيئة بوابات الدفع واستقبال أموال الاشتراكات' : 'Payment Gateways & Payouts Architecture'}
+                </h3>
+                <span className={`text-[9.5px] px-2 py-0.5 rounded-full font-black border ${
+                  gatewayStatus.stripeConfigured 
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}>
+                  {gatewayStatus.stripeConfigured ? 'بوابة Stripe حية 🟢' : 'وضع المحاكاة التفاعلية (Sandbox) 🧪'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                {language === 'ar' 
+                  ? 'كيفية وصول أموال العملاء واشتراكاتهم تلقائياً إلى حسابك البنكي (IBAN)'
+                  : 'How client subscription funds route directly into your designated bank account (IBAN)'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                fetch('/api/payment/status')
+                  .then(r => r.json())
+                  .then(data => { if (data) setGatewayStatus(data); })
+                  .catch(() => {});
+              }}
+              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-xl text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw size={12} />
+              <span>فحص حالة الربط</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3-Step Money Routing Pipeline */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 relative z-10 text-xs">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center justify-between text-violet-300 font-bold text-[11px]">
+              <span className="flex items-center gap-1.5">
+                <CreditCard size={14} />
+                <span>1. دفع العميل</span>
+              </span>
+              <span className="bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded text-[9px] font-black">Online / Card</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              يدفع العميل أو المنشأة قيمة الاشتراك ببطاقة فيزا، ماستركارد، مدى أو Apple Pay عبر بوابة الدفع الآمنة.
+            </p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center justify-between text-indigo-300 font-bold text-[11px]">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck size={14} />
+                <span>2. معالجة وتشفير Stripe</span>
+              </span>
+              <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded text-[9px] font-black">Automated</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              تتحقق خوادم Stripe تلقائياً من العملية وتصدر الفاتورة الضريبية وتودع المبلغ الصافي في رصيدك.
+            </p>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center justify-between text-emerald-300 font-bold text-[11px]">
+              <span className="flex items-center gap-1.5">
+                <Landmark size={14} />
+                <span>3. الإيداع في حسابك (IBAN)</span>
+              </span>
+              <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded text-[9px] font-black">Direct Payout</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              يقوم Stripe بتحويل الأرباح مباشرة إلى رقم الآيبان البنكي الخاص بشركتك وفق جدول الإيداع الدوري (يومي/أسبوعي).
+            </p>
+          </div>
+        </div>
+
+        {/* Keys setup instructions */}
+        <div className="bg-black/30 border border-white/10 rounded-2xl p-4 space-y-2.5 relative z-10 text-xs">
+          <div className="flex items-center gap-2 text-violet-300 font-black text-xs">
+            <Zap size={14} />
+            <span>المفاتيح المطلوبة لاستقبال المدفوعات الحقيقية (Environment Keys):</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+            <div className="bg-white/5 p-2.5 rounded-xl border border-white/10 space-y-1">
+              <div className="flex items-center justify-between font-mono font-bold text-violet-200">
+                <span>STRIPE_SECRET_KEY</span>
+                <span className="text-[9.5px] text-emerald-400 font-sans">مفتاح سري للخادم (sk_live_...)</span>
+              </div>
+              <p className="text-slate-400 text-[10.5px]">يُضاف في إعدادات البيئة (Secrets) ليقوم الخادم بإنشاء وتأكيد جلسات الدفع المشفرة.</p>
+            </div>
+            <div className="bg-white/5 p-2.5 rounded-xl border border-white/10 space-y-1">
+              <div className="flex items-center justify-between font-mono font-bold text-violet-200">
+                <span>VITE_STRIPE_PUBLISHABLE_KEY</span>
+                <span className="text-[9.5px] text-indigo-400 font-sans">مفتاح عام للواجهة (pk_live_...)</span>
+              </div>
+              <p className="text-slate-400 text-[10.5px]">يُضاف في إعدادات الواجهة للتحقق من أرقام البطاقات وتهيئة حقول الدفع المشفرة.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Invoices History section */}
       <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between font-sans">
@@ -890,8 +1173,19 @@ export default function SaasBilling({ user }: { user?: User }) {
                   </td>
                   <td className="py-3 px-3 text-left">
                     <button 
-                      onClick={() => alert(`جاري تنزيل الفاتورة رقم ${inv.invoiceNo} بصيغة المبيعات الافتراضية PDF...`)}
-                      className="p-1.5 text-slate-505 hover:text-purple-500 dark:text-slate-400 dark:hover:text-emerald-400 transition-colors inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg hover:scale-[1.03] active:scale-[0.98] cursor-pointer"
+                      onClick={() => {
+                        generateInvoicePDF({
+                          invoiceNo: inv.invoiceNo,
+                          date: inv.date,
+                          plan: inv.plan,
+                          amount: inv.amount,
+                          currency: 'USD ($)',
+                          status: inv.status,
+                          companyName: user?.name || 'مؤسسة إدارة الأسطول المتقدمة',
+                          billingCycle: billingCycle
+                        });
+                      }}
+                      className="p-1.5 text-slate-500 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg hover:scale-[1.03] active:scale-[0.98] cursor-pointer shadow-2xs"
                       title="تحميل كـ PDF"
                     >
                       <Download size={13} />
@@ -905,7 +1199,7 @@ export default function SaasBilling({ user }: { user?: User }) {
         </div>
       </div>
 
-      {/* Dynamic Upgrade / Checkout simulation dialog modal */}
+      {/* Dynamic Upgrade / Checkout dialog modal with Dual Payment Channels */}
       <AnimatePresence>
         {showUpgradeModal && modalTargetPlan && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -917,24 +1211,24 @@ export default function SaasBilling({ user }: { user?: User }) {
               onClick={() => {
                 if (checkoutStep !== 'processing') setShowUpgradeModal(false);
               }}
-              className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs"
+              className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs"
             />
             {/* Modal Body */}
             <motion.div 
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
-              className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-2xl max-w-md w-full relative z-10 text-right font-sans space-y-4"
+              className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-2xl max-w-lg w-full relative z-10 text-right font-sans space-y-4 max-h-[90vh] overflow-y-auto"
             >
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-500/10 text-purple-605 flex items-center justify-center rounded-xl shrink-0">
+                  <div className="w-10 h-10 bg-purple-500/10 text-purple-600 flex items-center justify-center rounded-xl shrink-0">
                     <CreditCard size={20} className="text-purple-500" />
                   </div>
                   <div>
                     <h3 className="text-xs font-black text-slate-900 dark:text-white leading-none">تأكيد الاشتراك وتفويض الدفع</h3>
-                    <span className="text-[10px] text-slate-450 dark:text-slate-505 block mt-1">تعديل معايير الباقة عبر بوابة Stripe</span>
+                    <span className="text-[10px] text-slate-450 dark:text-slate-500 block mt-1">اختر وسيلة الدفع المناسبة لمنشأتك</span>
                   </div>
                 </div>
                 {checkoutStep !== 'processing' && (
@@ -949,35 +1243,49 @@ export default function SaasBilling({ user }: { user?: User }) {
 
               {checkoutStep === 'details' && (
                 <div className="space-y-4">
-                  {/* Status indicator */}
-                  <div className={`p-2.5 rounded-xl border text-[10.5px] leading-relaxed font-bold flex items-center gap-2 ${
-                    isStripeConfigured 
-                      ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-600'
-                      : 'bg-purple-550/5 border-purple-500/10 text-purple-600'
-                  }`}>
-                    <div className="w-2 h-2 rounded-full bg-current animate-pulse shrink-0" />
-                    <span>
-                      {isStripeConfigured 
-                        ? 'مفتاح بوابة Stripe حقيقي نشط لبيئة الإنتاج 🔓' 
-                        : 'أنت في بيئة Sandbox للمحاكاة التفاعلية 🧪 (جرب بطاقة افتراضية)'}
-                    </span>
+                  {/* Payment Channel Tabs */}
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutPaymentMethod('card')}
+                      className={`py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        checkoutPaymentMethod === 'card'
+                          ? 'bg-white dark:bg-[#0f1422] text-purple-600 dark:text-purple-400 shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                      }`}
+                    >
+                      <CreditCard size={14} />
+                      <span>بطاقة ائتمان / Stripe</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutPaymentMethod('bank_transfer')}
+                      className={`py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        checkoutPaymentMethod === 'bank_transfer'
+                          ? 'bg-white dark:bg-[#0f1422] text-purple-600 dark:text-purple-400 shadow-xs'
+                          : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'
+                      }`}
+                    >
+                      <Landmark size={14} />
+                      <span>تحويل بنكي مباشر (IBAN)</span>
+                    </button>
                   </div>
 
                   {/* Pricing Overview */}
-                  <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs space-y-2">
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs space-y-2">
                     <div className="flex justify-between">
                       <span className="text-slate-500 font-medium">الباقة المعتمدة حالياً:</span>
-                      <span className="font-bold text-slate-800 dark:text-slate-250">
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
                         {activePlan === 'basic' ? 'الباقة الأساسية' : activePlan === 'pro' ? 'الباقة المتقدمة' : 'باقة الهيئات (Enterprise)'}
                       </span>
                     </div>
                     <div className="flex justify-between text-purple-600 dark:text-purple-400">
-                      <span className="font-bold">الباقة المستهدفة والمميزات:</span>
+                      <span className="font-bold">الباقة المستهدفة والترقية:</span>
                       <span className="font-black">
                         {modalTargetPlan === 'basic' ? 'الأساسية' : modalTargetPlan === 'pro' ? 'المتقدمة' : 'الهيئات والمؤسسات'}
                       </span>
                     </div>
-                    <hr className="border-slate-100 dark:border-slate-850" />
+                    <hr className="border-slate-100 dark:border-slate-800" />
                     <div className="flex justify-between text-[13px] font-black">
                       <span className="text-slate-800 dark:text-slate-200">الإجمالي المستحق للدفع:</span>
                       <span className="font-mono text-emerald-500 font-extrabold flex items-center gap-0.5">
@@ -987,78 +1295,183 @@ export default function SaasBilling({ user }: { user?: User }) {
                     </div>
                   </div>
 
-                  {/* Simulated forms if not configurated */}
-                  {!isStripeConfigured ? (
-                    <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-850">
-                      <span className="text-[10.5px] font-black text-slate-500 block">تفاصيل بطاقة الفوترة الافتراضية (Sandbox Simulator)</span>
-                      
-                      {cardError && (
-                        <div className="p-2 bg-rose-500/10 text-rose-500 rounded-xl text-[10px] font-bold text-center border border-rose-500/10">
-                          ⚠️ {cardError}
+                  {/* Error Notification */}
+                  {cardError && (
+                    <div className="p-2.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl text-[11px] font-bold text-center border border-rose-500/20">
+                      ⚠️ {cardError}
+                    </div>
+                  )}
+
+                  {/* TAB 1: CARD / STRIPE PAYMENT */}
+                  {checkoutPaymentMethod === 'card' && (
+                    <div className="space-y-3">
+                      {/* Status indicator */}
+                      <div className={`p-2.5 rounded-xl border text-[10.5px] leading-relaxed font-bold flex items-center justify-between gap-2 ${
+                        isStripeConfigured 
+                          ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-600'
+                          : 'bg-purple-500/5 border-purple-500/10 text-purple-600'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-current animate-pulse shrink-0" />
+                          <span>
+                            {isStripeConfigured 
+                              ? 'مفتاح بوابة Stripe حقيقي نشط لبيئة الإنتاج 🔓' 
+                              : 'أنت في بيئة Sandbox للمحاكاة التفاعلية 🧪'}
+                          </span>
+                        </div>
+                        {!isStripeConfigured && (
+                          <button
+                            type="button"
+                            onClick={handleAutofillTestCard}
+                            className="px-2 py-0.5 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-[9.5px] font-black transition-all cursor-pointer"
+                          >
+                            تعبئة بطاقة اختبار 💳
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Card inputs (shown in Sandbox simulator) */}
+                      {!isStripeConfigured ? (
+                        <div className="space-y-2.5 font-sans">
+                          <div>
+                            <input
+                              type="text"
+                              placeholder="رقم بطاقة الائتمان (16 رقمًا)"
+                              value={cardNumber}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim();
+                                setCardNumber(val.slice(0, 19));
+                              }}
+                              className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <input
+                              type="text"
+                              placeholder="انتهاء الصلاحية MM / YY"
+                              value={cardExpiry}
+                              onChange={(e) => {
+                                let val = e.target.value.replace(/\s/g, '');
+                                if (val.length === 2 && !val.includes('/')) {
+                                  val += '/';
+                                }
+                                setCardExpiry(val.slice(0, 5));
+                              }}
+                              className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white"
+                            />
+                            <input
+                              type="password"
+                              placeholder="الرقم السري CVC/CVV"
+                              value={cardCvc}
+                              onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                              className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white text-center"
+                            />
+                          </div>
+                          <div>
+                            <input
+                              type="text"
+                              placeholder="اسم حامل البطاقة بالكامل"
+                              value={cardName}
+                              onChange={(e) => setCardName(e.target.value)}
+                              className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white text-right"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-purple-500/10 text-purple-600 rounded-xl text-[11px] leading-relaxed border border-purple-500/10">
+                          🔒 سيتم توجيهك بأمان إلى صفحة Stripe المشفرة 100% لإتمام تفويض الدفع ببطاقتك أو Apple Pay، وستودع الأرباح مباشرة في حساب الآيبان الخاص بمالك النظام.
                         </div>
                       )}
+                    </div>
+                  )}
 
-                      <div className="space-y-3 font-sans">
+                  {/* TAB 2: DIRECT BANK TRANSFER (IBAN) */}
+                  {checkoutPaymentMethod === 'bank_transfer' && (
+                    <div className="space-y-3 text-xs">
+                      {/* Bank Details Card */}
+                      <div className="p-3.5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl border border-indigo-500/20 space-y-2.5 shadow-md">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-violet-300 font-bold flex items-center gap-1">
+                            <Landmark size={14} />
+                            <span>الحساب البنكي الرسمي المعتمد (IBAN)</span>
+                          </span>
+                          <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                            معتمد رسميّاً ✓
+                          </span>
+                        </div>
+                        <div className="space-y-1.5 text-[11px] border-t border-white/10 pt-2 font-mono">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400 font-sans">اسم البنك:</span>
+                            <span className="text-slate-100 font-sans font-bold">مصرف الراجحي / البنك الأهلي</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-400 font-sans">اسم المستفيد:</span>
+                            <span className="text-slate-100 font-sans font-bold">مؤسسة فليت أورفيكس للحلول الرقمية</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl border border-white/10 mt-1">
+                            <span className="text-slate-300 text-[10px] font-sans">رقم الآيبان:</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-violet-200 font-black font-mono text-[11.5px] select-all">SA4480000456608010167890</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyIban('SA4480000456608010167890')}
+                                className="p-1 px-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-[9.5px] font-sans font-bold flex items-center gap-1 transition-all cursor-pointer"
+                              >
+                                {copiedIban ? <CheckCheck size={12} className="text-emerald-300" /> : <Copy size={12} />}
+                                <span>{copiedIban ? 'تم النسخ' : 'نسخ'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bank Transfer Inputs */}
+                      <div className="space-y-2.5 font-sans">
+                        <span className="text-[10.5px] font-black text-slate-600 dark:text-slate-400 block">بيانات إثبات الحوالة البنكية:</span>
                         <div>
                           <input
                             type="text"
-                            placeholder="رقم بطاقة الائتمان (16 رقمًا، مثلاً: 4242 4242 ...)"
-                            value={cardNumber}
-                            onChange={(e) => {
-                              // format text
-                              const val = e.target.value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim();
-                              setCardNumber(val.slice(0, 19));
-                            }}
-                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <input
-                            type="text"
-                            placeholder="انتهاء الصلاحية MM / YY"
-                            value={cardExpiry}
-                            onChange={(e) => {
-                              let val = e.target.value.replace(/\s/g, '');
-                              if (val.length === 2 && !val.includes('/')) {
-                                val += '/';
-                              }
-                              setCardExpiry(val.slice(0, 5));
-                            }}
-                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white"
-                          />
-                          <input
-                            type="password"
-                            placeholder="الرقم السري CVC/CVV"
-                            value={cardCvc}
-                            onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white text-center"
-                          />
-                        </div>
-                        <div>
-                          <input
-                            type="text"
-                            placeholder="اسم حامل البطاقة كما يظهر بالهوية"
-                            value={cardName}
-                            onChange={(e) => setCardName(e.target.value)}
+                            placeholder="اسم الشركة أو المنشأة المحولة"
+                            value={senderCompanyName}
+                            onChange={(e) => setSenderCompanyName(e.target.value)}
                             className="w-full text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white text-right"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <input
+                            type="text"
+                            placeholder="رقم مرجع الحوالة البنكية"
+                            value={transferReference}
+                            onChange={(e) => setTransferReference(e.target.value)}
+                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white text-right"
+                          />
+                          <input
+                            type="text"
+                            placeholder="رقم هاتف مسؤول المالية"
+                            value={senderPhone}
+                            onChange={(e) => setSenderPhone(e.target.value)}
+                            className="w-full text-xs font-mono font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50/50 dark:bg-slate-900 focus:border-purple-500 text-slate-950 dark:text-white text-right"
                           />
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-3 bg-purple-50/10 text-purple-600 rounded-xl text-[11px] leading-relaxed border border-purple-500/10">
-                      🔒 ستفتح هذه العملية صفحة تفويض مشفرة خاصة بشركة Stripe لإتمام الدفع السحابي المؤمّن لـ {modalTargetPlan === 'basic' ? 'الباقة الأساسية' : modalTargetPlan === 'pro' ? 'الباقة المتقدمة' : 'باقة المؤسسات'}.
-                    </div>
                   )}
 
-                  {/* Footer buttons (Rearranged: primary pay action first so it aligns on the right in RTL) */}
+                  {/* Footer buttons */}
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <button
                       type="button"
                       onClick={executeCheckoutPayment}
                       className="py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 hover:from-violet-700 hover:via-indigo-700 hover:to-purple-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer shadow-md shadow-violet-500/20 flex items-center justify-center gap-1.5"
                     >
-                      <span>{isStripeConfigured ? 'التوجيه لـ Stripe 🔒' : 'إرساء دفع محاكى ✓'}</span>
+                      {checkoutPaymentMethod === 'bank_transfer' ? (
+                        <>
+                          <Send size={13} />
+                          <span>تأكيد إشعار التحويل البنكي ✓</span>
+                        </>
+                      ) : (
+                        <span>{isStripeConfigured ? 'التوجيه لـ Stripe 🔒' : 'إرساء دفع محاكى ✓'}</span>
+                      )}
                     </button>
                     <button
                       type="button"
@@ -1079,7 +1492,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                     <Sparkles className="text-yellow-400 absolute inset-0 m-auto animate-ping" size={20} />
                   </div>
                   <div className="space-y-1.5">
-                    <h4 className="text-sm font-black text-slate-850 dark:text-slate-100">جاري معالجة الاشتراك بأمان...</h4>
+                    <h4 className="text-sm font-black text-slate-800 dark:text-slate-100">جاري معالجة الاشتراك بأمان...</h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xs leading-normal">
                       {checkoutMessage}
                     </p>

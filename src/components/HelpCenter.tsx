@@ -49,6 +49,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import { User } from '../types';
+import { saveDocument } from '../services/firebase';
 import Breadcrumbs from './Breadcrumbs';
 
 interface HelpCenterProps {
@@ -787,15 +788,99 @@ export default function HelpCenter({ user, onNavigateToTab, onOpenTutorials }: H
     setTimeout(() => setCopiedFaqId(null), 2500);
   };
 
-  // Submit Support Ticket
-  const handleSubmitInquiry = (e: React.FormEvent) => {
+  // Switch sub-tabs cleanly with filter resets
+  const switchSubTab = (tab: 'guides' | 'faqs' | 'troubleshoot' | 'support' | 'quick-ref') => {
+    setActiveSubTab(tab);
+    setSelectedCategory('all');
+    if (tab === 'guides') {
+      setSelectedGuide(null);
+    }
+    if (tab === 'faqs' && !expandedFaqId) {
+      setExpandedFaqId('faq-1');
+    }
+  };
+
+  // Submit Support Ticket to SaaS Management / CRM
+  const handleSubmitInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquiryMessage.trim()) return;
+
+    const topicTitles: Record<string, { ar: string; en: string }> = {
+      'corporate-mgmt': { ar: 'إدارة الساس والشركة الأم (HQ)', en: 'SaaS HQ & Parent Company' },
+      'technical': { ar: 'مشكلة فنية أو عطل في النظام', en: 'Technical Bug / System Issue' },
+      'maintenance': { ar: 'استفسار عن أوامر الصيانة والورش', en: 'Maintenance & Work Orders' },
+      'sync': { ar: 'استفسار عن المزامنة وقاعدة البيانات', en: 'Cloud Sync & Database' },
+      'billing': { ar: 'الاشتراك، الباقات وترقية الخطة', en: 'Subscription & Billing' },
+      'feature': { ar: 'اقتراح ميزة جديدة للمنصة', en: 'Feature Request' }
+    };
+
+    const isHQ = inquiryTopic === 'corporate-mgmt';
+    const topicLabel = topicTitles[inquiryTopic] || { ar: inquiryTopic, en: inquiryTopic };
+    const ticketId = `tkt-${Date.now()}`;
+
+    const newTicket = {
+      id: ticketId,
+      name: inquiryName.trim() || user?.name || (isRtl ? 'مستخدم المنظومة' : 'Fleet System User'),
+      company: (user as any)?.company || (isRtl ? 'منشأة الأسطول اللوجستية' : 'Fleet Logistics Corp'),
+      email: inquiryEmail.trim() || (user as any)?.email || 'user@saas-fleet.com',
+      phone: (user as any)?.phone || 'غير مسجل',
+      fleetSize: (user as any)?.fleetSize || 15,
+      province: 'المملكة العربية السعودية',
+      country: 'المملكة العربية السعودية',
+      status: 'new',
+      date: new Date().toISOString().split('T')[0],
+      source: isHQ ? 'إدارة الساس والشركة الأم (HQ)' : 'مركز المساعدة - تذكرة دعم',
+      topic: inquiryTopic,
+      topicLabelAr: topicLabel.ar,
+      topicLabelEn: topicLabel.en,
+      type: 'support_ticket',
+      priority: isHQ ? 'urgent' : 'normal',
+      notes: `[الموضوع: ${topicLabel.ar}]\n${inquiryMessage.trim()}`,
+      communicationLogs: [
+        {
+          id: `log-${Date.now()}`,
+          date: new Date().toLocaleDateString('ar-SA') + ' ' + new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+          type: isHQ ? 'meeting' : 'call',
+          note: `📩 تم إرسال تذكرة جديدة من مركز المساعدة إلى لوحة تحكم الساس [${topicLabel.ar}]. بانتظار مراجعة فريق الإدارة والرد على العميل.`,
+          agent: isHQ ? 'إدارة الساس والشركة الأم' : 'فريق الدعم الفني'
+        }
+      ]
+    };
+
+    // 1. Save to SaaS Leads & CRM Pipeline (localStorage)
+    try {
+      const storedLeads = localStorage.getItem('saas_crm_leads_v1');
+      const leadsList = storedLeads ? JSON.parse(storedLeads) : [];
+      const updatedLeads = [newTicket, ...leadsList];
+      localStorage.setItem('saas_crm_leads_v1', JSON.stringify(updatedLeads));
+      
+      // Also save to dedicated support tickets store
+      const storedTickets = localStorage.getItem('saas_support_tickets_v1');
+      const ticketsList = storedTickets ? JSON.parse(storedTickets) : [];
+      localStorage.setItem('saas_support_tickets_v1', JSON.stringify([newTicket, ...ticketsList]));
+    } catch (err) {
+      console.warn("Could not save ticket to local storage:", err);
+    }
+
+    // 2. Save to Firestore if available
+    try {
+      await saveDocument('saas_leads', newTicket.id, newTicket);
+      await saveDocument('saas_tickets', newTicket.id, newTicket);
+    } catch (err) {
+      console.warn("Could not save ticket to cloud firestore:", err);
+    }
+
+    // 3. Dispatch global events for live update in active SaaS Controller tabs
+    try {
+      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      window.dispatchEvent(new CustomEvent('saas-tickets-updated', { detail: newTicket }));
+    } catch (err) {}
+
     setInquirySubmitted(true);
     setTimeout(() => {
       setInquiryMessage('');
       setInquirySubmitted(false);
-    }, 4000);
+    }, 4500);
   };
 
   // Filtered Guides
@@ -821,7 +906,16 @@ export default function HelpCenter({ user, onNavigateToTab, onOpenTutorials }: H
   // Filtered FAQs
   const filteredFaqs = useMemo(() => {
     return FAQ_DATA.filter(faq => {
-      const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
+      let matchesCategory = false;
+      if (selectedCategory === 'all') {
+        matchesCategory = true;
+      } else if (selectedCategory === 'maintenance') {
+        matchesCategory = faq.category === 'maintenance' || faq.category === 'periodic';
+      } else if (selectedCategory === 'cloud_hq') {
+        matchesCategory = faq.category === 'cloud' || faq.category === 'billing' || faq.category === 'general';
+      } else {
+        matchesCategory = faq.category === selectedCategory;
+      }
       if (!matchesCategory) return false;
 
       if (!searchQuery.trim()) return true;
@@ -928,92 +1022,104 @@ export default function HelpCenter({ user, onNavigateToTab, onOpenTutorials }: H
         </div>
       </div>
 
-      {/* ----------------- SUB-TABS NAVIGATION BAR ----------------- */}
-      <div className="flex items-center justify-between gap-3 border-b border-purple-100 dark:border-purple-900/40 pb-3 flex-wrap">
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+      {/* ----------------- SUB-TABS NAVIGATION BAR (SINGLE SCROLLABLE ROW) ----------------- */}
+      <div className="w-full bg-slate-100/90 dark:bg-purple-950/40 p-1.5 sm:p-2 rounded-2xl border border-purple-100 dark:border-purple-900/40 shadow-inner">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 text-xs font-bold scrollbar-thin">
+          {/* Button 1: Interactive User Guides */}
           <button
             type="button"
-            onClick={() => { setActiveSubTab('guides'); setSelectedGuide(null); }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            onClick={() => switchSubTab('guides')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'guides'
-                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-lg shadow-purple-800/30 border border-purple-400/30'
-                : 'bg-white dark:bg-purple-950/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900/50'
+                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-md shadow-purple-800/30 border border-purple-400/40'
+                : 'bg-white dark:bg-purple-900/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/60 border border-purple-100/80 dark:border-purple-900/50 shadow-xs'
             }`}
           >
-            <BookOpen size={15} />
+            <BookOpen size={16} className={activeSubTab === 'guides' ? 'text-fuchsia-300' : 'text-purple-600 dark:text-purple-400'} />
             <span>{isRtl ? 'أدلة الاستخدام التفاعلية' : 'Interactive User Guides'}</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeSubTab === 'guides' ? 'bg-white/20 text-white' : 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'}`}>
+            <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${activeSubTab === 'guides' ? 'bg-white/25 text-white' : 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'}`}>
               {USER_GUIDES.length}
             </span>
           </button>
 
+          {/* Button 2: Frequently Asked Questions (FAQ) */}
           <button
             type="button"
-            onClick={() => setActiveSubTab('faqs')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            onClick={() => switchSubTab('faqs')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'faqs'
-                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-lg shadow-purple-800/30 border border-purple-400/30'
-                : 'bg-white dark:bg-purple-950/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900/50'
+                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-md shadow-purple-800/30 border border-purple-400/40'
+                : 'bg-white dark:bg-purple-900/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/60 border border-purple-100/80 dark:border-purple-900/50 shadow-xs'
             }`}
           >
-            <HelpCircle size={15} />
+            <HelpCircle size={16} className={activeSubTab === 'faqs' ? 'text-cyan-300' : 'text-cyan-600 dark:text-cyan-400'} />
             <span>{isRtl ? 'الأسئلة الشائعة (FAQ)' : 'Frequently Asked Questions'}</span>
-            <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${activeSubTab === 'faqs' ? 'bg-white/20 text-white' : 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'}`}>
+            <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${activeSubTab === 'faqs' ? 'bg-white/25 text-white' : 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'}`}>
               {FAQ_DATA.length}
             </span>
           </button>
 
+          {/* Button 3: Troubleshooting Assistant */}
           <button
             type="button"
-            onClick={() => setActiveSubTab('troubleshoot')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            onClick={() => switchSubTab('troubleshoot')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'troubleshoot'
-                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-lg shadow-purple-800/30 border border-purple-400/30'
-                : 'bg-white dark:bg-purple-950/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900/50'
+                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-md shadow-purple-800/30 border border-purple-400/40'
+                : 'bg-white dark:bg-purple-900/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/60 border border-purple-100/80 dark:border-purple-900/50 shadow-xs'
             }`}
           >
-            <Zap size={15} />
+            <Zap size={16} className={activeSubTab === 'troubleshoot' ? 'text-amber-300' : 'text-amber-500'} />
             <span>{isRtl ? 'استكشاف الأعطال وحلها' : 'Troubleshooting Assistant'}</span>
+            <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${activeSubTab === 'troubleshoot' ? 'bg-white/25 text-white' : 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'}`}>
+              {TROUBLESHOOTING_GUIDES.length}
+            </span>
           </button>
 
+          {/* Button 4: Quick Reference & Shortcuts */}
           <button
             type="button"
-            onClick={() => setActiveSubTab('quick-ref')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            onClick={() => switchSubTab('quick-ref')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'quick-ref'
-                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-lg shadow-purple-800/30 border border-purple-400/30'
-                : 'bg-white dark:bg-purple-950/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900/50'
+                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-md shadow-purple-800/30 border border-purple-400/40'
+                : 'bg-white dark:bg-purple-900/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/60 border border-purple-100/80 dark:border-purple-900/50 shadow-xs'
             }`}
           >
-            <FileText size={15} />
+            <FileText size={16} className={activeSubTab === 'quick-ref' ? 'text-emerald-300' : 'text-emerald-600 dark:text-emerald-400'} />
             <span>{isRtl ? 'دليل الاختصارات والطباعة' : 'Quick Reference & Print'}</span>
           </button>
 
+          {/* Button 5: Support & HQ Direct Contact */}
           <button
             type="button"
-            onClick={() => setActiveSubTab('support')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            onClick={() => switchSubTab('support')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-2 cursor-pointer ${
               activeSubTab === 'support'
-                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-lg shadow-purple-800/30 border border-purple-400/30'
-                : 'bg-white dark:bg-purple-950/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900/50'
+                ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white shadow-md shadow-purple-800/30 border border-purple-400/40'
+                : 'bg-white dark:bg-purple-900/30 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/60 border border-purple-100/80 dark:border-purple-900/50 shadow-xs'
             }`}
           >
-            <Phone size={15} />
-            <span>{isRtl ? 'تواصل مع الدعم الفني' : 'Contact Support'}</span>
+            <Phone size={16} className={activeSubTab === 'support' ? 'text-rose-300' : 'text-rose-500'} />
+            <span>{isRtl ? 'تواصل مع الدعم وإدارة الساس' : 'Contact Support & HQ'}</span>
           </button>
-        </div>
 
-        {/* Video Tutorials Direct Link Button */}
-        {onOpenTutorials && (
+          {/* Button 6: Video Tutorials */}
           <button
             type="button"
-            onClick={() => onOpenTutorials('vid-1')}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white text-xs font-black shadow-md shadow-purple-700/30 border border-purple-400/30 flex items-center gap-2 transition cursor-pointer"
+            onClick={() => {
+              if (onOpenTutorials) {
+                onOpenTutorials('vid-1');
+              } else if (onNavigateToTab) {
+                onNavigateToTab('tutorials');
+              }
+            }}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-800 to-indigo-800 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black shadow-md shadow-purple-700/20 border border-purple-400/40 shrink-0 flex items-center gap-2 transition cursor-pointer"
           >
-            <Video size={15} />
-            <span>{isRtl ? 'مكتبة الفيديوهات التعليمية' : 'Video Tutorials Academy'}</span>
+            <Video size={16} className="text-fuchsia-300 shrink-0" />
+            <span>{isRtl ? 'مكتبة الفيديوهات التعليمية' : 'Video Tutorials'}</span>
           </button>
-        )}
+        </div>
       </div>
 
       {/* ----------------- SECTION 1: INTERACTIVE USER GUIDES ----------------- */}
@@ -1303,42 +1409,85 @@ export default function HelpCenter({ user, onNavigateToTab, onOpenTutorials }: H
       {/* ----------------- SECTION 2: FREQUENTLY ASKED QUESTIONS (FAQS) ----------------- */}
       {activeSubTab === 'faqs' && (
         <div className="space-y-6">
-          {/* Category Filter Pills */}
+          {/* Category Filter Pills (Single Scrollable Row) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold scrollbar-thin">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-xl transition-all shrink-0 cursor-pointer ${
-                selectedCategory === 'all'
-                  ? 'bg-gradient-to-r from-purple-700 to-indigo-700 text-white font-black shadow-md border border-purple-400/30'
-                  : 'bg-white dark:bg-purple-950/40 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900/50'
-              }`}
-            >
-              {isRtl ? 'كافة الأسئلة' : 'All Questions'}
-            </button>
-
             {[
-              { id: 'fleet', ar: 'الأسطول والمركبات', en: 'Fleet' },
-              { id: 'maintenance', ar: 'أوامر الصيانة', en: 'Maintenance' },
-              { id: 'periodic', ar: 'الصيانة الدورية', en: 'Periodic' },
-              { id: 'drivers', ar: 'السائقين والتسليم', en: 'Drivers' },
-              { id: 'inventory', ar: 'المخزن والقطع', en: 'Inventory' },
-              { id: 'cloud', ar: 'السحابة والمزامنة', en: 'Cloud Sync' },
-              { id: 'billing', ar: 'الاشتراك والفوترة', en: 'Billing' },
-            ].map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-4 py-2 rounded-xl transition-all shrink-0 cursor-pointer ${
-                  selectedCategory === cat.id
-                    ? 'bg-gradient-to-r from-purple-700 to-indigo-700 text-white font-black shadow-md border border-purple-400/30'
-                    : 'bg-white dark:bg-purple-950/40 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900/50'
-                }`}
-              >
-                {isRtl ? cat.ar : cat.en}
-              </button>
-            ))}
+              { 
+                id: 'all', 
+                ar: 'كافة الأسئلة', 
+                en: 'All Questions', 
+                icon: HelpCircle, 
+                color: 'text-cyan-500', 
+                count: FAQ_DATA.length 
+              },
+              { 
+                id: 'fleet', 
+                ar: 'الأسطول والمركبات', 
+                en: 'Fleet & Vehicles', 
+                icon: Truck, 
+                color: 'text-purple-500', 
+                count: FAQ_DATA.filter(f => f.category === 'fleet').length 
+              },
+              { 
+                id: 'maintenance', 
+                ar: 'أوامر الصيانة والدورية', 
+                en: 'Maintenance & PM', 
+                icon: Wrench, 
+                color: 'text-amber-500', 
+                count: FAQ_DATA.filter(f => f.category === 'maintenance' || f.category === 'periodic').length 
+              },
+              { 
+                id: 'drivers', 
+                ar: 'السائقين والتسليم', 
+                en: 'Drivers & Handover', 
+                icon: Users, 
+                color: 'text-blue-500', 
+                count: FAQ_DATA.filter(f => f.category === 'drivers').length 
+              },
+              { 
+                id: 'inventory', 
+                ar: 'المخازن والقطع', 
+                en: 'Inventory & Parts', 
+                icon: Warehouse, 
+                color: 'text-emerald-500', 
+                count: FAQ_DATA.filter(f => f.category === 'inventory').length 
+              },
+              { 
+                id: 'cloud_hq', 
+                ar: 'السحابة وإدارة الساس', 
+                en: 'Cloud & SaaS HQ', 
+                icon: Building2, 
+                color: 'text-fuchsia-500', 
+                count: FAQ_DATA.filter(f => ['cloud', 'billing', 'general'].includes(f.category)).length 
+              },
+            ].map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+              const IconComponent = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-4 py-2.5 rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white font-black shadow-md border border-purple-400/40'
+                      : 'bg-white dark:bg-purple-950/40 text-slate-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/40 border border-purple-100 dark:border-purple-900/50'
+                  }`}
+                >
+                  <IconComponent size={15} className={isSelected ? 'text-white' : cat.color} />
+                  <span>{isRtl ? cat.ar : cat.en}</span>
+                  {cat.count > 0 && (
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${
+                      isSelected 
+                        ? 'bg-white/25 text-white' 
+                        : 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'
+                    }`}>
+                      {cat.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* FAQs Accordion List */}
@@ -1459,6 +1608,25 @@ export default function HelpCenter({ user, onNavigateToTab, onOpenTutorials }: H
                 </div>
               );
             })}
+
+            {filteredFaqs.length === 0 && (
+              <div className="text-center py-12 bg-white dark:bg-purple-950/20 rounded-3xl border border-purple-100 dark:border-purple-900/40 p-6 space-y-3">
+                <HelpCircle size={32} className="mx-auto text-purple-400" />
+                <p className="text-sm font-black text-slate-800 dark:text-white">
+                  {isRtl ? 'لم يتم العثور على أي أسئلة تطابق بحثك' : 'No FAQs match your search criteria'}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-purple-300">
+                  {isRtl ? 'جرب البحث بكلمات أخرى أو عرض كافة الأسئلة.' : 'Try different keywords or clear the category filter.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold cursor-pointer transition shadow-md"
+                >
+                  {isRtl ? 'إعادة ضبط الفلترة والبحث' : 'Reset Filter & Search'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1793,16 +1961,24 @@ export default function HelpCenter({ user, onNavigateToTab, onOpenTutorials }: H
             </div>
 
             {inquirySubmitted ? (
-              <div className="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto">
+              <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-purple-500/10 to-emerald-500/10 border border-emerald-400/40 text-center space-y-3 shadow-md">
+                <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-500/30">
                   <CheckCircle2 size={24} />
                 </div>
-                <h4 className="text-sm font-black text-emerald-900 dark:text-emerald-200">
-                  {isRtl ? 'تم إرسال تذكرتك بنجاح!' : 'Support Ticket Submitted Successfully!'}
-                </h4>
-                <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                  {isRtl ? 'رقم التذكرة: #TK-8924. سيتم الرد عليك عبر البريد خلال وقت قياسي.' : 'Ticket ID: #TK-8924. We will contact you via email shortly.'}
-                </p>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-emerald-200">
+                    {isRtl ? 'تم إرسال تذكرتك بنجاح ومزامنتها مع إدارة الساس!' : 'Ticket Submitted & Synced with SaaS Control Panel!'}
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-purple-200">
+                    {isRtl 
+                      ? 'تم تحويل الطلب إلى لوحة تحكم إدارة الساس (SaaS Admin / CRM) وسيتم الرد عليك عبر البريد والتواصل المباشر.' 
+                      : 'Request has been routed to SaaS Management (CRM / Admin Panel). The team will review and respond promptly.'}
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/70 dark:bg-purple-950/60 rounded-xl border border-purple-200/50 dark:border-purple-800/50 text-[10.5px] font-mono text-purple-700 dark:text-purple-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{isRtl ? 'حالة التذكرة: مسجلة في لوحة القيادة السحابية (جديدة)' : 'Status: Synced to Cloud Control Panel (New)'}</span>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmitInquiry} className="space-y-4">

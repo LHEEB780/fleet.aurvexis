@@ -1602,6 +1602,43 @@ function getStripeClient() {
   return stripeClient;
 }
 
+// Payment Gateway status check
+app.get("/api/payment/status", (req, res) => {
+  const isStripeConfigured = !!process.env.STRIPE_SECRET_KEY;
+  const publishableKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
+  res.json({
+    stripeConfigured: isStripeConfigured,
+    hasPublishableKey: !!publishableKey,
+    publishableKeyPrefix: publishableKey ? publishableKey.substring(0, 7) + "..." : null,
+    mode: isStripeConfigured ? "live" : "sandbox_simulator",
+    currency: "USD",
+    message: isStripeConfigured
+      ? "بوابة Stripe مهيأة بنجاح ومفعلة لاستقبال المدفوعات الحقيقية."
+      : "بوابة الدفع في وضع المحاكاة التفاعلية (Sandbox). قم بضبط المفاتيح لتفعيل الدفع الحي."
+  });
+});
+
+// Bank transfer submission endpoint
+app.post("/api/bank-transfer/submit", (req, res) => {
+  try {
+    const { plan, billingCycle, amount, companyName, contactEmail, contactPhone, senderIban, transferReference, receiptNote } = req.body;
+    const requestNo = `TRF-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    res.json({
+      success: true,
+      requestNo,
+      date: new Date().toISOString().split('T')[0],
+      plan,
+      billingCycle,
+      amount,
+      companyName,
+      message: "تم استلام طلب التحويل البنكي بنجاح وسيتم مراجعته وتفعيل الحساب فوراً."
+    });
+  } catch (error: any) {
+    safeLog("Bank transfer submission fail", error);
+    res.status(500).json({ err: error.message || "Failed to process bank transfer receipt" });
+  }
+});
+
 // Create a real/simulated checkout session
 app.post("/api/stripe/create-checkout-session", async (req, res) => {
   try {

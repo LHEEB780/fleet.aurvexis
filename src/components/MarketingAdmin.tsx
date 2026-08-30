@@ -17,6 +17,7 @@ import {
   Truck, 
   Phone, 
   Mail, 
+  HelpCircle,
   Building2, 
   Briefcase, 
   Award,
@@ -571,7 +572,7 @@ export function MarketingAdmin({
 
   // CRM Advanced Filters & Modals
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
-  const [leadStatusFilter, setLeadStatusFilter] = useState<'all' | 'new' | 'contacted' | 'won' | 'lost'>('all');
+  const [leadStatusFilter, setLeadStatusFilter] = useState<'all' | 'new' | 'contacted' | 'won' | 'lost' | 'support' | 'hq'>('all');
   const [selectedLeadForDetail, setSelectedLeadForDetail] = useState<any | null>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [provisionSuccessInfo, setProvisionSuccessInfo] = useState<any | null>(null);
@@ -1720,6 +1721,24 @@ export function MarketingAdmin({
       setGalleryImages(DEFAULT_GALLERY_IMAGES);
       localStorage.setItem('saas_marketing_gallery_v1', JSON.stringify(DEFAULT_GALLERY_IMAGES));
     }
+
+    // Dynamic Live Listener for new tickets / inquiries submitted across tabs
+    const handleDynamicSync = () => {
+      const freshLeads = localStorage.getItem('saas_crm_leads_v1');
+      if (freshLeads) {
+        try { setLeads(JSON.parse(freshLeads)); } catch(e) {}
+      }
+    };
+
+    window.addEventListener('marketing-data-updated', handleDynamicSync);
+    window.addEventListener('saas-tickets-updated', handleDynamicSync);
+    window.addEventListener('storage', handleDynamicSync);
+
+    return () => {
+      window.removeEventListener('marketing-data-updated', handleDynamicSync);
+      window.removeEventListener('saas-tickets-updated', handleDynamicSync);
+      window.removeEventListener('storage', handleDynamicSync);
+    };
   }, []);
 
   // Sync state functions
@@ -2292,9 +2311,20 @@ export function MarketingAdmin({
       (l.company || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
       (l.email || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
       (l.phone || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
+      (l.source || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
+      (l.topic || '').toLowerCase().includes(leadSearchQuery.toLowerCase()) ||
       (l.province || '').toLowerCase().includes(leadSearchQuery.toLowerCase());
     
-    const matchesStatus = leadStatusFilter === 'all' || l.status === leadStatusFilter;
+    let matchesStatus = true;
+    if (leadStatusFilter === 'all') {
+      matchesStatus = true;
+    } else if (leadStatusFilter === 'support') {
+      matchesStatus = l.type === 'support_ticket' || (l.source && l.source.includes('مركز المساعدة')) || (l.source && l.source.includes('تذكرة'));
+    } else if (leadStatusFilter === 'hq') {
+      matchesStatus = l.topic === 'corporate-mgmt' || (l.source && l.source.includes('إدارة الساس')) || (l.source && l.source.includes('HQ'));
+    } else {
+      matchesStatus = l.status === leadStatusFilter;
+    }
     
     return matchesSearch && matchesStatus;
   });
@@ -3141,10 +3171,12 @@ export function MarketingAdmin({
                     <select
                       value={leadStatusFilter}
                       onChange={(e: any) => setLeadStatusFilter(e.target.value)}
-                      className="text-right p-2.5 pr-8 pl-8 bg-white border border-slate-200 outline-none rounded-xl text-xs text-slate-700 cursor-pointer appearance-none min-w-[140px] font-black"
+                      className="text-right p-2.5 pr-8 pl-8 bg-white border border-slate-200 outline-none rounded-xl text-xs text-slate-700 cursor-pointer appearance-none min-w-[170px] font-black"
                     >
-                      <option value="all">{language === 'ar' ? 'فلترة بكافة الحالات' : 'All Statuses'}</option>
-                      <option value="new">{language === 'ar' ? 'جديدة (انتظار)' : 'New Leads'}</option>
+                      <option value="all">{language === 'ar' ? 'فلترة بكافة الطلبات والتذاكر' : 'All Leads & Tickets'}</option>
+                      <option value="hq">{language === 'ar' ? '🏢 تذاكر إدارة الساس والشركة الأم (HQ)' : '🏢 SaaS HQ Management Tickets'}</option>
+                      <option value="support">{language === 'ar' ? '🎫 تذاكر الدعم (مركز المساعدة)' : '🎫 Help Center Support Tickets'}</option>
+                      <option value="new">{language === 'ar' ? 'جديدة (انتظار)' : 'New Leads / Pending'}</option>
                       <option value="contacted">{language === 'ar' ? 'قيد التواصل والمتابعة' : 'Contacted'}</option>
                       <option value="won">{language === 'ar' ? 'مقبولة وتأهيل ناجح' : 'Converted / Won'}</option>
                       <option value="lost">{language === 'ar' ? 'مرفوضة / منتهية' : 'Lost'}</option>
@@ -3263,9 +3295,24 @@ export function MarketingAdmin({
 
                         {/* Actions & Status */}
                         <div className="md:col-span-3 flex flex-row md:flex-col items-center md:items-end justify-between gap-2.5 text-right">
-                          <div className="space-y-1">
-                            <span className="text-[9px] text-slate-400 text-right font-mono block leading-none">{l.date} via {l.source || 'Landing'}</span>
-                            <div className="flex items-center gap-1 leading-none mt-0.5" onClick={() => setSelectedLeadForDetail(l)}>
+                          <div className="space-y-1 text-right">
+                            <div className="flex items-center gap-1.5 justify-end flex-wrap">
+                              {l.topic === 'corporate-mgmt' || (l.source && l.source.includes('إدارة الساس')) ? (
+                                <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold text-[9px] border border-purple-200 dark:border-purple-800 flex items-center gap-1">
+                                  <Building2 size={10} className="shrink-0" />
+                                  <span>{language === 'ar' ? 'إدارة الساس HQ' : 'SaaS HQ'}</span>
+                                </span>
+                              ) : l.type === 'support_ticket' || (l.source && l.source.includes('مركز المساعدة')) ? (
+                                <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold text-[9px] border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
+                                  <HelpCircle size={10} className="shrink-0" />
+                                  <span>{language === 'ar' ? 'تذكرة دعم فني' : 'Support Ticket'}</span>
+                                </span>
+                              ) : (
+                                <span className="text-[9px] text-slate-400 text-right font-mono block leading-none">{l.source || 'Landing'}</span>
+                              )}
+                              <span className="text-[8.5px] text-slate-400 font-mono">{l.date}</span>
+                            </div>
+                            <div className="flex items-center gap-1 leading-none mt-0.5 justify-end" onClick={() => setSelectedLeadForDetail(l)}>
                               {getStatusBadge(l.status)}
                             </div>
                           </div>
