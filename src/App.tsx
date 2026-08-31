@@ -79,6 +79,13 @@ const USERS: Record<UserRole, User> = {
     role: 'admin',
     avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200&h=200',
   },
+  super_admin: {
+    id: 'u0',
+    name: 'المشرف العام (مالك المنصة)',
+    title: 'SaaS Platform Owner',
+    role: 'super_admin',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200&h=200',
+  },
   technician: {
     id: 'u2',
     name: 'الفني أحمد',

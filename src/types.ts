@@ -143,7 +143,7 @@ export interface Technician {
   skills?: string[];
 }
 
-export type UserRole = 'admin' | 'technician' | 'viewer' | 'driver';
+export type UserRole = 'admin' | 'super_admin' | 'technician' | 'viewer' | 'driver';
 
 export interface User {
   id: string;
