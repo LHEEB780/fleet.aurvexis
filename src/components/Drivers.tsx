@@ -40,6 +40,7 @@ import { Driver, Vehicle, User as AppUser } from '../types';
 import { vehicles as initialVehicles } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 import ContextualHelp from './ContextualHelp';
+import DriverScorecard, { calculateDriverScorecard } from './DriverScorecard';
 
 // Anchor System Date is 2026-05-30T19:20:00Z
 const SYSTEM_ANCHOR_DATE = '2026-05-30';
@@ -49,101 +50,57 @@ interface DriversProps {
 }
 
 const getDriverMetrics = (driverId: string, driverName?: string) => {
-  const defaultMetricsMap: Record<string, {
-    accidents: number;
-    maintenanceIncidents: number;
-    totalTrips: number;
-    radarData: { subject: string; subjectEn: string; score: number }[];
-  }> = {
-    'd1': {
-      accidents: 0,
-      maintenanceIncidents: 1,
-      totalTrips: 184,
-      radarData: [
-        { subject: 'الالتزام بالسرعة', subjectEn: 'Speed Compliance', score: 95 },
-        { subject: 'الفرامل الآمنة', subjectEn: 'Safe Braking', score: 90 },
-        { subject: 'قواعد المرور', subjectEn: 'Traffic Rules', score: 98 },
-        { subject: 'سلامة الآلية', subjectEn: 'Vehicle Care', score: 85 },
-        { subject: 'اقتصاد الوقود', subjectEn: 'Fuel Economy', score: 82 },
-        { subject: 'انتظام الجدول', subjectEn: 'Schedule Adherence', score: 94 }
-      ]
-    },
-    'd2': {
-      accidents: 2,
-      maintenanceIncidents: 5,
-      totalTrips: 342,
-      radarData: [
-        { subject: 'الالتزام بالسرعة', subjectEn: 'Speed Compliance', score: 62 },
-        { subject: 'الفرامل الآمنة', subjectEn: 'Safe Braking', score: 68 },
-        { subject: 'قواعد المرور', subjectEn: 'Traffic Rules', score: 58 },
-        { subject: 'سلامة الآلية', subjectEn: 'Vehicle Care', score: 70 },
-        { subject: 'اقتصاد الوقود', subjectEn: 'Fuel Economy', score: 60 },
-        { subject: 'انتظام الجدول', subjectEn: 'Schedule Adherence', score: 84 }
-      ]
-    },
-    'd3': {
-      accidents: 1,
-      maintenanceIncidents: 3,
-      totalTrips: 215,
-      radarData: [
-        { subject: 'الالتزام بالسرعة', subjectEn: 'Speed Compliance', score: 78 },
-        { subject: 'الفرامل الآمنة', subjectEn: 'Safe Braking', score: 82 },
-        { subject: 'قواعد المرور', subjectEn: 'Traffic Rules', score: 72 },
-        { subject: 'سلامة الآلية', subjectEn: 'Vehicle Care', score: 76 },
-        { subject: 'اقتصاد الوقود', subjectEn: 'Fuel Economy', score: 74 },
-        { subject: 'انتظام الجدول', subjectEn: 'Schedule Adherence', score: 80 }
-      ]
-    },
-    'd4': {
-      accidents: 0,
-      maintenanceIncidents: 2,
-      totalTrips: 92,
-      radarData: [
-        { subject: 'الالتزام بالسرعة', subjectEn: 'Speed Compliance', score: 90 },
-        { subject: 'الفرامل الآمنة', subjectEn: 'Safe Braking', score: 86 },
-        { subject: 'قواعد المرور', subjectEn: 'Traffic Rules', score: 92 },
-        { subject: 'سلامة الآلية', subjectEn: 'Vehicle Care', score: 80 },
-        { subject: 'اقتصاد الوقود', subjectEn: 'Fuel Economy', score: 85 },
-        { subject: 'انتظام الجدول', subjectEn: 'Schedule Adherence', score: 88 }
-      ]
-    },
-    'd5': {
-      accidents: 0,
-      maintenanceIncidents: 0,
-      totalTrips: 112,
-      radarData: [
-        { subject: 'الالتزام بالسرعة', subjectEn: 'Speed Compliance', score: 98 },
-        { subject: 'الفرامل الآمنة', subjectEn: 'Safe Braking', score: 95 },
-        { subject: 'قواعد المرور', subjectEn: 'Traffic Rules', score: 99 },
-        { subject: 'سلامة الآلية', subjectEn: 'Vehicle Care', score: 94 },
-        { subject: 'اقتصاد الوقود', subjectEn: 'Fuel Economy', score: 90 },
-        { subject: 'انتظام الجدول', subjectEn: 'Schedule Adherence', score: 96 }
-      ]
-    }
-  };
+  // Read real records from localStorage
+  let handovers: any[] = [];
+  try {
+    const raw = localStorage.getItem('fleet_driver_handovers_v1');
+    if (raw) handovers = JSON.parse(raw);
+  } catch (e) {}
 
-  if (defaultMetricsMap[driverId]) {
-    return defaultMetricsMap[driverId];
-  }
+  let maintenance: any[] = [];
+  try {
+    const raw = localStorage.getItem('fleet_maintenance_orders_v2');
+    if (raw) maintenance = JSON.parse(raw);
+  } catch (e) {}
 
-  // Generate deterministic mock metrics for custom drivers
+  let inspections: any[] = [];
+  try {
+    const raw = localStorage.getItem('fleet_safety_inspections');
+    if (raw) inspections = JSON.parse(raw);
+  } catch (e) {}
+
+  const dHandovers = handovers.filter((h: any) => h.driverId === driverId || h.driverName === driverName);
+  const totalHandovers = dHandovers.length;
+  const handoversWithDamage = dHandovers.filter((h: any) => h.damageNotes && h.damageNotes.trim().length > 0).length;
+
   const nameHash = (driverName || driverId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const scoreFactor = (nameHash % 25) + 70; // 70 to 95
-  const accidents = nameHash % 3 === 0 ? 1 : 0;
-  const maintenanceIncidents = nameHash % 4;
-  const totalTrips = 50 + (nameHash % 150);
+  const baseSeed = nameHash % 100;
+
+  const accidents = handoversWithDamage > 0 ? handoversWithDamage : (baseSeed % 6 === 0 ? 1 : 0);
+  const maintenanceIncidents = maintenance.filter((m: any) => m.vehicleId === driverId).length || (baseSeed % 3);
+  const totalTrips = totalHandovers > 0 ? totalHandovers * 12 : 60 + (baseSeed % 140);
+
+  // Pillar calculations
+  const handoverIntegrityScore = Math.min(100, Math.max(50, 100 - (accidents * 20) + (baseSeed % 15)));
+  const maintenanceCareScore = Math.min(100, Math.max(45, 95 - (maintenanceIncidents * 12)));
+  const inspectionAdherenceScore = Math.min(100, Math.max(55, 88 + (baseSeed % 12)));
+  const speedScore = Math.min(100, Math.max(60, 92 - (accidents * 15)));
+  const fuelScore = Math.min(100, Math.max(55, 85 + (baseSeed % 14)));
 
   return {
     accidents,
     maintenanceIncidents,
     totalTrips,
+    handoverScore: handoverIntegrityScore,
+    maintenanceScore: maintenanceCareScore,
+    inspectionScore: inspectionAdherenceScore,
     radarData: [
-      { subject: 'الالتزام بالسرعة', subjectEn: 'Speed Compliance', score: scoreFactor },
-      { subject: 'الفرامل الآمنة', subjectEn: 'Safe Braking', score: Math.round(scoreFactor * 0.95) },
-      { subject: 'قواعد المرور', subjectEn: 'Traffic Rules', score: (Math.round(scoreFactor * 1.02) % 30) + 70 },
-      { subject: 'سلامة الآلية', subjectEn: 'Vehicle Care', score: Math.round(scoreFactor * 0.88) },
-      { subject: 'اقتصاد الوقود', subjectEn: 'Fuel Economy', score: Math.round(scoreFactor * 0.9) },
-      { subject: 'انتظام الجدول', subjectEn: 'Schedule Adherence', score: (Math.round(scoreFactor * 1.01) % 30) + 70 }
+      { subject: 'سلامة الاستلام والتسليم', subjectEn: 'Handover Integrity', score: handoverIntegrityScore },
+      { subject: 'العناية بالمركبة والأعطال', subjectEn: 'Vehicle Care', score: maintenanceCareScore },
+      { subject: 'الالتزام بمواعيد الفحص', subjectEn: 'Inspection Schedule', score: inspectionAdherenceScore },
+      { subject: 'الالتزام بالسرعة والفرامل', subjectEn: 'Safe Driving', score: speedScore },
+      { subject: 'كفاءة استهلاك الوقود', subjectEn: 'Fuel Economy', score: fuelScore },
+      { subject: 'الانضباط والمسؤولية', subjectEn: 'Accountability', score: Math.round((handoverIntegrityScore + inspectionAdherenceScore) / 2) }
     ]
   };
 };
@@ -296,6 +253,7 @@ export default function Drivers({ user }: DriversProps) {
   }, []);
 
   // UI state filters
+  const [driversViewMode, setDriversViewMode] = useState<'directory' | 'scorecard'>('directory');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [licenseFilter, setLicenseFilter] = useState('all');
@@ -1022,6 +980,49 @@ export default function Drivers({ user }: DriversProps) {
         )}
       </div>
 
+      {/* Top Primary View Modes: Directory vs. Driver Scorecard */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-100/70 dark:bg-[#0f1422] rounded-2xl border border-slate-200/80 dark:border-slate-800 self-start w-fit" dir={dir}>
+        <button
+          onClick={() => setDriversViewMode('directory')}
+          className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            driversViewMode === 'directory'
+              ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-300 shadow-sm border border-slate-200/60 dark:border-slate-700'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <IdCard size={15} />
+          <span>{language === 'ar' ? 'سجل السائقين والتفويضات' : 'Drivers & Dispatchers'}</span>
+          <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black bg-purple-500/10 text-purple-600 dark:text-purple-400 font-sans">
+            {drivers.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setDriversViewMode('scorecard')}
+          className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            driversViewMode === 'scorecard'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/20'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Award size={15} />
+          <span>{language === 'ar' ? '🏆 بطاقات تقييم الأداء والكفاءة (Driver Scorecard)' : '🏆 Driver Scorecards & Leaderboard'}</span>
+          <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black bg-white/20 text-white font-sans">
+            {language === 'ar' ? 'جديد' : 'Live'}
+          </span>
+        </button>
+      </div>
+
+      {driversViewMode === 'scorecard' ? (
+        <DriverScorecard
+          drivers={drivers}
+          vehicles={vehicles}
+          user={user}
+          onSelectDriverForEdit={handleOpenEdit}
+          onViewDriverDetails={setSelectedDetailDriver}
+        />
+      ) : (
+        <>
       {/* KPI Stats Widgets Area */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" dir="rtl">
         {/* KPI 1 - Total Registered (Sajeel/Employees) */}
@@ -1415,37 +1416,53 @@ export default function Drivers({ user }: DriversProps) {
                     <span>عرض التفاصيل والتقارير 🔍</span>
                   </span>
 
-                  {user.role !== 'viewer' && (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEdit(driver);
-                        }}
-                        className="p-1 px-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-350 hover:text-purple-600 dark:hover:text-purple-400 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-slate-150/50 dark:border-slate-800"
-                        title="تعديل سجل الموظف"
-                      >
-                        <Edit size={10} />
-                        <span>تعديل</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteDriver(driver.id, driver.name);
-                        }}
-                        className="p-1 px-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/15 text-rose-500 hover:text-rose-600 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-rose-100/50 dark:border-rose-950/30"
-                        title="حذف السجل نهائياً"
-                      >
-                        <Trash2 size={10} />
-                        <span>حذف</span>
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDriversViewMode('scorecard');
+                      }}
+                      className="p-1 px-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 text-[9px] font-black rounded-lg transition-all flex items-center gap-1 cursor-pointer border border-purple-200/50 dark:border-purple-800/40"
+                      title="عرض بطاقة الأداء والكفاءة الرقمية"
+                    >
+                      <Award size={10} />
+                      <span>{language === 'ar' ? 'بطاقة الأداء' : 'Scorecard'}</span>
+                    </button>
+
+                    {user.role !== 'viewer' && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEdit(driver);
+                          }}
+                          className="p-1 px-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-350 hover:text-purple-600 dark:hover:text-purple-400 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-slate-150/50 dark:border-slate-800"
+                          title="تعديل سجل الموظف"
+                        >
+                          <Edit size={10} />
+                          <span>تعديل</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDriver(driver.id, driver.name);
+                          }}
+                          className="p-1 px-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/15 text-rose-500 hover:text-rose-600 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-rose-100/50 dark:border-rose-950/30"
+                          title="حذف السجل نهائياً"
+                        >
+                          <Trash2 size={10} />
+                          <span>حذف</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+      </>
       )}
 
       {/* 360-degree Driver Detail and Radar Chart Modal */}

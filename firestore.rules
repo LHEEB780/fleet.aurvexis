@@ -295,10 +295,34 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /saas_tutorials/{tutorialId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /saas_gallery/{galleryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /saas_success_stories/{storyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /saas_tickets/{ticketId} {
+      allow read, write: if true;
+    }
+
     // 11. FAULT REPORTS
     match /fault_reports/{reportId} {
       allow read, update, delete: if true;
       allow create: if isValidFaultReport(request.resource.data);
+    }
+
+    // 12. DISPATCH LOGS & LIVE FLEET TRIPS
+    match /dispatch_logs/{logId} {
+      allow read, write: if true;
     }
   }
 }

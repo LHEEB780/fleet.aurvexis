@@ -231,9 +231,85 @@
         "orderId": { "type": "string", "description": "Associated maintenance/work order ID" }
       },
       "required": ["id", "date", "category", "vehicle", "priority", "status", "desc"]
+    },
+    "DispatchLog": {
+      "title": "DispatchLog",
+      "description": "Real-time dispatch and trip state logs for fleet vehicles.",
+      "type": "object",
+      "properties": {
+        "updatedAt": { "type": "string", "description": "Timestamp of the last dispatch state change" },
+        "tripsCount": { "type": "number", "description": "Total number of trips in state" },
+        "trips": { "type": "array", "description": "Array of dispatch trip records" }
+      }
+    },
+    "SaaSTutorial": {
+      "title": "SaaSTutorial",
+      "description": "Educational onboarding tutorials and interactive walkthroughs for platform users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "duration": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "title"]
+    },
+    "SaaSGalleryItem": {
+      "title": "SaaSGalleryItem",
+      "description": "Marketing product preview screenshot or photo asset.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "url": { "type": "string" }
+      },
+      "required": ["id", "title", "url"]
+    },
+    "SaaSSuccessStory": {
+      "title": "SaaSSuccessStory",
+      "description": "Case studies and success stories for client enterprise ROI.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "companyName": { "type": "string" },
+        "metrics": { "type": "string" }
+      },
+      "required": ["id", "companyName"]
+    },
+    "SaaSTicket": {
+      "title": "SaaSTicket",
+      "description": "General customer inquiry ticket submitted through help center.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "subject"]
     }
   },
   "firestore": {
+    "dispatch_logs": {
+      "schema": "DispatchLog",
+      "description": "Dispatched freight trips, live tracking checkpoints, and route states."
+    },
+    "saas_tutorials": {
+      "schema": "SaaSTutorial",
+      "description": "Interactive video and text onboarding guides."
+    },
+    "saas_gallery": {
+      "schema": "SaaSGalleryItem",
+      "description": "Marketing screenshots and dashboard previews."
+    },
+    "saas_success_stories": {
+      "schema": "SaaSSuccessStory",
+      "description": "Enterprise customer fleet case studies and ROI proofs."
+    },
+    "saas_tickets": {
+      "schema": "SaaSTicket",
+      "description": "Help center client questions and ticket communications."
+    },
     "vehicles": {
       "schema": "Vehicle",
       "description": "Collection storing white-label commercial fleet vehicles."
