@@ -75,9 +75,13 @@ import {
   Download,
   Eye,
   FileSpreadsheet,
-  File
+  File,
+  LayoutGrid
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import CuteAstronautRobot from './CuteAstronautRobot';
+import { AI_AGENTS_CONFIG, getAgentById, AIAgentDefinition } from './aiAgentsConfig';
+import AiAgentsModal from './AiAgentsModal';
 import { 
   vehicles as defaultVehicles, 
   maintenanceOrders as defaultOrders, 
@@ -186,6 +190,202 @@ const PROMPT_CATEGORIES_DATA = {
   }
 };
 
+// Theme configurations tailored for each of the 6 AI Agents
+export interface AgentThemeStyles {
+  colorHex: string;
+  themeBarBg: string;
+  themeBarBorder: string;
+  themeChipBg: string;
+  themeChipBorder: string;
+  themeChipText: string;
+  themeInputBg: string;
+  themeInputBorder: string;
+  themeInputText: string;
+  themeInputPlaceholder: string;
+  themeActionBtn: string;
+  activeCategoryBtn: string;
+  iconText: string;
+  disclaimerBg: string;
+  disclaimerText: string;
+  disclaimerBorder: string;
+  avatarGradient: string;
+}
+
+const AGENT_THEME_MAP: Record<string, AgentThemeStyles> = {
+  'project-manager': {
+    colorHex: '#8b5cf6',
+    themeBarBg: 'bg-[#180e30]',
+    themeBarBorder: 'border-purple-900/40',
+    themeChipBg: 'bg-[#2a134a]/85 hover:bg-[#381a63] active:bg-[#431f76]',
+    themeChipBorder: 'border-purple-800/60',
+    themeChipText: 'text-purple-100',
+    themeInputBg: 'bg-[#241344] focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20',
+    themeInputBorder: 'border-purple-700/50',
+    themeInputText: 'text-white',
+    themeInputPlaceholder: 'placeholder:text-purple-200/90 placeholder:font-medium',
+    themeActionBtn: 'bg-purple-900/40 hover:bg-purple-800/60 text-purple-200 border-purple-700/40 active:bg-purple-700',
+    activeCategoryBtn: 'bg-purple-600 hover:bg-purple-500 text-white',
+    iconText: 'text-purple-600 dark:text-purple-400',
+    disclaimerBg: 'bg-purple-50/80 dark:bg-purple-950/40',
+    disclaimerText: 'text-purple-700 dark:text-purple-300',
+    disclaimerBorder: 'border-purple-200/60 dark:border-purple-800/40',
+    avatarGradient: 'bg-gradient-to-r from-purple-600 to-indigo-600'
+  },
+  'mechanic': {
+    colorHex: '#f59e0b',
+    themeBarBg: 'bg-[#221002]',
+    themeBarBorder: 'border-amber-900/40',
+    themeChipBg: 'bg-[#3a1a05]/85 hover:bg-[#4e2307] active:bg-[#602b09]',
+    themeChipBorder: 'border-amber-800/60',
+    themeChipText: 'text-amber-100',
+    themeInputBg: 'bg-[#341804] focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20',
+    themeInputBorder: 'border-amber-700/50',
+    themeInputText: 'text-white',
+    themeInputPlaceholder: 'placeholder:text-amber-200/90 placeholder:font-medium',
+    themeActionBtn: 'bg-amber-900/40 hover:bg-amber-800/60 text-amber-200 border-amber-700/40 active:bg-amber-700',
+    activeCategoryBtn: 'bg-amber-600 hover:bg-amber-500 text-white',
+    iconText: 'text-amber-500 dark:text-amber-400',
+    disclaimerBg: 'bg-amber-50/80 dark:bg-amber-950/40',
+    disclaimerText: 'text-amber-700 dark:text-amber-300',
+    disclaimerBorder: 'border-amber-200/60 dark:border-amber-800/40',
+    avatarGradient: 'bg-gradient-to-r from-amber-500 to-orange-600'
+  },
+  'safety': {
+    colorHex: '#10b981',
+    themeBarBg: 'bg-[#041910]',
+    themeBarBorder: 'border-emerald-900/40',
+    themeChipBg: 'bg-[#072d1d]/85 hover:bg-[#0b4129] active:bg-[#0f5235]',
+    themeChipBorder: 'border-emerald-800/60',
+    themeChipText: 'text-emerald-100',
+    themeInputBg: 'bg-[#08291a] focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20',
+    themeInputBorder: 'border-emerald-700/50',
+    themeInputText: 'text-white',
+    themeInputPlaceholder: 'placeholder:text-emerald-200/90 placeholder:font-medium',
+    themeActionBtn: 'bg-emerald-900/40 hover:bg-emerald-800/60 text-emerald-200 border-emerald-700/40 active:bg-emerald-700',
+    activeCategoryBtn: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+    iconText: 'text-emerald-500 dark:text-emerald-400',
+    disclaimerBg: 'bg-emerald-50/80 dark:bg-emerald-950/40',
+    disclaimerText: 'text-emerald-700 dark:text-emerald-300',
+    disclaimerBorder: 'border-emerald-200/60 dark:border-emerald-800/40',
+    avatarGradient: 'bg-gradient-to-r from-emerald-600 to-teal-600'
+  },
+  'supply-chain': {
+    colorHex: '#0ea5e9',
+    themeBarBg: 'bg-[#041624]',
+    themeBarBorder: 'border-sky-900/40',
+    themeChipBg: 'bg-[#08283f]/85 hover:bg-[#0d3b5d] active:bg-[#114973]',
+    themeChipBorder: 'border-sky-800/60',
+    themeChipText: 'text-sky-100',
+    themeInputBg: 'bg-[#08253d] focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20',
+    themeInputBorder: 'border-sky-700/50',
+    themeInputText: 'text-white',
+    themeInputPlaceholder: 'placeholder:text-sky-200/90 placeholder:font-medium',
+    themeActionBtn: 'bg-sky-900/40 hover:bg-sky-800/60 text-sky-200 border-sky-700/40 active:bg-sky-700',
+    activeCategoryBtn: 'bg-sky-600 hover:bg-sky-500 text-white',
+    iconText: 'text-sky-500 dark:text-sky-400',
+    disclaimerBg: 'bg-sky-50/80 dark:bg-sky-950/40',
+    disclaimerText: 'text-sky-700 dark:text-sky-300',
+    disclaimerBorder: 'border-sky-200/60 dark:border-sky-800/40',
+    avatarGradient: 'bg-gradient-to-r from-sky-500 to-cyan-600'
+  },
+  'predictive': {
+    colorHex: '#f43f5e',
+    themeBarBg: 'bg-[#1c060e]',
+    themeBarBorder: 'border-rose-900/40',
+    themeChipBg: 'bg-[#330c1a]/85 hover:bg-[#4a1226] active:bg-[#5f1731]',
+    themeChipBorder: 'border-rose-800/60',
+    themeChipText: 'text-rose-100',
+    themeInputBg: 'bg-[#2f0c19] focus-within:border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20',
+    themeInputBorder: 'border-rose-700/50',
+    themeInputText: 'text-white',
+    themeInputPlaceholder: 'placeholder:text-rose-200/90 placeholder:font-medium',
+    themeActionBtn: 'bg-rose-900/40 hover:bg-rose-800/60 text-rose-200 border-rose-700/40 active:bg-rose-700',
+    activeCategoryBtn: 'bg-rose-600 hover:bg-rose-500 text-white',
+    iconText: 'text-rose-500 dark:text-rose-400',
+    disclaimerBg: 'bg-rose-50/80 dark:bg-rose-950/40',
+    disclaimerText: 'text-rose-700 dark:text-rose-300',
+    disclaimerBorder: 'border-rose-200/60 dark:border-rose-800/40',
+    avatarGradient: 'bg-gradient-to-r from-rose-500 to-pink-600'
+  },
+  'finance': {
+    colorHex: '#14b8a6',
+    themeBarBg: 'bg-[#041a17]',
+    themeBarBorder: 'border-teal-900/40',
+    themeChipBg: 'bg-[#072e29]/85 hover:bg-[#0b423b] active:bg-[#0f544b]',
+    themeChipBorder: 'border-teal-800/60',
+    themeChipText: 'text-teal-100',
+    themeInputBg: 'bg-[#072a25] focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20',
+    themeInputBorder: 'border-teal-700/50',
+    themeInputText: 'text-white',
+    themeInputPlaceholder: 'placeholder:text-teal-200/90 placeholder:font-medium',
+    themeActionBtn: 'bg-teal-900/40 hover:bg-teal-800/60 text-teal-200 border-teal-700/40 active:bg-teal-700',
+    activeCategoryBtn: 'bg-teal-600 hover:bg-teal-500 text-white',
+    iconText: 'text-teal-500 dark:text-teal-400',
+    disclaimerBg: 'bg-teal-50/80 dark:bg-teal-950/40',
+    disclaimerText: 'text-teal-700 dark:text-teal-300',
+    disclaimerBorder: 'border-teal-200/60 dark:border-teal-800/40',
+    avatarGradient: 'bg-gradient-to-r from-teal-600 to-emerald-700'
+  }
+};
+
+export const renderAgentVectorIcon = (agentId: string, size = 16, className = '') => {
+  switch (agentId) {
+    case 'project-manager':
+      return <Sparkles size={size} className={className} />;
+    case 'mechanic':
+      return <Wrench size={size} className={className} />;
+    case 'safety':
+      return <ShieldCheck size={size} className={className} />;
+    case 'supply-chain':
+      return <Boxes size={size} className={className} />;
+    case 'predictive':
+      return <LineChart size={size} className={className} />;
+    case 'finance':
+      return <Landmark size={size} className={className} />;
+    default:
+      return <Sparkles size={size} className={className} />;
+  }
+};
+
+export const renderAgentWelcomeCenterLogo = (agentId: string, currentTheme: AgentThemeStyles) => {
+  if (agentId === 'project-manager') {
+    return (
+      <div className="relative flex items-center justify-center mb-3">
+        <div 
+          className="absolute w-16 h-16 rotate-45 rounded-2xl opacity-20 filter blur-xs transition-all"
+          style={{ backgroundColor: currentTheme.colorHex }}
+        />
+        <svg 
+          className="relative w-12 h-12 text-purple-600 dark:text-purple-400 drop-shadow-[0_2px_14px_rgba(147,51,234,0.35)]" 
+          viewBox="0 0 24 24" 
+          fill="currentColor"
+        >
+          <path d="M12 1.5C12 7.298 7.298 12 1.5 12C7.298 12 12 16.702 12 22.5C12 16.702 16.702 12 22.5 12C16.702 12 12 7.298 12 1.5Z" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex items-center justify-center mb-3">
+      <div 
+        className="absolute w-16 h-16 rotate-45 rounded-2xl opacity-20 filter blur-xs transition-all"
+        style={{ backgroundColor: currentTheme.colorHex }}
+      />
+      <div 
+        className="relative w-14 h-14 rounded-2xl border flex items-center justify-center shadow-lg transition-all"
+        style={{
+          backgroundColor: `${currentTheme.colorHex}18`,
+          borderColor: `${currentTheme.colorHex}45`,
+          color: currentTheme.colorHex
+        }}
+      >
+        {renderAgentVectorIcon(agentId, 30, 'drop-shadow-sm')}
+      </div>
+    </div>
+  );
+};
+
 interface AiHubProps {
   onBack?: () => void;
 }
@@ -198,6 +398,49 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
   // 'project-manager' = AI Strategic Project Manager
   // 'mechanic' = Smart Mechanic Assistant & Parts Bot
   const [activeTab, setActiveTab] = useState<'project-manager' | 'mechanic' | 'copilot'>('project-manager');
+
+  // Dedicated 6 AI Agents State & Controller
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('project-manager');
+  const [isAgentGridModalOpen, setIsAgentGridModalOpen] = useState<boolean>(false);
+  const activeAgent = getAgentById(selectedAgentId);
+  const currentTheme = AGENT_THEME_MAP[activeAgent.id] || AGENT_THEME_MAP['project-manager'];
+
+  // Per-agent message histories map
+  const [agentChatHistories, setAgentChatHistories] = useState<Record<string, AIMessage[]>>(() => {
+    const map: Record<string, AIMessage[]> = {};
+    AI_AGENTS_CONFIG.forEach(ag => {
+      map[ag.id] = [
+        {
+          role: 'model',
+          text: language === 'ar' ? ag.initialMessageAr : ag.initialMessageEn,
+          timestamp: new Date()
+        }
+      ];
+    });
+    return map;
+  });
+
+  // Switch active agent smoothly
+  const handleSelectAgent = (agentId: string) => {
+    // 1. Save current agent messages
+    setAgentChatHistories(prev => ({
+      ...prev,
+      [selectedAgentId]: pmMessages
+    }));
+    // 2. Set new agent
+    setSelectedAgentId(agentId);
+    // 3. Load target agent messages
+    const targetAgent = getAgentById(agentId);
+    const existing = agentChatHistories[agentId] || [
+      {
+        role: 'model',
+        text: language === 'ar' ? targetAgent.initialMessageAr : targetAgent.initialMessageEn,
+        timestamp: new Date()
+      }
+    ];
+    setPmMessages(existing);
+    setActiveTab('project-manager');
+  };
 
   // --- Enhanced Command Center States ---
   const [isRegistryExpanded, setIsRegistryExpanded] = useState<boolean>(true);
@@ -342,22 +585,24 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
       xl: 'w-16 h-16 rounded-2xl'
     };
 
-    const bgMap: Record<string, string> = {
-      violet: 'bg-violet-500/10 border-violet-500/25 text-violet-600 dark:text-violet-400 dark:bg-violet-950/30',
-      amber: 'bg-amber-500/10 border-amber-500/25 text-amber-600 dark:text-amber-400 dark:bg-amber-950/30',
-      emerald: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-950/30',
-      sky: 'bg-sky-500/10 border-sky-500/25 text-sky-600 dark:text-sky-400 dark:bg-sky-950/30',
-      rose: 'bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400 dark:bg-rose-950/30',
-      teal: 'bg-teal-500/10 border-teal-500/25 text-teal-600 dark:text-teal-400 dark:bg-teal-950/30'
+    const shadowMap: Record<string, string> = {
+      violet: 'shadow-[0_4px_16px_rgba(139,92,246,0.22)] border-violet-500/30 bg-violet-500/10 dark:bg-violet-950/30',
+      amber: 'shadow-[0_4px_16px_rgba(245,158,11,0.22)] border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/30',
+      emerald: 'shadow-[0_4px_16px_rgba(16,185,129,0.22)] border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/30',
+      sky: 'shadow-[0_4px_16px_rgba(14,165,233,0.22)] border-sky-500/30 bg-sky-500/10 dark:bg-sky-950/30',
+      rose: 'shadow-[0_4px_16px_rgba(244,63,94,0.20)] border-rose-500/30 bg-rose-500/10 dark:bg-rose-950/30',
+      teal: 'shadow-[0_4px_16px_rgba(20,184,166,0.22)] border-teal-500/30 bg-teal-500/10 dark:bg-teal-950/30'
     };
 
     const activeTheme = isActive 
-      ? (bgMap[color] || 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700')
-      : 'bg-slate-100/60 dark:bg-slate-900/40 text-slate-400 dark:text-slate-600 border-slate-200/50 dark:border-slate-800/50 grayscale opacity-65';
+      ? (shadowMap[color] || 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700')
+      : 'bg-slate-100/60 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800/50 grayscale opacity-60';
+
+    const robotSize = size === 'xl' ? 'md' : size === 'lg' ? 'sm' : 'xs';
 
     return (
       <div className="relative shrink-0 select-none">
-        <div className={`${containerClasses[size]} border flex items-center justify-center shadow-xs transition-all ${activeTheme}`}>
+        <div className={`${containerClasses[size]} border flex items-center justify-center transition-all ${activeTheme}`}>
           {renderAgentIcon(id, color, size)}
         </div>
         {showStatusDot && (
@@ -2169,14 +2414,19 @@ Regarding: "${text}", live data metrics match our general parameters:
 
   return (
     <div 
-      className="fixed inset-0 z-[100] w-screen h-screen flex flex-col bg-[#efeae2] dark:bg-[#0b141a] overflow-hidden font-sans"
+      className="fixed inset-0 z-[100] w-screen h-screen flex flex-col bg-[#f6f4ee] dark:bg-[#0c1017] overflow-hidden font-sans"
       dir={dir}
     >
-      {/* 1. Brand Shadowed Purple Top Bar (بنفسجي ضلي فخم مع تدرجات وظلال عميقة) */}
-      <div className={`bg-gradient-to-r from-[#1e1136] via-[#2d184f] to-[#20123b] dark:from-[#130a24] dark:via-[#1f1038] dark:to-[#140b26] text-white px-3.5 md:px-5 py-2.5 flex items-center justify-between gap-3 shrink-0 z-30 shadow-xl shadow-purple-950/40 border-b border-purple-400/20 backdrop-blur-md ${isRtl ? 'flex-row-reverse' : ''}`}>
+      {/* 1. Brand Shadowed Top Bar with active agent color gradient and high-contrast styling */}
+      <div 
+        className={`text-white px-3 md:px-5 py-2.5 flex items-center justify-between gap-2.5 shrink-0 z-30 shadow-xl border-b transition-all duration-500 ${currentTheme.themeBarBg} bg-gradient-to-r ${activeAgent.headerGradient} ${currentTheme.themeBarBorder} ${isRtl ? 'flex-row-reverse' : ''}`}
+        style={{
+          boxShadow: `0 10px 30px -5px ${activeAgent.ambientGlowRgba}`
+        }}
+      >
         
-        {/* Left Side (or Right in RTL): Back button + Avatar + Contact Info & Status */}
-        <div className={`flex items-center gap-2.5 md:gap-3.5 min-w-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
+        {/* Left Side: Back button + Robot Avatar + Agent Info */}
+        <div className={`flex items-center gap-2 md:gap-3 min-w-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
           {/* Back Arrow Button */}
           <button
             type="button"
@@ -2185,45 +2435,38 @@ Regarding: "${text}", live data metrics match our general parameters:
                 window.history.back();
               }
             }}
-            className="p-2 -mx-1 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 rounded-xl border border-purple-300/20 transition-all cursor-pointer text-purple-100 hover:text-white flex items-center justify-center shrink-0 shadow-xs"
+            className="p-2 -mx-1 bg-white/15 hover:bg-white/25 active:bg-white/30 active:scale-95 rounded-xl border border-white/25 transition-all cursor-pointer text-white flex items-center justify-center shrink-0 shadow-xs"
             title={language === 'ar' ? 'الرجوع للتطبيق' : 'Back to App'}
           >
-            {isRtl ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
+            {isRtl ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
           </button>
 
-          {/* Avatar with Online Badge */}
+          {/* Avatar: Square with Sparkles (or Vector Icon) and Online Badge as in Screenshot 2 */}
           <div 
             className="relative shrink-0 cursor-pointer active:scale-95 transition-transform" 
-            onClick={() => activeTab === 'project-manager' ? setPmGuideModalOpen(true) : setMechGuideModalOpen(true)}
-            title={language === 'ar' ? 'عرض بطاقة الوكيل' : 'View Agent Card'}
+            onClick={() => setIsAgentGridModalOpen(true)}
+            title={language === 'ar' ? `الوكيل ${activeAgent.nameAr} - انقر لتغيير الوكيل` : `${activeAgent.nameEn} - Click to switch`}
           >
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-md overflow-hidden ${
-              activeTab === 'project-manager'
-                ? 'bg-gradient-to-tr from-purple-600 to-indigo-600 border-2 border-purple-300/30 ring-2 ring-purple-500/20'
-                : 'bg-gradient-to-tr from-amber-600 to-yellow-500 border-2 border-amber-300/30 ring-2 ring-amber-500/20'
-            }`}>
-              {activeTab === 'project-manager' ? <Sparkles size={20} /> : <Wrench size={20} />}
+            <div 
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-md border border-white/30 ${currentTheme.avatarGradient}`}
+            >
+              {renderAgentVectorIcon(activeAgent.id, 20, 'text-white')}
             </div>
-            <span className={`absolute -bottom-0.5 ${isRtl ? '-left-0.5' : '-right-0.5'} w-3.5 h-3.5 bg-[#25d366] rounded-full border-2 border-[#1e1136] shadow-xs animate-pulse`} />
+            <span className={`absolute -bottom-0.5 ${isRtl ? '-left-0.5' : '-right-0.5'} w-3.5 h-3.5 bg-[#25d366] rounded-full border-2 border-slate-900 shadow-xs animate-pulse`} />
           </div>
 
           {/* Contact Name & Live Status Subtitle */}
           <div className={`leading-tight min-w-0 ${isRtl ? 'text-right' : 'text-left'}`}>
-            <h3 className="text-sm md:text-base font-bold text-white truncate flex items-center gap-1.5">
-              <span>
-                {activeTab === 'project-manager' 
-                  ? (language === 'ar' ? 'روبرت - مدير الأسطول الذكي' : 'Robert - Fleet PM')
-                  : (language === 'ar' ? 'مساعد الصيانة والقطع' : 'Mechanic & Parts Bot')}
-              </span>
-              <span className="text-[9px] bg-purple-900/70 border border-purple-400/30 text-purple-200 px-2 py-0.5 rounded-full font-bold shadow-xs">AI</span>
+            <h3 className="text-sm md:text-base font-black text-white drop-shadow-xs truncate flex items-center gap-1.5">
+              <span>{language === 'ar' ? activeAgent.nameAr : activeAgent.nameEn}</span>
             </h3>
-            <p className="text-[11px] text-purple-200/80 truncate flex items-center gap-1 mt-0.5">
-              {(activeTab === 'project-manager' ? pmLoading : mechLoading) ? (
-                <span className="text-purple-200 font-bold italic flex items-center gap-1 animate-pulse">
+            <p className="text-[11px] text-white/90 font-medium truncate flex items-center gap-1 mt-0.5">
+              {pmLoading ? (
+                <span className="text-white font-bold italic flex items-center gap-1 animate-pulse">
                   <span>{language === 'ar' ? 'يكتب الآن...' : 'typing...'}</span>
                 </span>
               ) : (
-                <span className="text-purple-200/80 font-medium flex items-center gap-1">
+                <span className="text-white/95 font-bold flex items-center gap-1 drop-shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-[#25d366] shrink-0 shadow-xs" />
                   <span>{language === 'ar' ? 'متصل الآن' : 'online'}</span>
                 </span>
@@ -2232,42 +2475,61 @@ Regarding: "${text}", live data metrics match our general parameters:
           </div>
         </div>
 
-        {/* Center / Right: WhatsApp Agent Switcher Pill + Action Buttons */}
-        <div className={`flex items-center gap-2 shrink-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          {/* Agent Switcher Tabs */}
-          <div className="flex items-center bg-black/35 dark:bg-black/50 p-1 rounded-xl border border-purple-400/20 backdrop-blur-sm shadow-inner">
+        {/* Center / Right: Wrench/Sparkles Switcher Pill + Grid Button + Actions as in Screenshot 2 */}
+        <div className={`flex items-center gap-1.5 shrink-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
+          {/* Quick Toggle Pill: Mechanic & Strategic PM */}
+          <div className="flex items-center bg-black/50 p-1 rounded-2xl border border-white/20 backdrop-blur-md shadow-inner gap-1">
             <button
               type="button"
-              onClick={() => setActiveTab('project-manager')}
-              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                activeTab === 'project-manager'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-black ring-1 ring-white/20'
-                  : 'text-purple-200/80 hover:text-white hover:bg-white/10 active:bg-purple-900'
+              onClick={() => handleSelectAgent('mechanic')}
+              className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+                selectedAgentId === 'mechanic'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-sm'
+                  : 'text-white/70 hover:text-white hover:bg-white/15'
               }`}
+              title={language === 'ar' ? 'مساعد الصيانة والميكانيكا' : 'Mechanic'}
             >
-              <Sparkles size={12} />
-              <span className="hidden sm:inline">{language === 'ar' ? 'روبرت' : 'Robert'}</span>
+              <Wrench size={16} />
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('mechanic')}
-              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
-                activeTab === 'mechanic'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-black ring-1 ring-white/20'
-                  : 'text-purple-200/80 hover:text-white hover:bg-white/10 active:bg-purple-900'
+              onClick={() => handleSelectAgent('project-manager')}
+              className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+                selectedAgentId === 'project-manager'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm'
+                  : 'text-white/70 hover:text-white hover:bg-white/15'
               }`}
+              title={language === 'ar' ? 'روبرت - مدير الأسطول' : 'Robert - Fleet PM'}
             >
-              <Wrench size={12} />
-              <span className="hidden sm:inline">{language === 'ar' ? 'الصيانة' : 'Mechanic'}</span>
+              <Sparkles size={16} />
             </button>
+            {selectedAgentId !== 'mechanic' && selectedAgentId !== 'project-manager' && (
+              <button
+                type="button"
+                className={`p-1.5 rounded-xl transition-all cursor-pointer ${currentTheme.avatarGradient} text-white shadow-sm`}
+                title={language === 'ar' ? activeAgent.shortNameAr : activeAgent.shortNameEn}
+              >
+                {renderAgentVectorIcon(activeAgent.id, 16, 'text-white')}
+              </button>
+            )}
           </div>
+
+          {/* Grid Button to open Full 6-Agent Directory Modal as in Screenshot 2 */}
+          <button
+            type="button"
+            onClick={() => setIsAgentGridModalOpen(true)}
+            className="p-2 bg-white/15 hover:bg-white/25 active:bg-white/35 active:scale-95 rounded-xl border border-white/25 transition-all cursor-pointer text-white flex items-center justify-center relative shadow-xs"
+            title={language === 'ar' ? 'عرض تفاصيل وكلاء الذكاء الاصطناعي الـ 6' : 'View All 6 AI Agents'}
+          >
+            <LayoutGrid size={18} />
+          </button>
 
           {/* Simulator & Metrics Drawer Toggle */}
           <button
             type="button"
             onClick={handleToggleSidebar}
-            className={`p-2 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 rounded-xl border border-purple-300/20 transition-all cursor-pointer text-purple-100 hover:text-white flex items-center justify-center relative shadow-xs ${
-              showSidebar ? 'bg-purple-600/40 ring-2 ring-purple-400/40' : ''
+            className={`p-2 bg-white/15 hover:bg-white/25 active:bg-purple-900 active:scale-95 rounded-xl border border-white/25 transition-all cursor-pointer text-white flex items-center justify-center relative shadow-xs ${
+              showSidebar ? 'bg-purple-600/60 ring-2 ring-purple-300' : ''
             }`}
             title={language === 'ar' ? 'لوحة المحاكاة والمؤشرات' : 'Simulator & Metrics'}
           >
@@ -2279,7 +2541,7 @@ Regarding: "${text}", live data metrics match our general parameters:
             <button
               type="button"
               onClick={() => setWhatsAppMenuOpen(!whatsAppMenuOpen)}
-              className="p-2 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 rounded-xl border border-purple-300/20 transition-all cursor-pointer text-purple-100 hover:text-white flex items-center justify-center shadow-xs"
+              className="p-2 bg-white/15 hover:bg-white/25 active:bg-purple-900 active:scale-95 rounded-xl border border-white/25 transition-all cursor-pointer text-white flex items-center justify-center shadow-xs"
               title={language === 'ar' ? 'خيارات إضافية' : 'More options'}
             >
               <MoreVertical size={18} />
@@ -2851,24 +3113,24 @@ Regarding: "${text}", live data metrics match our general parameters:
               </>
               )}
 
-              {/* Chat Timeline Panel */}
-              <div className="flex-1 flex flex-col min-h-0 bg-[#efeae2] dark:bg-[#0b141a] relative">
+              {/* Chat Timeline Panel - Clean modern theme background */}
+              <div className="flex-1 flex flex-col min-h-0 bg-[#f6f4ee] dark:bg-[#0c1017] relative">
                 
-                {/* WhatsApp Messages Timeline */}
+                {/* Chat Messages Timeline */}
                 <div
                   ref={pmScrollRef}
-                  className="flex-1 overflow-y-auto p-3 md:p-5 space-y-3 bg-[#efeae2] dark:bg-[#0b141a] bg-opacity-95"
+                  className="flex-1 overflow-y-auto p-3 md:p-5 pb-24 md:pb-28 space-y-4 bg-[#f6f4ee] dark:bg-[#0c1017] scroll-smooth"
                 >
-                  {/* WhatsApp Floating Date Badge */}
+                  {/* Floating Date Badge */}
                   <div className="flex justify-center my-1 select-none">
-                    <span className="bg-white/85 dark:bg-[#182229]/90 text-[11px] font-bold text-[#54656f] dark:text-[#8696a0] px-3 py-1 rounded-lg shadow-2xs border border-black/5 dark:border-white/5">
+                    <span className="bg-white/95 dark:bg-[#151c2e] text-[11px] font-bold text-slate-600 dark:text-slate-300 px-3.5 py-1 rounded-full shadow-xs border border-slate-200/90 dark:border-slate-800">
                       {language === 'ar' ? 'اليوم' : 'TODAY'}
                     </span>
                   </div>
 
-                  {/* WhatsApp Security Encryption Disclaimer */}
+                  {/* Security Encryption Disclaimer */}
                   <div className="flex justify-center my-1 px-4 text-center select-none">
-                    <span className="bg-[#ffeecd]/80 dark:bg-[#182229]/90 text-[10px] font-semibold text-[#54656f] dark:text-[#8696a0] px-3.5 py-1.5 rounded-lg shadow-2xs max-w-md border border-[#ffe6b3] dark:border-slate-800">
+                    <span className={`${currentTheme.disclaimerBg} ${currentTheme.disclaimerText} text-[11px] md:text-xs font-bold px-4 py-1.5 rounded-full shadow-xs max-w-md border ${currentTheme.disclaimerBorder}`}>
                       🔒 {language === 'ar' ? 'الرسائل مدعومة بالذكاء الاصطناعي مع اتصال مباشر بقاعدة بيانات الأسطول والمخزون.' : 'Messages are AI-powered with real-time fleet & inventory database sync.'}
                     </span>
                   </div>
@@ -2882,15 +3144,19 @@ Regarding: "${text}", live data metrics match our general parameters:
                       >
                         <div className={`p-3 md:px-4 md:py-2.5 leading-relaxed max-w-[88%] md:max-w-[75%] relative rounded-2xl shadow-xs transition-all ${
                           isUser 
-                            ? `bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium ${isRtl ? 'rounded-tl-xs' : 'rounded-tr-xs'}` 
-                            : `bg-white dark:bg-[#1a152d] text-slate-800 dark:text-slate-100 border border-purple-100/50 dark:border-purple-900/40 ${isRtl ? 'rounded-tr-xs' : 'rounded-tl-xs'}`
+                            ? `${activeAgent.buttonGradient} text-white font-medium ${isRtl ? 'rounded-tl-xs' : 'rounded-tr-xs'} shadow-sm` 
+                            : `bg-white dark:bg-[#151c2a] text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 shadow-xs ${isRtl ? 'rounded-tr-xs' : 'rounded-tl-xs'}`
                         }`}>
                           {!isUser && (
-                            <div className="flex items-center justify-between gap-2 pb-1 mb-1.5 border-b border-slate-100 dark:border-purple-900/30">
-                              <span className="text-[11px] font-extrabold text-purple-600 dark:text-purple-400">
-                                {language === 'ar' ? 'روبرت - مدير الأسطول ⚡' : 'Robert - Fleet PM ⚡'}
+                            <div className="flex items-center justify-between gap-2 pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[11px] font-extrabold ${currentTheme.iconText}`}>
+                                  {language === 'ar' ? `${activeAgent.nameAr} ⚡` : `${activeAgent.nameEn} ⚡`}
+                                </span>
+                              </div>
+                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border ${activeAgent.glowPillClass}`}>
+                                {activeAgent.badge}
                               </span>
-                              <span className="text-[9px] bg-purple-100/80 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-bold">AI</span>
                             </div>
                           )}
 
@@ -2901,7 +3167,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                           {/* Render Attachment if present */}
                           {renderMessageAttachmentBadge(msg.attachment)}
 
-                          <div className={`flex items-center gap-2 mt-1.5 pt-1.5 border-t ${isUser ? 'border-white/20 text-purple-100' : 'border-slate-100 dark:border-purple-900/30 text-slate-400 dark:text-slate-400'} text-[10px] select-none ${
+                          <div className={`flex items-center gap-2 mt-1.5 pt-1.5 border-t ${isUser ? 'border-white/20 text-white/90' : 'border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-semibold'} text-[11px] select-none ${
                             isUser ? 'justify-end' : 'justify-between'
                           }`}>
                             {!isUser && (
@@ -2909,7 +3175,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 <button
                                   type="button"
                                   onClick={() => handleToggleSpeakMessage(`pm-${i}`, msg.text)}
-                                  className="flex items-center gap-1 hover:text-purple-600 dark:hover:text-purple-400 active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all"
+                                  className={`flex items-center gap-1 hover:${currentTheme.iconText} active:scale-95 rounded-md px-1.5 py-0.5 cursor-pointer transition-all`}
                                 >
                                   {activeAudioMessageId === `pm-${i}` && isPlayingAudio ? (
                                     <>
@@ -2929,7 +3195,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                   onClick={() => {
                                     navigator.clipboard.writeText(msg.text);
                                   }}
-                                  className="flex items-center gap-1 hover:text-purple-600 dark:hover:text-purple-400 active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all"
+                                  className={`flex items-center gap-1 hover:${currentTheme.iconText} active:scale-95 rounded-md px-1.5 py-0.5 cursor-pointer transition-all`}
                                 >
                                   <Copy size={12} />
                                   <span>{language === 'ar' ? 'نسخ' : 'Copy'}</span>
@@ -2948,7 +3214,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                       });
                                       setQuickOrderModalOpen(true);
                                     }}
-                                    className="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-bold hover:underline active:bg-purple-600 active:text-white rounded-md px-1.5 py-0.5 cursor-pointer transition-all"
+                                    className={`flex items-center gap-1 ${currentTheme.iconText} font-bold hover:underline active:scale-95 rounded-md px-1.5 py-0.5 cursor-pointer transition-all`}
                                   >
                                     <Wrench size={11} />
                                     <span>{language === 'ar' ? 'أمر صيانة' : 'Work Order'}</span>
@@ -2959,7 +3225,7 @@ Regarding: "${text}", live data metrics match our general parameters:
 
                             <div className="flex items-center gap-1">
                               <span>{new Date().toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                              {isUser && <CheckCheck size={14} className="text-purple-200" />}
+                              {isUser && <CheckCheck size={14} className="text-white/80" />}
                             </div>
                           </div>
                         </div>
@@ -2967,36 +3233,44 @@ Regarding: "${text}", live data metrics match our general parameters:
                     );
                   })}
 
-                  {/* When starting / 1 welcome message: Display Full-Screen Prompts */}
+                  {/* When starting / 1 welcome message: Display Full-Screen Prompts with Agent Logo in Center */}
                   {pmMessages.length <= 1 && (
                     <div className="py-4 px-2 max-w-2xl mx-auto flex flex-col items-center justify-center text-center animate-fade-in">
-                      <ModernAiBrandEmblem size={48} className="mb-3" />
+                      {/* Center Agent Logo as in Screenshot */}
+                      {renderAgentWelcomeCenterLogo(activeAgent.id, currentTheme)}
 
-                      <h2 className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2">
-                        <span>{language === 'ar' ? 'مرحباً laheeb' : 'Hello laheeb'}</span>
-                        <span className="text-xl animate-pulse">👋</span>
+                      <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center justify-center gap-2 mb-1">
+                        <span>{language === 'ar' ? activeAgent.welcomeGreetingAr : activeAgent.welcomeGreetingEn}</span>
+                        <span className="text-2xl animate-pulse">👋</span>
                       </h2>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 mb-4 font-medium">
-                        {language === 'ar' ? 'كيف يمكنني مساعدتك اليوم في إدارة الأسطول والورشة؟' : 'How can I help you today?'}
+                      <p className="text-xs md:text-sm text-slate-700 dark:text-slate-300 mb-5 font-semibold max-w-lg">
+                        {language === 'ar' ? activeAgent.welcomeSubtitleAr : activeAgent.welcomeSubtitleEn}
                       </p>
 
-                      <div className="w-full bg-white dark:bg-[#1a152d] border border-purple-100 dark:border-purple-900/40 rounded-2xl shadow-xs overflow-hidden text-right mb-4 divide-y divide-purple-50 dark:divide-purple-900/20">
-                        {((PROMPT_CATEGORIES_DATA as any)[selectedPromptCategory]?.prompts || PROMPT_CATEGORIES_DATA['for-you'].prompts).map((item: any, idx: number) => (
+                      {/* Featured Prompts for the active agent in single unified white card */}
+                      <div className="w-full bg-white dark:bg-[#151c2a] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden mb-5">
+                        {(selectedPromptCategory === 'for-you' 
+                          ? activeAgent.featuredPrompts 
+                          : ((PROMPT_CATEGORIES_DATA as any)[selectedPromptCategory]?.prompts || activeAgent.featuredPrompts)
+                        ).map((item: any, idx: number) => (
                           <button
                             key={idx}
                             type="button"
                             onClick={() => handlePmSendMessage(language === 'ar' ? item.textAr : item.textEn)}
-                            className={`w-full px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-950/40 active:bg-purple-600 active:text-white text-slate-700 dark:text-slate-200 text-xs md:text-sm font-semibold transition-all flex items-center gap-3 cursor-pointer group ${
+                            className={`w-full px-4 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 active:scale-[0.99] text-slate-900 dark:text-white text-xs md:text-sm font-bold transition-all flex items-center gap-3 cursor-pointer group ${
                               isRtl ? 'flex-row-reverse text-right' : 'text-left'
                             }`}
                           >
-                            <Sparkles size={14} className="text-purple-600 dark:text-purple-400 shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className={`shrink-0 transition-transform group-hover:scale-110 ${currentTheme.iconText}`}>
+                              {renderAgentVectorIcon(activeAgent.id, 16)}
+                            </span>
                             <span className="flex-1 leading-snug">{language === 'ar' ? item.textAr : item.textEn}</span>
                           </button>
                         ))}
                       </div>
 
-                      <div className="w-full flex items-center justify-center gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-wrap">
+                      {/* Category Pills */}
+                      <div className="w-full flex items-center justify-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-wrap">
                         {Object.values(PROMPT_CATEGORIES_DATA).map((cat: any) => {
                           const isActive = selectedPromptCategory === cat.id;
                           return (
@@ -3004,13 +3278,17 @@ Regarding: "${text}", live data metrics match our general parameters:
                               key={cat.id}
                               type="button"
                               onClick={() => setSelectedPromptCategory(cat.id)}
-                              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95 ${
+                              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95 ${
                                 isActive
-                                  ? 'bg-purple-600 text-white shadow-xs'
-                                  : 'bg-white/90 dark:bg-[#1a152d] text-slate-600 dark:text-slate-300 border border-purple-100 dark:border-purple-900/40 hover:bg-purple-50 active:bg-purple-600 active:text-white'
+                                  ? `${currentTheme.activeCategoryBtn} shadow-xs`
+                                  : 'bg-white/95 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-700 hover:bg-slate-50 active:bg-slate-200 shadow-2xs'
                               }`}
                             >
-                              {cat.id === 'for-you' && <Sparkles size={11} className={isActive ? 'text-white' : 'text-purple-600'} />}
+                              {cat.id === 'for-you' && (
+                                <span className="shrink-0">
+                                  {renderAgentVectorIcon(activeAgent.id, 12, isActive ? 'text-white' : currentTheme.iconText)}
+                                </span>
+                              )}
                               <span>{language === 'ar' ? cat.nameAr : cat.nameEn}</span>
                             </button>
                           );
@@ -3019,37 +3297,37 @@ Regarding: "${text}", live data metrics match our general parameters:
                     </div>
                   )}
 
-                  {/* WhatsApp Typing status */}
+                  {/* Typing status with Agent Icon */}
                   {pmLoading && (
                     <div className={`flex ${isRtl ? 'justify-end' : 'justify-start'} w-full my-1`}>
-                      <div className="bg-white dark:bg-[#1a152d] px-4 py-2.5 rounded-2xl rounded-tl-none border border-purple-100 dark:border-purple-900/30 flex items-center gap-2 shadow-xs">
+                      <div className="bg-white dark:bg-[#151c2a] px-4 py-2.5 rounded-2xl rounded-tl-none border border-slate-200/80 dark:border-slate-800 flex items-center gap-2.5 shadow-xs">
+                        <div className={`w-6 h-6 rounded-xl flex items-center justify-center text-white ${currentTheme.avatarGradient}`}>
+                          {renderAgentVectorIcon(activeAgent.id, 13, 'text-white')}
+                        </div>
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold italic">
-                          {language === 'ar' ? 'جاري التحليل والتخطيط...' : 'Robert is analyzing...'}
+                          {language === 'ar' ? `${activeAgent.shortNameAr} يحلل ويكتب...` : `${activeAgent.shortNameEn} is analyzing...`}
                         </span>
                         <div className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400 animate-bounce [animation-delay:-0.3s]" />
-                          <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400 animate-bounce [animation-delay:-0.15s]" />
-                          <span className="w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-400 animate-bounce" />
+                          <span className={`w-2 h-2 rounded-full ${currentTheme.iconText} animate-bounce [animation-delay:-0.3s] bg-current`} />
+                          <span className={`w-2 h-2 rounded-full ${currentTheme.iconText} animate-bounce [animation-delay:-0.15s] bg-current`} />
+                          <span className={`w-2 h-2 rounded-full ${currentTheme.iconText} animate-bounce bg-current`} />
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Quick Chips Floating Row */}
-                <div className="bg-gradient-to-r from-[#1c1032]/95 via-[#291747]/95 to-[#1f1138]/95 backdrop-blur-md px-3.5 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-b border-purple-400/20 shadow-inner">
-                  {[
-                    { textAr: 'فحص دوري للأسطول', textEn: 'Fleet Inspections', icon: '📋' },
-                    { textAr: 'أوامر الصيانة المتأخرة', textEn: 'Overdue Orders', icon: '🚨' },
-                    { textAr: 'الفنيين المتاحين للعمل', textEn: 'Available Techs', icon: '👨‍🔧' },
-                    { textAr: 'تقرير الميزانية والوقود', textEn: 'Budget & Fuel', icon: '💰' }
-                  ].map((chip, idx) => (
+                {/* Quick Chips Floating Row tailored to the active agent's dark theme */}
+                <div 
+                  className={`px-3.5 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-b transition-colors duration-300 ${currentTheme.themeBarBg} ${currentTheme.themeBarBorder}`}
+                >
+                  {activeAgent.quickChips.map((chip, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => handlePmSendMessage(language === 'ar' ? chip.textAr : chip.textEn)}
                       disabled={pmLoading}
-                      className="px-3.5 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 active:bg-purple-600 active:text-white active:scale-95 text-purple-100 text-[11px] font-bold shrink-0 shadow-xs border border-purple-400/25 backdrop-blur-xs transition-all flex items-center gap-1.5 cursor-pointer ring-1 ring-black/10"
+                      className={`px-3.5 py-1.5 rounded-full text-[11px] md:text-xs font-bold shrink-0 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 border ${currentTheme.themeChipBg} ${currentTheme.themeChipBorder} ${currentTheme.themeChipText}`}
                     >
                       <span>{chip.icon}</span>
                       <span>{language === 'ar' ? chip.textAr : chip.textEn}</span>
@@ -3060,188 +3338,11 @@ Regarding: "${text}", live data metrics match our general parameters:
                 {/* Attachment Preview Bar above Input */}
                 {renderAttachmentPreviewBar(pmAttachedFile, () => setPmAttachedFile(null))}
 
-                {/* Brand Shadowed Purple Gradient Input Bar */}
-                <div className="bg-gradient-to-r from-[#1e1136] via-[#2d184f] to-[#20123b] dark:from-[#130a24] dark:via-[#1f1038] dark:to-[#140b26] px-3 md:px-5 py-3 border-t border-purple-400/20 flex items-center gap-2 md:gap-3 shrink-0 z-20 shadow-2xl shadow-purple-950/40 backdrop-blur-md">
-                  {/* Emoji / Quick Prompts Button */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsQuickActionsOpen(!isQuickActionsOpen)}
-                      className="p-2.5 bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white rounded-xl border border-purple-300/20 transition-all cursor-pointer shrink-0 shadow-xs"
-                      title={language === 'ar' ? 'نماذج استفسارات' : 'Prompts'}
-                    >
-                      <Smile size={20} />
-                    </button>
-
-                    {isQuickActionsOpen && (
-                      <>
-                        <div className="fixed inset-0 z-30" onClick={() => setIsQuickActionsOpen(false)} />
-                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-64 bg-white dark:bg-[#1f1738] rounded-2xl shadow-2xl p-2 z-40 border border-purple-100 dark:border-purple-800/40 space-y-1 text-xs font-bold animate-scale-in`}>
-                          <div className="text-[10px] font-black text-purple-600 dark:text-purple-400 px-2 py-1 uppercase">
-                            {language === 'ar' ? 'استفسارات فورية' : 'Quick Prompts'}
-                          </div>
-                          {PROMPT_CATEGORIES_DATA['for-you'].prompts.map((p: any, idx: number) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => {
-                                handlePmSendMessage(language === 'ar' ? p.textAr : p.textEn);
-                                setIsQuickActionsOpen(false);
-                              }}
-                              className={`w-full p-2 text-xs rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 transition-all ${
-                                isRtl ? 'flex-row-reverse text-right' : 'text-left'
-                              }`}
-                            >
-                              <Sparkles size={12} className="text-purple-600 dark:text-purple-400 shrink-0" />
-                              <span className="truncate">{language === 'ar' ? p.textAr : p.textEn}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Attachment Button & Rich Attachment Menu */}
-                  <div className="relative shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setShowAttachMenu(!showAttachMenu)}
-                      className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-xs ${
-                        pmAttachedFile
-                          ? 'bg-purple-600 text-white border-purple-400 ring-2 ring-purple-400/40'
-                          : 'bg-white/10 hover:bg-white/15 active:bg-purple-900 active:scale-95 text-purple-100 hover:text-white border-purple-300/20'
-                      }`}
-                      title={language === 'ar' ? 'إرفاق ملفات وصور وتقارير' : 'Attach files and reports'}
-                    >
-                      <Paperclip size={20} />
-                    </button>
-
-                    {showAttachMenu && (
-                      <>
-                        <div className="fixed inset-0 z-30" onClick={() => setShowAttachMenu(false)} />
-                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-64 bg-white dark:bg-[#1c1432] rounded-2xl shadow-2xl p-2 z-40 border border-purple-200 dark:border-purple-800/60 space-y-1 text-xs font-bold animate-scale-in`}>
-                          <div className="text-[10px] font-black text-purple-600 dark:text-purple-400 px-2.5 py-1 uppercase tracking-wider border-b border-slate-100 dark:border-purple-900/30">
-                            {language === 'ar' ? 'إرفاق ملف أو إجراء' : 'Attach File or Action'}
-                          </div>
-
-                          {/* Camera */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowAttachMenu(false);
-                              handleTriggerCamera('pm');
-                            }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
-                          >
-                            <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 flex items-center justify-center shrink-0">
-                              <Camera size={16} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'التقاط صورة بالكاميرا' : 'Take Camera Photo'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'تصوير مباشر للأعطال والقطع' : 'Live photo of truck or part'}</p>
-                            </div>
-                          </button>
-
-                          {/* Gallery / Image Upload */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowAttachMenu(false);
-                              handleTriggerImageUpload('pm');
-                            }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
-                          >
-                            <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
-                              <ImageIcon size={16} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'رفع صورة / مخطط' : 'Upload Image'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'PNG, JPG, WEBP' : 'PNG, JPG, WEBP'}</p>
-                            </div>
-                          </button>
-
-                          {/* Documents Upload */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowAttachMenu(false);
-                              handleTriggerDocumentUpload('pm');
-                            }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
-                          >
-                            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
-                              <FileText size={16} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'إرفاق مستند / PDF' : 'Upload Document / PDF'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'PDF, DOCX, XLSX, TXT' : 'PDF, DOCX, XLSX, TXT'}</p>
-                            </div>
-                          </button>
-
-                          {/* Quick Work Order */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setQuickOrderModalOpen(true);
-                              setShowAttachMenu(false);
-                            }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer border-t border-slate-100 dark:border-purple-900/30 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
-                          >
-                            <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0">
-                              <Wrench size={16} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'إنشاء أمر صيانة فوري' : 'Create Work Order'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'إسناد فني وتحديد تكلفة' : 'Assign tech & parts'}</p>
-                            </div>
-                          </button>
-
-                          {/* Fleet Report */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handlePmSendMessage(language === 'ar' ? 'تقرير حالة أسطول المركبات والفحص الدوري' : 'Vehicle inspection & periodic maintenance summary');
-                              setShowAttachMenu(false);
-                            }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
-                          >
-                            <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center shrink-0">
-                              <FileSpreadsheet size={16} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'توليد تقرير أداء فوري' : 'Generate Fleet Report'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'جاهزية الأسطول والتكاليف' : 'Fleet readiness metrics'}</p>
-                            </div>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* If voice recording active, show live waveform banner; else show text input */}
-                  {isVoiceRecording && voiceRecordingTarget === 'pm' ? (
-                    renderVoiceRecordingBanner('pm')
-                  ) : (
-                    <div className="flex-1 bg-purple-950/40 dark:bg-black/50 rounded-2xl px-4 py-2.5 text-sm flex items-center border border-purple-300/25 dark:border-purple-500/20 focus-within:border-purple-300/60 focus-within:bg-purple-950/60 focus-within:ring-2 focus-within:ring-purple-400/30 backdrop-blur-xs shadow-inner transition-all">
-                      <input
-                        type="text"
-                        value={pmInput}
-                        onChange={(e) => setPmInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handlePmSendMessage();
-                          }
-                        }}
-                        placeholder={language === 'ar' ? 'اكتب رسالة لـ روبرت أو اضغط المايك للتسجيل...' : 'Type a message or tap mic to record...'}
-                        className={`w-full bg-transparent border-0 outline-none text-white placeholder:text-purple-200/60 ${
-                          isRtl ? 'text-right' : 'text-left'
-                        }`}
-                      />
-                    </div>
-                  )}
-
-                  {/* Circular Purple Brand Action Button (Send / Mic) */}
+                {/* Input Bar matching agent theme and screenshot */}
+                <div 
+                  className={`px-3 md:px-5 py-2.5 md:py-3 border-t flex items-center gap-2 md:gap-3 shrink-0 z-20 shadow-sm transition-all duration-300 ${currentTheme.themeBarBg} ${currentTheme.themeBarBorder}`}
+                >
+                  {/* Microphone / Record / Send Button */}
                   <button
                     type="button"
                     onClick={() => {
@@ -3253,12 +3354,12 @@ Regarding: "${text}", live data metrics match our general parameters:
                         handleStartRealVoiceRecording('pm');
                       }
                     }}
-                    className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-950/50 border transition-all shrink-0 cursor-pointer ${
+                    className={`p-2.5 md:p-3 rounded-2xl flex items-center justify-center border transition-all shrink-0 cursor-pointer shadow-md active:scale-95 ${
                       isVoiceRecording && voiceRecordingTarget === 'pm'
                         ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400 animate-pulse'
                         : (pmInput.trim() || pmAttachedFile)
-                        ? 'bg-gradient-to-tr from-purple-600 via-purple-500 to-indigo-600 hover:brightness-110 active:scale-95 text-white border-purple-300/30'
-                        : 'bg-white/10 hover:bg-white/20 active:scale-95 text-purple-100 hover:text-white border-purple-300/20'
+                        ? `${activeAgent.buttonGradient} text-white border-white/20`
+                        : currentTheme.themeActionBtn
                     }`}
                     title={
                       isVoiceRecording && voiceRecordingTarget === 'pm'
@@ -3276,6 +3377,185 @@ Regarding: "${text}", live data metrics match our general parameters:
                       <Mic size={18} className={isVoiceRecording ? 'text-rose-500 animate-pulse' : ''} />
                     )}
                   </button>
+
+                  {/* If voice recording active, show live waveform banner; else show text input */}
+                  {isVoiceRecording && voiceRecordingTarget === 'pm' ? (
+                    renderVoiceRecordingBanner('pm')
+                  ) : (
+                    <div className={`flex-1 rounded-2xl px-4 py-2.5 text-xs md:text-sm flex items-center border shadow-inner transition-all ${currentTheme.themeInputBg} ${currentTheme.themeInputBorder}`}>
+                      <input
+                        type="text"
+                        value={pmInput}
+                        onChange={(e) => setPmInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handlePmSendMessage();
+                          }
+                        }}
+                        placeholder={language === 'ar' ? `اكتب رسالة لـ ${activeAgent.shortNameAr} أو اضغط المايك للتسجيل...` : `Type a message to ${activeAgent.shortNameEn}...`}
+                        className={`w-full bg-transparent border-0 outline-none ${currentTheme.themeInputText} ${currentTheme.themeInputPlaceholder} ${
+                          isRtl ? 'text-right' : 'text-left'
+                        }`}
+                      />
+                    </div>
+                  )}
+
+                  {/* Attachment Button & Rich Attachment Menu */}
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowAttachMenu(!showAttachMenu)}
+                      className={`p-2.5 md:p-3 rounded-2xl border transition-all cursor-pointer shadow-2xs active:scale-95 ${
+                        pmAttachedFile
+                          ? `${currentTheme.activeCategoryBtn} ring-2 ring-white/40`
+                          : currentTheme.themeActionBtn
+                      }`}
+                      title={language === 'ar' ? 'إرفاق ملفات وصور وتقارير' : 'Attach files and reports'}
+                    >
+                      <Paperclip size={18} />
+                    </button>
+
+                    {showAttachMenu && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setShowAttachMenu(false)} />
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'left-0 -translate-x-11 sm:translate-x-0' : 'right-0'} w-72 max-w-[calc(100vw-32px)] bg-white dark:bg-[#1c1432] rounded-2xl shadow-2xl p-2.5 z-40 border border-slate-200 dark:border-purple-800/60 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <div className={`text-[11px] font-black ${currentTheme.iconText} px-2.5 py-1.5 uppercase tracking-wider border-b border-slate-100 dark:border-purple-900/30 text-start`}>
+                            {language === 'ar' ? 'إرفاق ملف أو إجراء' : 'Attach File or Action'}
+                          </div>
+
+                          {/* Camera */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              handleTriggerCamera('pm');
+                            }}
+                            className="w-full p-2.5 hover:bg-slate-100 dark:hover:bg-purple-950/50 active:scale-98 rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer text-start"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 flex items-center justify-center shrink-0">
+                              <Camera size={16} />
+                            </div>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'التقاط صورة بالكاميرا' : 'Take Camera Photo'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'تصوير مباشر للأعطال والقطع' : 'Live photo of truck or part'}</p>
+                            </div>
+                          </button>
+
+                          {/* Gallery / Image Upload */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              handleTriggerImageUpload('pm');
+                            }}
+                            className="w-full p-2.5 hover:bg-slate-100 dark:hover:bg-purple-950/50 active:scale-98 rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer text-start"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
+                              <ImageIcon size={16} />
+                            </div>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'رفع صورة / مخطط' : 'Upload Image'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'PNG, JPG, WEBP' : 'PNG, JPG, WEBP'}</p>
+                            </div>
+                          </button>
+
+                          {/* Documents Upload */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAttachMenu(false);
+                              handleTriggerDocumentUpload('pm');
+                            }}
+                            className="w-full p-2.5 hover:bg-slate-100 dark:hover:bg-purple-950/50 active:scale-98 rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer text-start"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
+                              <FileText size={16} />
+                            </div>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'إرفاق مستند / PDF' : 'Upload Document / PDF'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'PDF, DOCX, XLSX, TXT' : 'PDF, DOCX, XLSX, TXT'}</p>
+                            </div>
+                          </button>
+
+                          {/* Quick Work Order */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickOrderModalOpen(true);
+                              setShowAttachMenu(false);
+                            }}
+                            className="w-full p-2.5 hover:bg-slate-100 dark:hover:bg-purple-950/50 active:scale-98 rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer border-t border-slate-100 dark:border-purple-900/30 text-start"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0">
+                              <Wrench size={16} />
+                            </div>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'إنشاء أمر صيانة فوري' : 'Create Work Order'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'إسناد فني وتحديد تكلفة' : 'Assign tech & parts'}</p>
+                            </div>
+                          </button>
+
+                          {/* Fleet Report */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handlePmSendMessage(language === 'ar' ? 'تقرير حالة أسطول المركبات والفحص الدوري' : 'Vehicle inspection & periodic maintenance summary');
+                              setShowAttachMenu(false);
+                            }}
+                            className="w-full p-2.5 hover:bg-slate-100 dark:hover:bg-purple-950/50 active:scale-98 rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer text-start"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 flex items-center justify-center shrink-0">
+                              <FileSpreadsheet size={16} />
+                            </div>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'توليد تقرير أداء فوري' : 'Generate Fleet Report'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'جاهزية الأسطول والتكاليف' : 'Fleet readiness metrics'}</p>
+                            </div>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Emoji / Quick Prompts Button */}
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsQuickActionsOpen(!isQuickActionsOpen)}
+                      className={`p-2.5 md:p-3 rounded-2xl border transition-all cursor-pointer shadow-2xs active:scale-95 ${currentTheme.themeActionBtn}`}
+                      title={language === 'ar' ? 'نماذج استفسارات' : 'Prompts'}
+                    >
+                      <Smile size={18} />
+                    </button>
+
+                    {isQuickActionsOpen && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={() => setIsQuickActionsOpen(false)} />
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'left-0' : 'right-0'} w-72 max-w-[calc(100vw-32px)] bg-white dark:bg-[#1f1738] rounded-2xl shadow-2xl p-2.5 z-40 border border-slate-200 dark:border-purple-800/40 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <div className={`text-[11px] font-black ${currentTheme.iconText} px-2.5 py-1.5 uppercase tracking-wider text-start`}>
+                            {language === 'ar' ? 'استفسارات فورية' : 'Quick Prompts'}
+                          </div>
+                          {activeAgent.featuredPrompts.map((p, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                handlePmSendMessage(language === 'ar' ? p.textAr : p.textEn);
+                                setIsQuickActionsOpen(false);
+                              }}
+                              className="w-full p-2.5 text-xs rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 active:scale-98 text-slate-800 dark:text-slate-100 font-bold cursor-pointer flex items-center gap-2.5 transition-all text-start"
+                            >
+                              <span className={`${currentTheme.iconText} shrink-0`}>
+                                {renderAgentVectorIcon(activeAgent.id, 14)}
+                              </span>
+                              <span className="truncate flex-1 text-start">{language === 'ar' ? p.textAr : p.textEn}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -3802,8 +4082,8 @@ Regarding: "${text}", live data metrics match our general parameters:
                     {isQuickActionsOpen && (
                       <>
                         <div className="fixed inset-0 z-30" onClick={() => setIsQuickActionsOpen(false)} />
-                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-64 bg-white dark:bg-[#1f1738] rounded-2xl shadow-2xl p-2 z-40 border border-purple-100 dark:border-purple-800/40 space-y-1 text-xs font-bold animate-scale-in`}>
-                          <div className="text-[10px] font-black text-purple-600 dark:text-purple-400 px-2 py-1 uppercase">
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-72 max-w-[calc(100vw-32px)] bg-white dark:bg-[#1f1738] rounded-2xl shadow-2xl p-2.5 z-40 border border-purple-100 dark:border-purple-800/40 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <div className="text-[11px] font-black text-purple-600 dark:text-purple-400 px-2.5 py-1.5 uppercase tracking-wider text-start">
                             {language === 'ar' ? 'اختصارات الصيانة' : 'Quick Prompts'}
                           </div>
                           {PROMPT_CATEGORIES_DATA['parts'].prompts.map((p: any, idx: number) => (
@@ -3814,12 +4094,10 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 handleMechSendMessage(language === 'ar' ? p.textAr : p.textEn);
                                 setIsQuickActionsOpen(false);
                               }}
-                              className={`w-full p-2 text-xs rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-2 transition-all ${
-                                isRtl ? 'flex-row-reverse text-right' : 'text-left'
-                              }`}
+                              className="w-full p-2.5 text-xs rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white text-slate-800 dark:text-slate-100 font-bold cursor-pointer flex items-center gap-2.5 transition-all text-start"
                             >
-                              <Sparkles size={12} className="text-purple-600 dark:text-purple-400 shrink-0" />
-                              <span className="truncate">{language === 'ar' ? p.textAr : p.textEn}</span>
+                              <Sparkles size={14} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                              <span className="truncate flex-1 text-start">{language === 'ar' ? p.textAr : p.textEn}</span>
                             </button>
                           ))}
                         </div>
@@ -3845,8 +4123,8 @@ Regarding: "${text}", live data metrics match our general parameters:
                     {showMechAttachMenu && (
                       <>
                         <div className="fixed inset-0 z-30" onClick={() => setShowMechAttachMenu(false)} />
-                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0' : 'left-0'} w-64 bg-white dark:bg-[#1c1432] rounded-2xl shadow-2xl p-2 z-40 border border-purple-200 dark:border-purple-800/60 space-y-1 text-xs font-bold animate-scale-in`}>
-                          <div className="text-[10px] font-black text-purple-600 dark:text-purple-400 px-2.5 py-1 uppercase tracking-wider border-b border-slate-100 dark:border-purple-900/30">
+                        <div className={`absolute bottom-full mb-3 ${isRtl ? 'right-0 -translate-x-11 sm:translate-x-0' : 'left-0'} w-72 max-w-[calc(100vw-32px)] bg-white dark:bg-[#1c1432] rounded-2xl shadow-2xl p-2.5 z-40 border border-purple-200 dark:border-purple-800/60 space-y-1 text-xs font-bold animate-scale-in`}>
+                          <div className="text-[11px] font-black text-purple-600 dark:text-purple-400 px-2.5 py-1.5 uppercase tracking-wider border-b border-slate-100 dark:border-purple-900/30 text-start">
                             {language === 'ar' ? 'إرفاق فني ومستندات' : 'Attach Diagnostic Item'}
                           </div>
 
@@ -3857,14 +4135,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                               setShowMechAttachMenu(false);
                               handleTriggerCamera('mech');
                             }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                            className="w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer text-start"
                           >
                             <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 flex items-center justify-center shrink-0">
                               <Camera size={16} />
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'تصوير العطل بالكاميرا' : 'Take Photo of Fault'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'تصوير فوري للشاحنة أو القطعة' : 'Instant snapshot of component'}</p>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'تصوير العطل بالكاميرا' : 'Take Photo of Fault'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'تصوير فوري للشاحنة أو القطعة' : 'Instant snapshot of component'}</p>
                             </div>
                           </button>
 
@@ -3875,14 +4153,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                               setShowMechAttachMenu(false);
                               handleTriggerImageUpload('mech');
                             }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                            className="w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer text-start"
                           >
                             <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
                               <ImageIcon size={16} />
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'رفع مخطط / صورة قطعة' : 'Upload Part / Diagram'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'PNG, JPG, WEBP' : 'PNG, JPG, WEBP'}</p>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'رفع مخطط / صورة قطعة' : 'Upload Part / Diagram'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'PNG, JPG, WEBP' : 'PNG, JPG, WEBP'}</p>
                             </div>
                           </button>
 
@@ -3893,14 +4171,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                               setShowMechAttachMenu(false);
                               handleTriggerDocumentUpload('mech');
                             }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                            className="w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer text-start"
                           >
                             <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
                               <FileText size={16} />
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'كتالوج صيانة / PDF' : 'Maintenance Manual / PDF'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'PDF, DOCX, XLSX, TXT' : 'PDF, DOCX, XLSX, TXT'}</p>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'كتالوج صيانة / PDF' : 'Maintenance Manual / PDF'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'PDF, DOCX, XLSX, TXT' : 'PDF, DOCX, XLSX, TXT'}</p>
                             </div>
                           </button>
 
@@ -3918,14 +4196,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                               setQuickOrderModalOpen(true);
                               setShowMechAttachMenu(false);
                             }}
-                            className={`w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer border-t border-slate-100 dark:border-purple-900/30 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}
+                            className="w-full p-2.5 hover:bg-purple-50 dark:hover:bg-purple-950/50 active:bg-purple-600 active:text-white rounded-xl flex items-center gap-3 text-slate-800 dark:text-slate-100 transition-colors cursor-pointer border-t border-slate-100 dark:border-purple-900/30 text-start"
                           >
                             <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0">
                               <Wrench size={16} />
                             </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-xs">{language === 'ar' ? 'أمر صيانة فوري' : 'Work Order'}</p>
-                              <p className="text-[9px] text-slate-400">{language === 'ar' ? 'تسجيل أمر فحص عاجل' : 'Dispatch quick work order'}</p>
+                            <div className="min-w-0 flex-1 text-start">
+                              <p className="font-black text-xs text-slate-900 dark:text-white truncate">{language === 'ar' ? 'أمر صيانة فوري' : 'Work Order'}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{language === 'ar' ? 'تسجيل أمر فحص عاجل' : 'Dispatch quick work order'}</p>
                             </div>
                           </button>
                         </div>
@@ -4829,16 +5107,20 @@ Regarding: "${text}", live data metrics match our general parameters:
               className="absolute inset-0 bg-slate-950/65 backdrop-blur-xs" 
             />
 
-            {/* Main Chat Drawer Container (Sleek light/dark adaptive premium theme) */}
-            <motion.div 
-              initial={{ scale: 0.95, y: 30, opacity: 0 }} 
-              animate={{ scale: 1, y: 0, opacity: 1 }} 
-              exit={{ scale: 0.95, y: 30, opacity: 0 }}
-              className="bg-white dark:bg-[#0c101d] text-slate-800 dark:text-slate-100 w-full h-full md:max-w-4xl md:h-[90vh] flex flex-col md:rounded-3xl shadow-[0_20px_50px_rgba(109,40,217,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-slate-200 dark:border-slate-800 overflow-hidden z-[111]"
-              dir={isRtl ? 'rtl' : 'ltr'}
-            >
-                {/* Header with Glassmorphic Clean Style */}
-                <div className="py-4 px-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-[#111726] flex items-center justify-between shadow-xs">
+            {/* Main Chat Drawer Container (Sleek light/dark adaptive premium theme styled by active agent) */}
+            {(() => {
+              const modalAgentTheme = AGENT_THEME_MAP[activeChatAgent.id] || AGENT_THEME_MAP['project-manager'];
+              const matchedConfig = AI_AGENTS_CONFIG.find(a => a.id === activeChatAgent.id) || activeAgent;
+              return (
+                <motion.div 
+                  initial={{ scale: 0.95, y: 30, opacity: 0 }} 
+                  animate={{ scale: 1, y: 0, opacity: 1 }} 
+                  exit={{ scale: 0.95, y: 30, opacity: 0 }}
+                  className="bg-[#f6f4ee] dark:bg-[#0c1017] text-slate-800 dark:text-slate-100 w-full h-full md:max-w-4xl md:h-[90vh] flex flex-col md:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-[111]"
+                  dir={isRtl ? 'rtl' : 'ltr'}
+                >
+                {/* Header with Agent Branding */}
+                <div className="py-4 px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111726] flex items-center justify-between shadow-xs">
                   <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
                     {/* Dynamic Vector Icon Avatar */}
                     {renderAgentAvatarContainer(activeChatAgent.id, activeChatAgent.color, activeChatAgent.isActive, 'lg', true)}
@@ -4848,8 +5130,8 @@ Regarding: "${text}", live data metrics match our general parameters:
                           {language === 'ar' ? activeChatAgent.nameAr : activeChatAgent.nameEn}
                         </h3>
                         {/* Active Status Badge with Icon */}
-                        <span className="text-[9px] px-2.5 py-0.5 rounded-full font-black bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/30 flex items-center gap-1">
-                          <CheckCircle2 size={10} className="text-emerald-500 shrink-0" />
+                        <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-black ${modalAgentTheme.disclaimerBg} ${modalAgentTheme.disclaimerText} border ${modalAgentTheme.disclaimerBorder} flex items-center gap-1`}>
+                          <CheckCircle2 size={10} className={`${modalAgentTheme.iconText} shrink-0`} />
                           <span>
                             {activeChatAgent.isActive 
                               ? (language === 'ar' ? 'نشط ومطابق' : 'Active') 
@@ -4873,20 +5155,14 @@ Regarding: "${text}", live data metrics match our general parameters:
                 {/* Message Streams Area */}
                 <div
                   ref={agentChatScrollRef}
-                  className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/70 dark:bg-[#070a13] scrollbar-thin scrollbar-thumb-violet-200 dark:scrollbar-thumb-slate-850"
+                  className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 bg-[#f6f4ee] dark:bg-[#0c1017] scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-850"
                 >
-                  {/* If in Welcome Landing State, render the stunning landing greeting inside scroll container */}
+                  {/* If in Welcome Landing State, render the branded center greeting as requested by the user */}
                   {isWelcomeState ? (
-                    <div className="flex flex-col justify-center min-h-[50vh] text-center max-w-2xl mx-auto py-10">
-                      {/* Centered Brand Logo */}
+                    <div className="flex flex-col justify-center min-h-[50vh] text-center max-w-2xl mx-auto py-8">
+                      {/* Centered Robot Logo in Circle matching screenshot */}
                       <div className="flex items-center justify-center mb-6">
-                        <div className="relative w-20 h-20 flex items-center justify-center bg-violet-100 dark:bg-violet-950/30 rounded-full p-4 border border-violet-250 dark:border-violet-800 shadow-[0_0_30px_rgba(139,92,246,0.05)]">
-                          <svg className="w-12 h-12 text-violet-500 dark:text-violet-400 animate-pulse" viewBox="0 0 100 100" fill="currentColor">
-                            <path d="M50,15 L72,37 L63,40 L50,29 L37,40 L28,37 Z" />
-                            <path d="M20,68 L42,50 L45,59 L33,68 L45,77 L42,86 Z" transform="rotate(120 50 50)" />
-                            <path d="M20,68 L42,50 L45,59 L33,68 L45,77 L42,86 Z" transform="rotate(240 50 50)" />
-                          </svg>
-                        </div>
+                        {renderAgentWelcomeCenterLogo(activeChatAgent.id, modalAgentTheme)}
                       </div>
 
                       {/* Greeting */}
@@ -4899,10 +5175,10 @@ Regarding: "${text}", live data metrics match our general parameters:
                           : `I am your AI assistant ${activeChatAgent.nameEn}. How can I assist you in managing maintenance and operations today?`}
                       </p>
 
-                      {/* Recommended Quick Query Cards (centered, huge, interactive, purple brand identity) */}
+                      {/* Recommended Quick Query Cards styled by Agent Branding */}
                       <div className="space-y-3 max-w-xl mx-auto px-4">
-                        <div className="flex items-center justify-center gap-2 text-violet-600 dark:text-violet-400 text-xs font-black tracking-wider uppercase mb-1">
-                          <Compass size={13} className="text-violet-500 dark:text-violet-400" />
+                        <div className={`flex items-center justify-center gap-2 ${modalAgentTheme.iconText} text-xs font-black tracking-wider uppercase mb-1`}>
+                          <Compass size={13} />
                           <span>{language === 'ar' ? 'استعلامات سريعة موصى بها من الوكيل' : 'RECOMMENDED QUICK QUERIES'}</span>
                         </div>
                         <div className="grid grid-cols-1 gap-2.5">
@@ -4911,15 +5187,15 @@ Regarding: "${text}", live data metrics match our general parameters:
                               key={idx}
                               type="button"
                               onClick={() => handleAgentSendMessage(activeChatAgent.id, sug.text)}
-                              className="group relative flex items-center justify-between p-3.5 text-right bg-white dark:bg-[#151c2e] hover:bg-violet-50/80 dark:hover:bg-violet-950/20 border border-slate-200 dark:border-slate-800 hover:border-violet-200 dark:hover:border-violet-500 rounded-xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 shadow-xs hover:shadow-md text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white animate-fadeIn"
+                              className={`group relative flex items-center justify-between p-3.5 ${isRtl ? 'text-right' : 'text-left'} bg-white dark:bg-[#151c2e] hover:bg-slate-50 dark:hover:bg-slate-800 border ${modalAgentTheme.themeChipBorder} rounded-xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 shadow-xs hover:shadow-md text-slate-700 dark:text-slate-200 animate-fadeIn`}
                             >
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-400 flex items-center justify-center group-hover:bg-violet-100 dark:group-hover:bg-violet-900 transition-colors">
-                                  <Compass size={14} />
+                              <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                <div className={`w-8 h-8 rounded-xl ${modalAgentTheme.themeChipBg} ${modalAgentTheme.iconText} flex items-center justify-center shrink-0`}>
+                                  {renderAgentVectorIcon(activeChatAgent.id, 14)}
                                 </div>
                                 <span className="text-xs md:text-[13px] font-black leading-snug">{sug.label}</span>
                               </div>
-                              <span className="text-xs text-violet-400 group-hover:text-violet-600 group-hover:translate-x-1 transition-all">
+                              <span className={`text-xs ${modalAgentTheme.iconText} group-hover:translate-x-1 transition-all`}>
                                 {isRtl ? '←' : '→'}
                               </span>
                             </button>
@@ -4934,7 +5210,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                       return (
                         <div
                           key={i}
-                          className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full`}
+                          className={`flex flex-col ${isUser ? (isRtl ? 'items-start' : 'items-end') : (isRtl ? 'items-end' : 'items-start')} w-full`}
                         >
                           <span className={`text-[10px] font-extrabold text-slate-400 dark:text-slate-500 block px-2 mb-1`}>
                             {isUser 
@@ -4942,15 +5218,15 @@ Regarding: "${text}", live data metrics match our general parameters:
                               : (language === 'ar' ? `الوكيل ${activeChatAgent.nameAr} 🤖` : `${activeChatAgent.nameEn} 🤖`)}
                           </span>
 
-                           <div className={`p-4 leading-relaxed max-w-[85%] border relative group transition-all duration-300 ${
+                          <div className={`p-4 leading-relaxed max-w-[85%] border relative group transition-all duration-300 ${
                             isUser 
-                              ? 'bg-gradient-to-br from-violet-50/90 to-indigo-50/60 dark:from-violet-950/20 dark:to-indigo-950/15 text-violet-950 dark:text-violet-200 rounded-2xl rounded-tr-none px-5 py-3.5 border-violet-200/60 dark:border-violet-500/15 font-semibold shadow-[0_6px_18px_rgba(139,92,246,0.08)]' 
-                              : 'bg-gradient-to-br from-indigo-50/70 to-white dark:from-[#11172b] dark:to-[#0c1020] text-slate-800 dark:text-slate-100 rounded-2xl rounded-tl-none border-violet-500/20 dark:border-violet-400/15 font-medium shadow-[0_6px_24px_rgba(109,40,217,0.03)]'
+                              ? `${matchedConfig.buttonGradient} text-white font-medium ${isRtl ? 'rounded-tl-xs' : 'rounded-tr-xs'} shadow-sm` 
+                              : `bg-white dark:bg-[#151c2a] text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 shadow-xs ${isRtl ? 'rounded-tr-xs' : 'rounded-tl-xs'}`
                           } ${isRtl ? 'text-right' : 'text-left'}`}>
                             
                             {!isUser && (
-                              <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100/60 dark:border-slate-800/40 text-[10px] font-black text-violet-600 dark:text-violet-400 select-none">
-                                <Sparkles size={11} className="animate-pulse shrink-0" />
+                              <div className={`flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-100/60 dark:border-slate-800/40 text-[10px] font-black ${modalAgentTheme.iconText} select-none`}>
+                                <span className="shrink-0">{renderAgentVectorIcon(activeChatAgent.id, 12)}</span>
                                 <span>{language === 'ar' ? 'توصية الوكيل الذكي' : 'Verified AI Agent Recommendation'}</span>
                               </div>
                             )}
@@ -4964,7 +5240,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                 <button
                                   type="button"
                                   onClick={() => handleToggleSpeakMessage(`agent-chat-${activeChatAgent.id}-${i}`, msg.text)}
-                                  className="flex items-center gap-1.5 hover:text-violet-600 dark:hover:text-violet-400 cursor-pointer transition-colors"
+                                  className={`flex items-center gap-1.5 hover:${modalAgentTheme.iconText} cursor-pointer transition-colors`}
                                 >
                                   {activeAudioMessageId === `agent-chat-${activeChatAgent.id}-${i}` && isPlayingAudio ? (
                                     <>
@@ -4984,7 +5260,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                   onClick={() => {
                                     navigator.clipboard.writeText(msg.text);
                                   }}
-                                  className="flex items-center gap-1.5 hover:text-violet-600 dark:hover:text-violet-400 cursor-pointer transition-colors"
+                                  className={`flex items-center gap-1.5 hover:${modalAgentTheme.iconText} cursor-pointer transition-colors`}
                                 >
                                   <Copy size={13} />
                                   <span>{language === 'ar' ? 'نسخ التوصية' : 'Copy'}</span>
@@ -5020,7 +5296,7 @@ Regarding: "${text}", live data metrics match our general parameters:
 
                   {agentChatLoading[activeChatAgent.id] && (
                     <div className={`flex items-start gap-3 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                      <div className="w-8 h-8 rounded-xl bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-850 flex items-center justify-center shrink-0">
+                      <div className={`w-8 h-8 rounded-xl ${modalAgentTheme.disclaimerBg} ${modalAgentTheme.iconText} border ${modalAgentTheme.disclaimerBorder} flex items-center justify-center shrink-0`}>
                         <Loader2 size={16} className="animate-spin" />
                       </div>
                       <div className="p-3.5 bg-white dark:bg-[#111726] text-slate-600 dark:text-slate-300 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-800 text-xs font-bold animate-pulse shadow-xs">
@@ -5032,25 +5308,25 @@ Regarding: "${text}", live data metrics match our general parameters:
 
                 {/* Evolving Recommended Suggestions */}
                 {!isWelcomeState && (
-                  <div className="px-5 py-3 bg-violet-50/10 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800/80 flex flex-col gap-2 select-none shadow-inner animate-fadeIn">
-                    <div className={`flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-extrabold pr-1 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                      <Lightbulb size={13} className="text-amber-500 animate-pulse shrink-0" />
+                  <div className={`px-5 py-3 ${modalAgentTheme.themeBarBg} border-t ${modalAgentTheme.themeBarBorder} flex flex-col gap-2 select-none shadow-inner animate-fadeIn`}>
+                    <div className={`flex items-center gap-1.5 text-[11px] text-slate-300 font-extrabold pr-1 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
+                      <Lightbulb size={13} className="text-amber-400 animate-pulse shrink-0" />
                       <span>{language === 'ar' ? 'توصيات ومتابعات موصى بها من الوكيل:' : 'Recommended Next Steps:'}</span>
                     </div>
-                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-violet-200/50 dark:scrollbar-thumb-slate-800 no-scrollbar snap-x max-w-full">
+                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-slate-700 no-scrollbar snap-x max-w-full">
                       {currentSuggestions.map((sug, idx) => (
                         <button
                           key={idx}
                           type="button"
                           disabled={agentChatLoading[activeChatAgent.id]}
                           onClick={() => setSelectedReadingSuggestion(sug.text)}
-                          className="flex items-center gap-2 text-xs font-black bg-white dark:bg-[#151c2e] hover:bg-violet-50 dark:hover:bg-violet-950/20 text-slate-700 dark:text-slate-200 hover:text-violet-700 dark:hover:text-violet-400 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-500 cursor-pointer transition-all duration-200 shadow-xs shrink-0 snap-center max-w-[280px] text-ellipsis overflow-hidden whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                          className={`flex items-center gap-2 text-xs font-black ${modalAgentTheme.themeChipBg} ${modalAgentTheme.themeChipText} px-4 py-2 rounded-full border ${modalAgentTheme.themeChipBorder} cursor-pointer transition-all duration-200 shadow-xs shrink-0 snap-center max-w-[280px] text-ellipsis overflow-hidden whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           <span className="truncate">{sug.label}</span>
                           {isRtl ? (
-                            <ArrowLeft size={11} className="text-violet-600 dark:text-violet-400 shrink-0 font-bold" />
+                            <ArrowLeft size={11} className={`${modalAgentTheme.iconText} shrink-0 font-bold`} />
                           ) : (
-                            <ArrowRight size={11} className="text-violet-600 dark:text-violet-400 shrink-0 font-bold" />
+                            <ArrowRight size={11} className={`${modalAgentTheme.iconText} shrink-0 font-bold`} />
                           )}
                         </button>
                       ))}
@@ -5058,8 +5334,8 @@ Regarding: "${text}", live data metrics match our general parameters:
                   </div>
                 )}
 
-                {/* Chat Input form with Violet Accents */}
-                <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-[#0c101d] shadow-md">
+                {/* Chat Input form with Agent Branded Accents */}
+                <div className={`p-4 border-t ${modalAgentTheme.themeBarBorder} ${modalAgentTheme.themeBarBg} shadow-md`}>
                   <form 
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -5072,13 +5348,13 @@ Regarding: "${text}", live data metrics match our general parameters:
                       value={agentInputText}
                       onChange={(e) => setAgentInputText(e.target.value)}
                       disabled={agentChatLoading[activeChatAgent.id]}
-                      placeholder={language === 'ar' ? 'اكتب تساؤلاً أو طلباً تنظيمياً للوكيل...' : 'Type a query or action command...'}
-                      className="flex-1 p-3.5 bg-white dark:bg-[#151c2e] border border-slate-200 dark:border-slate-800/80 rounded-2xl text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-violet-600 dark:focus:border-violet-400 focus:ring-1 focus:ring-violet-600/20 dark:focus:ring-violet-400/20 transition-all disabled:opacity-60"
+                      placeholder={language === 'ar' ? `اكتب تساؤلاً أو طلباً للوكيل ${activeChatAgent.nameAr}...` : `Type a query for ${activeChatAgent.nameEn}...`}
+                      className={`flex-1 p-3.5 ${modalAgentTheme.themeInputBg} border ${modalAgentTheme.themeInputBorder} ${modalAgentTheme.themeInputText} ${modalAgentTheme.themeInputPlaceholder} rounded-2xl text-xs font-semibold outline-none transition-all disabled:opacity-60`}
                     />
                     <button
                       type="submit"
                       disabled={!agentInputText.trim() || agentChatLoading[activeChatAgent.id]}
-                      className="p-3.5 bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600 disabled:bg-slate-150 disabled:dark:bg-slate-800 text-white disabled:text-slate-400 dark:disabled:text-slate-500 rounded-2xl cursor-pointer transition-all duration-200 border-0 flex items-center justify-center shrink-0 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(109,40,217,0.32)] hover:shadow-[0_4px_18_rgba(109,40,217,0.45)] dark:shadow-none"
+                      className={`p-3.5 ${modalAgentTheme.activeCategoryBtn} disabled:bg-slate-200 disabled:dark:bg-slate-800 text-white disabled:text-slate-400 dark:disabled:text-slate-500 rounded-2xl cursor-pointer transition-all duration-200 border-0 flex items-center justify-center shrink-0 disabled:cursor-not-allowed shadow-md hover:scale-105 active:scale-95`}
                     >
                       {agentChatLoading[activeChatAgent.id] ? (
                         <Loader2 size={16} className="animate-spin" />
@@ -5089,6 +5365,8 @@ Regarding: "${text}", live data metrics match our general parameters:
                   </form>
                 </div>
               </motion.div>
+            );
+          })()}
 
               {/* 5. RECOMMENDATION CENTERED READING MODAL */}
               <AnimatePresence>
@@ -5264,6 +5542,15 @@ Regarding: "${text}", live data metrics match our general parameters:
           </div>
         )}
       </AnimatePresence>
+      {/* 6 AI Agents Directory Modal */}
+      <AiAgentsModal
+        isOpen={isAgentGridModalOpen}
+        onClose={() => setIsAgentGridModalOpen(false)}
+        selectedAgentId={selectedAgentId}
+        onSelectAgent={(agentId) => handleSelectAgent(agentId)}
+        activeStatusMap={agentsRegistry.reduce((acc: any, a) => ({ ...acc, [a.id]: a.isActive }), {})}
+        onToggleActive={(agentId) => toggleAgentActive(agentId)}
+      />
     </div>
   );
 }
