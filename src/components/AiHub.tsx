@@ -621,6 +621,14 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
   const [activeScenario, setActiveScenario] = useState<'normal' | 'parts-crisis' | 'backlog-peak' | 'staff-shortage'>('normal');
   const [pmPersona, setPmPersona] = useState<'default' | 'commander' | 'economist'>('default');
   const [mechPersona, setMechPersona] = useState<'default' | 'master' | 'safety'>('default');
+  const [agentPersonas, setAgentPersonas] = useState<Record<string, string>>({
+    'project-manager': 'default',
+    'mechanic': 'default',
+    'safety': 'default',
+    'supply-chain': 'default',
+    'predictive': 'default',
+    'finance': 'default'
+  });
 
   // Dynamic metrics based on activeScenario simulation
   const simulatedVehiclesCount = activeScenario === 'staff-shortage' 
@@ -639,8 +647,59 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
     ? 2
     : defaultTechnicians.length;
 
-  // Helper to build context modifier for strategic PM
-  const getPmContextModifier = () => {
+  const handleSetAgentPersona = (agentId: string, persona: string) => {
+    setAgentPersonas(prev => ({ ...prev, [agentId]: persona }));
+    if (agentId === 'project-manager') setPmPersona(persona as any);
+    if (agentId === 'mechanic') setMechPersona(persona as any);
+  };
+
+  const getAgentPersonaOptions = (agentId: string, isAr: boolean) => {
+    switch (agentId) {
+      case 'project-manager':
+        return [
+          { value: 'default', label: isAr ? 'الافتراضي المتزن (تخطيط استراتيجي وميزانية)' : 'Standard Balanced (Planning & Budget)' },
+          { value: 'commander', label: isAr ? 'القائد الصارم العملياتي (توجيهات حاسمة)' : 'Tactical Commander (Decisive Directive)' },
+          { value: 'economist', label: isAr ? 'المحلل المالي للجدوى (تقليص الهدر)' : 'Budget Optimizer (Cost Efficiency)' },
+        ];
+      case 'mechanic':
+        return [
+          { value: 'default', label: isAr ? 'الافتراضي الفني (تشخيص وأدلة صيانة)' : 'Standard Technical (Repair Guides)' },
+          { value: 'master', label: isAr ? 'المعلم وكبير الفنيين (عزوم شد وتفاصيل ميكانيكية)' : 'Master Mechanic (Torque & Specs)' },
+          { value: 'safety', label: isAr ? 'مفتش السلامة الميكانيكية (أمان الورشة والفحص)' : 'Safety Inspector (Hazard Prevention)' },
+        ];
+      case 'safety':
+        return [
+          { value: 'default', label: isAr ? 'مدقق المعايير واللوائح (امتثال نظامي معتمد)' : 'Standard Regulatory Auditor' },
+          { value: 'strict', label: isAr ? 'المفتش الصارم للورش (تدقيق ميداني صارم)' : 'Strict HSE Field Inspector' },
+          { value: 'preventive', label: isAr ? 'مستشار السلامة الاستباقية (تفادي الحوادث والمخاطر)' : 'Preventive Safety Advisor' },
+        ];
+      case 'supply-chain':
+        return [
+          { value: 'default', label: isAr ? 'محلل المشتريات المتزن (توريد ومخزون منتظم)' : 'Balanced Procurement Analyst' },
+          { value: 'negotiator', label: isAr ? 'مفاوض الموردين الحاسم (أفضل عروض وضمانات)' : 'Aggressive Vendor Negotiator' },
+          { value: 'buffer', label: isAr ? 'مدير المخزون الاحترازي (تأمين قطع الطوارئ)' : 'Buffer Stock Risk Manager' },
+        ];
+      case 'predictive':
+        return [
+          { value: 'default', label: isAr ? 'التنبؤ الذكي القياسي (معدل تآكل القطع والمسافات)' : 'Standard Predictive Analytics' },
+          { value: 'sensitive', label: isAr ? 'كاشف الأعطال المبكرة (حساسية فائقة للشذوذ)' : 'High Sensitivity Fault Detector' },
+          { value: 'lifecycle', label: isAr ? 'مخطط دورة حياة الأصول (إطالة عمر الشاحنات)' : 'Asset Lifecycle & Fleet Optimizer' },
+        ];
+      case 'finance':
+        return [
+          { value: 'default', label: isAr ? 'التدقيق المالي المتوازن (مراقبة المصروفات والفواتير)' : 'Balanced Cost Auditor' },
+          { value: 'cost-cutter', label: isAr ? 'مستشار خفض الهدر والتكاليف (تقشف ذكي)' : 'Strict Cost Reduction Advisor' },
+          { value: 'roi-evaluator', label: isAr ? 'مقيّم الجدوى والورش الخارجية (عائد الاستثمار)' : 'Outsource ROI & Repair Evaluator' },
+        ];
+      default:
+        return [
+          { value: 'default', label: isAr ? 'الافتراضي المتزن' : 'Standard Balanced' }
+        ];
+    }
+  };
+
+  // Helper to build context modifier for any active AI Agent
+  const getAgentContextModifier = (agentId: string) => {
     let scenarioText = '';
     if (activeScenario === 'parts-crisis') {
       scenarioText = 'تحذير أزمة توريد: المخزون هبط بنسبة 60% وأرصدة الأرفف تحت خط الأمان الحرج. اقترح حلول استباقية لإعادة التدوير والتقشف.';
@@ -650,14 +709,56 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
       scenarioText = 'تحذير عجز بشري: يعمل بالورشة فنيين اثنين فقط اليوم بسبب الإجازات. اقترح جدول مهام طارئ والتركيز على الأعطال الفادحة فقط.';
     }
 
+    const currentPersona = agentPersonas[agentId] || 'default';
     let personaText = '';
-    if (pmPersona === 'commander') {
-      personaText = 'تحدث بصفتك كوماندر وقائد عمليات حاسم. أعط توجيهات مباشرة عسكرية الطابع، في نقاط موجزة ومسؤولة، وركز على الامتثال.';
-    } else if (pmPersona === 'economist') {
-      personaText = 'تحدث بصفتك محلل اقتصادي خبير. ركز على كفاءة الميزانية وتقليص الهدر المالي وعائد الاستثمار لكل قرار صيانة.';
+
+    const agentDef = getAgentById(agentId);
+    const agentRoleIntro = agentDef ? `أنت تتحدث وتجيب الآن بصفتك: "${agentDef.nameAr}". دورك: ${agentDef.roleAr}. ${agentDef.systemContextPrompt}` : '';
+
+    if (agentId === 'project-manager') {
+      if (currentPersona === 'commander') {
+        personaText = 'تحدث بصفتك كوماندر وقائد عمليات حاسم. أعط توجيهات مباشرة عسكرية الطابع، في نقاط موجزة ومسؤولة، وركز على الامتثال.';
+      } else if (currentPersona === 'economist') {
+        personaText = 'تحدث بصفتك محلل اقتصادي خبير. ركز على كفاءة الميزانية وتقليص الهدر المالي وعائد الاستثمار لكل قرار صيانة.';
+      }
+    } else if (agentId === 'mechanic') {
+      if (currentPersona === 'master') {
+        personaText = 'تقمص دور المعلم وكبير الفنيين المتقاعد ذو الخبرة العريقة. أسهب في ذكر عزم الربط، وتفاصيل الأجزاء الداخلية الميكانيكية بدقة.';
+      } else if (currentPersona === 'safety') {
+        personaText = 'تقمص دور مفتش السلامة والأمان الصارم. وجه كل تركيزك في خطوات الإصلاح حول سلامة الفني ومعدات الحماية.';
+      }
+    } else if (agentId === 'safety') {
+      if (currentPersona === 'strict') {
+        personaText = 'تقمص دور مفتش أمان صارم جداً لا يتهاون مع أي مخالفة وتدقيق سجلات الفحص بدقة.';
+      } else if (currentPersona === 'preventive') {
+        personaText = 'ركز على الإجراءات الاستباقية للسلامة والوقاية من الحوادث قبل وقوعها.';
+      }
+    } else if (agentId === 'supply-chain') {
+      if (currentPersona === 'negotiator') {
+        personaText = 'تقمص دور مفاوض أسعار متمرس يبحث عن أعلى خصومات من الموردين وأطول فترات ضمان.';
+      } else if (currentPersona === 'buffer') {
+        personaText = 'ركز على تأمين المخزون الاحترازي للأصناف الحرجة وتفادي انقطاع سلاسل الإمداد.';
+      }
+    } else if (agentId === 'predictive') {
+      if (currentPersona === 'sensitive') {
+        personaText = 'ركز على رصد المؤشرات المبكرة جداً للأعطال والتنبيه لأي شذوذ في بيانات المركبة.';
+      } else if (currentPersona === 'lifecycle') {
+        personaText = 'ركز على تخطيط دورة حياة المركبات وتقليل استهلاك المحركات والمحاور وإطالة العمر الافتراضي.';
+      }
+    } else if (agentId === 'finance') {
+      if (currentPersona === 'cost-cutter') {
+        personaText = 'ركز على كشف الهدر المالي وفرض حلول تقشف فورية لخفض نفقات الصيانة.';
+      } else if (currentPersona === 'roi-evaluator') {
+        personaText = 'قدم مقارنات دقيقة لجدوى الإصلاح الداخلي مقابل الخارجي وعائد الاستثمار في كل قطعة.';
+      }
     }
 
-    return `${scenarioText} ${personaText}`.trim();
+    return `${agentRoleIntro} ${scenarioText} ${personaText}`.trim();
+  };
+
+  // Compatibility helper for strategic PM
+  const getPmContextModifier = () => {
+    return getAgentContextModifier(selectedAgentId);
   };
 
   // Helper to build custom message context for Mechanic Bot
@@ -762,17 +863,15 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
   // Fullscreen Page Mode State
   const [isFullscreenChat, setIsFullscreenChat] = useState<boolean>(false);
 
-  // Shared sidebar visibility state - default to false so conversation takes 100% full width
-  const [showSidebar, setShowSidebar] = useState<boolean>(() => {
-    const saved = localStorage.getItem('fleet_ai_show_sidebar');
-    return saved === 'true';
-  });
+  // Clear any legacy sidebar flag so no drawer ever opens
+  useEffect(() => {
+    localStorage.removeItem('fleet_ai_show_sidebar');
+  }, []);
 
-  const handleToggleSidebar = () => {
-    const nextState = !showSidebar;
-    setShowSidebar(nextState);
-    localStorage.setItem('fleet_ai_show_sidebar', String(nextState));
-  };
+  // Sidebar and Crisis Simulator have been completely removed as requested
+  const showSidebar = false;
+  const setShowSidebar = (_val?: boolean) => {};
+  const handleToggleSidebar = () => {};
 
   // Fullscreen Modern Chat States
   const [selectedPromptCategory, setSelectedPromptCategory] = useState<string>('for-you');
@@ -2477,41 +2576,27 @@ Regarding: "${text}", live data metrics match our general parameters:
 
         {/* Center / Right: Wrench/Sparkles Switcher Pill + Grid Button + Actions as in Screenshot 2 */}
         <div className={`flex items-center gap-1.5 shrink-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          {/* Quick Toggle Pill: Mechanic & Strategic PM */}
-          <div className="flex items-center bg-black/50 p-1 rounded-2xl border border-white/20 backdrop-blur-md shadow-inner gap-1">
-            <button
-              type="button"
-              onClick={() => handleSelectAgent('mechanic')}
-              className={`p-1.5 rounded-xl transition-all cursor-pointer ${
-                selectedAgentId === 'mechanic'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-sm'
-                  : 'text-white/70 hover:text-white hover:bg-white/15'
-              }`}
-              title={language === 'ar' ? 'مساعد الصيانة والميكانيكا' : 'Mechanic'}
-            >
-              <Wrench size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectAgent('project-manager')}
-              className={`p-1.5 rounded-xl transition-all cursor-pointer ${
-                selectedAgentId === 'project-manager'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm'
-                  : 'text-white/70 hover:text-white hover:bg-white/15'
-              }`}
-              title={language === 'ar' ? 'روبرت - مدير الأسطول' : 'Robert - Fleet PM'}
-            >
-              <Sparkles size={16} />
-            </button>
-            {selectedAgentId !== 'mechanic' && selectedAgentId !== 'project-manager' && (
-              <button
-                type="button"
-                className={`p-1.5 rounded-xl transition-all cursor-pointer ${currentTheme.avatarGradient} text-white shadow-sm`}
-                title={language === 'ar' ? activeAgent.shortNameAr : activeAgent.shortNameEn}
-              >
-                {renderAgentVectorIcon(activeAgent.id, 16, 'text-white')}
-              </button>
-            )}
+          {/* Quick Toggle Pill: All 6 AI Agents */}
+          <div className="flex items-center bg-black/50 p-1 rounded-2xl border border-white/20 backdrop-blur-md shadow-inner gap-1 overflow-x-auto max-w-[210px] sm:max-w-none scrollbar-none">
+            {AI_AGENTS_CONFIG.map(ag => {
+              const isSelected = selectedAgentId === ag.id;
+              const agTheme = AGENT_THEME_MAP[ag.id] || AGENT_THEME_MAP['project-manager'];
+              return (
+                <button
+                  key={ag.id}
+                  type="button"
+                  onClick={() => handleSelectAgent(ag.id)}
+                  className={`p-1.5 rounded-xl transition-all cursor-pointer shrink-0 ${
+                    isSelected
+                      ? `${agTheme.avatarGradient} text-white shadow-sm ring-1.5 ring-white/60 scale-105`
+                      : 'text-white/70 hover:text-white hover:bg-white/15'
+                  }`}
+                  title={language === 'ar' ? ag.nameAr : ag.nameEn}
+                >
+                  {renderAgentVectorIcon(ag.id, 16, 'text-white')}
+                </button>
+              );
+            })}
           </div>
 
           {/* Grid Button to open Full 6-Agent Directory Modal as in Screenshot 2 */}
@@ -2524,17 +2609,6 @@ Regarding: "${text}", live data metrics match our general parameters:
             <LayoutGrid size={18} />
           </button>
 
-          {/* Simulator & Metrics Drawer Toggle */}
-          <button
-            type="button"
-            onClick={handleToggleSidebar}
-            className={`p-2 bg-white/15 hover:bg-white/25 active:bg-purple-900 active:scale-95 rounded-xl border border-white/25 transition-all cursor-pointer text-white flex items-center justify-center relative shadow-xs ${
-              showSidebar ? 'bg-purple-600/60 ring-2 ring-purple-300' : ''
-            }`}
-            title={language === 'ar' ? 'لوحة المحاكاة والمؤشرات' : 'Simulator & Metrics'}
-          >
-            <LayoutDashboard size={18} />
-          </button>
 
           {/* WhatsApp Dropdown Menu (3 dots) */}
           <div className="relative">
@@ -2637,110 +2711,35 @@ Regarding: "${text}", live data metrics match our general parameters:
                   <div className={`fixed inset-y-0 z-50 w-[88vw] max-w-sm bg-white dark:bg-[#0c101d] shadow-2xl overflow-y-auto p-5 md:static md:w-80 md:z-auto md:shadow-none md:bg-slate-50/60 md:dark:bg-[#090d18] flex flex-col shrink-0 ${
                     isRtl ? 'right-0 md:order-last md:border-l border-slate-200 dark:border-slate-850' : 'left-0 md:border-r border-slate-200 dark:border-slate-850'
                   }`}>
-                    {/* Mobile Drawer Close Header */}
-                    <div className={`flex md:hidden items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-slate-800 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <div className="w-6 h-6 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center">
-                          <LayoutDashboard size={14} />
+                    {/* Drawer Header for Mobile & Desktop */}
+                    <div className={`flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200/80 dark:border-slate-800 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-2.5 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-8 h-8 rounded-xl bg-violet-100 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center shadow-xs">
+                          <Bot size={18} />
                         </div>
-                        <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                          {language === 'ar' ? 'محاكي الطوارئ والمؤشرات' : 'Simulator & Controls'}
-                        </span>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                              {language === 'ar' ? 'سجل وبطاقات تشغيل الوكلاء' : 'AI Agents Registry'}
+                            </span>
+                            <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-black border border-emerald-500/20">
+                              {agentsRegistry.filter(a => a.isActive).length}/6 {language === 'ar' ? 'نشط' : 'Active'}
+                            </span>
+                          </div>
+                          <p className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
+                            {language === 'ar' ? 'اختر أي وكيل للتبديل الفوري وإدارة حالته' : 'Select an agent to switch or manage status'}
+                          </p>
+                        </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setShowSidebar(false)}
                         className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors cursor-pointer"
-                        title={language === 'ar' ? 'إغلاق والعودة إلى روبرت' : 'Close and return to Robert'}
+                        title={language === 'ar' ? 'إغلاق اللوحة الجانبية' : 'Close Sidebar'}
                       >
                         <X size={16} />
                       </button>
                     </div>
-
-                    {/* Simulation crisis & Persona selector panel */}
-                <div className="mb-5 p-4 bg-violet-50/50 dark:bg-violet-950/15 rounded-2xl border border-violet-150/40 dark:border-violet-900/30 space-y-3.5 shadow-xs">
-                  <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                    <Sparkles size={14} className="text-violet-600 dark:text-violet-400" />
-                    <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                      {language === 'ar' ? 'محاكي طوارئ الورشة والأعطال' : 'Workshop Crisis Simulator'}
-                    </span>
-                  </div>
-                  
-                  {/* Scenario Pills with Vector Icons */}
-                  <div className="space-y-1">
-                    <label className={`text-[9px] font-extrabold text-slate-400 dark:text-slate-500 block ${isRtl ? 'text-right' : 'text-left'}`}>
-                      {language === 'ar' ? 'سيناريو التشغيل الفعلي للمطابقة:' : 'Active Operational Scenario:'}
-                    </label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveScenario('normal')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                          activeScenario === 'normal'
-                            ? 'bg-emerald-500 text-white border-transparent shadow-xs'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-emerald-500/40'
-                        }`}
-                      >
-                        <CheckCircle2 size={12} className="shrink-0" />
-                        <span>{language === 'ar' ? 'طبيعي متزن' : 'Balanced'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveScenario('parts-crisis')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                          activeScenario === 'parts-crisis'
-                            ? 'bg-rose-500 text-white border-transparent shadow-xs'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-rose-500/40'
-                        }`}
-                      >
-                        <AlertTriangle size={12} className="shrink-0" />
-                        <span>{language === 'ar' ? 'أزمة توريد' : 'Parts Crisis'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveScenario('backlog-peak')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                          activeScenario === 'backlog-peak'
-                            ? 'bg-amber-500 text-white border-transparent shadow-xs'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-amber-500/40'
-                        }`}
-                      >
-                        <Zap size={12} className="shrink-0" />
-                        <span>{language === 'ar' ? 'ذروة تكدس' : 'Backlog Peak'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveScenario('staff-shortage')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                          activeScenario === 'staff-shortage'
-                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-violet-500/40'
-                        }`}
-                      >
-                        <Users size={12} className="shrink-0" />
-                        <span>{language === 'ar' ? 'عجز بشري' : 'Staff Short'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Persona selectors */}
-                  <div className="space-y-2 border-t border-slate-200/30 dark:border-slate-800/40 pt-2">
-                    <div>
-                      <label className={`text-[9px] font-extrabold text-slate-400 dark:text-slate-500 block ${isRtl ? 'text-right' : 'text-left'}`}>
-                        {language === 'ar' ? 'نمط وكيل المخطط (PM):' : 'Strategic PM Persona:'}
-                      </label>
-                      <select
-                        value={pmPersona}
-                        onChange={(e) => setPmPersona(e.target.value as any)}
-                        className="w-full mt-1 p-1.5 bg-white dark:bg-[#121829] border border-slate-200/60 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[9px] font-bold outline-hidden cursor-pointer"
-                      >
-                        <option value="default">{language === 'ar' ? 'الافتراضي المتزن' : 'Standard Balanced'}</option>
-                        <option value="commander">{language === 'ar' ? 'القائد الصارم العملياتي' : 'Tactical Commander'}</option>
-                        <option value="economist">{language === 'ar' ? 'المحلل المالي للجدوى' : 'Budget Optimizer'}</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
 
                 {/* AI AGENTS REGISTRY CARD */}
                 <div className="p-4 bg-white dark:bg-[#121829] rounded-2xl border border-slate-200/50 dark:border-slate-800/60 shadow-xs flex flex-col gap-3 mb-5">
@@ -2778,36 +2777,44 @@ Regarding: "${text}", live data metrics match our general parameters:
                       >
                         <p className={`text-[9px] text-slate-400 dark:text-slate-500 font-semibold leading-normal ${isRtl ? 'text-right' : 'text-left'}`}>
                           {language === 'ar' 
-                            ? 'تحكم بتشغيل أو إيقاف الوكلاء ومطابقتهم الذكية بالمؤسسة:' 
-                            : 'Configure, run or pause active business agents dynamically:'}
+                            ? 'انقر على أي وكيل لاختياره فورياً للمحادثة والمحاكاة:' 
+                            : 'Click on any agent to activate for chat and simulation:'}
                         </p>
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
                           {agentsRegistry.map((agent) => {
                             const isAct = agent.isActive;
+                            const isCurrentlySelected = selectedAgentId === agent.id;
                             return (
                               <div 
                                 key={agent.id}
                                 className={`p-3 rounded-2xl border transition-all flex flex-col gap-2 cursor-pointer group hover:border-violet-500/50 dark:hover:border-violet-400/50 hover:bg-slate-50/80 dark:hover:bg-[#161d33]/60 ${
-                                  isAct 
-                                    ? 'bg-white dark:bg-[#111526] border-slate-200/80 dark:border-slate-800/90 shadow-xs' 
-                                    : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200/40 dark:border-slate-800/40 opacity-70'
+                                  isCurrentlySelected 
+                                    ? 'bg-violet-50/80 dark:bg-violet-950/40 border-violet-500 dark:border-violet-400 shadow-md ring-2 ring-violet-500/30' 
+                                    : isAct 
+                                      ? 'bg-white dark:bg-[#111526] border-slate-200/80 dark:border-slate-800/90 shadow-xs' 
+                                      : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200/40 dark:border-slate-800/40 opacity-70'
                                 }`}
-                                onClick={(e) => {
-                                  const target = e.target as HTMLElement;
-                                  if (target.closest('button')) return;
-                                  handleOpenAgentChat(agent);
+                                onClick={() => {
+                                  handleSelectAgent(agent.id);
                                 }}
-                                title={language === 'ar' ? 'انقر لفتح نافذة الدردشة التفاعلية مع الوكيل' : 'Click to open interactive chat with this agent'}
+                                title={language === 'ar' ? `تفعيل واختيار الوكيل ${agent.nameAr}` : `Select and activate ${agent.nameEn}`}
                               >
                                 <div className={`flex items-center justify-between gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                   <div className={`flex items-center gap-2.5 min-w-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                     {renderAgentAvatarContainer(agent.id, agent.color, isAct, 'md', true)}
                                     <div className="text-left leading-tight min-w-0">
-                                      <span className={`text-[10.5px] font-black block truncate ${isRtl ? 'text-right' : 'text-left'} ${
-                                        isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'
-                                      }`}>
-                                        {language === 'ar' ? agent.nameAr : agent.nameEn}
-                                      </span>
+                                      <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <span className={`text-[10.5px] font-black block truncate ${isRtl ? 'text-right' : 'text-left'} ${
+                                          isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'
+                                        }`}>
+                                          {language === 'ar' ? agent.nameAr : agent.nameEn}
+                                        </span>
+                                        {isCurrentlySelected && (
+                                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-violet-600 text-white shadow-xs">
+                                            {language === 'ar' ? 'النشط' : 'Active'}
+                                          </span>
+                                        )}
+                                      </div>
                                       <div className={`flex items-center gap-1 mt-0.5 ${isRtl ? 'flex-row-reverse justify-end' : ''}`}>
                                         <span className="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 truncate">
                                           {agent.roles.join(' • ')}
@@ -2822,12 +2829,20 @@ Regarding: "${text}", live data metrics match our general parameters:
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleOpenAgentChat(agent);
+                                        handleSelectAgent(agent.id);
+                                        if (window.innerWidth < 768) {
+                                          setShowSidebar(false);
+                                        }
                                       }}
-                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-600 hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-300 transition-colors cursor-pointer"
+                                      className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                                        isCurrentlySelected
+                                          ? 'bg-violet-600 text-white shadow-xs'
+                                          : 'bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-600 hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-300'
+                                      }`}
                                       title={language === 'ar' ? 'محادثة فورية مع الوكيل' : 'Chat with Agent'}
                                     >
                                       <MessageSquare size={12} />
+                                      <span className="text-[9px] font-bold hidden sm:inline">{language === 'ar' ? 'محادثة' : 'Chat'}</span>
                                     </button>
 
                                     {/* Small Play/Pause Toggle Switch */}
@@ -2866,66 +2881,6 @@ Regarding: "${text}", live data metrics match our general parameters:
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
-
-                {/* Header inside side block */}
-                <div className="mb-5 space-y-1">
-                  <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                    <div className="p-2 rounded-xl bg-violet-600 text-white shadow-md shadow-violet-500/5">
-                      <LayoutDashboard size={16} />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                        {language === 'ar' ? 'مؤشرات التخطيط الإستراتيجي' : 'Strategy Board Metrics'}
-                      </h4>
-                      <p className="text-[9px] text-slate-400 dark:text-slate-500">
-                        {language === 'ar' ? 'بيانات معالجة الأسطول المزامنة بالخادم' : 'Live database sync parameters'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Micro Metric Boxes */}
-                <div className="grid grid-cols-2 gap-2 mb-5">
-                  <div className="p-3 bg-white dark:bg-[#121829] rounded-2xl border border-slate-200/50 dark:border-slate-800/60 shadow-xs flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">
-                      {language === 'ar' ? 'المركبات بالأسطول' : 'Vehicles'}
-                    </span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-base font-black text-slate-800 dark:text-white font-mono">{simulatedVehiclesCount}</span>
-                      <Truck size={11} className="text-blue-500 shrink-0" />
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-white dark:bg-[#121829] rounded-2xl border border-slate-200/50 dark:border-slate-800/60 shadow-xs flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">
-                      {language === 'ar' ? 'أوامر الصيانة' : 'Repair Orders'}
-                    </span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-base font-black text-slate-800 dark:text-white font-mono">{simulatedOrdersCount}</span>
-                      <Wrench size={11} className="text-violet-500 shrink-0" />
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-white dark:bg-[#121829] rounded-2xl border border-slate-200/50 dark:border-slate-800/60 shadow-xs flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">
-                      {language === 'ar' ? 'أصناف قطع الغيار' : 'Unique Parts'}
-                    </span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-base font-black text-slate-800 dark:text-white font-mono">{simulatedInventoryCount}</span>
-                      <Warehouse size={11} className="text-amber-500 shrink-0" />
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-white dark:bg-[#121829] rounded-2xl border border-slate-200/50 dark:border-slate-800/60 shadow-xs flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block">
-                      {language === 'ar' ? 'طاقم المهندسين' : 'Staff Mechanics'}
-                    </span>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-base font-black text-slate-800 dark:text-white font-mono">{simulatedTechniciansCount}</span>
-                      <Users size={11} className="text-emerald-500 shrink-0" />
-                    </div>
-                  </div>
                 </div>
 
                 {/* Firebase Database Diagnostic Hub (أداة تشخيص السحابية والمزامنة اللحظية) */}
@@ -3583,110 +3538,35 @@ Regarding: "${text}", live data metrics match our general parameters:
                   <div className={`fixed inset-y-0 z-50 w-[88vw] max-w-sm bg-white dark:bg-[#0c101d] shadow-2xl overflow-y-auto p-5 md:static md:w-80 md:z-auto md:shadow-none md:bg-slate-50/60 md:dark:bg-[#090d18] flex flex-col shrink-0 ${
                     isRtl ? 'right-0 md:order-last md:border-l border-slate-200 dark:border-slate-850' : 'left-0 md:border-r border-slate-200 dark:border-slate-850'
                   }`}>
-                    {/* Mobile Drawer Close Header */}
-                    <div className={`flex md:hidden items-center justify-between pb-3 mb-3 border-b border-slate-200/80 dark:border-slate-800 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                      <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                          <Wrench size={14} />
+                    {/* Drawer Header for Mobile & Desktop */}
+                    <div className={`flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200/80 dark:border-slate-800 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex items-center gap-2.5 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-xs">
+                          <Bot size={18} />
                         </div>
-                        <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                          {language === 'ar' ? 'محاكي طوارئ الصيانة والقطع' : 'Maintenance Simulator'}
-                        </span>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                              {language === 'ar' ? 'سجل وبطاقات تشغيل الوكلاء' : 'AI Agents Registry'}
+                            </span>
+                            <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-black border border-emerald-500/20">
+                              {agentsRegistry.filter(a => a.isActive).length}/6 {language === 'ar' ? 'نشط' : 'Active'}
+                            </span>
+                          </div>
+                          <p className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
+                            {language === 'ar' ? 'اختر أي وكيل للتبديل الفوري وإدارة حالته' : 'Select an agent to switch or manage status'}
+                          </p>
+                        </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setShowSidebar(false)}
                         className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors cursor-pointer"
-                        title={language === 'ar' ? 'إغلاق والعودة إلى مساعد الصيانة' : 'Close and return to Mechanic'}
+                        title={language === 'ar' ? 'إغلاق اللوحة الجانبية' : 'Close Sidebar'}
                       >
                         <X size={16} />
                       </button>
                     </div>
-
-                    {/* Simulation crisis & Persona selector panel for Mechanic */}
-                <div className="mb-5 p-4 bg-amber-50/40 dark:bg-amber-950/10 rounded-2xl border border-amber-150/40 dark:border-amber-900/30 space-y-3.5 shadow-xs">
-                  <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse text-right' : 'text-left'}`}>
-                    <Wrench size={14} className="text-amber-600 dark:text-amber-400" />
-                    <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                      {language === 'ar' ? 'محاكي طوارئ الصيانة والقطع' : 'Workshop Crisis Simulator'}
-                    </span>
-                  </div>
-                  
-                  {/* Scenario Pills with Vector Icons */}
-                  <div className="space-y-1">
-                    <label className={`text-[9px] font-extrabold text-slate-400 dark:text-slate-500 block ${isRtl ? 'text-right' : 'text-left'}`}>
-                      {language === 'ar' ? 'سيناريو التشغيل الفعلي للمطابقة:' : 'Active Operational Scenario:'}
-                    </label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveScenario('normal')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                          activeScenario === 'normal'
-                            ? 'bg-emerald-500 text-white border-transparent shadow-xs'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-emerald-500/40'
-                        }`}
-                      >
-                        <CheckCircle2 size={12} className="shrink-0" />
-                        <span>{language === 'ar' ? 'طبيعي متزن' : 'Balanced'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveScenario('parts-crisis')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                          activeScenario === 'parts-crisis'
-                            ? 'bg-rose-500 text-white border-transparent shadow-xs'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-rose-500/40'
-                        }`}
-                      >
-                        <AlertTriangle size={12} className="shrink-0" />
-                        <span>{language === 'ar' ? 'أزمة توريد' : 'Parts Crisis'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveScenario('backlog-peak')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                          activeScenario === 'backlog-peak'
-                            ? 'bg-amber-500 text-white border-transparent shadow-xs'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-amber-500/40'
-                        }`}
-                      >
-                        <Zap size={12} className="shrink-0" />
-                        <span>{language === 'ar' ? 'ذروة تكدس' : 'Backlog Peak'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveScenario('staff-shortage')}
-                        className={`p-2 text-[9px] font-extrabold rounded-xl transition-all cursor-pointer border flex items-center justify-center gap-1.5 ${
-                          activeScenario === 'staff-shortage'
-                            ? 'bg-gradient-to-r from-indigo-950 via-purple-900 to-violet-950 text-white border-transparent shadow-xs'
-                            : 'bg-white dark:bg-[#121829] text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-800 hover:border-violet-500/40'
-                        }`}
-                      >
-                        <Users size={12} className="shrink-0" />
-                        <span>{language === 'ar' ? 'عجز بشري' : 'Staff Short'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Persona selectors */}
-                  <div className="space-y-2 border-t border-slate-200/30 dark:border-slate-800/40 pt-2">
-                    <div>
-                      <label className={`text-[9px] font-extrabold text-slate-400 dark:text-slate-500 block ${isRtl ? 'text-right' : 'text-left'}`}>
-                        {language === 'ar' ? 'نمط وكيل الصيانة (Technician):' : 'Technician Persona:'}
-                      </label>
-                      <select
-                        value={mechPersona}
-                        onChange={(e) => setMechPersona(e.target.value as any)}
-                        className="w-full mt-1 p-1.5 bg-white dark:bg-[#121829] border border-slate-200/60 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[9px] font-bold outline-hidden cursor-pointer"
-                      >
-                        <option value="default">{language === 'ar' ? 'الافتراضي المتزن' : 'Standard Balanced'}</option>
-                        <option value="master">{language === 'ar' ? 'المعلم وكبير الفنيين المتقاعد' : 'Master Mechanic'}</option>
-                        <option value="safety">{language === 'ar' ? 'مفتش السلامة والأمان الصارم' : 'Safety Inspector'}</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
 
                 {/* AI AGENTS REGISTRY CARD */}
                 <div className="p-4 bg-white dark:bg-[#121829] rounded-2xl border border-slate-200/50 dark:border-slate-800/60 shadow-xs flex flex-col gap-3 mb-5">
@@ -3724,36 +3604,44 @@ Regarding: "${text}", live data metrics match our general parameters:
                       >
                         <p className={`text-[9px] text-slate-400 dark:text-slate-500 font-semibold leading-normal ${isRtl ? 'text-right' : 'text-left'}`}>
                           {language === 'ar' 
-                            ? 'تحكم بتشغيل أو إيقاف الوكلاء ومطابقتهم الذكية بالمؤسسة:' 
-                            : 'Configure, run or pause active business agents dynamically:'}
+                            ? 'انقر على أي وكيل لاختياره فورياً للمحادثة والمحاكاة:' 
+                            : 'Click on any agent to activate for chat and simulation:'}
                         </p>
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
                           {agentsRegistry.map((agent) => {
                             const isAct = agent.isActive;
+                            const isCurrentlySelected = selectedAgentId === agent.id;
                             return (
                               <div 
                                 key={agent.id}
-                                className={`p-3 rounded-2xl border transition-all flex flex-col gap-2 cursor-pointer group hover:border-violet-500/50 dark:hover:border-violet-400/50 hover:bg-slate-50/80 dark:hover:bg-[#161d33]/60 ${
-                                  isAct 
-                                    ? 'bg-white dark:bg-[#111526] border-slate-200/80 dark:border-slate-800/90 shadow-xs' 
-                                    : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200/40 dark:border-slate-800/40 opacity-70'
+                                className={`p-3 rounded-2xl border transition-all flex flex-col gap-2 cursor-pointer group hover:border-amber-500/50 dark:hover:border-amber-400/50 hover:bg-slate-50/80 dark:hover:bg-[#161d33]/60 ${
+                                  isCurrentlySelected 
+                                    ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-500 dark:border-amber-400 shadow-md ring-2 ring-amber-500/30' 
+                                    : isAct 
+                                      ? 'bg-white dark:bg-[#111526] border-slate-200/80 dark:border-slate-800/90 shadow-xs' 
+                                      : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-200/40 dark:border-slate-800/40 opacity-70'
                                 }`}
-                                onClick={(e) => {
-                                  const target = e.target as HTMLElement;
-                                  if (target.closest('button')) return;
-                                  handleOpenAgentChat(agent);
+                                onClick={() => {
+                                  handleSelectAgent(agent.id);
                                 }}
-                                title={language === 'ar' ? 'انقر لفتح نافذة الدردشة التفاعلية مع الوكيل' : 'Click to open interactive chat with this agent'}
+                                title={language === 'ar' ? `تفعيل واختيار الوكيل ${agent.nameAr}` : `Select and activate ${agent.nameEn}`}
                               >
                                 <div className={`flex items-center justify-between gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                   <div className={`flex items-center gap-2.5 min-w-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                     {renderAgentAvatarContainer(agent.id, agent.color, isAct, 'md', true)}
                                     <div className="text-left leading-tight min-w-0">
-                                      <span className={`text-[10.5px] font-black block truncate ${isRtl ? 'text-right' : 'text-left'} ${
-                                        isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'
-                                      }`}>
-                                        {language === 'ar' ? agent.nameAr : agent.nameEn}
-                                      </span>
+                                      <div className={`flex items-center gap-1.5 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <span className={`text-[10.5px] font-black block truncate ${isRtl ? 'text-right' : 'text-left'} ${
+                                          isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'
+                                        }`}>
+                                          {language === 'ar' ? agent.nameAr : agent.nameEn}
+                                        </span>
+                                        {isCurrentlySelected && (
+                                          <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-amber-600 text-white shadow-xs">
+                                            {language === 'ar' ? 'النشط' : 'Active'}
+                                          </span>
+                                        )}
+                                      </div>
                                       <div className={`flex items-center gap-1 mt-0.5 ${isRtl ? 'flex-row-reverse justify-end' : ''}`}>
                                         <span className="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 truncate">
                                           {agent.roles.join(' • ')}
@@ -3768,12 +3656,20 @@ Regarding: "${text}", live data metrics match our general parameters:
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleOpenAgentChat(agent);
+                                        handleSelectAgent(agent.id);
+                                        if (window.innerWidth < 768) {
+                                          setShowSidebar(false);
+                                        }
                                       }}
-                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-violet-100 dark:bg-slate-800 dark:hover:bg-violet-950/60 text-slate-600 hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-300 transition-colors cursor-pointer"
+                                      className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                                        isCurrentlySelected
+                                          ? 'bg-amber-600 text-white shadow-xs'
+                                          : 'bg-slate-100 hover:bg-amber-100 dark:bg-slate-800 dark:hover:bg-amber-950/60 text-slate-600 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-300'
+                                      }`}
                                       title={language === 'ar' ? 'محادثة فورية مع الوكيل' : 'Chat with Agent'}
                                     >
                                       <MessageSquare size={12} />
+                                      <span className="text-[9px] font-bold hidden sm:inline">{language === 'ar' ? 'محادثة' : 'Chat'}</span>
                                     </button>
 
                                     {/* Small Play/Pause Toggle Switch */}
@@ -3784,7 +3680,7 @@ Regarding: "${text}", live data metrics match our general parameters:
                                         toggleAgentActive(agent.id);
                                       }}
                                       className={`relative w-8 h-4.5 rounded-full p-0.5 transition-colors duration-200 focus:outline-hidden cursor-pointer ${
-                                        isAct ? 'bg-gradient-to-r from-purple-600 to-indigo-500' : 'bg-slate-300 dark:bg-slate-700'
+                                        isAct ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-slate-300 dark:bg-slate-700'
                                       }`}
                                       title={isAct 
                                         ? (language === 'ar' ? 'إيقاف الوكيل' : 'Stop Agent') 
@@ -4515,29 +4411,6 @@ Regarding: "${text}", live data metrics match our general parameters:
                         {language === 'ar' ? 'أ' : 'A'}
                       </button>
                     </div>
-
-                    {/* Sidebar Toggle Button with Active Scenario Indicator */}
-                    <button
-                      type="button"
-                      onClick={handleToggleSidebar}
-                      className={`p-1.5 md:p-2 md:px-3 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border ${
-                        showSidebar
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                          : 'bg-emerald-50/80 border-emerald-200/80 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-900/50 dark:text-emerald-300'
-                      }`}
-                      title={language === 'ar' ? 'غرفة محاكاة الطوارئ الموحدة وبطاقات الوكلاء' : 'Simulator & Metrics'}
-                    >
-                      <LayoutDashboard size={14} className="shrink-0" />
-                      <span className="text-[11px] font-extrabold flex items-center gap-1">
-                        <span className="hidden sm:inline">{language === 'ar' ? 'المحاكاة:' : 'Sim:'}</span>
-                        <span>
-                          {activeScenario === 'normal' && (language === 'ar' ? 'متزن' : 'Balanced')}
-                          {activeScenario === 'parts-crisis' && (language === 'ar' ? 'أزمة توريد' : 'Crisis')}
-                          {activeScenario === 'backlog-peak' && (language === 'ar' ? 'ذروة تكدس' : 'Peak')}
-                          {activeScenario === 'staff-shortage' && (language === 'ar' ? 'عجز بشري' : 'Shortage')}
-                        </span>
-                      </span>
-                    </button>
 
                     <button
                       onClick={handleCoPilotClearChat}
