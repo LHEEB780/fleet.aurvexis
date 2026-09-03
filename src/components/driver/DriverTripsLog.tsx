@@ -410,24 +410,32 @@ export default function DriverTripsLog({
       )}
 
       {/* Centralized Dispatch Live Sync Notice */}
-      <div className="bg-gradient-to-r from-indigo-900/40 via-purple-900/30 to-indigo-900/40 rounded-3xl p-4 border border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-3 text-indigo-200">
-          <div className="p-2 bg-indigo-500/20 text-cyan-300 rounded-xl shrink-0">
-            <Sparkles size={16} />
+      <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 dark:from-[#0d1224] dark:via-[#14122d] dark:to-[#0d1224] rounded-3xl p-4.5 border-2 border-indigo-200/90 dark:border-indigo-800/60 shadow-md shadow-indigo-100/60 dark:shadow-none flex flex-col sm:flex-row items-center justify-between gap-4 text-xs transition-all">
+        <div className="flex items-center gap-3.5 text-slate-900 dark:text-white w-full sm:w-auto">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-600/30">
+            <Sparkles size={20} className="text-amber-300" />
           </div>
-          <div>
-            <span className="font-black text-slate-100 block">
-              {language === 'ar' ? 'الرحلات والمهمات تصدر وتُسند مركزياً من الإدارة' : 'Missions are centrally dispatched by Management'}
-            </span>
-            <span className="text-[10px] text-indigo-300/80 font-medium">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-black text-slate-900 dark:text-white text-xs sm:text-sm block">
+                {language === 'ar' ? 'الرحلات والمهمات تصدر وتُسند مركزياً من الإدارة' : 'Missions are centrally dispatched by Management'}
+              </span>
+              <span className="px-2 py-0.5 rounded-lg bg-indigo-600 text-white dark:bg-indigo-500/30 dark:text-indigo-300 text-[10px] font-black shadow-xs">
+                {language === 'ar' ? 'توصية وتوجيه ذكي' : 'Smart Dispatch'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-700 dark:text-indigo-200 font-semibold leading-relaxed">
               {language === 'ar' ? 'تظهر أي رحلة جديدة تسندها الإدارة في حسابك فوراً مع خط السير والتوجيه الملاحي المباشر.' : 'Any dispatched trip appears here immediately with turn-by-turn navigation.'}
-            </span>
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-mono font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            <span>{language === 'ar' ? 'متزامن لحظياً' : 'Live Synced'}</span>
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-600 text-white dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-600 dark:border-emerald-500/40 rounded-full text-xs font-black shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white dark:bg-emerald-400"></span>
+            </span>
+            <span>{language === 'ar' ? 'متزامن لحظياً ✓' : 'Live Synced ✓'}</span>
           </span>
         </div>
       </div>

@@ -254,6 +254,37 @@ export default function DriverAssignedProjects({
 
       </div>
 
+      {/* Centralized Dispatch Live Sync Notice */}
+      <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-50 dark:from-[#0d1224] dark:via-[#14122d] dark:to-[#0d1224] rounded-3xl p-4.5 border-2 border-indigo-200/90 dark:border-indigo-800/60 shadow-md shadow-indigo-100/60 dark:shadow-none flex flex-col sm:flex-row items-center justify-between gap-4 text-xs transition-all">
+        <div className="flex items-center gap-3.5 text-slate-900 dark:text-white w-full sm:w-auto">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-600/30">
+            <Sparkles size={20} className="text-amber-300" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-black text-slate-900 dark:text-white text-xs sm:text-sm block">
+                {language === 'ar' ? 'المهام والمشاريع تصدر وتُسند مركزياً من الإدارة' : 'Tasks and Projects are centrally assigned by Management'}
+              </span>
+              <span className="px-2 py-0.5 rounded-lg bg-indigo-600 text-white dark:bg-indigo-500/30 dark:text-indigo-300 text-[10px] font-black shadow-xs">
+                {language === 'ar' ? 'توصية وتوجيه ذكي' : 'Smart Dispatch'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-700 dark:text-indigo-200 font-semibold leading-relaxed">
+              {language === 'ar' ? 'تظهر أي مشاريع أو مهام ميدانية جديدة تسندها الإدارة في حسابك فوراً مع تفاصيل أوامر العمل والملاحة.' : 'Any dispatched projects or field tasks appear here immediately with work orders and navigation.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-600 text-white dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-600 dark:border-emerald-500/40 rounded-full text-xs font-black shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white dark:bg-emerald-400"></span>
+            </span>
+            <span>{language === 'ar' ? 'متزامن لحظياً ✓' : 'Live Synced ✓'}</span>
+          </span>
+        </div>
+      </div>
+
     </div>
   );
 }
