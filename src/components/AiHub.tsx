@@ -92,6 +92,18 @@ import { getAIProjectManagerInsight, AIMessage } from '../services/aiService';
 import { collection, getDocs } from 'firebase/firestore';
 import { db, testFirestoreConnection, pushLocalDataToCloud, pullCloudDataToLocal } from '../services/firebase';
 import firebaseConfig from '../services/firebaseConfig';
+import AgentActionCard from './AgentActionCard';
+import AgentActionModal from './AgentActionModal';
+import AgentActionsHistoryModal from './AgentActionsHistoryModal';
+import { 
+  getAgentActions, 
+  findActionDef, 
+  detectUserActionIntent, 
+  parseActionFromText, 
+  getAgentActionsHistory,
+  AgentActionDef,
+  ExecutedActionReceipt
+} from '../services/agentActionExecutor';
 
 export interface AttachedFileItem {
   id: string;
@@ -110,6 +122,11 @@ interface MechanicMessage {
   text: string;
   timestamp: Date;
   attachment?: AttachedFileItem;
+  action?: {
+    actionType: string;
+    params: Record<string, any>;
+    receipt?: any;
+  };
 }
 
 // Sleek Modern Geometric AI Brand Emblem matching Hostinger / Agent style
@@ -442,6 +459,28 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
     setActiveTab('project-manager');
   };
 
+  // Agent Direct Action Execution States
+  const [isActionModalOpen, setIsActionModalOpen] = useState<boolean>(false);
+  const [selectedActionForModal, setSelectedActionForModal] = useState<AgentActionDef | null>(null);
+  const [actionModalParams, setActionModalParams] = useState<Record<string, any>>({});
+  const [isActionHistoryModalOpen, setIsActionHistoryModalOpen] = useState<boolean>(false);
+  const [executedActionsCount, setExecutedActionsCount] = useState<number>(() => {
+    return getAgentActionsHistory().length;
+  });
+
+  // Sync executedActionsCount on storage updates
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      setExecutedActionsCount(getAgentActionsHistory().length);
+    };
+    window.addEventListener('storage', handleStorageUpdate);
+    window.addEventListener('fleet_data_updated', handleStorageUpdate);
+    return () => {
+      window.removeEventListener('storage', handleStorageUpdate);
+      window.removeEventListener('fleet_data_updated', handleStorageUpdate);
+    };
+  }, []);
+
   // --- Enhanced Command Center States ---
   const [isRegistryExpanded, setIsRegistryExpanded] = useState<boolean>(true);
   const [agentsRegistry, setAgentsRegistry] = useState([
@@ -753,7 +792,13 @@ export default function AiHub({ onBack }: AiHubProps = {}) {
       }
     }
 
-    return `${agentRoleIntro} ${scenarioText} ${personaText}`.trim();
+    const actionExecutionInstructions = `
+      [إمكانية تنفيذ المهام المباشرة في النظام]:
+      أنت وكيل تنفيذي ذو صلاحية في النظام. إذا طلب منك المستخدم أو إذا اقتضى تحليلك تنفيذ مهمة عملية في النظام (مثل أمر صيانة، حجز قطعة، فحص سلامة، طلب شراء، جدولة رحلة، سند صرف)، يمكنك تضمين وسم الإجراء في نهاية ردك بالصيغة التالية:
+      ||ACTION:{"actionType":"<نوع_الإجراء>", "params":{...}}||
+    `;
+
+    return `${agentRoleIntro} ${scenarioText} ${personaText} ${actionExecutionInstructions}`.trim();
   };
 
   // Compatibility helper for strategic PM
@@ -1559,7 +1604,29 @@ Regarding: "${text}", live data metrics match our general parameters:
         promptContext += ` [ملاحظة مرفق: أرفق المستخدم ملفاً/صورة باسم "${currentAttachment.name}"، نوعه "${currentAttachment.type}"، وحجمه ${Math.round(currentAttachment.size / 1024)} KB]`;
       }
       const response = await getAIProjectManagerInsight([...pmMessages, userMessage], promptContext);
-      setPmMessages(prev => [...prev, { role: 'model', text: response, timestamp: new Date() }]);
+      const parsed = parseActionFromText(response);
+      let proposedAction = parsed.proposedAction;
+
+      // If model did not emit tag but user requested an actionable task, detect intent:
+      if (!proposedAction) {
+        const intent = detectUserActionIntent(selectedAgentId, userMessageText);
+        if (intent) {
+          proposedAction = {
+            actionType: intent.actionType,
+            params: intent.suggestedParams
+          };
+        }
+      }
+
+      setPmMessages(prev => [
+        ...prev, 
+        { 
+          role: 'model', 
+          text: parsed.cleanText, 
+          timestamp: new Date(),
+          action: proposedAction
+        }
+      ]);
     } catch (e) {
       console.error(e);
       setPmMessages(prev => [...prev, { 
@@ -1673,11 +1740,24 @@ Regarding: "${text}", live data metrics match our general parameters:
 
       const data = await res.json();
 
+      const parsed = parseActionFromText(data.text);
+      let proposedAction = parsed.proposedAction;
+      if (!proposedAction) {
+        const intent = detectUserActionIntent('mechanic', userMessageText);
+        if (intent) {
+          proposedAction = {
+            actionType: intent.actionType,
+            params: intent.suggestedParams
+          };
+        }
+      }
+
       setMechMessages(prev => [...prev, {
         id: `msg-${Date.now()}-reply`,
         role: 'model',
-        text: data.text,
-        timestamp: new Date()
+        text: parsed.cleanText,
+        timestamp: new Date(),
+        action: proposedAction
       }]);
     } catch (e) {
       console.error(e);
@@ -2609,6 +2689,21 @@ Regarding: "${text}", live data metrics match our general parameters:
             <LayoutGrid size={18} />
           </button>
 
+          {/* Audit Log / Executed Actions History Button */}
+          <button
+            type="button"
+            onClick={() => setIsActionHistoryModalOpen(true)}
+            className="p-2 bg-white/15 hover:bg-white/25 active:bg-white/35 active:scale-95 rounded-xl border border-white/25 transition-all cursor-pointer text-white flex items-center justify-center relative shadow-xs"
+            title={language === 'ar' ? `سجل مهام الذكاء الاصطناعي المنفذة (${executedActionsCount})` : `Executed AI Tasks Log (${executedActionsCount})`}
+          >
+            <Zap size={18} className="text-amber-300 fill-amber-300/30" />
+            {executedActionsCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 rounded-full border border-slate-900 shadow-xs">
+                {executedActionsCount}
+              </span>
+            )}
+          </button>
+
 
           {/* WhatsApp Dropdown Menu (3 dots) */}
           <div className="relative">
@@ -3122,6 +3217,33 @@ Regarding: "${text}", live data metrics match our general parameters:
                           {/* Render Attachment if present */}
                           {renderMessageAttachmentBadge(msg.attachment)}
 
+                          {/* Render Executable Action Card if present */}
+                          {!isUser && msg.action && (
+                            <div className="mt-3">
+                              <AgentActionCard
+                                actionType={msg.action.actionType}
+                                params={msg.action.params}
+                                agentId={selectedAgentId}
+                                agentNameAr={activeAgent.nameAr}
+                                agentNameEn={activeAgent.nameEn}
+                                initialReceipt={msg.action.receipt}
+                                onExecuted={(receipt) => {
+                                  msg.action!.receipt = receipt;
+                                  setPmMessages([...pmMessages]);
+                                  setExecutedActionsCount(getAgentActionsHistory().length);
+                                }}
+                                onOpenModal={(actionType, params) => {
+                                  const def = findActionDef(actionType);
+                                  if (def) {
+                                    setSelectedActionForModal(def);
+                                    setActionModalParams(params);
+                                    setIsActionModalOpen(true);
+                                  }
+                                }}
+                              />
+                            </div>
+                          )}
+
                           <div className={`flex items-center gap-2 mt-1.5 pt-1.5 border-t ${isUser ? 'border-white/20 text-white/90' : 'border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-semibold'} text-[11px] select-none ${
                             isUser ? 'justify-end' : 'justify-between'
                           }`}>
@@ -3270,6 +3392,62 @@ Regarding: "${text}", live data metrics match our general parameters:
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Dedicated Agent Action Direct Execution Toolbar */}
+                <div 
+                  className={`px-3.5 py-2 flex items-center justify-between gap-2 border-t border-b transition-colors duration-300 ${currentTheme.themeBarBg} ${currentTheme.themeBarBorder}`}
+                >
+                  <div className={`flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1 shrink-0 px-1 select-none">
+                      <Zap size={13} className="text-amber-400 fill-amber-400 shrink-0" />
+                      <span className="hidden sm:inline">{language === 'ar' ? 'مهام الوكيل التنفيذية:' : 'Agent Direct Actions:'}</span>
+                    </span>
+                    {getAgentActions(selectedAgentId).map((actionDef) => (
+                      <button
+                        key={actionDef.actionType}
+                        type="button"
+                        onClick={() => {
+                          setSelectedActionForModal(actionDef);
+                          setActionModalParams({});
+                          setIsActionModalOpen(true);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-[11px] font-black shrink-0 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 border ${
+                          actionDef.color === 'emerald'
+                            ? 'bg-emerald-600/20 hover:bg-emerald-600/35 text-emerald-300 border-emerald-500/40'
+                            : actionDef.color === 'amber'
+                            ? 'bg-amber-600/20 hover:bg-amber-600/35 text-amber-300 border-amber-500/40'
+                            : actionDef.color === 'blue'
+                            ? 'bg-blue-600/20 hover:bg-blue-600/35 text-blue-300 border-blue-500/40'
+                            : actionDef.color === 'rose'
+                            ? 'bg-rose-600/20 hover:bg-rose-600/35 text-rose-300 border-rose-500/40'
+                            : actionDef.color === 'purple'
+                            ? 'bg-purple-600/20 hover:bg-purple-600/35 text-purple-300 border-purple-500/40'
+                            : 'bg-teal-600/20 hover:bg-teal-600/35 text-teal-300 border-teal-500/40'
+                        }`}
+                        title={language === 'ar' ? actionDef.descAr : actionDef.descEn}
+                      >
+                        <span className="text-xs">⚡</span>
+                        <span>{language === 'ar' ? actionDef.titleAr : actionDef.titleEn}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Audit Log / History Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsActionHistoryModalOpen(true)}
+                    className="px-2.5 py-1.5 rounded-xl text-[10.5px] font-black bg-white/10 hover:bg-white/20 text-white/90 border border-white/20 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer active:scale-95 shadow-xs"
+                    title={language === 'ar' ? 'سجل العمليات والمهام المنفذة بواسطة الوكلاء' : 'View AI Agent Executed Tasks History'}
+                  >
+                    <FileText size={12} className="text-amber-400" />
+                    <span className="hidden xs:inline">{language === 'ar' ? 'سجل المهام' : 'Audit Log'}</span>
+                    {executedActionsCount > 0 && (
+                      <span className="px-1.5 py-0.2 bg-amber-500 text-slate-950 font-black rounded-full text-[9px]">
+                        {executedActionsCount}
+                      </span>
+                    )}
+                  </button>
                 </div>
 
                 {/* Quick Chips Floating Row tailored to the active agent's dark theme */}
@@ -3821,6 +3999,33 @@ Regarding: "${text}", live data metrics match our general parameters:
 
                           {/* Render Attachment if present */}
                           {renderMessageAttachmentBadge(msg.attachment)}
+
+                          {/* Render Executable Action Card if present */}
+                          {!isUser && msg.action && (
+                            <div className="mt-3">
+                              <AgentActionCard
+                                actionType={msg.action.actionType}
+                                params={msg.action.params}
+                                agentId="mechanic"
+                                agentNameAr="المساعد الفني والميكانيكي الذكي"
+                                agentNameEn="Smart Maintenance Assistant"
+                                initialReceipt={msg.action.receipt}
+                                onExecuted={(receipt) => {
+                                  msg.action!.receipt = receipt;
+                                  setMechMessages([...mechMessages]);
+                                  setExecutedActionsCount(getAgentActionsHistory().length);
+                                }}
+                                onOpenModal={(actionType, params) => {
+                                  const def = findActionDef(actionType);
+                                  if (def) {
+                                    setSelectedActionForModal(def);
+                                    setActionModalParams(params);
+                                    setIsActionModalOpen(true);
+                                  }
+                                }}
+                              />
+                            </div>
+                          )}
 
                           {!isUser && (
                             <div className="flex items-center gap-2.5 mt-2.5 pt-2 border-t border-slate-100 dark:border-purple-900/30 text-[10px] text-slate-400 font-bold select-none">
@@ -5415,6 +5620,45 @@ Regarding: "${text}", live data metrics match our general parameters:
           </div>
         )}
       </AnimatePresence>
+      {/* Agent Direct Action Confirmation & Input Modal */}
+      <AgentActionModal
+        isOpen={isActionModalOpen}
+        onClose={() => setIsActionModalOpen(false)}
+        actionDef={selectedActionForModal}
+        initialParams={actionModalParams}
+        agentId={selectedAgentId}
+        vehicles={defaultVehicles}
+        orders={defaultOrders}
+        inventory={defaultInventory}
+        technicians={defaultTechnicians}
+        onActionExecuted={(receipt) => {
+          setExecutedActionsCount(getAgentActionsHistory().length);
+          // Add a confirmed execution card directly into the current chat stream
+          setPmMessages(prev => [
+            ...prev,
+            {
+              role: 'model',
+              text: language === 'ar'
+                ? `⚡ **تم تنفيذ المهمة بنجاح في النظام!**\n- الإجراء: ${receipt.titleAr}\n- المعرف: \`${receipt.entityId}\`\n- ${receipt.summaryAr}\n- تم التوثيق في سجل العمليات.`
+                : `⚡ **System Action Executed Successfully!**\n- Action: ${receipt.titleEn}\n- Entity ID: \`${receipt.entityId}\`\n- ${receipt.summaryEn}\n- Documented in audit ledger.`,
+              timestamp: new Date(),
+              action: {
+                actionType: receipt.actionType,
+                params: receipt.params,
+                receipt: receipt
+              }
+            }
+          ]);
+        }}
+      />
+
+      {/* Agent Actions History & Audit Log Modal */}
+      <AgentActionsHistoryModal
+        isOpen={isActionHistoryModalOpen}
+        onClose={() => setIsActionHistoryModalOpen(false)}
+        filterAgentId={selectedAgentId}
+      />
+
       {/* 6 AI Agents Directory Modal */}
       <AiAgentsModal
         isOpen={isAgentGridModalOpen}

@@ -13,6 +13,11 @@ export interface AIMessage {
     isImage?: boolean;
   };
   timestamp?: Date;
+  action?: {
+    actionType: string;
+    params: Record<string, any>;
+    receipt?: any;
+  };
 }
 
 export async function getAIProjectManagerInsight(messages: AIMessage[], customModifier?: string): Promise<string> {

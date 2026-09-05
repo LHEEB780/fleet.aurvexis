@@ -3,9 +3,15 @@ import {
   vehicles as defaultVehicles, 
   maintenanceOrders as defaultOrders, 
   inventory as defaultInventory, 
-  technicians as defaultTechnicians,
-  drivers as defaultDrivers
+  technicians as defaultTechnicians
 } from '../data';
+
+const defaultDrivers = [
+  { id: 'D1', name: 'سالم الشمري', phone: '0551234567', vehicleId: '1' },
+  { id: 'D2', name: 'عمر القحطاني', phone: '0559876543', vehicleId: '2' },
+  { id: 'D3', name: 'فهد المطيري', phone: '0553334455', vehicleId: '3' },
+  { id: 'D4', name: 'محمد الدوسري', phone: '0556667788', vehicleId: '4' }
+];
 
 export interface ActionFieldDef {
   name: string;
