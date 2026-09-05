@@ -74,6 +74,7 @@ import {
 import { BrowserNotificationModal } from './BrowserNotificationModal';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 import { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
+import { renderBrandInlineStyle, adjustColorBrightness } from '../services/themeEngine';
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -109,46 +110,6 @@ const SidebarItem = ({ icon, label, active, onClick, collapsed }: SidebarItemPro
     )}
   </button>
 );
-
-const adjustColorBrightness = (hex: string, percent: number): string => {
-  try {
-    let cleanHex = hex.trim().replace('#', '');
-    if (cleanHex.length === 3) {
-      cleanHex = cleanHex.split('').map(char => char + char).join('');
-    }
-    if (cleanHex.length !== 6) {
-      return hex;
-    }
-    
-    let r = parseInt(cleanHex.substring(0, 2), 16);
-    let g = parseInt(cleanHex.substring(2, 4), 16);
-    let b = parseInt(cleanHex.substring(4, 6), 16);
-    
-    if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      return hex;
-    }
-    
-    const factor = percent / 100;
-    if (percent > 0) {
-      r = Math.round(r + (255 - r) * factor);
-      g = Math.round(g + (255 - g) * factor);
-      b = Math.round(b + (255 - b) * factor);
-    } else {
-      r = Math.round(r + r * factor);
-      g = Math.round(g + g * factor);
-      b = Math.round(b + b * factor);
-    }
-    
-    const clamp = (val: number) => Math.max(0, Math.min(255, val));
-    const rHex = clamp(r).toString(16).padStart(2, '0');
-    const gHex = clamp(g).toString(16).padStart(2, '0');
-    const bHex = clamp(b).toString(16).padStart(2, '0');
-    
-    return `#${rHex}${gHex}${bHex}`;
-  } catch (e) {
-    return hex;
-  }
-};
 
 const THEMES_PRESETS = [
   {
@@ -1611,21 +1572,7 @@ export default function AppLayout({
       className="flex h-screen bg-[#f4f6fa] dark:bg-[#05070a] font-sans text-slate-950 dark:text-slate-100 overflow-hidden transition-all duration-500" 
       dir={dir}
     >
-      <style>{`
-        :root, .dark, body, html {
-          --color-brand-blue-50: ${adjustColorBrightness(brandPrimaryColor, 92)} !important;
-          --color-brand-blue-100: ${adjustColorBrightness(brandPrimaryColor, 80)} !important;
-          --color-brand-blue-250: ${adjustColorBrightness(brandPrimaryColor, 60)} !important; /* support legacy if any */
-          --color-brand-blue-200: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-          --color-brand-blue-300: ${adjustColorBrightness(brandPrimaryColor, 40)} !important;
-          --color-brand-blue-400: ${adjustColorBrightness(brandPrimaryColor, 20)} !important;
-          --color-brand-blue-500: ${brandPrimaryColor} !important;
-          --color-brand-blue-600: ${adjustColorBrightness(brandPrimaryColor, -15)} !important;
-          --color-brand-blue-700: ${adjustColorBrightness(brandPrimaryColor, -30)} !important;
-          --color-brand-blue-800: ${adjustColorBrightness(brandPrimaryColor, -45)} !important;
-          --color-brand-blue-900: ${adjustColorBrightness(brandPrimaryColor, -60)} !important;
-        }
-      `}</style>
+      <style>{renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}</style>
       
       {/* Floating Sync / Offline Toast Overlay */}
       <AnimatePresence>
@@ -2296,6 +2243,32 @@ export default function AppLayout({
 
             {/* Group B: Preferences & System Controls */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Global Dark / Light Theme Toggle Button */}
+              <button 
+                id="header-theme-toggle-btn"
+                type="button"
+                onClick={toggleDarkMode}
+                className="h-8.5 px-2.5 text-slate-700 dark:text-amber-300 bg-white dark:bg-slate-800 hover:bg-amber-50/60 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0 active:scale-95 group"
+                title={isDarkMode ? (language === 'ar' ? 'التبديل إلى الوضع النهاري (الفاتح)' : 'Switch to Light Mode') : (language === 'ar' ? 'التبديل إلى الوضع الليلي (الداكن)' : 'Switch to Dark Mode')}
+                aria-label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {isDarkMode ? (
+                  <>
+                    <Sun size={14} className="text-amber-400 shrink-0 group-hover:rotate-45 transition-transform duration-300" />
+                    <span className="text-[11px] font-black leading-none text-amber-300 hidden sm:inline">
+                      {language === 'ar' ? 'نهاري' : 'Light'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Moon size={14} className="text-violet-600 dark:text-violet-400 shrink-0 group-hover:-rotate-12 transition-transform duration-300" />
+                    <span className="text-[11px] font-black leading-none text-slate-700 dark:text-slate-200 hidden sm:inline">
+                      {language === 'ar' ? 'ليلي' : 'Dark'}
+                    </span>
+                  </>
+                )}
+              </button>
+
               {/* Language Toggle Button */}
               <button 
                 type="button"
@@ -2489,7 +2462,7 @@ export default function AppLayout({
               className={activeTab === 'maintenance-bot' ? 'w-full h-full flex flex-col flex-1' : 'max-w-[1400px] w-full mx-auto h-full space-y-6'}
             >
               {/* Page Sub-Header (Scrolls Naturally, Not Sticky) */}
-              {activeTab !== 'maintenance-bot' && (
+              {activeTab !== 'maintenance-bot' && activeTab !== 'help-center' && (
                 <div className={`rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-all duration-300 shadow-xs ${
                   activeTab === 'external-maintenance'
                     ? 'bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 dark:from-purple-950 dark:via-purple-900 dark:to-[#0f1422] text-white border border-purple-500/40 dark:border-purple-800/60 shadow-lg shadow-purple-900/15'
@@ -2605,6 +2578,23 @@ export default function AppLayout({
               </nav>
 
               <div className="border-t border-slate-200/50 dark:border-slate-800 pt-3 space-y-1.5">
+                {/* Mobile Global Theme Toggle */}
+                <button 
+                  type="button"
+                  onClick={() => {
+                    toggleDarkMode();
+                  }}
+                  className="flex items-center justify-between w-full p-2.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    {isDarkMode ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-violet-600" />}
+                    <span>{language === 'ar' ? (isDarkMode ? 'التبديل للوضع النهاري (الفاتح)' : 'التبديل للوضع الليلي (الداكن)') : (isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode')}</span>
+                  </div>
+                  <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50">
+                    {isDarkMode ? 'DARK' : 'LIGHT'}
+                  </span>
+                </button>
+
                 <button 
                   onClick={() => {
                     setMobileMenuOpen(false);
@@ -3310,6 +3300,81 @@ export default function AppLayout({
                                 )}
                               </button>
                             ))}
+                          </div>
+                        </div>
+
+                        {/* Global Theme Mode & Dark Calibration Card */}
+                        <div className="p-4 bg-gradient-to-br from-slate-50 via-indigo-50/20 to-purple-50/20 dark:from-slate-900/60 dark:via-purple-950/20 dark:to-slate-900/60 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-3">
+                          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                {isDarkMode ? (
+                                  <Moon size={16} className="text-violet-400" />
+                                ) : (
+                                  <Sun size={16} className="text-amber-500" />
+                                )}
+                                <span className="text-xs font-black text-slate-900 dark:text-white">
+                                  {language === 'ar' ? 'نمط المظهر العام ومعايرة الألوان (Theme Mode)' : 'Global Theme & Brand Luminance Calibration'}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-450 mt-0.5">
+                                {language === 'ar' 
+                                  ? 'تتكيف درجات لون علامتك التجارية تلقائياً عند تفعيل الوضع الداكن لضمان أعلى مستويات الوضوح وراحة العين.'
+                                  : 'Custom brand color saturation and luminance automatically calibrate in dark mode for optimal contrast.'}
+                              </p>
+                            </div>
+
+                            {/* Mode Switcher Buttons */}
+                            <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isDarkMode) toggleDarkMode();
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                                  !isDarkMode
+                                    ? 'bg-amber-500 text-white shadow-xs'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                              >
+                                <Sun size={13} />
+                                <span>{language === 'ar' ? 'نهاري' : 'Light'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!isDarkMode) toggleDarkMode();
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                                  isDarkMode
+                                    ? 'bg-violet-600 text-white shadow-xs'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                              >
+                                <Moon size={13} />
+                                <span>{language === 'ar' ? 'ليلي' : 'Dark'}</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Live Contrast Preview Pill */}
+                          <div className="flex items-center justify-between p-2.5 bg-white/80 dark:bg-slate-950/80 rounded-xl border border-slate-100 dark:border-slate-850 text-xs">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-450">
+                              {language === 'ar' ? 'معاينة شارة الهوية بالوضع الحالي:' : 'Active Brand Badge Preview:'}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span 
+                                className="px-3 py-1 rounded-lg text-[11px] font-black shadow-2xs flex items-center gap-1.5"
+                                style={{
+                                  backgroundColor: 'var(--brand-50)',
+                                  color: 'var(--brand-800)',
+                                  border: '1px solid var(--brand-subtle-border)'
+                                }}
+                              >
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--brand-500)' }} />
+                                {language === 'ar' ? 'معتمد ومضبوط للتباين' : 'Calibrated Contrast'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>

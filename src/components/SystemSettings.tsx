@@ -8,7 +8,7 @@ import {
   ShieldAlert, Box, Users, BarChart3, Truck, 
   Warehouse, Handshake, AlertCircle, Briefcase,
   Palette, Coins, Bell, Volume2, VolumeX, Smartphone,
-  Zap, Send, CheckCircle2
+  Zap, Send, CheckCircle2, Sun, Moon
 } from 'lucide-react';
 import { MENU_ITEMS, MenuItem } from '../constants';
 import { useLanguage } from '../services/LanguageContext';
@@ -134,6 +134,61 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
     return safeLocalStorage.getItem('saas_primary_color') || '#673de6';
   });
 
+  // --- GLOBAL THEME MODE STATE ---
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = safeLocalStorage.getItem('saas_theme_mode');
+      if (saved) return saved === 'dark';
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleThemeChange = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ isDark?: boolean; theme?: string }>;
+      if (customEvent?.detail?.isDark !== undefined) {
+        setIsDarkMode(customEvent.detail.isDark);
+      } else {
+        const saved = safeLocalStorage.getItem('saas_theme_mode');
+        if (saved) {
+          setIsDarkMode(saved === 'dark');
+        } else {
+          setIsDarkMode(document.documentElement.classList.contains('dark'));
+        }
+      }
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'saas_theme_mode') {
+        setIsDarkMode(e.newValue === 'dark');
+      }
+      if (e.key === 'saas_primary_color' || e.key === 'saas_brand_primary_color') {
+        setPrimaryColor(e.newValue || '#673de6');
+      }
+    };
+
+    window.addEventListener('theme-changed', handleThemeChange);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('theme-changed', handleThemeChange);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
+
+  const toggleThemeMode = (targetDark?: boolean) => {
+    const nextDark = targetDark !== undefined ? targetDark : !isDarkMode;
+    setIsDarkMode(nextDark);
+    safeLocalStorage.setItem('saas_theme_mode', nextDark ? 'dark' : 'light');
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDark: nextDark } }));
+    window.dispatchEvent(new Event('storage'));
+  };
+
   const COLOR_PRESETS = [
     { id: 'violet', hex: '#673de6', labelAr: 'بنفسجي تكنولوجي', labelEn: 'Tech Violet' },
     { id: 'indigo', hex: '#4f46e5', labelAr: 'أزرق إنديغو', labelEn: 'Modern Indigo' },
@@ -149,10 +204,11 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
     setAutosaveStatus('saving');
     setPrimaryColor(hex);
     safeLocalStorage.setItem('saas_primary_color', hex);
+    safeLocalStorage.setItem('saas_brand_primary_color', hex);
     
     // Dispatch standard storage event and custom brand color event
+    window.dispatchEvent(new CustomEvent('brand-color-changed', { detail: { color: hex } }));
     window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new Event('brand-color-changed'));
     
     setTimeout(() => {
       setAutosaveStatus('saved');
@@ -451,6 +507,69 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
               </button>
             );
           })}
+        </div>
+
+        {/* Global Dark / Light Theme Mode & Brand Contrast Calibration */}
+        <div className="pt-3 border-t border-violet-500/15 dark:border-violet-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              {isDarkMode ? (
+                <Moon size={15} className="text-violet-400 shrink-0" />
+              ) : (
+                <Sun size={15} className="text-amber-500 shrink-0" />
+              )}
+              <span className="text-xs font-black text-slate-850 dark:text-white">
+                {isRtl ? 'وضع المظهر العام (داكن / نهاري)' : 'Global Theme Appearance (Dark / Light)'}
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-450 dark:text-slate-400">
+              {isRtl 
+                ? 'يتم تلقائياً تكييف إضاءة وتدرجات لون الهوية في الوضع الداكن لضمان راحة العين وأعلى تباين ممكن.'
+                : 'Brand colors and highlights automatically adjust luminance for high contrast and readability in dark mode.'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            {/* Contrast calibrated preview badge */}
+            <span 
+              className="px-2.5 py-1 rounded-lg text-[10px] font-black shrink-0 shadow-2xs"
+              style={{
+                backgroundColor: 'var(--brand-50)',
+                color: 'var(--brand-800)',
+                border: '1px solid var(--brand-subtle-border)'
+              }}
+            >
+              {isRtl ? 'درجة معتمدة' : 'Calibrated'}
+            </span>
+
+            {/* Toggle Switch */}
+            <div className="flex items-center p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => toggleThemeMode(false)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  !isDarkMode
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Sun size={13} />
+                <span>{isRtl ? 'نهاري' : 'Light'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleThemeMode(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  isDarkMode
+                    ? 'bg-violet-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Moon size={13} />
+                <span>{isRtl ? 'ليلي' : 'Dark'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

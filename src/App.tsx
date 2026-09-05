@@ -30,46 +30,12 @@ import { MarketingAdmin } from './components/MarketingAdmin';
 import SuperAdminPortal from './components/SuperAdminPortal';
 import VideoTutorialsModal from './components/VideoTutorialsModal';
 import HelpCenter from './components/HelpCenter';
-
-const adjustColorBrightness = (hex: string, percent: number): string => {
-  try {
-    let cleanHex = hex.trim().replace('#', '');
-    if (cleanHex.length === 3) {
-      cleanHex = cleanHex.split('').map(char => char + char).join('');
-    }
-    if (cleanHex.length !== 6) {
-      return hex;
-    }
-    
-    let r = parseInt(cleanHex.substring(0, 2), 16);
-    let g = parseInt(cleanHex.substring(2, 4), 16);
-    let b = parseInt(cleanHex.substring(4, 6), 16);
-    
-    if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      return hex;
-    }
-    
-    const factor = percent / 100;
-    if (percent > 0) {
-      r = Math.round(r + (255 - r) * factor);
-      g = Math.round(g + (255 - g) * factor);
-      b = Math.round(b + (255 - b) * factor);
-    } else {
-      r = Math.round(r + r * factor);
-      g = Math.round(g + g * factor);
-      b = Math.round(b + b * factor);
-    }
-    
-    const clamp = (val: number) => Math.max(0, Math.min(255, val));
-    const rHex = clamp(r).toString(16).padStart(2, '0');
-    const gHex = clamp(g).toString(16).padStart(2, '0');
-    const bHex = clamp(b).toString(16).padStart(2, '0');
-    
-    return `#${rHex}${gHex}${bHex}`;
-  } catch (e) {
-    return hex;
-  }
-};
+import {
+  adjustColorBrightness,
+  generateBrandPalette,
+  applyBrandPaletteToDocument,
+  renderBrandInlineStyle
+} from './services/themeEngine';
 
 const USERS: Record<UserRole, User> = {
   admin: {
@@ -375,40 +341,7 @@ export default function App() {
     }
   }, []);
 
-  // --- DYNAMIC BRAND PRIMARY COLOR LOADER HOOK ---
-  React.useEffect(() => {
-    const applyBrandColor = () => {
-      const savedColor = localStorage.getItem('saas_primary_color') || '#673de6';
-      
-      const shades = {
-        50: adjustColorBrightness(savedColor, 95),
-        100: adjustColorBrightness(savedColor, 85),
-        200: adjustColorBrightness(savedColor, 70),
-        300: adjustColorBrightness(savedColor, 50),
-        400: adjustColorBrightness(savedColor, 25),
-        500: savedColor,
-        600: adjustColorBrightness(savedColor, -15),
-        700: adjustColorBrightness(savedColor, -30),
-        800: adjustColorBrightness(savedColor, -45),
-        900: adjustColorBrightness(savedColor, -60),
-      };
-      
-      Object.entries(shades).forEach(([shade, hex]) => {
-        document.documentElement.style.setProperty(`--brand-${shade}`, hex);
-      });
-    };
-
-    applyBrandColor();
-    
-    window.addEventListener('storage', applyBrandColor);
-    // Custom event listener for instant single-window updates
-    window.addEventListener('brand-color-changed', applyBrandColor);
-    
-    return () => {
-      window.removeEventListener('storage', applyBrandColor);
-      window.removeEventListener('brand-color-changed', applyBrandColor);
-    };
-  }, []);
+  // --- DYNAMIC BRAND PRIMARY COLOR LOADER IS MANAGED BY UNIFIED THEME HOOK BELOW ---
 
   // --- OFFLINE SYNC STATE & PROCESSORS ---
   const [isOnlineState, setIsOnlineState] = useState(navigator.onLine);
@@ -733,8 +666,24 @@ export default function App() {
   // Call browser default language detector on first load
   useBrowserLanguageDetector(language, setLanguage);
 
-  const isDarkMode = false;
-  const setIsDarkMode = (_val?: any) => {};
+  // --- GLOBAL UI THEME STATE (LIGHT / DARK) ---
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const savedTheme = localStorage.getItem('fleet_theme') || localStorage.getItem('theme');
+      if (savedTheme === 'dark') return true;
+      if (savedTheme === 'light') return false;
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+    } catch (e) {
+      console.warn('Dark mode init error', e);
+    }
+    return false;
+  });
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => !prev);
+  };
 
   const sanitizeBrandName = (name: string | null | undefined): string => {
     if (!name || name === 'شعبة صيانة الآليات والمعدات التخصصية' || name.includes('شعبة صيانة') || name.includes('المعدات التخصصية') || name.toLowerCase().includes('axoventra')) {
@@ -770,8 +719,79 @@ export default function App() {
     return localStorage.getItem('saas_brand_logo') || '';
   });
   const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => {
-    return localStorage.getItem('saas_brand_primary_color') || '#6d28d9';
+    return localStorage.getItem('saas_brand_primary_color') || localStorage.getItem('saas_primary_color') || '#673de6';
   });
+
+  // --- THEME & BRANDING HARMONIZATION EFFECT ---
+  // Synchronizes the .dark class on the root HTML element and recalculates
+  // all custom brand color shades so dark mode maintains optimal contrast and vibrance.
+  useEffect(() => {
+    try {
+      const themeVal = isDarkMode ? 'dark' : 'light';
+      localStorage.setItem('fleet_theme', themeVal);
+      localStorage.setItem('theme', themeVal);
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.style.colorScheme = 'dark';
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.style.colorScheme = 'light';
+      }
+      window.dispatchEvent(new CustomEvent('theme-changed', { detail: { isDarkMode } }));
+    } catch (e) {
+      console.warn('Theme update error', e);
+    }
+  }, [isDarkMode]);
+
+  // Recalculate and apply brand palette on theme change or brand color change
+  useEffect(() => {
+    const applyCurrentPalette = () => {
+      const activeColor = localStorage.getItem('saas_brand_primary_color') || 
+                          localStorage.getItem('saas_primary_color') || 
+                          brandPrimaryColor || 
+                          '#673de6';
+      const palette = generateBrandPalette(activeColor, isDarkMode);
+      applyBrandPaletteToDocument(palette);
+    };
+
+    applyCurrentPalette();
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'saas_brand_primary_color' || e.key === 'saas_primary_color') {
+        const newColor = localStorage.getItem('saas_brand_primary_color') || localStorage.getItem('saas_primary_color') || brandPrimaryColor;
+        setBrandPrimaryColor(newColor);
+        applyBrandPaletteToDocument(generateBrandPalette(newColor, isDarkMode));
+      }
+      if (e.key === 'fleet_theme' || e.key === 'theme') {
+        const newTheme = localStorage.getItem('fleet_theme') || localStorage.getItem('theme');
+        setIsDarkMode(newTheme === 'dark');
+      }
+    };
+
+    const handleBrandEvent = (e: any) => {
+      const newColor = e.detail?.color || localStorage.getItem('saas_brand_primary_color') || localStorage.getItem('saas_primary_color') || brandPrimaryColor;
+      setBrandPrimaryColor(newColor);
+      applyBrandPaletteToDocument(generateBrandPalette(newColor, isDarkMode));
+    };
+
+    const handleThemeEvent = (e: any) => {
+      if (typeof e.detail?.isDarkMode === 'boolean') {
+        setIsDarkMode(e.detail.isDarkMode);
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('brand-color-changed', handleBrandEvent);
+    window.addEventListener('theme-changed', handleThemeEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('brand-color-changed', handleBrandEvent);
+      window.removeEventListener('theme-changed', handleThemeEvent);
+    };
+  }, [isDarkMode, brandPrimaryColor]);
 
   const getPendingDataVolumeMB = (): number => {
     let totalChars = 0;
@@ -1308,21 +1328,7 @@ export default function App() {
       case 'marketing-portal':
         return (
           <>
-            <style>{`
-              :root, .dark, body, html {
-                --color-brand-blue-50: ${adjustColorBrightness(brandPrimaryColor, 92)} !important;
-                --color-brand-blue-100: ${adjustColorBrightness(brandPrimaryColor, 80)} !important;
-                --color-brand-blue-250: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-                --color-brand-blue-200: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-                --color-brand-blue-300: ${adjustColorBrightness(brandPrimaryColor, 40)} !important;
-                --color-brand-blue-400: ${adjustColorBrightness(brandPrimaryColor, 20)} !important;
-                --color-brand-blue-500: ${brandPrimaryColor} !important;
-                --color-brand-blue-600: ${adjustColorBrightness(brandPrimaryColor, -15)} !important;
-                --color-brand-blue-700: ${adjustColorBrightness(brandPrimaryColor, -30)} !important;
-                --color-brand-blue-800: ${adjustColorBrightness(brandPrimaryColor, -45)} !important;
-                --color-brand-blue-900: ${adjustColorBrightness(brandPrimaryColor, -60)} !important;
-              }
-            `}</style>
+            <style>{renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}</style>
             <MarketingLandingPage 
               onNavigateToSaaS={() => setActiveTab('dashboard')}
               brandPrimaryColor={brandPrimaryColor}
@@ -1383,21 +1389,7 @@ export default function App() {
   if (portalMode === 'super-admin') {
     return (
       <>
-        <style>{`
-          :root, .dark, body, html {
-            --color-brand-blue-50: ${adjustColorBrightness(brandPrimaryColor, 92)} !important;
-            --color-brand-blue-100: ${adjustColorBrightness(brandPrimaryColor, 80)} !important;
-            --color-brand-blue-250: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-            --color-brand-blue-200: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-            --color-brand-blue-300: ${adjustColorBrightness(brandPrimaryColor, 40)} !important;
-            --color-brand-blue-400: ${adjustColorBrightness(brandPrimaryColor, 20)} !important;
-            --color-brand-blue-500: ${brandPrimaryColor} !important;
-            --color-brand-blue-600: ${adjustColorBrightness(brandPrimaryColor, -15)} !important;
-            --color-brand-blue-700: ${adjustColorBrightness(brandPrimaryColor, -30)} !important;
-            --color-brand-blue-800: ${adjustColorBrightness(brandPrimaryColor, -45)} !important;
-            --color-brand-blue-900: ${adjustColorBrightness(brandPrimaryColor, -60)} !important;
-          }
-        `}</style>
+        <style>{renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}</style>
         <SuperAdminPortal
           brandPrimaryColor={brandPrimaryColor}
           setBrandPrimaryColor={setBrandPrimaryColor}
@@ -1425,21 +1417,7 @@ export default function App() {
   if (portalMode === 'marketing') {
     return (
       <>
-        <style>{`
-          :root, .dark, body, html {
-            --color-brand-blue-50: ${adjustColorBrightness(brandPrimaryColor, 92)} !important;
-            --color-brand-blue-100: ${adjustColorBrightness(brandPrimaryColor, 80)} !important;
-            --color-brand-blue-250: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-            --color-brand-blue-200: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-            --color-brand-blue-300: ${adjustColorBrightness(brandPrimaryColor, 40)} !important;
-            --color-brand-blue-400: ${adjustColorBrightness(brandPrimaryColor, 20)} !important;
-            --color-brand-blue-500: ${brandPrimaryColor} !important;
-            --color-brand-blue-600: ${adjustColorBrightness(brandPrimaryColor, -15)} !important;
-            --color-brand-blue-700: ${adjustColorBrightness(brandPrimaryColor, -30)} !important;
-            --color-brand-blue-800: ${adjustColorBrightness(brandPrimaryColor, -45)} !important;
-            --color-brand-blue-900: ${adjustColorBrightness(brandPrimaryColor, -60)} !important;
-          }
-        `}</style>
+        <style>{renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}</style>
         <MarketingLandingPage 
           onNavigateToSaaS={(autoLogin = true) => {
             setPortalMode('saas');
@@ -1472,19 +1450,7 @@ export default function App() {
         className="min-h-screen flex items-center justify-center bg-[#f4f6fa] dark:bg-[#080b11] text-slate-950 dark:text-slate-100 p-4 transition-colors duration-500 overflow-y-auto select-none"
       >
         <style>{`
-          :root, .dark, body, html {
-            --color-brand-blue-50: ${adjustColorBrightness(brandPrimaryColor, 92)} !important;
-            --color-brand-blue-100: ${adjustColorBrightness(brandPrimaryColor, 80)} !important;
-            --color-brand-blue-250: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-            --color-brand-blue-200: ${adjustColorBrightness(brandPrimaryColor, 60)} !important;
-            --color-brand-blue-300: ${adjustColorBrightness(brandPrimaryColor, 40)} !important;
-            --color-brand-blue-400: ${adjustColorBrightness(brandPrimaryColor, 20)} !important;
-            --color-brand-blue-500: ${brandPrimaryColor} !important;
-            --color-brand-blue-600: ${adjustColorBrightness(brandPrimaryColor, -15)} !important;
-            --color-brand-blue-700: ${adjustColorBrightness(brandPrimaryColor, -30)} !important;
-            --color-brand-blue-800: ${adjustColorBrightness(brandPrimaryColor, -45)} !important;
-            --color-brand-blue-900: ${adjustColorBrightness(brandPrimaryColor, -60)} !important;
-          }
+          ${renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}
           @keyframes scanBeam {
             0% { top: 10%; opacity: 0.2; }
             50% { top: 90%; opacity: 1; }
@@ -3280,32 +3246,35 @@ export default function App() {
   }
 
   return (
-    <AppLayout 
-      activeTab={activeTab} 
-      setActiveTab={setActiveTab}
-      isAiEnabled={isAiEnabled}
-      setIsAiEnabled={setIsAiEnabled}
-      user={currentUser}
-      onNavigateToMarketing={() => {
-        setPortalMode('marketing');
-        localStorage.setItem('saas_portal_mode', 'marketing');
-      }}
-      onRoleChange={(role) => {
-        const u = USERS[role];
-        setCurrentUser(u);
-        saveCurrentUserToStorage(u);
-      }}
-      isDarkMode={isDarkMode}
-      toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      onLogout={handleLogout}
-      onUserUpdate={(updatedUser) => {
-        setCurrentUser(updatedUser);
-        saveCurrentUserToStorage(updatedUser);
-      }}
-    >
-      {renderContent()}
-      {renderOfflineSyncBanner()}
-      {renderMandatorySyncPrompt()}
-    </AppLayout>
+    <>
+      <style>{renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}</style>
+      <AppLayout 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab}
+        isAiEnabled={isAiEnabled}
+        setIsAiEnabled={setIsAiEnabled}
+        user={currentUser}
+        onNavigateToMarketing={() => {
+          setPortalMode('marketing');
+          localStorage.setItem('saas_portal_mode', 'marketing');
+        }}
+        onRoleChange={(role) => {
+          const u = USERS[role];
+          setCurrentUser(u);
+          saveCurrentUserToStorage(u);
+        }}
+        isDarkMode={isDarkMode}
+        toggleDarkMode={toggleDarkMode}
+        onLogout={handleLogout}
+        onUserUpdate={(updatedUser) => {
+          setCurrentUser(updatedUser);
+          saveCurrentUserToStorage(updatedUser);
+        }}
+      >
+        {renderContent()}
+        {renderOfflineSyncBanner()}
+        {renderMandatorySyncPrompt()}
+      </AppLayout>
+    </>
   );
 }

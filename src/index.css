@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -291,37 +292,42 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
   border-color: #1e293b !important;
 }
 
-/* Glowing tech interactive items */
+/* Glowing tech interactive items with dynamic brand variables */
 .dark .bg-brand-blue-500/10,
 .dark .dark\:bg-brand-blue-500\/20 {
-  background-color: rgba(103, 61, 230, 0.15) !important;
-  border-color: rgba(103, 61, 230, 0.3) !important;
+  background-color: var(--brand-subtle-bg, rgba(103, 61, 230, 0.15)) !important;
+  border-color: var(--brand-subtle-border, rgba(103, 61, 230, 0.3)) !important;
 }
 
 .dark .text-brand-blue-800,
 .dark .dark\:text-\[\#34d399\],
 .dark .text-brand-blue-700,
 .dark .dark\:text-slate-300:hover {
-  color: #c4b5fd !important;
+  color: var(--brand-800, #c4b5fd) !important;
 }
 
-/* Sidebar navigation active state */
+/* Sidebar navigation active state with dynamic brand color gradient */
 .dark .bg-brand-blue-600 {
-  background: linear-gradient(135deg, #673de6 0%, #5429cf 100%) !important;
-  box-shadow: 0 4px 14px rgba(103, 61, 230, 0.3) !important;
+  background: linear-gradient(135deg, var(--brand-500, #673de6) 0%, var(--brand-600, #5429cf) 100%) !important;
+  box-shadow: 0 4px 14px var(--brand-glow, rgba(103, 61, 230, 0.3)) !important;
 }
 
-/* Cohesive premium tech-purple buttons */
-.dark .bg-brand-blue-50,
+/* Subtly tinted cards/badges in dark mode (prevent blinding white backgrounds) */
+.dark .bg-brand-blue-50 {
+  background-color: var(--brand-subtle-bg, rgba(103, 61, 230, 0.14)) !important;
+  border-color: var(--brand-subtle-border, rgba(103, 61, 230, 0.28)) !important;
+  color: var(--brand-800, #e0d7ff) !important;
+}
+
+/* Cohesive premium tech buttons adapting to custom branding */
 .dark .bg-brand-blue-500,
 .dark .dark\:bg-brand-blue-500,
-.dark .bg-brand-blue-600,
 .dark .bg-brand-blue-700,
 .dark .bg-brand-blue-800 {
-  background: linear-gradient(135deg, #673de6 0%, #5429cf 100%) !important;
+  background: linear-gradient(135deg, var(--brand-500, #673de6) 0%, var(--brand-600, #5429cf) 100%) !important;
   border-color: #1e293b !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(103, 61, 230, 0.25) !important;
+  box-shadow: 0 4px 14px var(--brand-glow, rgba(103, 61, 230, 0.25)) !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
@@ -330,7 +336,7 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 .dark .bg-brand-blue-600:hover,
 .dark .bg-brand-blue-700:hover {
   opacity: 0.95;
-  box-shadow: 0 6px 18px rgba(103, 61, 230, 0.4) !important;
+  box-shadow: 0 6px 18px var(--brand-glow, rgba(103, 61, 230, 0.4)) !important;
   transform: translateY(-0.5px);
 }
 
