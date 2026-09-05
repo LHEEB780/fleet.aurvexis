@@ -2635,8 +2635,12 @@ Regarding: "${text}", live data metrics match our general parameters:
           </div>
 
           {/* Contact Name & Live Status Subtitle */}
-          <div className={`leading-tight min-w-0 ${isRtl ? 'text-right' : 'text-left'}`}>
-            <h3 className="text-sm md:text-base font-black text-white drop-shadow-xs truncate flex items-center gap-1.5">
+          <div 
+            className={`leading-tight min-w-0 cursor-pointer group ${isRtl ? 'text-right' : 'text-left'}`}
+            onClick={() => setIsAgentGridModalOpen(true)}
+            title={language === 'ar' ? 'انقر لعرض وتغيير وكلاء الذكاء الاصطناعي' : 'Click to view & switch AI agents'}
+          >
+            <h3 className="text-sm md:text-base font-black text-white drop-shadow-xs truncate flex items-center gap-1.5 group-hover:text-violet-200 transition-colors">
               <span>{language === 'ar' ? activeAgent.nameAr : activeAgent.nameEn}</span>
             </h3>
             <p className="text-[11px] text-white/90 font-medium truncate flex items-center gap-1 mt-0.5">
@@ -2654,31 +2658,8 @@ Regarding: "${text}", live data metrics match our general parameters:
           </div>
         </div>
 
-        {/* Center / Right: Wrench/Sparkles Switcher Pill + Grid Button + Actions as in Screenshot 2 */}
+        {/* Center / Right: Grid Button + Actions as in Screenshot 2 */}
         <div className={`flex items-center gap-1.5 shrink-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
-          {/* Quick Toggle Pill: All 6 AI Agents */}
-          <div className="flex items-center bg-black/50 p-1 rounded-2xl border border-white/20 backdrop-blur-md shadow-inner gap-1 overflow-x-auto max-w-[210px] sm:max-w-none scrollbar-none">
-            {AI_AGENTS_CONFIG.map(ag => {
-              const isSelected = selectedAgentId === ag.id;
-              const agTheme = AGENT_THEME_MAP[ag.id] || AGENT_THEME_MAP['project-manager'];
-              return (
-                <button
-                  key={ag.id}
-                  type="button"
-                  onClick={() => handleSelectAgent(ag.id)}
-                  className={`p-1.5 rounded-xl transition-all cursor-pointer shrink-0 ${
-                    isSelected
-                      ? `${agTheme.avatarGradient} text-white shadow-sm ring-1.5 ring-white/60 scale-105`
-                      : 'text-white/70 hover:text-white hover:bg-white/15'
-                  }`}
-                  title={language === 'ar' ? ag.nameAr : ag.nameEn}
-                >
-                  {renderAgentVectorIcon(ag.id, 16, 'text-white')}
-                </button>
-              );
-            })}
-          </div>
-
           {/* Grid Button to open Full 6-Agent Directory Modal as in Screenshot 2 */}
           <button
             type="button"
