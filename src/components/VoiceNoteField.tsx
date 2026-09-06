@@ -32,24 +32,63 @@ export default function VoiceNoteField({
     if (!SpeechRecognition) {
       setShowSupportWarn(true);
     }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
+    };
   }, []);
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (disabled) return;
     setErrorStatus(null);
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setErrorStatus('نظام التشغيل أو المتصفح الحالي لا يدعم التعرف المباشر على الصوت.');
+      setTimeout(() => setErrorStatus(null), 5000);
       return;
     }
 
     if (isListening) {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
       }
       setIsListening(false);
     } else {
+      // Proactively request / verify microphone permission if supported
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Stop stream tracks immediately so the microphone is released for speech recognition
+          stream.getTracks().forEach(t => t.stop());
+        } catch (micErr: any) {
+          if (micErr?.name === 'NotAllowedError' || micErr?.name === 'PermissionDeniedError') {
+            setErrorStatus('تم رفض إذن الميكروفون. يرجى تفعيل صلاحية الميكروفون من إعدادات المتصفح.');
+            setIsListening(false);
+            setTimeout(() => setErrorStatus(null), 5000);
+            return;
+          }
+          if (micErr?.name === 'NotFoundError' || micErr?.name === 'DevicesNotFoundError') {
+            setErrorStatus('لم يتم العثور على ميكروفون متصل بالجهاز.');
+            setIsListening(false);
+            setTimeout(() => setErrorStatus(null), 5000);
+            return;
+          }
+        }
+      }
+
       try {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
@@ -80,24 +119,39 @@ export default function VoiceNoteField({
         };
 
         recognition.onerror = (event: any) => {
-          console.error('Speech recognition error', event);
-          if (event.error === 'not-allowed') {
-            setErrorStatus('تم رفض الوصول للميكروفون. يرجى تفعيل الصلاحية من قفل الأمان بالمتصفح.');
-          } else {
-            setErrorStatus(`خطأ في التعرف: ${event.error}`);
+          const errCode = event?.error || 'unknown';
+
+          // Benign events: silence timeout or intentional stop
+          if (errCode === 'no-speech' || errCode === 'aborted') {
+            setIsListening(false);
+            return;
           }
+
+          if (errCode === 'not-allowed' || errCode === 'service-not-allowed') {
+            setErrorStatus('تم رفض إذن الميكروفون. يرجى تفعيل الصلاحية من قفل الأمان بالمتصفح.');
+          } else if (errCode === 'audio-capture') {
+            setErrorStatus('تعذر التقاط الصوت. يرجى التأكد من توصيل الميكروفون.');
+          } else if (errCode === 'network') {
+            setErrorStatus('تعذر الاتصال بخدمة التعرف الصوتي (تحقق من اتصال الإنترنت).');
+          } else {
+            setErrorStatus(`توقف الاستماع الصوتي (${errCode})`);
+          }
+
           setIsListening(false);
+          setTimeout(() => setErrorStatus(null), 5000);
         };
 
         recognition.onend = () => {
           setIsListening(false);
+          recognitionRef.current = null;
         };
 
         recognitionRef.current = recognition;
         recognition.start();
       } catch (err: any) {
-        setErrorStatus(`عرقل عملية التشغيل: ${err.message || err}`);
+        setErrorStatus(`تعذر بدء التسجيل الصوتي: ${err.message || err}`);
         setIsListening(false);
+        setTimeout(() => setErrorStatus(null), 5000);
       }
     }
   };

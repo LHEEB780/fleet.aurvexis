@@ -311,7 +311,7 @@ export default function MaintenanceBot({
   };
 
   // Speech to Text / Voice Recognition handler
-  const toggleListening = () => {
+  const toggleListening = async () => {
     if (isLoading) return;
     setVoiceNotice(null);
 
@@ -331,9 +331,33 @@ export default function MaintenanceBot({
         } catch {
           // ignore
         }
+        recognitionRef.current = null;
       }
       setIsListening(false);
     } else {
+      // Proactively request / verify microphone permission if supported
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(t => t.stop());
+        } catch (micErr: any) {
+          if (micErr?.name === 'NotAllowedError' || micErr?.name === 'PermissionDeniedError') {
+            setVoiceNotice(language === 'ar' 
+              ? '⚠️ يرجى السماح بصلاحية الميكروفون من إعدادات المتصفح.' 
+              : '⚠️ Please allow microphone permission in your browser.');
+            setIsListening(false);
+            setTimeout(() => setVoiceNotice(null), 4000);
+            return;
+          }
+          if (micErr?.name === 'NotFoundError' || micErr?.name === 'DevicesNotFoundError') {
+            setVoiceNotice(language === 'ar' ? '⚠️ لم يتم العثور على ميكروفون متصل.' : '⚠️ No microphone found.');
+            setIsListening(false);
+            setTimeout(() => setVoiceNotice(null), 4000);
+            return;
+          }
+        }
+      }
+
       try {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
@@ -363,22 +387,35 @@ export default function MaintenanceBot({
         };
 
         recognition.onerror = (event: any) => {
-          console.warn('Speech recognition error', event);
-          if (event.error === 'not-allowed') {
+          const errCode = event?.error || 'unknown';
+
+          // Benign events: silence timeout or intentional stop
+          if (errCode === 'no-speech' || errCode === 'aborted') {
+            setIsListening(false);
+            return;
+          }
+
+          if (errCode === 'not-allowed' || errCode === 'service-not-allowed') {
             setVoiceNotice(language === 'ar' 
               ? '⚠️ يرجى السماح بصلاحية الميكروفون من إعدادات المتصفح.' 
               : '⚠️ Please allow microphone permission in your browser.');
+          } else if (errCode === 'audio-capture') {
+            setVoiceNotice(language === 'ar' ? '⚠️ تعذر التقاط الصوت من الميكروفون.' : '⚠️ Audio capture failed.');
+          } else if (errCode === 'network') {
+            setVoiceNotice(language === 'ar' ? '⚠️ تعذر الاتصال بخدمة التعرف الصوتي.' : '⚠️ Voice service network error.');
           } else {
             setVoiceNotice(language === 'ar' 
-              ? `⚠️ خطأ في التسجيل الصوتي (${event.error})` 
-              : `⚠️ Voice error (${event.error})`);
+              ? `⚠️ توقف الاستماع الصوتي (${errCode})` 
+              : `⚠️ Voice recording stopped (${errCode})`);
           }
+
           setIsListening(false);
           setTimeout(() => setVoiceNotice(null), 4000);
         };
 
         recognition.onend = () => {
           setIsListening(false);
+          recognitionRef.current = null;
         };
 
         recognitionRef.current = recognition;

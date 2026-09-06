@@ -2356,13 +2356,17 @@ Regarding: "${text}", live data metrics match our general parameters:
         };
 
         recognition.onerror = (err: any) => {
-          console.warn('Speech rec error in live recording:', err);
+          const errCode = err?.error;
+          if (errCode === 'no-speech' || errCode === 'aborted') {
+            return;
+          }
+          // Silently fall back to MediaRecorder audio recording without noisy warnings
         };
 
         recognition.start();
         speechRecRef.current = recognition;
-      } catch (e) {
-        console.warn('Speech recognition initiation error:', e);
+      } catch {
+        // Silently continue to MediaStream Audio Recording
       }
     }
 

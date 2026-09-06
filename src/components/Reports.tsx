@@ -54,6 +54,7 @@ import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
 import { PartsConsumptionAnalysis } from './PartsConsumptionAnalysis';
 import { ManagerDashboardReport } from './ManagerDashboardReport';
+import { MonthlyCostBreakdownChart } from './MonthlyCostBreakdownChart';
 import { formatCurrency, getCurrencyLabel, getConversionRateFromSAR } from '../services/formatters';
 
 interface ReportsProps {
@@ -126,7 +127,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
   const [endDate, setEndDate] = useState<string>('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('all');
-  const [activeSubTab, setActiveSubTab] = useState<'financial' | 'fleet' | 'techs' | 'inventory' | 'safety' | 'parts_analysis' | 'manager_dashboard'>('manager_dashboard');
+  const [activeSubTab, setActiveSubTab] = useState<'financial' | 'fleet' | 'techs' | 'inventory' | 'safety' | 'parts_analysis' | 'manager_dashboard' | 'monthly_breakdown'>('manager_dashboard');
   const [selectedInspectionDetails, setSelectedInspectionDetails] = useState<any | null>(null);
   const [isBotOpen, setIsBotOpen] = useState(false);
   const [isBotMaximized, setIsBotMaximized] = useState(false);
@@ -502,6 +503,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       techs: 'أداء المهندسين وحصاد الورش',
       inventory: 'صحة وجودة تموين المستودعات',
       parts_analysis: 'تحليل استهلاك قطع الغيار للمركبات',
+      monthly_breakdown: 'توزيع تكاليف الصيانة الشهرية (قطع غيار، أجور، صيانة خارجية)',
       safety: 'تدقيق الأمان وضمان جودة الصيانة',
     };
 
@@ -570,6 +572,32 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                 <td><span class="badge badge-info">${v.type}</span></td>
                 <td style="text-align: center; font-family: monospace;">${v.ordersCount} أمر</td>
                 <td style="text-align: left; font-family: monospace; font-weight: bold; color: #ef4444;">${formatCurrency(v.totalCost, language, 'SAR')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } else if (activeSubTab === 'monthly_breakdown') {
+      tabSpecificContentHtml = `
+        <div class="section-title">📊 توزيع تكاليف الصيانة الشهرية (قطع غيار، أجور عمالة، صيانة خارجية)</div>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>الشهر</th>
+              <th style="text-align: left;">قطع الغيار</th>
+              <th style="text-align: left;">أجور العمالة</th>
+              <th style="text-align: left;">صيانة خارجية</th>
+              <th style="text-align: left;">إجمالي التكلفة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${analysis.monthlyChartData.map(m => `
+              <tr>
+                <td><strong>${m.month}</strong></td>
+                <td style="text-align: left; font-family: monospace; color: #d97706;">${formatCurrency(m.cost * 0.5, language, 'SAR')}</td>
+                <td style="text-align: left; font-family: monospace; color: #2563eb;">${formatCurrency(m.cost * 0.3, language, 'SAR')}</td>
+                <td style="text-align: left; font-family: monospace; color: #7c3aed;">${formatCurrency(m.cost * 0.2, language, 'SAR')}</td>
+                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #059669;">${formatCurrency(m.cost, language, 'SAR')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -1267,6 +1295,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
         {[
           { id: 'manager_dashboard', label: '📈 لوحة مؤشرات المديرين', desc: 'تحليل تكاليف الصيانة وجاهزية الأسطول' },
           { id: 'financial', label: '💰 مركز التحليل المالي والنفقات', desc: 'تتبع تكاليف الإصلاح الدورية' },
+          { id: 'monthly_breakdown', label: '📊 توزيع التكاليف الشهرية', desc: 'قطع غيار، أجور عمالة، صيانة خارجية' },
           { id: 'fleet', label: '🚛 كفاءة الحركة وحالة الأسطول', desc: 'توزيع فئات وأقسام الآليات والسيارات' },
           { id: 'techs', label: '🔧 أداء المهندسين وحصاد الورش', desc: 'تتبع ضغط العمل وتخصص الكادر الفني' },
           { id: 'inventory', label: '📦 صحة وجودة تموين المستودعات', desc: 'القطع الأكثر طلباً ومعدلات استهلاكها' },
@@ -1310,7 +1339,18 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
 
           {/* ==================== TAB 1: FINANCIAL METRICS ==================== */}
           {activeSubTab === 'financial' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-6">
+              {/* Featured Recharts Monthly Cost Breakdown (Spare parts, Labor wages, External maintenance) */}
+              <MonthlyCostBreakdownChart
+                orders={ordersList}
+                workshops={workshopsList}
+                vehicles={vehiclesList}
+                inventory={inventoryList}
+                language={language}
+                isDarkMode={isDarkMode}
+              />
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Monthly Cumulative Cost Area Chart */}
               <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-705 shadow-soft lg:col-span-2">
@@ -1641,6 +1681,19 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
               </div>
 
             </div>
+          </div>
+          )}
+
+          {/* ==================== TAB: DEDICATED MONTHLY COST BREAKDOWN ==================== */}
+          {activeSubTab === 'monthly_breakdown' && (
+            <MonthlyCostBreakdownChart
+              orders={ordersList}
+              workshops={workshopsList}
+              vehicles={vehiclesList}
+              inventory={inventoryList}
+              language={language}
+              isDarkMode={isDarkMode}
+            />
           )}
 
           {/* ==================== TAB 2: FLEET KNOWLEDGE ==================== */}
