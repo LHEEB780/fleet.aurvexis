@@ -36,6 +36,7 @@ import {
   applyBrandPaletteToDocument,
   renderBrandInlineStyle
 } from './services/themeEngine';
+import { sanitizeEntireLocalStorage } from './utils/storage';
 
 const USERS: Record<UserRole, User> = {
   admin: {
@@ -721,6 +722,11 @@ export default function App() {
   const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => {
     return localStorage.getItem('saas_brand_primary_color') || localStorage.getItem('saas_primary_color') || '#673de6';
   });
+
+  // Proactively prevent QuotaExceededError by pruning stale caches and heavy base64 images
+  useEffect(() => {
+    sanitizeEntireLocalStorage();
+  }, []);
 
   // --- THEME & BRANDING HARMONIZATION EFFECT ---
   // Synchronizes the .dark class on the root HTML element and recalculates

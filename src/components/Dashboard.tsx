@@ -90,6 +90,7 @@ import {
 import SmartDiagnostic from './SmartDiagnostic';
 import VoiceNoteField from './VoiceNoteField';
 import TechnicalInspectionChecklist from './TechnicalInspectionChecklist';
+import { safeSetItem } from '../utils/storage';
 
 interface StatCardProps {
   label: string;
@@ -3381,7 +3382,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                                  return invItem;
                                                });
                                                setInventory(updatedInventory);
-                                               localStorage.setItem('fleet_inventory_v2', JSON.stringify(updatedInventory));
+                                               safeSetItem('fleet_inventory_v2', JSON.stringify(updatedInventory));
 
                                                triggerToast(language === 'ar' ? `تم طلب وصرف قطعة ${item.name} بنجاح خصماً من المستودع!` : `Part ${item.name} requested and issued successfully from inventory!`);
                                                e.target.value = '';

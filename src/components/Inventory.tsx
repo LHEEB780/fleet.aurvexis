@@ -35,13 +35,25 @@ import {
   Activity,
   Info,
   Camera,
-  Upload
+  Upload,
+  QrCode,
+  Copy,
+  CheckCheck,
+  ScanLine,
+  Barcode as BarcodeIcon
 } from 'lucide-react';
 import { InventoryItem, User } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
 import { formatCurrency } from '../services/formatters';
+import { 
+  safeSetItem, 
+  safeGetItem, 
+  safeRemoveItem, 
+  compressImage, 
+  sanitizeEntireLocalStorage 
+} from '../utils/storage';
 
 const SYSTEM_ANCHOR_DATE = '2026-05-19';
 
@@ -712,7 +724,8 @@ export default function Inventory({ user }: InventoryProps) {
   const { language } = useLanguage();
   // Inventory state
   const [items, setItems] = useState<InventoryItem[]>(() => {
-    const saved = localStorage.getItem('fleet_inventory_v2');
+    sanitizeEntireLocalStorage();
+    const saved = safeGetItem('fleet_inventory_v2');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -722,7 +735,12 @@ export default function Inventory({ user }: InventoryProps) {
           for (const item of parsed) {
             if (item && item.id && !seenIds.has(item.id)) {
               seenIds.add(item.id);
-              uniqueItems.push(item);
+              // Clean any bloated base64 images from legacy items to prevent quota errors
+              const cleanItem = { ...item };
+              if (typeof cleanItem.image === 'string' && cleanItem.image.startsWith('data:image/') && cleanItem.image.length > 30000) {
+                cleanItem.image = '';
+              }
+              uniqueItems.push(cleanItem);
             }
           }
           return uniqueItems;
@@ -735,7 +753,7 @@ export default function Inventory({ user }: InventoryProps) {
 
   // Transactions state
   const [transactions, setTransactions] = useState<InventoryTransaction[]>(() => {
-    const saved = localStorage.getItem('fleet_inventory_tx_v2');
+    const saved = safeGetItem('fleet_inventory_tx_v2');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -744,13 +762,15 @@ export default function Inventory({ user }: InventoryProps) {
     return initialTransactions;
   });
 
-  // Persist inventory state
+  // Persist inventory state safely without crashing React
   useEffect(() => {
-    localStorage.setItem('fleet_inventory_v2', JSON.stringify(items));
+    safeSetItem('fleet_inventory_v2', JSON.stringify(items));
   }, [items]);
 
   useEffect(() => {
-    localStorage.setItem('fleet_inventory_tx_v2', JSON.stringify(transactions));
+    // Keep transactions to max 60 to prevent storage bloat
+    const trimmed = transactions.length > 60 ? transactions.slice(-60) : transactions;
+    safeSetItem('fleet_inventory_tx_v2', JSON.stringify(trimmed));
   }, [transactions]);
 
   useEffect(() => {
@@ -772,11 +792,11 @@ export default function Inventory({ user }: InventoryProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [stockStatusFilter, setStockStatusFilter] = useState<'all' | 'low' | 'healthy'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    return (localStorage.getItem('fleet_inventory_view_mode') as 'grid' | 'list') || 'grid';
+    return (safeGetItem('fleet_inventory_view_mode') as 'grid' | 'list') || 'grid';
   });
 
   useEffect(() => {
-    localStorage.setItem('fleet_inventory_view_mode', viewMode);
+    safeSetItem('fleet_inventory_view_mode', viewMode);
   }, [viewMode]);
   
   // Modals & Panels
@@ -963,25 +983,32 @@ export default function Inventory({ user }: InventoryProps) {
     }
   };
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (file.size > 4 * 1024 * 1024) {
-      alert(language === 'ar' ? 'حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 4 ميجابايت.' : 'Image is too large. Please select a file smaller than 4MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
+    try {
+      // Compress uploaded image client-side to thumbnail (max 320x320, 0.65 quality)
+      // This reduces 4MB camera files down to ~15KB-25KB, preventing quota issues completely!
+      const compressed = await compressImage(file, 320, 320, 0.65);
       if (isEdit) {
-        setEditItemState(prev => ({ ...prev, image: base64String }));
+        setEditItemState(prev => ({ ...prev, image: compressed }));
       } else {
-        setNewItem(prev => ({ ...prev, image: base64String }));
+        setNewItem(prev => ({ ...prev, image: compressed }));
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn("Failed to compress image, using fallback", err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        if (isEdit) {
+          setEditItemState(prev => ({ ...prev, image: base64String }));
+        } else {
+          setNewItem(prev => ({ ...prev, image: base64String }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [selectedItemForTx, setSelectedItemForTx] = useState<InventoryItem | null>(null);
@@ -1014,7 +1041,7 @@ export default function Inventory({ user }: InventoryProps) {
   const [auditCounts, setAuditCounts] = useState<Record<string, { count: number; note: string }>>({});
   const [auditNotes, setAuditNotes] = useState('');
   const [auditHistory, setAuditHistory] = useState<AuditRecord[]>(() => {
-    const saved = localStorage.getItem('fleet_audits_history_v2');
+    const saved = safeGetItem('fleet_audits_history_v2');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -1024,7 +1051,9 @@ export default function Inventory({ user }: InventoryProps) {
   });
 
   useEffect(() => {
-    localStorage.setItem('fleet_audits_history_v2', JSON.stringify(auditHistory));
+    // Keep max 20 audits to conserve quota
+    const trimmed = auditHistory.length > 20 ? auditHistory.slice(-20) : auditHistory;
+    safeSetItem('fleet_audits_history_v2', JSON.stringify(trimmed));
   }, [auditHistory]);
 
   const handlePostAudit = (e: React.FormEvent) => {
@@ -1067,11 +1096,7 @@ export default function Inventory({ user }: InventoryProps) {
     });
 
     if (adjustments.length === 0) {
-      alert('لا توجد أي فروقات كميات مسجلة لتسويتها حالياً. يرجى تعديل الكميات الفعلية لبعض الأصناف للتجربة.');
-      return;
-    }
-
-    if (!confirm(`هل أنت متأكد من اعتماد وترحيل فروقات الجرد لعدد (${itemsAdjustedCount}) أصناف وتعديل كميات المستودع الفعليّة فوراً بكود أمن الأستوديو؟`)) {
+      setToastMessage(language === 'ar' ? 'لا توجد أي فروقات كميات مسجلة لتسويتها حالياً.' : 'No quantity variances detected.');
       return;
     }
 
@@ -1107,7 +1132,7 @@ export default function Inventory({ user }: InventoryProps) {
     setAuditCounts({});
     setAuditNotes('');
 
-    alert('تم مطابقة جرد المستودع الدفتري بالفعلي وترحيل فروقات الكميات بنجاح!');
+    setToastMessage(language === 'ar' ? 'تم مطابقة جرد المستودع الدفتري بالفعلي وترحيل الفروقات بنجاح!' : 'Inventory audit balanced and posted successfully!');
   };
 
   // Barcode Bulk Printer States
@@ -1122,29 +1147,188 @@ export default function Inventory({ user }: InventoryProps) {
   const [labelBorder, setLabelBorder] = useState<boolean>(true); // Show border labels for cut guidelines
   const [labelSpacer, setLabelSpacer] = useState<number>(10); // Spacing in pixels between labels
 
-  // Persist Print Queue
+  // Persist Print Queue safely
   useEffect(() => {
-    localStorage.setItem('fleet_barcode_queue', JSON.stringify(printQueue));
+    safeSetItem('fleet_barcode_queue', JSON.stringify(printQueue));
   }, [printQueue]);
 
   // Helper to generate a smart barcode for empty parts
   const generateSmartPartNumber = (cat: string) => {
-    const catPrefix = {
+    const catPrefix: Record<string, string> = {
       'فلاتر': 'FLT',
       'فرامل': 'BRK',
       'إطارات': 'TIR',
       'أقراص وزيوت': 'OIL',
       'هيدروليك': 'HYD',
       'كهرباء': 'ELE',
-    }[cat] || 'PRT';
-    
-    // Generate code format: CAT-YYMMSS-RAND
+      'أخرى': 'GEN'
+    };
+    const prefix = catPrefix[cat] || 'PRT';
     const date = new Date();
     const yy = String(date.getFullYear()).slice(-2);
     const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const ss = String(date.getSeconds()).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
     const rand = Math.floor(100 + Math.random() * 900); // 3 digit random
-    return `${catPrefix}-${yy}${mm}${ss}-${rand}`;
+    return `${prefix}-${yy}${mm}${dd}-${rand}`;
+  };
+
+  const generateEanBarcode = () => {
+    let code = '628'; // Saudi GS1 prefix standard
+    for (let i = 0; i < 9; i++) {
+      code += Math.floor(Math.random() * 10);
+    }
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      sum += parseInt(code[i]) * (i % 2 === 0 ? 1 : 3);
+    }
+    const checkDigit = (10 - (sum % 10)) % 10;
+    return `${code}${checkDigit}`;
+  };
+
+  const generateSkuBarcode = () => {
+    const chars = '0123456789ABCDEF';
+    let rand = '';
+    for (let i = 0; i < 6; i++) {
+      rand += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `SKU-${rand}`;
+  };
+
+  // Sound beep feedback for barcode capture
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(950, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    } catch (e) {}
+  };
+
+  // Toast notification & quick state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [autoAddToQueueOnAdd, setAutoAddToQueueOnAdd] = useState<boolean>(true);
+  const [copiedBarcode, setCopiedBarcode] = useState<string | null>(null);
+
+  // Field Scanner State (for Add Item and Edit Item barcode input)
+  const [isFieldScannerOpen, setIsFieldScannerOpen] = useState(false);
+  const [fieldScannerTarget, setFieldScannerTarget] = useState<'add' | 'edit'>('add');
+  const [fieldCameraStream, setFieldCameraStream] = useState<MediaStream | null>(null);
+  const [fieldScannerError, setFieldScannerError] = useState<string | null>(null);
+  const fieldVideoRef = React.useRef<HTMLVideoElement>(null);
+
+  // Auto dismiss toast
+  useEffect(() => {
+    if (!toastMessage) return;
+    const t = setTimeout(() => setToastMessage(null), 3500);
+    return () => clearTimeout(t);
+  }, [toastMessage]);
+
+  // Open camera scanner for barcode inputs
+  const openFieldScanner = (target: 'add' | 'edit') => {
+    setFieldScannerTarget(target);
+    setFieldScannerError(null);
+    setIsFieldScannerOpen(true);
+  };
+
+  // Stop camera stream when closing field scanner
+  const closeFieldScanner = () => {
+    if (fieldCameraStream) {
+      fieldCameraStream.getTracks().forEach(track => track.stop());
+      setFieldCameraStream(null);
+    }
+    setIsFieldScannerOpen(false);
+    setFieldScannerError(null);
+  };
+
+  // Control camera stream for field scanner
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let detectorInterval: any = null;
+
+    if (isFieldScannerOpen) {
+      navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(s => {
+          stream = s;
+          setFieldCameraStream(s);
+          if (fieldVideoRef.current) {
+            fieldVideoRef.current.srcObject = s;
+            fieldVideoRef.current.play().catch(() => {});
+          }
+
+          // If browser has native BarcodeDetector API (e.g. Chrome on Android)
+          if ('BarcodeDetector' in window) {
+            try {
+              const detector = new (window as any).BarcodeDetector({
+                formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'qr_code', 'upc_a', 'upc_e']
+              });
+              detectorInterval = setInterval(async () => {
+                if (fieldVideoRef.current && fieldVideoRef.current.readyState >= 2) {
+                  try {
+                    const barcodes = await detector.detect(fieldVideoRef.current);
+                    if (barcodes && barcodes.length > 0) {
+                      const detected = barcodes[0].rawValue;
+                      if (detected) {
+                        handleFieldBarcodeDetected(detected);
+                      }
+                    }
+                  } catch (e) {}
+                }
+              }, 400);
+            } catch (e) {}
+          }
+        })
+        .catch(err => {
+          console.error("Camera access failed:", err);
+          setFieldScannerError(language === 'ar' 
+            ? 'تعذر تشغيل كاميرا الهاتف مباشرة. يمكنك كتابة الكود أو استخدام أزرار التوليد والمحاكاة.'
+            : 'Could not access phone camera. You can enter code or use quick barcode tools.'
+          );
+        });
+    } else {
+      if (fieldCameraStream) {
+        fieldCameraStream.getTracks().forEach(track => track.stop());
+        setFieldCameraStream(null);
+      }
+    }
+
+    return () => {
+      if (stream) stream.getTracks().forEach(track => track.stop());
+      if (detectorInterval) clearInterval(detectorInterval);
+    };
+  }, [isFieldScannerOpen]);
+
+  // Bind video element
+  useEffect(() => {
+    if (fieldVideoRef.current && fieldCameraStream) {
+      fieldVideoRef.current.srcObject = fieldCameraStream;
+    }
+  }, [fieldCameraStream, isFieldScannerOpen]);
+
+  const handleFieldBarcodeDetected = (code: string) => {
+    if (!code) return;
+    const clean = code.trim();
+    playBeep();
+    if (fieldScannerTarget === 'add') {
+      setNewItem(prev => ({ ...prev, partNumber: clean }));
+    } else {
+      setEditItemState(prev => ({ ...prev, partNumber: clean }));
+    }
+    setToastMessage(language === 'ar' ? `تم مسح الباركود بنجاح: ${clean}` : `Barcode detected: ${clean}`);
+    closeFieldScanner();
+  };
+
+  const copyToClipboard = (text: string) => {
+    if (!text) return;
+    navigator.clipboard?.writeText(text);
+    setCopiedBarcode(text);
+    setTimeout(() => setCopiedBarcode(null), 2000);
+    setToastMessage(language === 'ar' ? 'تم نسخ الباركود إلى الحافظة' : 'Barcode copied to clipboard');
   };
 
   // Add/Update individual print item in queue
@@ -1156,6 +1340,36 @@ export default function Inventory({ user }: InventoryProps) {
       }
       return [...prev, { item, copies: defaultCopies }];
     });
+  };
+
+  const handleClearPrintQueue = () => {
+    if (printQueue.length === 0) {
+      setToastMessage(language === 'ar' ? 'طابور ملصقات الباركود فارغ بالفعل' : 'Print queue is already empty');
+      return;
+    }
+    const count = printQueue.reduce((acc, q) => acc + q.copies, 0);
+    setPrintQueue([]);
+    safeRemoveItem('fleet_barcode_queue');
+    setToastMessage(
+      language === 'ar'
+        ? `تم تفريغ طابور ملصقات الباركود بنجاح (تم إزالة ${count} ملصق)`
+        : `Cleared ${count} labels from print queue`
+    );
+  };
+
+  const handleFillAllToPrintQueue = () => {
+    if (items.length === 0) {
+      setToastMessage(language === 'ar' ? 'لا توجد أصناف في المستودع' : 'No items in inventory');
+      return;
+    }
+    const toAdd = items.map(it => ({ item: it, copies: 1 }));
+    setPrintQueue(toAdd);
+    safeSetItem('fleet_barcode_queue', JSON.stringify(toAdd));
+    setToastMessage(
+      language === 'ar'
+        ? `تمت إضافة كافة أصناف المستودع (${items.length} صنف) إلى طابور الطباعة`
+        : `Added ${items.length} items to print queue`
+    );
   };
 
   // New stock item form state
@@ -1247,16 +1461,23 @@ export default function Inventory({ user }: InventoryProps) {
   // Submit main new item
   const handleAddItemSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItem.name || !newItem.partNumber || !newItem.quantity) {
-      alert('الرجاء تعبئة البيانات الأساسية للقطعة المراد تخزينها.');
+    if (!newItem.name || !newItem.name.trim()) {
+      alert(language === 'ar' ? 'الرجاء إدخال اسم الصنف بالكامل.' : 'Please enter item name.');
       return;
     }
 
+    // Auto-generate barcode if blank
+    const finalBarcode = (newItem.partNumber && newItem.partNumber.trim())
+      ? newItem.partNumber.trim()
+      : generateSmartPartNumber(newItem.category);
+
+    const initialQuantity = parseInt(newItem.quantity) || 1;
+
     const createdItem: InventoryItem = {
       id: `i-${Date.now()}`,
-      name: newItem.name,
-      partNumber: newItem.partNumber,
-      quantity: parseInt(newItem.quantity) || 0,
+      name: newItem.name.trim(),
+      partNumber: finalBarcode,
+      quantity: initialQuantity,
       minQuantity: parseInt(newItem.minQuantity) || 5,
       category: newItem.category,
       price: newItem.price ? parseFloat(newItem.price) : undefined,
@@ -1277,6 +1498,11 @@ export default function Inventory({ user }: InventoryProps) {
 
     setItems(prev => [createdItem, ...prev]);
     setIsAddModalOpen(false);
+
+    // Auto-add to barcode print queue if checked
+    if (autoAddToQueueOnAdd) {
+      addToPrintQueue(createdItem, 1);
+    }
 
     // Add entry transaction
     const newTx: InventoryTransaction = {
@@ -1312,23 +1538,31 @@ export default function Inventory({ user }: InventoryProps) {
       managerNotes: ''
     });
 
-    alert('تم توريد القطعة بنجاح إلى قاعدة بيانات المخزن وتحقيق دمج فوري.');
+    setToastMessage(
+      language === 'ar'
+        ? `تم توريد القطعة "${createdItem.name}" بنجاح (الباركود: ${createdItem.partNumber})`
+        : `Item "${createdItem.name}" registered (Barcode: ${createdItem.partNumber})`
+    );
   };
 
   // Submit item updates
   const handleEditItemSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedItemForEdit || !editItemState.name || !editItemState.partNumber) {
-      alert('الرجاء كتابة الاسم والكود التسلسلي للقطعة.');
+    if (!selectedItemForEdit || !editItemState.name) {
+      alert(language === 'ar' ? 'الرجاء كتابة اسم القطعة.' : 'Please enter item name.');
       return;
     }
+
+    const finalBarcode = (editItemState.partNumber && editItemState.partNumber.trim())
+      ? editItemState.partNumber.trim()
+      : (selectedItemForEdit.partNumber || generateSmartPartNumber(editItemState.category || 'فلاتر'));
 
     setItems(prev => prev.map(item => {
       if (item.id === selectedItemForEdit.id) {
         return {
           ...item,
           name: editItemState.name || '',
-          partNumber: editItemState.partNumber || '',
+          partNumber: finalBarcode,
           minQuantity: typeof editItemState.minQuantity === 'string' ? parseInt(editItemState.minQuantity) : editItemState.minQuantity ?? 5,
           category: editItemState.category || 'أخرى',
           price: editItemState.price !== undefined ? parseFloat(editItemState.price as any) : undefined,
@@ -1354,7 +1588,11 @@ export default function Inventory({ user }: InventoryProps) {
     setIsEditModalOpen(false);
     setSelectedItemForEdit(null);
     setEditItemState({});
-    alert('تم تعديل بيانات القطعة وحفظها بنجاح!');
+    setToastMessage(
+      language === 'ar'
+        ? `تم تعديل بيانات القطعة والباركود بنجاح!`
+        : `Item data and barcode updated successfully!`
+    );
   };
 
   // Submit Detailed Transaction Flow
@@ -1386,10 +1624,13 @@ export default function Inventory({ user }: InventoryProps) {
 
   // Delete inventory item entirely
   const handleDeleteItem = (id: string, name: string) => {
-    if (confirm(`هل أنت متأكد من رغبتك في شطب صنف ${name} من قائمة المستودعات؟`)) {
-      setItems(prev => prev.filter(item => item.id !== id));
-      alert('تم إزالة القطعة وتحديث المؤشرات الفنية للشركة.');
-    }
+    setItems(prev => prev.filter(item => item.id !== id));
+    setPrintQueue(prev => prev.filter(q => q.item.id !== id));
+    setToastMessage(
+      language === 'ar'
+        ? `تم شطب صنف "${name}" من سجلات المستودع بنجاح`
+        : `Removed item "${name}" from inventory`
+    );
   };
 
   // Export current parts and stock status report to Excel (CSV format with BOM)
@@ -1958,14 +2199,20 @@ export default function Inventory({ user }: InventoryProps) {
 
               {user.role !== 'viewer' && (
                 <button
+                  id="barcode-queue-header-btn"
                   onClick={() => setIsBulkPrintModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-purple-100 hover:text-white rounded-xl text-xs font-bold transition-all hover:scale-[1.01] active:scale-95 cursor-pointer flex-1 sm:flex-initial justify-center whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-bold transition-all hover:scale-[1.01] active:scale-95 cursor-pointer flex-1 sm:flex-initial justify-center whitespace-nowrap shadow-sm"
+                  title="فتح طابور ملصقات الباركود والطباعة الفورية"
                 >
-                  <Printer size={14} className="text-purple-300" />
-                  <span>محطة ملصقات الباركود</span>
-                  {printQueue.length > 0 && (
+                  <Printer size={14} className="text-indigo-300" />
+                  <span>{language === 'ar' ? 'طابور الباركود والطباعة' : 'Barcode Queue & Print'}</span>
+                  {printQueue.length > 0 ? (
                     <span className="mr-1 px-1.5 py-0.5 bg-rose-500 text-white font-mono text-[9px] font-black rounded-full animate-pulse">
                       {printQueue.reduce((acc, q) => acc + q.copies, 0)}
+                    </span>
+                  ) : (
+                    <span className="mr-1 px-1.5 py-0.5 bg-white/20 text-white font-mono text-[8px] rounded-full">
+                      0
                     </span>
                   )}
                 </button>
@@ -2013,7 +2260,16 @@ export default function Inventory({ user }: InventoryProps) {
 
               {user.role !== 'viewer' && (
                 <button
-                  onClick={() => setIsAddModalOpen(true)}
+                  id="add-new-item-btn"
+                  onClick={() => {
+                    if (!newItem.partNumber) {
+                      setNewItem(prev => ({
+                        ...prev,
+                        partNumber: generateSmartPartNumber(prev.category || 'فلاتر')
+                      }));
+                    }
+                    setIsAddModalOpen(true);
+                  }}
                   className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-md transition-all hover:scale-[1.02] active:scale-95 cursor-pointer flex-1 sm:flex-initial justify-center whitespace-nowrap"
                 >
                   <Plus size={14} />
@@ -2323,17 +2579,41 @@ export default function Inventory({ user }: InventoryProps) {
 
                           {/* Barcode and actions preview */}
                           <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800/80">
-                            <div className="w-1/2 p-1 bg-white rounded border border-slate-100/50 flex justify-center items-center">
+                            <div 
+                              onClick={() => {
+                                addToPrintQueue(item, 1);
+                                setIsBulkPrintModalOpen(true);
+                                setToastMessage(language === 'ar' ? `تم فتح طابور الباركود للصنف "${item.name}"` : `Opened barcode queue for "${item.name}"`);
+                              }}
+                              className="w-1/2 p-1 bg-white rounded border border-slate-200 dark:border-slate-700 hover:border-indigo-400 flex justify-center items-center cursor-pointer transition-colors shadow-2xs group"
+                              title="انقر لمعاينة ملصق الباركود وطباعته"
+                            >
                               <Barcode val={item.partNumber} height={16} showText={false} />
                             </div>
                             <button
                               type="button"
-                              onClick={() => addToPrintQueue(item, 1)}
-                              className="flex items-center justify-center gap-1 text-[8.5px] px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-black transition-all cursor-pointer"
-                              title="إضافة ملصق باركود للطباعة"
+                              onClick={() => {
+                                addToPrintQueue(item, 1);
+                                setIsBulkPrintModalOpen(true);
+                                setToastMessage(language === 'ar' ? `تمت إضافة "${item.name}" إلى طابور ملصقات الباركود بنجاح` : `Added "${item.name}" to barcode print queue`);
+                              }}
+                              className={`flex items-center justify-center gap-1 text-[8.5px] px-2 py-1 rounded-lg font-black transition-all cursor-pointer ${
+                                printQueue.some(q => q.item.id === item.id)
+                                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                                  : 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300'
+                              }`}
+                              title="فتح طابور الباركود ومعاينة الطباعة"
                             >
-                              <Printer size={9} />
+                              <Printer size={10} />
                               <span>طابور الباركود</span>
+                              {(() => {
+                                const qItem = printQueue.find(q => q.item.id === item.id);
+                                return qItem ? (
+                                  <span className="mr-0.5 px-1 py-0.2 bg-white/25 text-white text-[8px] rounded-full font-mono font-black">
+                                    {qItem.copies}
+                                  </span>
+                                ) : null;
+                              })()}
                             </button>
                           </div>
                         </div>
@@ -2548,6 +2828,33 @@ export default function Inventory({ user }: InventoryProps) {
                                 title="تعديل التفاصيل الفنية للمستودعات"
                               >
                                 <Edit3 size={11} />
+                              </button>
+
+                              {/* Barcode Queue Button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  addToPrintQueue(item, 1);
+                                  setIsBulkPrintModalOpen(true);
+                                  setToastMessage(language === 'ar' ? `تمت إضافة "${item.name}" إلى طابور ملصقات الباركود بنجاح` : `Added "${item.name}" to barcode print queue`);
+                                }}
+                                className={`p-1 px-2 rounded-lg text-[9px] font-bold cursor-pointer shrink-0 flex items-center gap-1 transition-colors ${
+                                  printQueue.some(q => q.item.id === item.id)
+                                    ? 'bg-indigo-600 text-white shadow-xs'
+                                    : 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+                                }`}
+                                title="طابور الباركود والطباعة"
+                              >
+                                <Printer size={11} />
+                                <span className="hidden sm:inline text-[8.5px]">طابور الباركود</span>
+                                {(() => {
+                                  const qItem = printQueue.find(q => q.item.id === item.id);
+                                  return qItem ? (
+                                    <span className="px-1 bg-white/25 text-white rounded-full text-[7.5px] font-mono">
+                                      {qItem.copies}
+                                    </span>
+                                  ) : null;
+                                })()}
                               </button>
 
                               {/* quick decrement */}
@@ -3469,40 +3776,19 @@ export default function Inventory({ user }: InventoryProps) {
                         className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none"
                       />
                     </div>
-                    
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-black text-slate-500 block">الكود التسلسلي (Part No.)</label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const code = generateSmartPartNumber(newItem.category);
-                            setNewItem(prev => ({ ...prev, partNumber: code }));
-                          }}
-                          className="flex items-center gap-0.5 text-[9px] font-black text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-                          title="توليد كود باركود ذكي تلقائي للقطع التي ليس عليها باركود"
-                        >
-                          <Sparkles size={10} />
-                          <span>توليد تلقائي ✨</span>
-                        </button>
-                      </div>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="مثال: MB-32095-DSL"
-                        value={newItem.partNumber}
-                        onChange={(e) => setNewItem(prev => ({ ...prev, partNumber: e.target.value }))}
-                        className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none text-left font-mono"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-500 block">فئة القطعة ميكانيكياً</label>
                       <select
                         value={newItem.category}
-                        onChange={(e) => setNewItem(prev => ({ ...prev, category: e.target.value }))}
+                        onChange={(e) => {
+                          const newCat = e.target.value;
+                          setNewItem(prev => ({
+                            ...prev,
+                            category: newCat,
+                            partNumber: prev.partNumber ? prev.partNumber : generateSmartPartNumber(newCat)
+                          }));
+                        }}
                         className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none"
                       >
                         <option value="فلاتر">فلاتر</option>
@@ -3514,6 +3800,167 @@ export default function Inventory({ user }: InventoryProps) {
                         <option value="أخرى">أخرى</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* Dedicated Barcode Management & Generator Card */}
+                  <div className="p-3.5 bg-gradient-to-br from-indigo-50/60 via-purple-50/30 to-slate-50/80 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-slate-900/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                          <BarcodeIcon size={13} />
+                        </div>
+                        <div>
+                          <span className="text-xs font-black text-slate-800 dark:text-white block leading-tight">
+                            الباركود والرمز التعريفي للصنف (Barcode / Part No.)
+                          </span>
+                          <span className="text-[9.5px] text-slate-500 dark:text-slate-400">
+                            يمكنك كتابته، مسحه بالكاميرا، أو توليد كود فوري بضغطة زر
+                          </span>
+                        </div>
+                      </div>
+
+                      {newItem.partNumber && (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(newItem.partNumber)}
+                          className="p-1 px-2 text-[9px] font-bold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
+                          title="نسخ الباركود"
+                        >
+                          {copiedBarcode === newItem.partNumber ? <CheckCheck size={10} className="text-emerald-500" /> : <Copy size={10} />}
+                          <span>نسخ</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Quick Barcode Generation Tools */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[9.5px] font-bold text-slate-500 ml-1">أدوات الإنشاء السريع:</span>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = generateSmartPartNumber(newItem.category);
+                          setNewItem(prev => ({ ...prev, partNumber: code }));
+                          setToastMessage(language === 'ar' ? `تم إنشاء باركود ذكي: ${code}` : `Generated smart barcode: ${code}`);
+                        }}
+                        className="flex items-center gap-1 text-[9.5px] font-black px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-2xs transition-all active:scale-95 cursor-pointer"
+                        title="إنشاء كود قياسي حسب فئة القطعة وتاريخ اليوم"
+                      >
+                        <Sparkles size={10} />
+                        <span>توليد ذكي تلقائي ✨</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = generateEanBarcode();
+                          setNewItem(prev => ({ ...prev, partNumber: code }));
+                          setToastMessage(language === 'ar' ? `تم إنشاء باركود رقمي EAN-13: ${code}` : `Generated EAN barcode: ${code}`);
+                        }}
+                        className="flex items-center gap-1 text-[9.5px] font-bold px-2 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg transition-all active:scale-95 cursor-pointer"
+                        title="إنشاء باركود رقمي قياسي عالمي (EAN-13)"
+                      >
+                        <BarcodeIcon size={10} className="text-purple-500" />
+                        <span>رقمي EAN-13 🔢</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = generateSkuBarcode();
+                          setNewItem(prev => ({ ...prev, partNumber: code }));
+                          setToastMessage(language === 'ar' ? `تم إنشاء رمز SKU: ${code}` : `Generated SKU: ${code}`);
+                        }}
+                        className="flex items-center gap-1 text-[9.5px] font-bold px-2 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg transition-all active:scale-95 cursor-pointer"
+                        title="إنشاء رمز SKU تسلسلي للمستودع"
+                      >
+                        <span>🏷️ كود SKU</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => openFieldScanner('add')}
+                        className="flex items-center gap-1 text-[9.5px] font-black px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-2xs transition-all active:scale-95 cursor-pointer mr-auto"
+                        title="فتح كاميرا الهاتف لمسح باركود الملصق المطبوع على القطعة"
+                      >
+                        <ScanLine size={11} />
+                        <span>مسح بالكاميرا 📷</span>
+                      </button>
+                    </div>
+
+                    {/* Barcode Input & Live Sticker */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+                      <div className="md:col-span-7 space-y-1">
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            required
+                            placeholder="مثال: FLT-260909-320 أو امسح الباركود"
+                            value={newItem.partNumber}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, partNumber: e.target.value.toUpperCase() }))}
+                            className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 uppercase"
+                          />
+                          {newItem.partNumber && (
+                            <button
+                              type="button"
+                              onClick={() => setNewItem(prev => ({ ...prev, partNumber: '' }))}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                              title="تفريغ الحقل"
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
+                        </div>
+                        <span className="text-[9px] text-slate-400 block">
+                          * يستخدم الكود في ملصقات الرفوف والباركود وعمليات الجرد السريع.
+                        </span>
+                      </div>
+
+                      {/* Live Barcode Vector Sticker Preview */}
+                      <div className="md:col-span-5">
+                        {newItem.partNumber ? (
+                          <div className="p-2 bg-white rounded-xl border border-indigo-200 dark:border-indigo-900 shadow-2xs flex flex-col items-center justify-center">
+                            <Barcode val={newItem.partNumber} height={26} showText={true} />
+                            <span className="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-0.5">
+                              <span>✓ باركود صالح للطباعة والمسح</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <div 
+                            onClick={() => {
+                              const code = generateSmartPartNumber(newItem.category);
+                              setNewItem(prev => ({ ...prev, partNumber: code }));
+                            }}
+                            className="p-2.5 bg-white/70 dark:bg-slate-800/70 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 text-center group transition-colors"
+                          >
+                            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 group-hover:underline">
+                              ⚡ اضغط هنا لإنشاء باركود فوري
+                            </span>
+                            <span className="text-[8px] text-slate-400">
+                              أو اكتب الكود في الحقل المقابل
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Auto Queue Checkbox */}
+                    <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={autoAddToQueueOnAdd}
+                          onChange={(e) => setAutoAddToQueueOnAdd(e.target.checked)}
+                          className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-700 cursor-pointer"
+                        />
+                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                          إضافة ملصق هذه القطعة تلقائياً إلى "طابور الباركود" بعد الحفظ للطباعة الفورية
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
 
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-500 block">الرصيد الابتدائي</label>
@@ -3815,19 +4262,6 @@ export default function Inventory({ user }: InventoryProps) {
                     </div>
                     
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 block">الكود التسلسلي (Part No.)</label>
-                      <input 
-                        type="text" 
-                        required
-                        value={editItemState.partNumber || ''}
-                        onChange={(e) => setEditItemState(prev => ({ ...prev, partNumber: e.target.value }))}
-                        className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none text-left font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-500 block">فئة القطعة ميكانيكياً</label>
                       <select
                         value={editItemState.category || 'أخرى'}
@@ -3843,6 +4277,163 @@ export default function Inventory({ user }: InventoryProps) {
                         <option value="أخرى">أخرى</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* Dedicated Barcode Card in Edit Modal */}
+                  <div className="p-3.5 bg-gradient-to-br from-indigo-50/60 via-purple-50/30 to-slate-50/80 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-slate-900/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                          <BarcodeIcon size={13} />
+                        </div>
+                        <div>
+                          <span className="text-xs font-black text-slate-800 dark:text-white block leading-tight">
+                            الباركود والرمز التعريفي (Barcode / Part No.)
+                          </span>
+                          <span className="text-[9.5px] text-slate-500 dark:text-slate-400">
+                            تحديث الكود أو إعادة التوليد أو المسح بالكاميرا
+                          </span>
+                        </div>
+                      </div>
+
+                      {editItemState.partNumber && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(editItemState.partNumber || '')}
+                            className="p-1 px-2 text-[9px] font-bold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
+                            title="نسخ الباركود"
+                          >
+                            {copiedBarcode === editItemState.partNumber ? <CheckCheck size={10} className="text-emerald-500" /> : <Copy size={10} />}
+                            <span>نسخ</span>
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedItemForEdit) {
+                                addToPrintQueue({
+                                  ...selectedItemForEdit,
+                                  name: editItemState.name || selectedItemForEdit.name,
+                                  partNumber: editItemState.partNumber || selectedItemForEdit.partNumber
+                                }, 1);
+                                setIsBulkPrintModalOpen(true);
+                                setToastMessage(language === 'ar' ? 'تمت إضافة القطعة لطابور الطباعة وفتح النافذة' : 'Added to print queue');
+                              }
+                            }}
+                            className="p-1 px-2 text-[9px] font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                            title="إرسال لطابور الطباعة فوراً"
+                          >
+                            <Printer size={10} />
+                            <span>طباعة الملصق</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quick Generation and Camera Buttons */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[9.5px] font-bold text-slate-500 ml-1">توليد جديد:</span>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = generateSmartPartNumber(editItemState.category || 'فلاتر');
+                          setEditItemState(prev => ({ ...prev, partNumber: code }));
+                          setToastMessage(language === 'ar' ? `تم إنشاء باركود ذكي: ${code}` : `Generated smart barcode: ${code}`);
+                        }}
+                        className="flex items-center gap-1 text-[9.5px] font-black px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-2xs transition-all active:scale-95 cursor-pointer"
+                      >
+                        <Sparkles size={10} />
+                        <span>توليد ذكي ✨</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = generateEanBarcode();
+                          setEditItemState(prev => ({ ...prev, partNumber: code }));
+                          setToastMessage(language === 'ar' ? `تم إنشاء باركود رقمي EAN-13: ${code}` : `Generated EAN barcode: ${code}`);
+                        }}
+                        className="flex items-center gap-1 text-[9.5px] font-bold px-2 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg transition-all active:scale-95 cursor-pointer"
+                      >
+                        <BarcodeIcon size={10} className="text-purple-500" />
+                        <span>رقمي EAN-13 🔢</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = generateSkuBarcode();
+                          setEditItemState(prev => ({ ...prev, partNumber: code }));
+                          setToastMessage(language === 'ar' ? `تم إنشاء رمز SKU: ${code}` : `Generated SKU: ${code}`);
+                        }}
+                        className="flex items-center gap-1 text-[9.5px] font-bold px-2 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg transition-all active:scale-95 cursor-pointer"
+                      >
+                        <span>🏷️ كود SKU</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => openFieldScanner('edit')}
+                        className="flex items-center gap-1 text-[9.5px] font-black px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-2xs transition-all active:scale-95 cursor-pointer mr-auto"
+                        title="مسح باركود جديد بالكاميرا"
+                      >
+                        <ScanLine size={11} />
+                        <span>مسح بالكاميرا 📷</span>
+                      </button>
+                    </div>
+
+                    {/* Barcode Input & Live Preview */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+                      <div className="md:col-span-7 space-y-1">
+                        <div className="relative">
+                          <input 
+                            type="text" 
+                            required
+                            value={editItemState.partNumber || ''}
+                            onChange={(e) => setEditItemState(prev => ({ ...prev, partNumber: e.target.value.toUpperCase() }))}
+                            className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-indigo-500 uppercase"
+                          />
+                          {editItemState.partNumber && (
+                            <button
+                              type="button"
+                              onClick={() => setEditItemState(prev => ({ ...prev, partNumber: '' }))}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                              title="تفريغ الحقل"
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-5">
+                        {editItemState.partNumber ? (
+                          <div className="p-2 bg-white rounded-xl border border-indigo-200 dark:border-indigo-900 shadow-2xs flex flex-col items-center justify-center">
+                            <Barcode val={editItemState.partNumber} height={26} showText={true} />
+                            <span className="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                              ✓ باركود صالح للطباعة
+                            </span>
+                          </div>
+                        ) : (
+                          <div 
+                            onClick={() => {
+                              const code = generateSmartPartNumber(editItemState.category || 'فلاتر');
+                              setEditItemState(prev => ({ ...prev, partNumber: code }));
+                            }}
+                            className="p-2 bg-white/70 dark:bg-slate-800/70 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 text-center"
+                          >
+                            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400">
+                              ⚡ اضغط لتوليد كود تلقائي
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
 
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-500 block">الحد الأدنى الآمن</label>
@@ -4326,30 +4917,27 @@ export default function Inventory({ user }: InventoryProps) {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-black text-slate-700 dark:text-slate-300">3. الأصناف المطلوبة للطباعة</span>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => {
-                              if (confirm('هل أنت متأكد من تصفير كافة الأصناف المضافة لطابور الطباعة حالياً؟')) {
-                                setPrintQueue([]);
-                              }
-                            }}
-                            className="text-[9px] font-black text-rose-500 hover:underline cursor-pointer"
+                            id="btn-clear-barcode-queue"
+                            onClick={handleClearPrintQueue}
+                            className="text-[10px] font-black text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 active:scale-95 px-2 py-0.5 rounded-lg cursor-pointer transition-all flex items-center gap-1 border border-transparent hover:border-rose-200 dark:hover:border-rose-900"
+                            title="تفريغ كافة الأصناف من طابور طباعة الباركود"
                           >
-                            تفريغ الطابور 🗑️
+                            <Trash2 size={11} className="text-rose-500" />
+                            <span>تفريغ الطابور 🗑️</span>
                           </button>
-                          <span className="text-slate-300">|</span>
+                          <span className="text-slate-300 dark:text-slate-700">|</span>
                           <button
                             type="button"
-                            onClick={() => {
-                              // Fill matching current stock deficit or all
-                              const toAdd = items.map(it => ({ item: it, copies: 1 }));
-                              setPrintQueue(toAdd);
-                              alert('تم تعبئة طابور الطباعة بكافة الأصناف المسجلة في الرفوف (بواقع ملصق واحد لكل صنف).');
-                            }}
-                            className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                            id="btn-fill-barcode-queue"
+                            onClick={handleFillAllToPrintQueue}
+                            className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 active:scale-95 px-2 py-0.5 rounded-lg cursor-pointer transition-all flex items-center gap-1 border border-transparent hover:border-indigo-200 dark:hover:border-indigo-900"
+                            title="إضافة ملصق واحد لكافة أصناف المستودع"
                           >
-                            تعبئة الكل ➕
+                            <Plus size={11} className="text-indigo-500" />
+                            <span>تعبئة الكل ➕</span>
                           </button>
                         </div>
                       </div>
@@ -4542,6 +5130,157 @@ export default function Inventory({ user }: InventoryProps) {
               </motion.div>
             </div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- MODAL: FAST CAMERA BARCODE SCANNER FOR FIELDS --- */}
+      <AnimatePresence>
+        {isFieldScannerOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto" dir="rtl">
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                onClick={closeFieldScanner}
+                className="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" 
+              />
+
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+                animate={{ opacity: 1, scale: 1, y: 0 }} 
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative z-10 inline-block w-full max-w-md p-6 my-8 overflow-hidden text-right align-middle transition-all transform bg-white dark:bg-slate-800 shadow-2xl rounded-2xl border border-slate-100 dark:border-slate-700"
+              >
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <ScanLine size={18} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                        {language === 'ar' ? 'مسح باركود القطعة بالكاميرا' : 'Scan Part Barcode with Camera'}
+                      </h3>
+                      <p className="text-[10px] text-slate-400">
+                        وجه الكاميرا نحو ملصق الباركود على صندوق القطعة
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={closeFieldScanner} className="text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Camera Viewfinder Area */}
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center border border-slate-700">
+                  <video
+                    ref={fieldVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+
+                  {/* Aiming Reticle overlay */}
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div className="w-3/4 h-24 border-2 border-emerald-400 rounded-lg relative shadow-[0_0_15px_rgba(52,211,153,0.5)]">
+                      <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-red-500 animate-pulse" />
+                    </div>
+                  </div>
+
+                  {fieldScannerError && (
+                    <div className="absolute inset-0 bg-black/80 p-4 flex flex-col items-center justify-center text-center">
+                      <p className="text-xs text-amber-300 font-bold mb-3">{fieldScannerError}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Manual input simulation / fallback tools */}
+                <div className="mt-4 space-y-2">
+                  <span className="text-[10px] font-black text-slate-500 block">أو أدخل / حاكِ قراءة الباركود فوراً:</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="اكتب كود الباركود هنا..."
+                      id="scanner-manual-input"
+                      className="flex-1 p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold dark:text-white outline-none text-left uppercase"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = (e.target as HTMLInputElement).value;
+                          if (val) handleFieldBarcodeDetected(val);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('scanner-manual-input') as HTMLInputElement;
+                        if (input && input.value) {
+                          handleFieldBarcodeDetected(input.value);
+                        }
+                      }}
+                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black cursor-pointer"
+                    >
+                      تأكيد
+                    </button>
+                  </div>
+
+                  {/* Sample Quick Demo Barcodes */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[9px] text-slate-400">أمثلة سريعة:</span>
+                    {['MB-32095-DSL', 'FLT-260909-882', 'BRK-PAD-7741', 'OIL-SYN-5W30'].map(sample => (
+                      <button
+                        key={sample}
+                        type="button"
+                        onClick={() => handleFieldBarcodeDetected(sample)}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded text-[9px] font-mono font-bold cursor-pointer"
+                      >
+                        {sample}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={closeFieldScanner}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-black cursor-pointer"
+                  >
+                    إلغاء وإغلاق
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification for Barcode Actions */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 max-w-md w-11/12 bg-slate-900/95 dark:bg-indigo-950/95 text-white p-3 px-4 rounded-2xl shadow-2xl border border-indigo-500/30 flex items-center justify-between gap-3 backdrop-blur-md"
+            dir="rtl"
+          >
+            <div className="flex items-center gap-2 text-xs font-bold">
+              <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                ✓
+              </div>
+              <span>{toastMessage}</span>
+            </div>
+            <button
+              onClick={() => setToastMessage(null)}
+              className="text-slate-400 hover:text-white p-1"
+            >
+              <X size={14} />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 

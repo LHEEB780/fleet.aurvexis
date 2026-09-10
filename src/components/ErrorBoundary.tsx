@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { RotateCcw, AlertTriangle, RefreshCw } from 'lucide-react';
+import { RotateCcw, AlertTriangle, RefreshCw, Database } from 'lucide-react';
+import { freeStorageSpace, sanitizeEntireLocalStorage } from '../utils/storage';
 
 interface Props {
   children: ReactNode;
@@ -27,6 +28,14 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error caught by ErrorBoundary:', error, errorInfo);
+    // If storage quota error, automatically attempt cleanup
+    const errStr = String(error?.message || error || '').toLowerCase();
+    if (errStr.includes('quota') || errStr.includes('setitem') || errStr.includes('storage')) {
+      try {
+        freeStorageSpace();
+        sanitizeEntireLocalStorage();
+      } catch (e) {}
+    }
     this.setState({ errorInfo });
   }
 
@@ -36,7 +45,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   handleResetCacheAndReload = () => {
     try {
+      freeStorageSpace();
+      sanitizeEntireLocalStorage();
       localStorage.removeItem('saas_active_tab');
+      localStorage.removeItem('fleet_barcode_queue');
       sessionStorage.clear();
     } catch (e) {
       console.warn('Failed to clear storage:', e);
@@ -44,8 +56,21 @@ export class ErrorBoundary extends Component<Props, State> {
     window.location.href = window.location.origin + window.location.pathname;
   };
 
+  handleDeepCleanQuota = () => {
+    try {
+      freeStorageSpace();
+      sanitizeEntireLocalStorage();
+      localStorage.removeItem('fleet_barcode_queue');
+      localStorage.removeItem('fleet_offline_maintenance_queue');
+      localStorage.removeItem('saas_critical_audit_logs');
+    } catch (e) {}
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
+      const isQuotaError = String(this.state.error?.message || this.state.error || '').toLowerCase().includes('quota');
+
       return (
         <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans dir-rtl" dir="rtl">
           <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-right">
@@ -55,22 +80,35 @@ export class ErrorBoundary extends Component<Props, State> {
 
             <div className="space-y-2">
               <h1 className="text-xl font-black text-white">
-                حدث تعذر بسيط أثناء تحميل الصفحة
+                {isQuotaError ? 'تم تجاوز الحد المتاح للذاكرة المؤقتة' : 'حدث تعذر بسيط أثناء تحميل الصفحة'}
               </h1>
               <p className="text-xs text-slate-400 leading-relaxed">
-                التطبيق متصل ومحدث بالكامل، ولكن حدث خطأ مؤقت في استجابة العرض على متصفح جهازك. يمكنك إعادة تشغيل الواجهة فوراً بنقرة زر.
+                {isQuotaError 
+                  ? 'تم اكتشاف امتلاء المساحة المخصصة للتخزين في المتصفح. يمكنك بنقرة واحدة تفريغ الملفات المؤقتة القديمة ومتابعة العمل فوراً دون فقدان أي بيانات.'
+                  : 'التطبيق متصل ومحدث بالكامل، ولكن حدث خطأ مؤقت في استجابة العرض على متصفح جهازك. يمكنك إعادة تشغيل الواجهة فوراً بنقرة زر.'}
               </p>
             </div>
 
             <div className="pt-2 space-y-3">
-              <button
-                type="button"
-                onClick={this.handleReload}
-                className="w-full py-3.5 px-5 bg-violet-600 hover:bg-violet-500 active:scale-98 text-white font-black text-xs rounded-2xl shadow-lg shadow-violet-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <RefreshCw size={16} className="animate-spin-slow" />
-                <span>إعادة تحميل وتحديث التطبيق الآن</span>
-              </button>
+              {isQuotaError ? (
+                <button
+                  type="button"
+                  onClick={this.handleDeepCleanQuota}
+                  className="w-full py-3.5 px-5 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white font-black text-xs rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Database size={16} />
+                  <span>تفريغ الذاكرة المؤقتة وتشغيل التطبيق الآن</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={this.handleReload}
+                  className="w-full py-3.5 px-5 bg-violet-600 hover:bg-violet-500 active:scale-98 text-white font-black text-xs rounded-2xl shadow-lg shadow-violet-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <RefreshCw size={16} className="animate-spin-slow" />
+                  <span>إعادة تحميل وتحديث التطبيق الآن</span>
+                </button>
+              )}
 
               <button
                 type="button"

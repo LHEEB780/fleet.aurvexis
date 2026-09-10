@@ -28,6 +28,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { Vendor, SupplyOrder, InventoryItem } from '../types';
+import { safeSetItem } from '../utils/storage';
 import VendorReports from './VendorReports';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
@@ -372,19 +373,19 @@ export default function Vendors({ user }: VendorsProps) {
   // Sync to localStorage
   const saveVendorsToStore = (newVendors: Vendor[]) => {
     setVendors(newVendors);
-    localStorage.setItem('fleet_vendors_v2', JSON.stringify(newVendors));
+    safeSetItem('fleet_vendors_v2', JSON.stringify(newVendors));
     syncVendorsWithWorkshops(newVendors);
   };
 
   const saveOrdersToStore = (newOrders: SupplyOrder[]) => {
     setSupplyOrders(newOrders);
-    localStorage.setItem('fleet_supply_orders_v2', JSON.stringify(newOrders));
+    safeSetItem('fleet_supply_orders_v2', JSON.stringify(newOrders));
   };
 
   // Sync back to inventory
   const updateInventoryInStore = (updatedInv: InventoryItem[]) => {
     setInventoryItems(updatedInv);
-    localStorage.setItem('fleet_inventory_v2', JSON.stringify(updatedInv));
+    safeSetItem('fleet_inventory_v2', JSON.stringify(updatedInv));
   };
 
   // --- LOGIC / FILTERING ---

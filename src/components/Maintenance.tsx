@@ -59,6 +59,7 @@ import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
 import SmartDiagnostic from './SmartDiagnostic';
 import { notifyNewMaintenanceOrder } from '../services/browserNotifications';
+import { safeSetItem } from '../utils/storage';
 
 const SYSTEM_ANCHOR_DATE = '2026-05-19';
 
@@ -180,25 +181,25 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
     ];
   });
 
-  // --- PERSIST OTHER MODULE STATES GLOBALLY ---
+  // --- PERSIST OTHER MODULE STATES GLOBALLY SAFELY ---
   useEffect(() => {
-    localStorage.setItem('fleet_maintenance_orders_v2', JSON.stringify(orders));
+    safeSetItem('fleet_maintenance_orders_v2', JSON.stringify(orders));
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('fleet_vehicles_v2', JSON.stringify(localVehicles));
+    safeSetItem('fleet_vehicles_v2', JSON.stringify(localVehicles));
   }, [localVehicles]);
 
   useEffect(() => {
-    localStorage.setItem('fleet_technicians_v2', JSON.stringify(localTechnicians));
+    safeSetItem('fleet_technicians_v2', JSON.stringify(localTechnicians));
   }, [localTechnicians]);
 
   useEffect(() => {
-    localStorage.setItem('fleet_workshops', JSON.stringify(localWorkshops));
+    safeSetItem('fleet_workshops', JSON.stringify(localWorkshops));
   }, [localWorkshops]);
 
   useEffect(() => {
-    localStorage.setItem('fleet_inventory_v2', JSON.stringify(localInventory));
+    safeSetItem('fleet_inventory_v2', JSON.stringify(localInventory));
   }, [localInventory]);
 
   // Project Manager Visual Toggles & View Mode
