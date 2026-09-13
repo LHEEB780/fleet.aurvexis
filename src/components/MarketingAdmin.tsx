@@ -66,7 +66,8 @@ import {
   HardHat,
   Car,
   CheckCircle2,
-  Share2
+  Share2,
+  Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
@@ -98,6 +99,11 @@ import dieselMaintenance from '../assets/images/diesel_maintenance_1783750031121
 import hydraulicServicing from '../assets/images/hydraulic_servicing_1783750041949.jpg';
 import constructionHeavyMachinery from '../assets/images/construction_heavy_machinery_1782935156246.jpg';
 import mechanicTruckWorkshop from '../assets/images/mechanic_truck_workshop_1782935168167.jpg';
+import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
+import driverTruckInspection from '../assets/images/driver_truck_inspection_1786784371761.jpg';
+import aiFleetDiagnostics from '../assets/images/ai_fleet_diagnostics_1786785439472.jpg';
+import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
+import { CURATED_ARTICLE_IMAGES } from './MarketingArticlesSection';
 
 interface MarketingAdminProps {
   brandPrimaryColor: string;
@@ -1168,6 +1174,26 @@ export function MarketingAdmin({
           `[${new Date().toLocaleTimeString()}] [أتمتة] صيانة وتطهير فوري لذاكرة التبادل المؤقتة ووحدات Sw.js.`,
           `[${new Date().toLocaleTimeString()}] [اتصال] فحص الـ API الميداني للمحافظ والمعدات: نشط ومتصل بالقاعدة المركزية.`
         ]
+      },
+      {
+        id: 'article-writer',
+        name: 'بوت كتابة مقالات وصناعة المحتوى التخصصي',
+        nameEn: 'Autonomous Technical & SEO Article Writer',
+        icon: 'pen',
+        description: 'يتولى صياغة المقالات الفنية حول صيانة الشاحنات والمعدات الثقيلة، وأدلة الصيانة الوقائية، والمحتوى التسويقي المتوافق مع محركات البحث (SEO) ونشرها لجذب الورش وأصحاب الأساطيل.',
+        descriptionEn: 'Generates specialized fleet maintenance articles, preventive guides, and SEO-optimized marketing content to educate workshops and attract prospective SaaS subscribers.',
+        isActive: true,
+        triggerEvent: 'On Instant Trigger / Content Schedule',
+        triggerEventAr: 'عند تفاعل فوري بالنظام أو طلب كتابة مقال',
+        prompt: 'أنت خبير كتابة المقالات الفنية والتسويقية المتخصص في صيانة الأساطيل الثقيلة والمعدات وأنظمة الورش الذكية لمنصة FleetAurvexis. قم بصياغة مقالات رصينة ذات قيمة ميكانيكية وإدارية حقيقية تدعم الكلمات الدلالية وتستعرض أفضل الممارسات وحلول المنصة الرقمية.',
+        lastRun: 'منذ لحظات',
+        stats: { scansCount: 88, actionsTaken: 74, efficiencyRating: '99.2%' },
+        logs: [
+          `[${new Date().toLocaleTimeString()}] [تحليل] فحص الكلمات المفتاحية الأكثر بحثاً في قطاع صيانة المعدات والشاحنات.`,
+          `[${new Date().toLocaleTimeString()}] [كتابة] صياغة مقال بعنوان "الدليل الشامل للصيانة الوقائية وتقليل تكاليف الأساطيل".`,
+          `[${new Date().toLocaleTimeString()}] [تحسين] تدقيق معايير الـ SEO وتوزيع العناوين الفرعية ونقاط الفحص الفني.`,
+          `[${new Date().toLocaleTimeString()}] [نشر] تجهيز المقال للأرشفة والنشر التلقائي في الموقع العام ومركز المعرفة بنجاح.`
+        ]
       }
     ];
 
@@ -1176,13 +1202,33 @@ export function MarketingAdmin({
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const missing = defaults.filter(def => !parsed.some((p: any) => p.id === def.id));
+          const sanitized = parsed.map((item: any) => {
+            if (!item) return null;
+            const name = (item.name || '').toLowerCase();
+            const nameEn = (item.nameEn || '').toLowerCase();
+            if (name.includes('مقال') || name.includes('كتابة') || nameEn.includes('article') || nameEn.includes('blog')) {
+              return {
+                ...item,
+                icon: 'pen',
+                description: item.description && item.description.length > 25
+                  ? item.description
+                  : 'يتولى صياغة المقالات الفنية حول صيانة الشاحنات والمعدات الثقيلة، وأدلة الصيانة الوقائية، والمحتوى التسويقي المتوافق مع محركات البحث (SEO) ونشرها لجذب الورش وأصحاب الأساطيل.',
+                prompt: item.prompt && item.prompt.length > 25
+                  ? item.prompt
+                  : 'أنت خبير كتابة المقالات الفنية والتسويقية المتخصص في صيانة الأساطيل الثقيلة والمعدات وأنظمة الورش الذكية لمنصة FleetAurvexis. قم بصياغة مقالات رصينة ذات قيمة ميكانيكية وإدارية حقيقية تدعم الكلمات الدلالية وتستعرض أفضل الممارسات وحلول المنصة الرقمية.'
+              };
+            }
+            return item;
+          }).filter(Boolean);
+
+          const missing = defaults.filter(def => !sanitized.some((p: any) => p.id === def.id || (def.id === 'article-writer' && (p.name?.includes('مقال') || p.name?.includes('كتابة')))));
           if (missing.length > 0) {
-            const merged = [...parsed, ...missing];
+            const merged = [...sanitized, ...missing];
             localStorage.setItem('saas_ai_robots', JSON.stringify(merged));
             return merged;
           }
-          return parsed;
+          localStorage.setItem('saas_ai_robots', JSON.stringify(sanitized));
+          return sanitized;
         }
       } catch (e) { }
     }
@@ -1217,7 +1263,7 @@ export function MarketingAdmin({
   const [newRobotForm, setNewRobotForm] = useState({
     name: '',
     nameEn: '',
-    icon: 'users',
+    icon: 'pen',
     description: '',
     descriptionEn: '',
     triggerEventAr: 'عند تفاعل فوري بالنظام',
@@ -1230,6 +1276,327 @@ export function MarketingAdmin({
   useEffect(() => {
     localStorage.setItem('saas_ai_robots', JSON.stringify(aiRobots));
   }, [aiRobots]);
+
+  // SaaS Published & Generated Articles Catalog
+  const [publishedArticles, setPublishedArticles] = useState<any[]>(() => {
+    const saved = localStorage.getItem('saas_articles_catalog');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [
+      {
+        id: 'art-1',
+        title: 'الدليل الشامل للصيانة الوقائية للشاحنات والمعدات الثقيلة: خطة الـ 5 خطوات لتفادي الأعطال المفاجئة',
+        titleEn: 'Comprehensive Preventive Maintenance Guide for Heavy Trucks & Fleet Assets',
+        category: 'صيانة وقائية وأساطيل',
+        categoryEn: 'Preventive Fleet Maintenance',
+        readTime: '4 دقائق قراءة',
+        date: '2026-09-12',
+        tags: ['صيانة_الشاحنات', 'إدارة_الأساطيل', 'فحص_وقائي', 'محركات_الديزل'],
+        summary: 'تعد الصيانة الوقائية الركيزة الأولى لاستدامة أساطيل النقل والمعدات الثقيلة؛ حيث توفر ما يزيد عن 35% من تكاليف الإصلاحات الطارئة وترفع العمر التشغيلي للمركبات.',
+        content: `### مقدمة: لماذا تعد الصيانة الوقائية استثماراً وليست تكلفة؟
+في قطاع النقل البري والمقاولات، يعني توقف شاحنة واحدة خسائر تشغيلية تتجاوز تكلفة الإصلاح الميكانيكي. الصيانة الوقائية المبرمجة تضمن جاهزية الأسطول بنسبة تتجاوز 95%.
+
+#### المحور الأول: الفحص اليومي ما قبل الانطلاق (Pre-trip Inspection)
+- قياس منسوب الزيوت وسوائل التبريد وفحص مضخة الهيدروليك.
+- فحص ضغط الإطارات وعمق المداس لمنع الانفجارات الحرارية على الطرق السريعة.
+- اختبار ضغط الهواء لمنظومة المكابح الهوائية (Air Brake System) والتأكد من عدم وجود تسريب.
+
+#### المحور الثاني: دورات الصيانة المجدولة بناءً على الكيلومترات وساعات التشغيل
+- كل 10,000 كم: استبدال زيت المحرك وفلاتر الوقود وفلتر الهواء الأساسي.
+- كل 40,000 كم: فحص منظومة التعليق، ميزان الدوران، وتشحيم محاور الكردان.
+- كل 80,000 كم: فحص كامل لناقل الحركة (القيربوكس) وسائل التوجيه الهيدروليكي واستبدال سائل الفرامل.
+
+#### المحور الثالث: دور الرقمنة ونظام FleetAurvexis في حماية الأسطول
+بفضل تفعيل بطاقة الفحص الفني الرقمية بنظام باركود QR، يستطيع السائق أو الفني إتمام الفحص في أقل من دقيقتين مع توثيق الصور والبيانات الحية، وتنبيه مدير الصيانة فوراً لأي خلل طارئ قبل تفاقمه.
+
+#### الخلاصة ودعوة للعمل:
+استدامة الأسطول تبدأ من الالتزام بالجدول الدوري. انضم إلى المنظومة الرقمية وارفع أمان أسطولك اليوم.`,
+        author: 'بوت كتابة المقالات - FleetAurvexis AI',
+        status: 'published',
+        isPublishedToMarketingSite: true,
+        image: highwayLogisticsTruck
+      },
+      {
+        id: 'art-2',
+        title: 'كيف ترفع مراكز الصيانة إنتاجيتها بنسبة 40% عبر الفحص الرقمي بنظام QR الذكي',
+        titleEn: 'Boosting Workshop Productivity by 40% with Intelligent QR Digital Inspections',
+        category: 'التحول الرقمي للورش',
+        categoryEn: 'Workshop Digital Transformation',
+        readTime: '3 دقائق قراءة',
+        date: '2026-09-10',
+        tags: ['فحص_رقمي', 'إدارة_الورش', 'باركود_QR', 'إنتاجية_الصيانة'],
+        summary: 'استبدال النماذج الورقية بنظام بطاقات QR الممسوحة ذكياً يقضي على أخطاء الفحص ويسرع تسليم أوامر العمل وربط الفنيين بقطع الغيار الفورية.',
+        content: `### التحول من الورق إلى الأتمتة الميدانية
+عانت الورش التقليدية لسنوات من ضياع أوراق الفحص وبطء وصول التقارير للمشرفين، مما يتسبب في تأخر تسليم المركبات لأيام إضافية.
+
+#### مزايا بطاقة الفحص الرقمية بـ QR:
+1. مسح فوري بهاتف الفني دون الحاجة لتثبيت برامج معقدة.
+2. تسجيل الأعطال وتصويرها حياً لرفع الموثوقية مع العميل.
+3. الربط الفوري بمستودع قطع الغيار لتقليل زمن الانتظار.
+
+#### النتائج الميدانية:
+أظهرت النتائج ارتفاع سرعة معالجة أوامر العمل بنسبة 40%، وتقليص النزاعات مع ملاك المركبات بنسبة 85% بفضل التوثيق المصور الشفاف.`,
+        author: 'بوت كتابة المقالات - FleetAurvexis AI',
+        status: 'published',
+        isPublishedToMarketingSite: true,
+        image: driverTruckInspection
+      },
+      {
+        id: 'art-3',
+        title: '5 استراتيجيات مجربة لخفض استهلاك الوقود وتكاليف التشغيل لأساطيل النقل',
+        titleEn: '5 Proven Strategies to Cut Fuel Consumption and Fleet Operational Costs',
+        category: 'كفاءة الطاقة والتشغيل',
+        categoryEn: 'Energy & Fuel Efficiency',
+        readTime: '5 دقائق قراءة',
+        date: '2026-09-08',
+        tags: ['استهلاك_الوقود', 'تكاليف_التشغيل', 'أساطيل_النقل', 'سلوك_السائق'],
+        summary: 'يشكل الوقود أكثر من 30% من تكاليف تشغيل الأساطيل. استعرض أهم الخطوات التقنية لتقليل هذا العبء المالي باستخدام مستشعرات الصيانة والتدريب الذكي.',
+        content: `### تكلفة الوقود: التحدي الأكبر لمديري الأساطيل
+مع ارتفاع تكاليف الوقود، تصبح أي نسبة توفير عاملاً حاسماً في ربحية الشركة واستمراريتها.
+
+#### الاستراتيجيات الخمس الأساسية:
+1. معايرة ضغط الإطارات بدقة لتفادي زيادة استهلاك الوقود واهتراء المداس.
+2. مراقبة سلوك القيادة والتسارع العنيف وتجنب فترات التوقف مع تشغيل المحرك (Idling).
+3. الصيانة الدورية لفلاتر الهواء وشمعات الاحتراق وحواقن الديزل.
+4. تخطيط المسارات الذكي وتفادي الاختناقات المرورية.
+5. استخدام زيوت محركات تخليقية ذات لزوجة محسنة.`,
+        author: 'بوت كتابة المقالات - FleetAurvexis AI',
+        status: 'published',
+        isPublishedToMarketingSite: true,
+        image: dieselMaintenance
+      }
+    ];
+  });
+
+  const [articlePromptTopic, setArticlePromptTopic] = useState<string>('الدليل الشامل للصيانة الوقائية للشاحنات والمعدات الثقيلة');
+  const [articleAudience, setArticleAudience] = useState<string>('fleets');
+  const [isGeneratingArticle, setIsGeneratingArticle] = useState<boolean>(false);
+  const [selectedArticleForView, setSelectedArticleForView] = useState<any | null>(null);
+  const [copiedArticleId, setCopiedArticleId] = useState<string | null>(null);
+  const [articlePublishToast, setArticlePublishToast] = useState<string>('');
+  const [showArticleImageModal, setShowArticleImageModal] = useState<boolean>(false);
+  const [customArticleImageUrl, setCustomArticleImageUrl] = useState<string>('');
+
+  const handleTogglePublishToMarketing = (articleId: string) => {
+    setPublishedArticles(prev => {
+      const updated = prev.map(art => {
+        if (art.id === articleId) {
+          const newState = art.isPublishedToMarketingSite === false ? true : false;
+          return { ...art, isPublishedToMarketingSite: newState };
+        }
+        return art;
+      });
+      localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+      return updated;
+    });
+
+    if (selectedArticleForView?.id === articleId) {
+      setSelectedArticleForView((prev: any) => prev ? {
+        ...prev,
+        isPublishedToMarketingSite: prev.isPublishedToMarketingSite === false ? true : false
+      } : null);
+    }
+
+    setArticlePublishToast(language === 'ar' ? '✓ تم تحديث حالة النشر على الموقع التسويقي' : '✓ Marketing site publishing state updated');
+    setTimeout(() => setArticlePublishToast(''), 3500);
+  };
+
+  const handleChangeArticleImage = (articleId: string, newImage: string) => {
+    setPublishedArticles(prev => {
+      const updated = prev.map(art => {
+        if (art.id === articleId) {
+          return { ...art, image: newImage, imageUrl: newImage };
+        }
+        return art;
+      });
+      localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+      return updated;
+    });
+
+    if (selectedArticleForView?.id === articleId) {
+      setSelectedArticleForView((prev: any) => prev ? {
+        ...prev,
+        image: newImage,
+        imageUrl: newImage
+      } : null);
+    }
+
+    setShowArticleImageModal(false);
+    setArticlePublishToast(language === 'ar' ? '✓ تم تعيين وتحديث صورة المقال الاحترافية' : '✓ Professional article image assigned');
+    setTimeout(() => setArticlePublishToast(''), 3500);
+  };
+
+  const handleGenerateNewArticle = (customTopic?: string) => {
+    const topic = (customTopic || articlePromptTopic || 'صيانة الشاحنات والمعدات الثقيلة').trim();
+    setIsGeneratingArticle(true);
+
+    setTimeout(() => {
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const newArtId = `art-${Date.now()}`;
+      
+      let title = topic;
+      let titleEn = 'Fleet Maintenance & Diagnostic Comprehensive Technical Guide';
+      let category = 'صيانة وقائية وتشغيل أساطيل';
+      let tags = ['صيانة_المعدات', 'سلامة_الأساطيل', 'إدارة_الورش', 'فحص_رقمي'];
+      let pickedImage = highwayLogisticsTruck;
+      
+      if (topic.includes('وقود') || topic.includes('استهلاك') || topic.includes('تكاليف') || topic.includes('ديزل')) {
+        title = `دليل خفض استهلاك الوقود وتكاليف الصيانة في أساطيل النقل الثقيل`;
+        titleEn = 'Cutting Fuel Costs & Fleet Operational Expenditure Guide';
+        category = 'كفاءة الطاقة والتشغيل';
+        tags = ['استهلاك_الوقود', 'خفض_التكاليف', 'إدارة_الأساطيل', 'كفاءة_الطاقة'];
+        pickedImage = dieselMaintenance;
+      } else if (topic.includes('فرامل') || topic.includes('هيدروليك') || topic.includes('أمان')) {
+        title = `أهمية الفحص الدوري لمنظومة الفرامل والهيدروليك لضمان أمان الطرق والسلامة المهنية`;
+        titleEn = 'Hydraulic & Air Brake Routine Inspection Standards for Heavy Vehicles';
+        category = 'سلامة المركبات والفحص الدوري';
+        tags = ['مكابح_هوائية', 'أنظمة_الهيدروليك', 'سلامة_الطرق', 'صيانة_شاحنات'];
+        pickedImage = hydraulicServicing;
+      } else if (topic.includes('2030') || topic.includes('تحول') || topic.includes('رقمي')) {
+        title = `التحول الرقمي لورش الصيانة ومراكز الفحص في ظل رؤية 2030`;
+        titleEn = 'Digital Transformation for Fleet Maintenance Centers under Vision 2030';
+        category = 'التحول الرقمي والأتمتة';
+        tags = ['رؤية_2030', 'تحول_رقمي', 'أتمتة_الورش', 'FleetAurvexis'];
+        pickedImage = enterpriseFleetDepot;
+      } else if (topic.includes('QR') || topic.includes('باركود') || topic.includes('فحص') || topic.includes('سائق')) {
+        title = `كيف ترفع الورش إنتاجيتها بنسبة 40% عبر الفحص الرقمي بنظام QR الذكي`;
+        titleEn = 'Boosting Workshop Performance with Smart QR Inspection Cards';
+        category = 'الفحص الفني والتقنية';
+        tags = ['فحص_رقمي', 'كود_QR', 'إنتاجية_الورش', 'تقارير_الصيانة'];
+        pickedImage = driverTruckInspection;
+      } else if (topic.includes('ذكاء') || topic.includes('أعطال') || topic.includes('حساسات') || topic.includes('تنبؤ')) {
+        title = `دور الذكاء الاصطناعي والمستشعرات في التنبؤ المبكر بأعطال الشاحنات`;
+        titleEn = 'AI Sensors and Early Failure Prediction for Commercial Trucks';
+        category = 'فحص وتشخيص الذكاء الاصطناعي';
+        tags = ['ذكاء_اصطناعي', 'تشخيص_مبكر', 'حساسات_الأعطال', 'صيانة_تنبؤية'];
+        pickedImage = aiFleetDiagnostics;
+      } else if (topic.includes('ورش') || topic.includes('ميكانيك')) {
+        pickedImage = mechanicTruckWorkshop;
+      } else if (topic.includes('معدات') || topic.includes('إنشاءات')) {
+        pickedImage = constructionHeavyMachinery;
+      }
+
+      const generatedContent = `### تمهيد وأهمية الموضوع
+في ظل التطور المتسارع لأنظمة إدارة وتشغيل الشاحنات والآليات الثقيلة، أصبحت صياغة معايير دقيقة للصيانة أمراً لا غنى عنه لكل منشأة تسعى للاستدامة وخفض التكاليف غير المبررة.
+
+#### المحور الأول: التشخيص المبكر وفحص الأجزاء الحيوية
+- فحص دوري للمحرك وأنظمة ضخ الديزل والتبريد.
+- التحقق من توازن العجلات وأنظمة التعليق الهوائي والميكانيكي.
+- مراقبة مؤشرات الضغط ودرجات الحرارة عبر الحساسات الرقمية لتفادي التلف المفاجئ.
+
+#### المحور الثاني: إدارة جداول الصيانة وتوثيق قطع الغيار
+- تسجيل أرقام الشاسيه والمحركات بدقة وربط كل مركبة بسجل رقمي تراكمي.
+- الاعتماد على قطع الغيار الأصلية المعتمدة لضمان أطول عمر تشغيلي.
+- تدريب الكوادر الفنية على أحدث وسائل الفحص الإلكتروني لتسريع وتيرة العمل.
+
+#### المحور الثالث: القيمة المضافة لحلول FleetAurvexis الذكية
+يوفر نظام FleetAurvexis حلاً متكاملاً يربط الفنيين الميدانيين بالإدارة السحابية، مما يقلل فترات التوقف ويزيد من دقة رصد الأعطال بنسبة تصل إلى 99%.
+
+#### التوصيات الختامية:
+ننصح مديري الأساطيل ومسؤولي الورش بتبني الفحص اليومي المنتظم وأرشفة كافة البيانات سحابياً لضمان أعلى مستويات الأمان والأداء.`;
+
+      const newArticle = {
+        id: newArtId,
+        title,
+        titleEn,
+        category,
+        categoryEn: 'Technical Fleet & Workshop Insights',
+        readTime: '4 دقائق قراءة',
+        date: dateStr,
+        tags,
+        summary: `مقال فني تخصصي صاغه بوت كتابة المقالات حول "${title}" لتثقيف المستفيدين ورفع الوعي الميكانيكي وتدعيم محركات البحث لموقع المنصة.`,
+        content: generatedContent,
+        author: 'بوت كتابة المقالات - FleetAurvexis AI',
+        status: 'published',
+        isPublishedToMarketingSite: true,
+        image: pickedImage,
+        targetAudience: articleAudience
+      };
+
+      setPublishedArticles(prev => {
+        const updated = [newArticle, ...prev];
+        localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+        window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+        return updated;
+      });
+      setSelectedArticleForView(newArticle);
+      setIsGeneratingArticle(false);
+
+      if (useFirebase && isFirestoreConnected) {
+        try {
+          saveDocument('saas_articles', newArtId, newArticle);
+        } catch (e) {}
+      }
+
+      setAiRobots(prev => prev.map(b => {
+        if (b.id === selectedRobotId || b.id === 'article-writer' || b.name.includes('مقال')) {
+          return {
+            ...b,
+            stats: {
+              ...b.stats,
+              actionsTaken: b.stats.actionsTaken + 1,
+              scansCount: b.stats.scansCount + 1
+            },
+            logs: [
+              `[${now.toLocaleTimeString()}] [مقال جديد] تم توليد ونشر مقال بعنوان: "${title}".`,
+              `[${now.toLocaleTimeString()}] [إرفاق صور احترافية] إدراج صورة فوتوغرافية معتمدة عالية الدقة تتناسب مع الموضوع.`,
+              `[${now.toLocaleTimeString()}] [نشر بالموقع] تم النشر المباشر في قسم المقالات على الموقع التسويقي (Landing Page) بنجاح 🟢`,
+              `[${now.toLocaleTimeString()}] [سيو وتوزيع] الكلمات المفتاحية: ${tags.join('، ')}.`,
+              ...b.logs
+            ]
+          };
+        }
+        return b;
+      }));
+
+      setArticlePublishToast(`✓ تم توليد المقال ونشره على الموقع التسويقي مع صورة احترافية بنجاح: "${title}"`);
+      setTimeout(() => setArticlePublishToast(''), 4500);
+    }, 900);
+  };
+
+  const handleCopyArticle = (article: any) => {
+    const fullText = `${article.title}\n\n${article.summary}\n\n${article.content}\n\n---\nنُشر بواسطة: ${article.author} • ${article.date}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(fullText);
+    }
+    setCopiedArticleId(article.id);
+    setTimeout(() => setCopiedArticleId(null), 2500);
+  };
+
+  const handleDeleteArticle = (articleId: string) => {
+    setPublishedArticles(prev => {
+      const filtered = prev.filter(a => a.id !== articleId);
+      localStorage.setItem('saas_articles_catalog', JSON.stringify(filtered));
+      return filtered;
+    });
+    if (selectedArticleForView?.id === articleId) {
+      setSelectedArticleForView(null);
+    }
+  };
+
+  const handleDownloadArticle = (article: any) => {
+    const text = `${article.title}\n${article.category} | ${article.readTime} | ${article.date}\n\n${article.summary}\n\n${article.content}\n\n---\nFleetAurvexis AI Articles Vault`;
+    const element = document.createElement("a");
+    const file = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    element.href = URL.createObjectURL(file);
+    element.download = `${article.title.substring(0, 30)}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
 
   const handleToggleRobotActive = (id: string) => {
     setAiRobots(prev => prev.map(bot => {
@@ -1370,6 +1737,20 @@ export function MarketingAdmin({
             `[${new Date().toLocaleTimeString()}] [صيانة] تفويض الصيانة الذكية الذاتية عن بعد: تم تطهير الكاشز والملفات المؤقتة وإعادة رصف نقاط استقبال تذاكر الخدمة.`,
             `[${new Date().toLocaleTimeString()}] [تأكيد] صيانة منافذ الاتصال والمحركات مكتملة بنسبة ١٠٠٪ بنشاط دوري تفصيلي تام.`
           ];
+        } else if (id === 'article-writer' || botObj.name.includes('مقال') || botObj.name.includes('كتابة') || botObj.nameEn?.toLowerCase().includes('article')) {
+          const sampleThemes = [
+            'الدليل الشامل للصيانة الوقائية للشاحنات والمعدات الثقيلة لتفادي الأعطال المفاجئة',
+            'كيف ترفع مراكز الصيانة إنتاجيتها بنسبة 40% عبر الفحص الرقمي بنظام QR الذكي',
+            '5 استراتيجيات لخفض تكاليف التشغيل واستهلاك الوقود لأساطيل النقل الثقيل',
+            'التحول الرقمي لإدارة الورش ومراكز الصيانة المتخصصة وفق رؤية 2030'
+          ];
+          const pickedTheme = sampleThemes[Math.floor(Math.random() * sampleThemes.length)];
+          logsToAppend = [
+            `[${new Date().toLocaleTimeString()}] [استطلاع] مسح متطلبات السوق واستفسارات ورش الصيانة والأساطيل الحالية.`,
+            `[${new Date().toLocaleTimeString()}] [سيو وكلمات] تدقيق الكلمات المفتاحية: "صيانة الشاحنات"، "الفحص الفني الدوري"، "إدارة الأساطيل".`,
+            `[${new Date().toLocaleTimeString()}] [صياغة ذكية] صياغة وتوليد مقال تخصصي جديد بعنوان: "${pickedTheme}".`,
+            `[${new Date().toLocaleTimeString()}] [أرشفة ونشر] تم اعتماد المقال وتخزينه في مستودع المقالات المنشورة بنجاح.`
+          ];
         } else {
           logsToAppend = [
             `[${new Date().toLocaleTimeString()}] [طلب] تشغيل الوكيل المخصص: "${botObj.name}" بنجاح فوري.`,
@@ -1495,7 +1876,9 @@ export function MarketingAdmin({
       const leadsSnap = await getDocs(collection(db, 'saas_leads'));
       const listLeads: any[] = [];
       leadsSnap.forEach(docSnap => {
-        listLeads.push(docSnap.data());
+        const d = docSnap.data() || {};
+        const lId = (d.id && d.id !== 'undefined' && d.id !== 'null') ? String(d.id).trim() : docSnap.id;
+        listLeads.push({ ...d, id: lId });
       });
       if (listLeads.length > 0) {
         setLeads(listLeads);
@@ -1523,7 +1906,11 @@ export function MarketingAdmin({
       // 3. Features
       const featuresSnap = await getDocs(collection(db, 'saas_features'));
       const listFeatures: any[] = [];
-      featuresSnap.forEach(d => { listFeatures.push(d.data()); });
+      featuresSnap.forEach(d => { 
+        const r = d.data() || {};
+        const fId = (r.id && r.id !== 'undefined' && r.id !== 'null') ? String(r.id).trim() : d.id;
+        listFeatures.push({ ...r, id: fId }); 
+      });
       if (listFeatures.length > 0) {
         setFeatures(listFeatures);
         localStorage.setItem('saas_marketing_features_v1', JSON.stringify(listFeatures));
@@ -1532,7 +1919,11 @@ export function MarketingAdmin({
       // 4. Clients
       const clientsSnap = await getDocs(collection(db, 'saas_clients'));
       const listClients: any[] = [];
-      clientsSnap.forEach(d => { listClients.push(d.data()); });
+      clientsSnap.forEach(d => { 
+        const r = d.data() || {};
+        const cId = (r.id && r.id !== 'undefined' && r.id !== 'null') ? String(r.id).trim() : d.id;
+        listClients.push({ ...r, id: cId }); 
+      });
       if (listClients.length > 0) {
         setClients(listClients);
         localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(listClients));
@@ -1541,7 +1932,11 @@ export function MarketingAdmin({
       // 5. Testimonials/Reviews
       const reviewsSnap = await getDocs(collection(db, 'saas_reviews'));
       const listReviews: any[] = [];
-      reviewsSnap.forEach(d => { listReviews.push(d.data()); });
+      reviewsSnap.forEach(d => { 
+        const r = d.data() || {};
+        const revId = (r.id && r.id !== 'undefined' && r.id !== 'null') ? String(r.id).trim() : d.id;
+        listReviews.push({ ...r, id: revId }); 
+      });
       if (listReviews.length > 0) {
         setReviews(listReviews);
         localStorage.setItem('saas_marketing_reviews_v1', JSON.stringify(listReviews));
@@ -1572,25 +1967,41 @@ export function MarketingAdmin({
 
       // 2. Leads
       for (const l of leads) {
-        await saveDocument('saas_leads', l.id, l);
+        if (!l) continue;
+        const leadId = (l.id && l.id !== 'undefined' && l.id !== 'null') 
+          ? String(l.id).trim() 
+          : `lead-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        await saveDocument('saas_leads', leadId, { ...l, id: leadId });
         count++;
       }
 
       // 3. Features
       for (const f of features) {
-        await saveDocument('saas_features', f.id, f);
+        if (!f) continue;
+        const fId = (f.id && f.id !== 'undefined' && f.id !== 'null') 
+          ? String(f.id).trim() 
+          : `feat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        await saveDocument('saas_features', fId, { ...f, id: fId });
         count++;
       }
 
       // 4. Clients
       for (const c of clients) {
-        await saveDocument('saas_clients', c.id, c);
+        if (!c) continue;
+        const cId = (c.id && c.id !== 'undefined' && c.id !== 'null') 
+          ? String(c.id).trim() 
+          : `client-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        await saveDocument('saas_clients', cId, { ...c, id: cId });
         count++;
       }
 
       // 5. Reviews
       for (const r of reviews) {
-        await saveDocument('saas_reviews', r.id, r);
+        if (!r) continue;
+        const rId = (r.id && r.id !== 'undefined' && r.id !== 'null') 
+          ? String(r.id).trim() 
+          : `review-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        await saveDocument('saas_reviews', rId, { ...r, id: rId });
         count++;
       }
 
@@ -1635,7 +2046,19 @@ export function MarketingAdmin({
     // 4. Leads
     const storedLeads = localStorage.getItem('saas_crm_leads_v1');
     if (storedLeads) {
-      try { setLeads(JSON.parse(storedLeads)); } catch(e) {}
+      try {
+        const parsed = JSON.parse(storedLeads);
+        if (Array.isArray(parsed)) {
+          const sanitized = parsed.map((item, idx) => {
+            if (!item) return null;
+            const validId = (item.id && item.id !== 'undefined' && item.id !== 'null')
+              ? String(item.id).trim()
+              : `lead-${Date.now()}-${idx}`;
+            return { ...item, id: validId };
+          }).filter(Boolean);
+          setLeads(sanitized);
+        }
+      } catch(e) {}
     } else {
       const initialLeads = [
         {
@@ -1726,7 +2149,19 @@ export function MarketingAdmin({
     const handleDynamicSync = () => {
       const freshLeads = localStorage.getItem('saas_crm_leads_v1');
       if (freshLeads) {
-        try { setLeads(JSON.parse(freshLeads)); } catch(e) {}
+        try {
+          const parsed = JSON.parse(freshLeads);
+          if (Array.isArray(parsed)) {
+            const sanitized = parsed.map((item, idx) => {
+              if (!item) return null;
+              const validId = (item.id && item.id !== 'undefined' && item.id !== 'null')
+                ? String(item.id).trim()
+                : `lead-sync-${Date.now()}-${idx}`;
+              return { ...item, id: validId };
+            }).filter(Boolean);
+            setLeads(sanitized);
+          }
+        } catch(e) {}
       }
     };
 
@@ -1890,16 +2325,31 @@ export function MarketingAdmin({
   };
 
   const saveLeads = async (items: any[], updatedLead?: any) => {
-    setLeads(items);
-    localStorage.setItem('saas_crm_leads_v1', JSON.stringify(items));
+    // Sanitize items so that every lead has a guaranteed non-empty string ID
+    const sanitized = (items || []).map((l, index) => {
+      if (!l) return null;
+      const leadId = (l.id && l.id !== 'undefined' && l.id !== 'null') 
+        ? String(l.id).trim() 
+        : `lead-${Date.now()}-${index}`;
+      return { ...l, id: leadId };
+    }).filter(Boolean) as any[];
+
+    setLeads(sanitized);
+    localStorage.setItem('saas_crm_leads_v1', JSON.stringify(sanitized));
     triggerSaveNotification();
     if (useFirebase && isFirestoreConnected) {
       try {
         if (updatedLead) {
-          await saveDocument('saas_leads', updatedLead.id, updatedLead);
+          const leadId = (updatedLead.id && updatedLead.id !== 'undefined' && updatedLead.id !== 'null')
+            ? String(updatedLead.id).trim()
+            : `lead-${Date.now()}`;
+          const finalLead = { ...updatedLead, id: leadId };
+          await saveDocument('saas_leads', leadId, finalLead);
         } else {
-          for (const l of items) {
-            await saveDocument('saas_leads', l.id, l);
+          for (const l of sanitized) {
+            if (l && l.id) {
+              await saveDocument('saas_leads', l.id, l);
+            }
           }
         }
       } catch (e) {
@@ -1962,7 +2412,7 @@ export function MarketingAdmin({
     setLeads(updated);
     localStorage.setItem('saas_crm_leads_v1', JSON.stringify(updated));
     triggerSaveNotification();
-    if (useFirebase && isFirestoreConnected) {
+    if (useFirebase && isFirestoreConnected && leadId && leadId !== 'undefined' && leadId !== 'null') {
       try {
         await deleteDocument('saas_leads', leadId);
       } catch (e) {
@@ -3833,6 +4283,7 @@ export function MarketingAdmin({
                       if (bot.icon === 'shield') botIcon = <ShieldCheck size={15} />;
                       if (bot.icon === 'activity') botIcon = <Activity size={15} />;
                       if (bot.icon === 'database') botIcon = <Database size={15} />;
+                      if (bot.icon === 'pen' || bot.icon === 'article' || bot.name?.includes('مقال') || bot.name?.includes('كتابة') || bot.nameEn?.toLowerCase().includes('article')) botIcon = <PenTool size={15} />;
 
                       return (
                         <div
@@ -3941,6 +4392,7 @@ export function MarketingAdmin({
                   if (bot.icon === 'shield') botIcon = <ShieldCheck size={16} />;
                   if (bot.icon === 'activity') botIcon = <Activity size={16} />;
                   if (bot.icon === 'database') botIcon = <Database size={16} />;
+                  if (bot.icon === 'pen' || bot.icon === 'article' || bot.name?.includes('مقال') || bot.name?.includes('كتابة') || bot.nameEn?.toLowerCase().includes('article')) botIcon = <PenTool size={16} />;
 
                   return (
                     <div className="space-y-6">
@@ -4058,6 +4510,470 @@ export function MarketingAdmin({
                             </div>
                           </div>
                         )}
+
+                        {/* Special Custom Interactive Article Studio for Article Writer Agent */}
+                        {(bot.id === 'article-writer' || bot.name?.includes('مقال') || bot.name?.includes('كتابة') || bot.nameEn?.toLowerCase().includes('article')) && (
+                          <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white p-5 rounded-3xl border border-indigo-500/30 shadow-xl space-y-4 text-right font-sans relative overflow-hidden">
+                            {/* Ambient Background Glow */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+                            
+                            {/* Studio Header */}
+                            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-black tracking-wider uppercase font-mono">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  {language === 'ar' ? 'جاهز للتوليد والنشر الفوري' : 'Ready to Generate'}
+                                </span>
+                                <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-[10px] font-bold">
+                                  {publishedArticles.length} {language === 'ar' ? 'مقالات بالأرشيف' : 'Articles'}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <h4 className="text-sm font-black text-white flex items-center gap-2 justify-end">
+                                  <span>{language === 'ar' ? 'استوديو توليد وصياغة المقالات الفنية والـ SEO' : 'AI Technical Article & SEO Studio'}</span>
+                                  <span className="p-1 rounded-lg bg-indigo-600 text-white">
+                                    <PenTool size={13} />
+                                  </span>
+                                </h4>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                  {language === 'ar' 
+                                    ? 'صياغة مقالات هندسية متخصصة ومحتوى تسويقي لتصدر محركات البحث وتوعية المشتركين' 
+                                    : 'Generates specialized fleet maintenance articles and SEO-rich marketing content'}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Toast Notification */}
+                            {articlePublishToast && (
+                              <div className="bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 p-2.5 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-2">
+                                <CheckCircle2 size={15} className="text-emerald-400" />
+                                <span>{articlePublishToast}</span>
+                              </div>
+                            )}
+
+                            {/* Preset Topics Badges */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-slate-400">{language === 'ar' ? 'اختر فكرة مقال أو اكتب عنوانك أدناه:' : 'Select preset topic or type custom:'}</span>
+                                <span className="text-indigo-400 font-bold">{language === 'ar' ? 'مواضيع الصيانة الأكثر بحثاً' : 'Trending Fleet Topics'}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 justify-end">
+                                {[
+                                  'الدليل الشامل للصيانة الوقائية للشاحنات والمعدات الثقيلة',
+                                  'كيف ترفع مراكز الصيانة إنتاجيتها بنسبة 40% عبر الفحص الرقمي بنظام QR الذكي',
+                                  '5 استراتيجيات لخفض تكاليف التشغيل واستهلاك الوقود لأساطيل النقل',
+                                  'التحول الرقمي لورش الصيانة في ظل رؤية 2030',
+                                  'أهمية الفحص الدوري لمنظومة الفرامل والهيدروليك لضمان أمان الطرق'
+                                ].map((topic, tIdx) => (
+                                  <button
+                                    key={tIdx}
+                                    type="button"
+                                    onClick={() => setArticlePromptTopic(topic)}
+                                    className={`px-3 py-1.5 rounded-xl text-[10.5px] font-bold border transition-all text-right cursor-pointer ${
+                                      articlePromptTopic === topic
+                                        ? 'bg-indigo-600 border-indigo-400 text-white shadow-md'
+                                        : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700/80 text-slate-300 hover:text-white'
+                                    }`}
+                                  >
+                                    {topic}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Topic Input Bar & Target Audience */}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+                              <div className="md:col-span-8">
+                                <input
+                                  type="text"
+                                  value={articlePromptTopic}
+                                  onChange={e => setArticlePromptTopic(e.target.value)}
+                                  placeholder={language === 'ar' ? 'اكتب عنوان أو فكرة المقال التي تريد صياغتها...' : 'Enter article topic or title...'}
+                                  className="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-3.5 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 text-right"
+                                />
+                              </div>
+                              <div className="md:col-span-4 flex items-center gap-2">
+                                <select
+                                  value={articleAudience}
+                                  onChange={e => setArticleAudience(e.target.value)}
+                                  className="w-full bg-slate-800/90 border border-slate-700 rounded-2xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 text-right cursor-pointer font-sans"
+                                >
+                                  <option value="fleets">{language === 'ar' ? 'أصحاب الأساطيل (تسويق)' : 'Fleet Managers'}</option>
+                                  <option value="workshops">{language === 'ar' ? 'فنيو ومهندسو الورش' : 'Workshop Engineers'}</option>
+                                  <option value="general">{language === 'ar' ? 'دليل إرشادي عام' : 'General Guide'}</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Trigger Generation Button */}
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-0.5">
+                              <div className="text-[11px] text-slate-400 text-right">
+                                <span>{language === 'ar' ? '⚡ يتم توليد المقال تلقائياً بأقسام هيكلية، وتحسين SEO، ودعوة للعمل CTA.' : 'Generates structured technical articles with verified checklists.'}</span>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={isGeneratingArticle}
+                                onClick={() => handleGenerateNewArticle()}
+                                className={`w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs font-black cursor-pointer shadow-lg transition-all flex items-center justify-center gap-2 border ${
+                                  isGeneratingArticle
+                                    ? 'bg-slate-800 text-slate-500 border-transparent cursor-not-allowed'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 border-indigo-400 text-white hover:scale-[1.015]'
+                                }`}
+                              >
+                                {isGeneratingArticle ? (
+                                  <>
+                                    <RefreshCw size={13} className="animate-spin text-indigo-300" />
+                                    <span>{language === 'ar' ? 'جاري صياغة وكتابة المقال بالـ AI...' : 'Generating Article...'}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <PenTool size={13} className="text-amber-300" />
+                                    <span>{language === 'ar' ? 'توليد وكتابة مقال جديد فورا' : 'Generate Article with AI'}</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+
+                            {/* Article Showcase (Current active or selected article) */}
+                            {(() => {
+                              const activeArt = selectedArticleForView || publishedArticles[0];
+                              if (!activeArt) return null;
+
+                              const isCopied = copiedArticleId === activeArt.id;
+                              const isPublishedToSite = activeArt.isPublishedToMarketingSite !== false;
+                              const activeArtImage = activeArt.image || activeArt.imageUrl || highwayLogisticsTruck;
+
+                              return (
+                                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4.5 space-y-3.5 text-right">
+                                  {/* Professional Image Banner & Publication Controls */}
+                                  <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 group/img">
+                                    <div className="h-40 sm:h-48 w-full overflow-hidden relative">
+                                      <img
+                                        src={activeArtImage}
+                                        alt={activeArt.title}
+                                        className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500"
+                                        referrerPolicy="no-referrer"
+                                      />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                                    </div>
+
+                                    {/* Top Floating Badges & Action Buttons */}
+                                    <div className="absolute top-3 right-3 left-3 flex items-center justify-between gap-2 flex-wrap">
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowArticleImageModal(true)}
+                                          className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-900 text-purple-200 hover:text-white border border-purple-400/40 rounded-lg text-[10.5px] font-bold backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                        >
+                                          <Sparkles size={11} className="text-amber-400" />
+                                          <span>{language === 'ar' ? 'تغيير الصورة الاحترافية' : 'Change Image'}</span>
+                                        </button>
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleTogglePublishToMarketing(activeArt.id)}
+                                          className={`px-3 py-1 rounded-lg text-[10.5px] font-black backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer border ${
+                                            isPublishedToSite
+                                              ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300 hover:bg-rose-950/80 hover:border-rose-500/50 hover:text-rose-300'
+                                              : 'bg-amber-950/80 border-amber-500/50 text-amber-300 hover:bg-emerald-950/80 hover:border-emerald-500/50 hover:text-emerald-300'
+                                          }`}
+                                          title={isPublishedToSite ? (language === 'ar' ? 'انقر لإلغاء النشر من الموقع' : 'Click to unpublish') : (language === 'ar' ? 'انقر للنشر على الموقع' : 'Click to publish')}
+                                        >
+                                          {isPublishedToSite ? (
+                                            <>
+                                              <CheckCircle2 size={11} className="text-emerald-400" />
+                                              <span>{language === 'ar' ? '✓ منشور على الموقع التسويقي' : '✓ Live on Marketing Site'}</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Clock size={11} className="text-amber-400" />
+                                              <span>{language === 'ar' ? 'مسودة (غير معروض بالموقع)' : 'Draft (Unpublished)'}</span>
+                                            </>
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Bottom Title bar on Image */}
+                                    <div className="absolute bottom-3 right-3 left-3 text-white">
+                                      <span className="text-[10px] text-purple-300 font-mono block">
+                                        {language === 'ar' ? 'صورة المقال المعتمدة للنشر العام' : 'Public Article Featured Cover'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Article Meta Bar */}
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyArticle(activeArt)}
+                                        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                      >
+                                        {isCopied ? (
+                                          <>
+                                            <CheckCircle2 size={12} className="text-emerald-400" />
+                                            <span className="text-emerald-300">{language === 'ar' ? 'تم النسخ!' : 'Copied!'}</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Copy size={12} />
+                                            <span>{language === 'ar' ? 'نسخ نص المقال' : 'Copy Text'}</span>
+                                          </>
+                                        )}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadArticle(activeArt)}
+                                        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                        title={language === 'ar' ? 'تحميل كملف نصي' : 'Download text file'}
+                                      >
+                                        <Download size={12} />
+                                        <span>{language === 'ar' ? 'تحميل' : 'Download'}</span>
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                                      <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[10px] font-bold">
+                                        {activeArt.category}
+                                      </span>
+                                      <span className="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-mono">
+                                        {activeArt.readTime}
+                                      </span>
+                                      <span className="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-mono">
+                                        {activeArt.date}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Article Title */}
+                                  <div>
+                                    <h5 className="text-sm md:text-base font-black text-white leading-snug">
+                                      {activeArt.title}
+                                    </h5>
+                                    {activeArt.titleEn && (
+                                      <p className="text-[10px] text-slate-400 font-mono mt-0.5" dir="ltr">
+                                        {activeArt.titleEn}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* SEO Tags */}
+                                  {activeArt.tags && activeArt.tags.length > 0 && (
+                                    <div className="flex items-center gap-1.5 flex-wrap justify-end pt-0.5">
+                                      <span className="text-[9.5px] text-slate-400 font-bold ml-1">SEO:</span>
+                                      {activeArt.tags.map((tag: string, tagIdx: number) => (
+                                        <span key={tagIdx} className="px-2 py-0.5 bg-slate-900 text-indigo-300 border border-indigo-500/20 rounded-md text-[9px] font-mono">
+                                          #{tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Summary Callout */}
+                                  <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl text-slate-300 text-xs leading-relaxed border-r-4 border-r-indigo-500">
+                                    <span className="font-bold text-indigo-300 block mb-1 text-[10.5px]">{language === 'ar' ? 'ملخص ومستخلص المقال:' : 'Article Executive Abstract:'}</span>
+                                    {activeArt.summary}
+                                  </div>
+
+                                  {/* Article Body Content */}
+                                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 max-h-[240px] overflow-y-auto text-slate-300 text-xs leading-relaxed font-sans space-y-2 whitespace-pre-line text-right">
+                                    {activeArt.content}
+                                  </div>
+
+                                  {/* Footer Author citation */}
+                                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-800">
+                                    <span className="font-mono text-indigo-400">ID: {activeArt.id}</span>
+                                    <span className="flex items-center gap-1">
+                                      <span>{language === 'ar' ? 'الكاتب الآلي:' : 'Author:'}</span>
+                                      <strong className="text-slate-300">{activeArt.author || 'FleetAurvexis AI Writer'}</strong>
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Published Articles Catalog / Vault List */}
+                            <div className="space-y-2 pt-2 border-t border-slate-800">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] text-slate-400 font-mono">{publishedArticles.length} {language === 'ar' ? 'مقالات بالأرشيف' : 'Total Articles'}</span>
+                                <h5 className="text-xs font-black text-slate-300 flex items-center gap-1.5">
+                                  <span>{language === 'ar' ? 'مستودع وأرشيف المقالات السابقة' : 'Articles Published Vault'}</span>
+                                  <BookOpen size={12} className="text-indigo-400" />
+                                </h5>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                                {publishedArticles.map((art) => {
+                                  const isSelected = (selectedArticleForView?.id || publishedArticles[0]?.id) === art.id;
+                                  const isPublishedToSite = art.isPublishedToMarketingSite !== false;
+                                  const artImg = art.image || art.imageUrl || highwayLogisticsTruck;
+                                  return (
+                                    <div
+                                      key={art.id}
+                                      onClick={() => setSelectedArticleForView(art)}
+                                      className={`p-2.5 rounded-xl border text-right cursor-pointer transition-all flex items-center justify-between gap-2.5 ${
+                                        isSelected
+                                          ? 'bg-indigo-950/40 border-indigo-500/60 shadow-xs'
+                                          : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 text-slate-300'
+                                      }`}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteArticle(art.id);
+                                        }}
+                                        className="text-slate-500 hover:text-rose-400 p-1 rounded transition-colors text-[10px] shrink-0"
+                                        title={language === 'ar' ? 'حذف من المستودع' : 'Delete'}
+                                      >
+                                        ✕
+                                      </button>
+
+                                      <div className="space-y-0.5 flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 justify-end">
+                                          {isPublishedToSite && (
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="منشور بالموقع" />
+                                          )}
+                                          <h6 className="text-[10.5px] font-black text-white line-clamp-1">
+                                            {art.title}
+                                          </h6>
+                                        </div>
+                                        <div className="flex items-center gap-2 justify-end text-[9px] text-slate-400">
+                                          <span>{art.readTime}</span>
+                                          <span>•</span>
+                                          <span className="text-indigo-300">{art.category}</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Thumbnail */}
+                                      <div className="w-12 h-10 rounded-lg overflow-hidden shrink-0 border border-slate-700 bg-slate-800">
+                                        <img
+                                          src={artImg}
+                                          alt=""
+                                          className="w-full h-full object-cover"
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Professional Image Selection Modal for Articles */}
+                        <AnimatePresence>
+                          {showArticleImageModal && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                              onClick={() => setShowArticleImageModal(false)}
+                            >
+                              <motion.div
+                                initial={{ scale: 0.95, y: 15 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 0.95, y: 15 }}
+                                onClick={e => e.stopPropagation()}
+                                className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto space-y-5 text-right shadow-2xl"
+                                dir="rtl"
+                              >
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowArticleImageModal(false)}
+                                    className="text-slate-400 hover:text-white p-1 rounded-lg"
+                                  >
+                                    ✕
+                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-base font-black text-white">
+                                      {language === 'ar' ? 'اختيار صورة احترافية للمقال' : 'Select Professional Article Image'}
+                                    </h4>
+                                    <Sparkles size={16} className="text-amber-400" />
+                                  </div>
+                                </div>
+
+                                <p className="text-xs text-slate-400 leading-relaxed">
+                                  {language === 'ar'
+                                    ? 'اختر صورة فوتوغرافية معتمدة عالية الدقة من مكتبة صور الأساطيل والورش الهندسية لإرفاقها بالمقال ونشرها على الموقع التسويقي:'
+                                    : 'Choose a verified high-resolution photograph to accompany your article on the marketing site:'}
+                                </p>
+
+                                {/* Gallery Grid */}
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                  {CURATED_ARTICLE_IMAGES.map(item => {
+                                    const activeArt = selectedArticleForView || publishedArticles[0];
+                                    const isCurrent = activeArt && (activeArt.image === item.url || activeArt.imageUrl === item.url);
+                                    return (
+                                      <div
+                                        key={item.id}
+                                        onClick={() => {
+                                          if (activeArt) handleChangeArticleImage(activeArt.id, item.url);
+                                        }}
+                                        className={`group relative rounded-2xl overflow-hidden border-2 cursor-pointer transition-all aspect-video ${
+                                          isCurrent
+                                            ? 'border-purple-500 shadow-md shadow-purple-500/30 ring-2 ring-purple-500/50'
+                                            : 'border-slate-700 hover:border-purple-400 opacity-85 hover:opacity-100'
+                                        }`}
+                                      >
+                                        <img
+                                          src={item.url}
+                                          alt={item.labelAr}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                          referrerPolicy="no-referrer"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent flex items-end p-2.5">
+                                          <span className="text-[10px] font-bold text-white leading-tight">
+                                            {language === 'ar' ? item.labelAr : item.labelEn}
+                                          </span>
+                                        </div>
+                                        {isCurrent && (
+                                          <div className="absolute top-2 left-2 bg-purple-600 text-white p-1 rounded-full shadow-md">
+                                            <CheckCircle2 size={12} />
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Custom URL input fallback */}
+                                <div className="pt-2 border-t border-slate-800 space-y-2">
+                                  <label className="text-xs font-bold text-slate-300 block">
+                                    {language === 'ar' ? 'أو إدخال رابط صورة خارجي مخصص (URL):' : 'Or paste a custom image URL:'}
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const activeArt = selectedArticleForView || publishedArticles[0];
+                                        if (activeArt && customArticleImageUrl.trim()) {
+                                          handleChangeArticleImage(activeArt.id, customArticleImageUrl.trim());
+                                        }
+                                      }}
+                                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl cursor-pointer shrink-0"
+                                    >
+                                      {language === 'ar' ? 'تطبيق الرابط' : 'Apply URL'}
+                                    </button>
+                                    <input
+                                      type="url"
+                                      dir="ltr"
+                                      placeholder="https://example.com/fleet-image.jpg"
+                                      value={customArticleImageUrl}
+                                      onChange={e => setCustomArticleImageUrl(e.target.value)}
+                                      className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                                    />
+                                  </div>
+                                </div>
+                              </motion.div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
                         {/* Config Tab & Performance stats */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -4280,7 +5196,8 @@ export function MarketingAdmin({
                               { id: 'zap', label: language === 'ar' ? 'طاقة/فحص' : 'Intelli' },
                               { id: 'shield', label: language === 'ar' ? 'صيانة/أمن' : 'Shield' },
                               { id: 'activity', label: language === 'ar' ? 'نبض/نشاط' : 'Activity' },
-                              { id: 'database', label: language === 'ar' ? 'داتا' : 'Data' }
+                              { id: 'database', label: language === 'ar' ? 'داتا' : 'Data' },
+                              { id: 'pen', label: language === 'ar' ? 'مقالات/كتابة' : 'Articles' }
                             ].map(ic => (
                               <button
                                 type="button"

@@ -37,7 +37,8 @@ import {
   Phone,
   Mail,
   ChevronDown,
-  ChevronLeft
+  ChevronLeft,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
@@ -45,6 +46,7 @@ import { saveDocument } from '../services/firebase';
 import FleetManagersShowcaseModal from './FleetManagersShowcaseModal';
 import VideoTutorialsModal from './VideoTutorialsModal';
 import CustomerSuccessStories from './CustomerSuccessStories';
+import MarketingArticlesSection from './MarketingArticlesSection';
 import FleetAurvexisLogo, { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 
@@ -593,25 +595,41 @@ export default function MarketingLandingPage({
     }
 
     setIsSubmitting(true);
+    const newLeadId = `lead-${Date.now()}`;
+    const leadPayload = {
+      id: newLeadId,
+      ...signupForm,
+      submittedAt: new Date().toISOString(),
+      date: new Date().toISOString().split('T')[0],
+      brand: effectiveBrandName,
+      status: 'new'
+    };
+
     try {
-      await saveDocument('saas_leads', Date.now().toString(), {
-        ...signupForm,
-        submittedAt: new Date().toISOString(),
-        brand: effectiveBrandName,
-        status: 'new'
-      });
+      await saveDocument('saas_leads', newLeadId, leadPayload);
+      
+      // Also update local storage for CRM
+      try {
+        const storedLeads = localStorage.getItem('saas_crm_leads_v1');
+        const leadsList = storedLeads ? JSON.parse(storedLeads) : [];
+        localStorage.setItem('saas_crm_leads_v1', JSON.stringify([leadPayload, ...leadsList]));
+        window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      } catch (e) {}
+
       setSubmitSuccess(true);
       setSignupForm({ name: '', email: '', phone: '', company: '', fleetSize: '20-50' });
     } catch (err) {
       console.error('Error saving lead:', err);
       // Fallback to localStorage
+      try {
+        const storedLeads = localStorage.getItem('saas_crm_leads_v1');
+        const leadsList = storedLeads ? JSON.parse(storedLeads) : [];
+        localStorage.setItem('saas_crm_leads_v1', JSON.stringify([leadPayload, ...leadsList]));
+        window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      } catch (e) {}
+
       const localLeads = JSON.parse(localStorage.getItem('saas_local_leads') || '[]');
-      localLeads.push({
-        ...signupForm,
-        submittedAt: new Date().toISOString(),
-        brand: effectiveBrandName,
-        status: 'new'
-      });
+      localLeads.push(leadPayload);
       localStorage.setItem('saas_local_leads', JSON.stringify(localLeads));
       setSubmitSuccess(true);
     } finally {
@@ -707,6 +725,13 @@ export default function MarketingLandingPage({
             </a>
             <a href="#roi" className="text-xs font-semibold text-purple-200/90 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-xl transition-all">
               {language === 'ar' ? 'حاسبة الوفورات' : 'ROI Tool'}
+            </a>
+            <a 
+              href="#articles-section" 
+              className="text-xs font-bold text-purple-100 hover:text-white bg-purple-500/20 hover:bg-purple-500/30 border border-purple-300/30 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5"
+            >
+              <BookOpen size={12} className="text-purple-300" />
+              <span>{language === 'ar' ? 'المدونة والمقالات' : 'Blog & Insights'}</span>
             </a>
           </nav>
 
@@ -1631,6 +1656,12 @@ export default function MarketingLandingPage({
         />
       )}
 
+      {/* Technical Articles & Engineering Blog Section */}
+      <MarketingArticlesSection 
+        onStartTrial={() => setShowSignupModal(true)} 
+        brandPrimaryColor={brandPrimaryColor} 
+      />
+
       {/* Customer Success Stories & Case Studies */}
       <CustomerSuccessStories />
 
@@ -1659,6 +1690,14 @@ export default function MarketingLandingPage({
                           e.preventDefault();
                           if (item.id === "item-3-1") {
                             const elem = document.getElementById('success-stories-section');
+                            if (elem) {
+                              elem.scrollIntoView({ behavior: 'smooth' });
+                              return;
+                            }
+                          }
+
+                          if (item.id === "item-3-2") {
+                            const elem = document.getElementById('articles-section');
                             if (elem) {
                               elem.scrollIntoView({ behavior: 'smooth' });
                               return;

@@ -205,10 +205,17 @@ export default function CustomerSuccessStories() {
       
       // Save to localStorage
       const existingLeadsStr = localStorage.getItem('saas_crm_leads_v1');
-      let currentLeads = [];
+      let currentLeads: any[] = [];
       if (existingLeadsStr) {
         try {
-          currentLeads = JSON.parse(existingLeadsStr);
+          const parsed = JSON.parse(existingLeadsStr);
+          if (Array.isArray(parsed)) {
+            currentLeads = parsed.map((item: any, idx: number) => {
+              if (!item) return null;
+              const vId = (item.id && item.id !== 'undefined' && item.id !== 'null') ? item.id : `lead-${Date.now()}-${idx}`;
+              return { ...item, id: vId };
+            }).filter(Boolean);
+          }
         } catch(e) {}
       }
       

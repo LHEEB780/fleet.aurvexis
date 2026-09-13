@@ -314,6 +314,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /saas_articles/{articleId} {
+      allow read, write: if true;
+    }
+
     // 11. FAULT REPORTS
     match /fault_reports/{reportId} {
       allow read, update, delete: if true;

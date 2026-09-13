@@ -243,7 +243,7 @@ export async function compressImage(
 }
 
 /**
- * Self-healing routine to fix existing bloated localStorage on application boot.
+ * Self-healing routine to fix existing bloated or corrupted localStorage on application boot.
  */
 export function sanitizeEntireLocalStorage(): void {
   try {
@@ -253,6 +253,35 @@ export function sanitizeEntireLocalStorage(): void {
       if (cleaned.length < rawInv.length) {
         localStorage.setItem('fleet_inventory_v2', cleaned);
         console.info(`[Storage] Auto-sanitized fleet_inventory_v2: reduced from ${(rawInv.length/1024).toFixed(1)}KB to ${(cleaned.length/1024).toFixed(1)}KB`);
+      }
+    }
+
+    // Auto-heal any corrupt or undefined lead IDs
+    const rawLeads = localStorage.getItem('saas_crm_leads_v1');
+    if (rawLeads) {
+      try {
+        const parsed = JSON.parse(rawLeads);
+        if (Array.isArray(parsed)) {
+          let hasFixes = false;
+          const healed = parsed.map((lead: any, idx: number) => {
+            if (!lead) return null;
+            if (!lead.id || lead.id === 'undefined' || lead.id === 'null' || typeof lead.id !== 'string') {
+              hasFixes = true;
+              return {
+                ...lead,
+                id: `lead-healed-${Date.now()}-${idx}`
+              };
+            }
+            return lead;
+          }).filter(Boolean);
+
+          if (hasFixes) {
+            localStorage.setItem('saas_crm_leads_v1', JSON.stringify(healed));
+            console.info('[Storage] Cleaned and sanitized corrupted lead IDs in saas_crm_leads_v1');
+          }
+        }
+      } catch (err) {
+        console.warn('[Storage] Error parsing rawLeads during boot cleanup:', err);
       }
     }
   } catch (e) {

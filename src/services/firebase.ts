@@ -122,28 +122,57 @@ export async function testFirestoreConnection(): Promise<boolean> {
 }
 
 // Single Document Operations
-export async function saveDocument(colName: string, docId: string, data: any): Promise<void> {
-  const path = `${colName}/${docId}`;
+export async function saveDocument(colName: string, docId?: string | null, data?: any): Promise<void> {
+  const payload = data ? { ...data } : {};
+  let targetId = (typeof docId === 'string' && docId.trim() && docId !== 'undefined' && docId !== 'null')
+    ? docId.trim()
+    : (payload.id && typeof payload.id === 'string' && payload.id.trim() && payload.id !== 'undefined' && payload.id !== 'null')
+      ? payload.id.trim()
+      : null;
+
+  if (!targetId) {
+    try {
+      if (db) {
+        targetId = doc(collection(db, colName)).id;
+      } else {
+        targetId = `${colName}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      }
+    } catch {
+      targetId = `${colName}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    }
+  }
+
+  const path = `${colName}/${targetId}`;
   if (!db) {
     console.warn(`Firestore is unavailable. Cannot save document to ${path}.`);
     return;
   }
+
+  if (!payload.id) {
+    payload.id = targetId;
+  }
+
   try {
-    const cleanData = JSON.parse(JSON.stringify(data)); // strip undefined fields
-    await setDoc(doc(db, colName, docId), cleanData);
+    const cleanData = JSON.parse(JSON.stringify(payload)); // strip undefined fields
+    await setDoc(doc(db, colName, targetId), cleanData);
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
 
-export async function deleteDocument(colName: string, docId: string): Promise<void> {
-  const path = `${colName}/${docId}`;
+export async function deleteDocument(colName: string, docId?: string | null): Promise<void> {
+  if (!docId || typeof docId !== 'string' || !docId.trim() || docId === 'undefined' || docId === 'null') {
+    console.warn(`deleteDocument called with invalid docId for collection "${colName}":`, docId);
+    return;
+  }
+  const targetId = docId.trim();
+  const path = `${colName}/${targetId}`;
   if (!db) {
     console.warn(`Firestore is unavailable. Cannot delete document from ${path}.`);
     return;
   }
   try {
-    await deleteDoc(doc(db, colName, docId));
+    await deleteDoc(doc(db, colName, targetId));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }
@@ -246,7 +275,9 @@ export async function pullCloudDataToLocal(): Promise<{ success: boolean; count:
         const snap = await getDocs(collection(db, config.collectionName));
         const list: any[] = [];
         snap.forEach((doc) => {
-          list.push(doc.data());
+          const docData = doc.data() || {};
+          const docId = (docData.id && docData.id !== 'undefined' && docData.id !== 'null') ? docData.id : doc.id;
+          list.push({ ...docData, id: docId });
           count++;
         });
         

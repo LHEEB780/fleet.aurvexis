@@ -850,7 +850,19 @@ export default function HelpCenter({ user, onNavigateToTab, onOpenTutorials }: H
     // 1. Save to SaaS Leads & CRM Pipeline (localStorage)
     try {
       const storedLeads = localStorage.getItem('saas_crm_leads_v1');
-      const leadsList = storedLeads ? JSON.parse(storedLeads) : [];
+      let leadsList: any[] = [];
+      if (storedLeads) {
+        try {
+          const parsed = JSON.parse(storedLeads);
+          if (Array.isArray(parsed)) {
+            leadsList = parsed.map((item: any, idx: number) => {
+              if (!item) return null;
+              const vId = (item.id && item.id !== 'undefined' && item.id !== 'null') ? item.id : `lead-${Date.now()}-${idx}`;
+              return { ...item, id: vId };
+            }).filter(Boolean);
+          }
+        } catch(e) {}
+      }
       const updatedLeads = [newTicket, ...leadsList];
       localStorage.setItem('saas_crm_leads_v1', JSON.stringify(updatedLeads));
       
