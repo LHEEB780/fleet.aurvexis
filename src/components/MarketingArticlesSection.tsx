@@ -20,6 +20,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useLanguage } from '../services/LanguageContext';
+import { ArticleShareModal } from './ArticleShareModal';
 
 // Import high-fidelity local assets for fleet articles
 import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
@@ -46,6 +47,10 @@ export interface MarketingArticle {
   isPublishedToMarketingSite?: boolean;
   image?: string;
   imageUrl?: string;
+  imageSource?: string;
+  imageCaption?: string;
+  imageModel?: string;
+  imagePrompt?: string;
 }
 
 export const CURATED_ARTICLE_IMAGES: { id: string; labelAr: string; labelEn: string; url: string }[] = [
@@ -200,7 +205,8 @@ export default function MarketingArticlesSection({
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [selectedArticle, setSelectedArticle] = useState<MarketingArticle | null>(null);
-  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [actionToast, setActionToast] = useState<string>('');
 
   // Sync with Admin panel articles updates
   useEffect(() => {
@@ -250,22 +256,25 @@ export default function MarketingArticlesSection({
     return art.category === activeCategory || (art.categoryEn && art.categoryEn.toLowerCase().includes(activeCategory.toLowerCase()));
   });
 
-  const handleCopyShare = (art: MarketingArticle) => {
-    const textToCopy = `${art.title}\n\n${art.summary}\n\nاقرأ المزيد عبر منصة FleetAurvexis: ${window.location.origin}`;
-    navigator.clipboard?.writeText(textToCopy);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 3000);
-  };
-
-  const handleDownload = (art: MarketingArticle) => {
-    const content = `${art.title}\nالتصنيف: ${art.category} | ${art.date} | ${art.readTime}\nالكاتب: ${art.author}\n\nالملخص:\n${art.summary}\n\nنص المقال:\n${art.content}\n\nتم النشر عبر منصة FleetAurvexis`;
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${art.title.slice(0, 30)}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+  // Native apps share trigger (WhatsApp, WA Business, Telegram, Messenger, Facebook, X, Gmail, Device)
+  const handleShareArticle = async (art: MarketingArticle) => {
+    setSelectedArticle(art);
+    // Try native share sheet first (supported on standalone mobile browsers)
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: art.title,
+          text: `${art.title}\n\n${art.summary || ''}\n\nمنصة FleetAurvexis`,
+          url: window.location.href
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+        // If browser iframe restricts native share, fall through to our apps share modal
+      }
+    }
+    // Open dedicated apps share drawer with direct WhatsApp, WA Business, Telegram, Messenger, X, Gmail links
+    setIsShareModalOpen(true);
   };
 
   return (
@@ -482,33 +491,41 @@ export default function MarketingArticlesSection({
               {/* Scrollable Content Body */}
               <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-right">
                 
-                {/* Toolbar (Share / Copy / Download) */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4 flex-wrap gap-3">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyShare(selectedArticle)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-slate-200"
-                    >
-                      {copiedLink ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                      <span>{copiedLink ? (language === 'ar' ? 'تم نسخ الرابط!' : 'Copied!') : (language === 'ar' ? 'مشاركة المقال' : 'Share')}</span>
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => handleDownload(selectedArticle)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-slate-200"
-                    >
-                      <Download size={14} />
-                      <span>{language === 'ar' ? 'تحميل كملف نصي' : 'Download text'}</span>
-                    </button>
+                {/* Toolbar (Share Article Only) */}
+                <div className="flex flex-col gap-3 border-b border-slate-100 pb-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Apps Share Button (Opens mobile apps drawer: WhatsApp, WA Business, Telegram, Messenger, Facebook, X, Gmail, Device) */}
+                      <button
+                        type="button"
+                        onClick={() => handleShareArticle(selectedArticle)}
+                        className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
+                        title={language === 'ar' ? 'مشاركة عبر تطبيقات الموبايل (واتساب، تليجرام، فيسبوك...)' : 'Share via mobile apps'}
+                      >
+                        <Share2 size={16} />
+                        <span>{language === 'ar' ? 'مشاركة المقال' : 'Share Article'}</span>
+                      </button>
+                    </div>
+
+                    <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-purple-600" />
+                      <span>{language === 'ar' ? 'الناشر الرسمي:' : 'Author:'}</span>
+                      <strong className="text-slate-800">{selectedArticle.author}</strong>
+                    </div>
                   </div>
 
-                  <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                    <Sparkles size={13} className="text-purple-600" />
-                    <span>{language === 'ar' ? 'الناشر الرسمي:' : 'Author:'}</span>
-                    <strong className="text-slate-800">{selectedArticle.author}</strong>
-                  </div>
+                  {/* Feedback Toast Notification Banner */}
+                  {actionToast && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="px-3.5 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-2 shadow-xs"
+                    >
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>{actionToast}</span>
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* Executive Summary Callout */}
@@ -566,6 +583,14 @@ export default function MarketingArticlesSection({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Apps Sharing Sheet (WhatsApp, WA Business, Telegram, Messenger, Facebook, X, Gmail, Device) */}
+      <ArticleShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        article={selectedArticle}
+        language={language}
+      />
     </section>
   );
 }

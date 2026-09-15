@@ -1588,6 +1588,145 @@ Please read and extract all details carefully. If it's an image or a PDF, use th
   }
 });
 
+// Fallback helper for article image generation
+function getArticleImageFallback(prompt: string = "", topic: string = "", aspectRatio: string = "16:9") {
+  const query = `${prompt} ${topic}`.toLowerCase();
+  
+  let chosenKey = "highway";
+  let labelAr = "شاحنات النقل اللوجستي السريع";
+  let labelEn = "Highway Fleet Logistics";
+
+  if (query.includes("ديزل") || query.includes("diesel") || query.includes("وقود") || query.includes("fuel") || query.includes("حواقن")) {
+    chosenKey = "diesel";
+    labelAr = "صيانة محركات الديزل والحواقن";
+    labelEn = "Diesel Engine Diagnostics";
+  } else if (query.includes("هيدروليك") || query.includes("hydraulic") || query.includes("ضغط") || query.includes("صمامات")) {
+    chosenKey = "hydraulic";
+    labelAr = "معايرة الأنظمة الهيدروليكية";
+    labelEn = "Hydraulic Systems Servicing";
+  } else if (query.includes("qr") || query.includes("فحص") || query.includes("سائق") || query.includes("تفتيش") || query.includes("inspection")) {
+    chosenKey = "inspection";
+    labelAr = "الفحص الميداني للشاحنات وبطاقة QR";
+    labelEn = "Driver & QR Fleet Inspection";
+  } else if (query.includes("ذكاء") || query.includes("ai") || query.includes("حساسات") || query.includes("تنبؤ") || query.includes("telemetry")) {
+    chosenKey = "ai-diag";
+    labelAr = "تشخيص الأعطال بالذكاء الاصطناعي";
+    labelEn = "AI Fleet Diagnostics & Telemetry";
+  } else if (query.includes("ورشة") || query.includes("ميكانيك") || query.includes("workshop") || query.includes("mechanic")) {
+    chosenKey = "workshop";
+    labelAr = "ورشة صيانة الشاحنات الثقيلة";
+    labelEn = "Heavy Commercial Workshop";
+  } else if (query.includes("مستودع") || query.includes("لوجستي") || query.includes("depot") || query.includes("مركز")) {
+    chosenKey = "depot";
+    labelAr = "مستودعات ومركز انطلاق الأسطول";
+    labelEn = "Enterprise Logistics Depot";
+  } else if (query.includes("معدات") || query.includes("حفار") || query.includes("بلدوزر") || query.includes("heavy") || query.includes("إنشاءات")) {
+    chosenKey = "heavy-machinery";
+    labelAr = "صيانة المعدات الثقيلة والحفارات";
+    labelEn = "Heavy Machinery Maintenance";
+  } else if (query.includes("نظافة") || query.includes("بلدية") || query.includes("خدمات")) {
+    chosenKey = "municipal";
+    labelAr = "أسطول الخدمات الحضرية والبلدية";
+    labelEn = "Municipal Fleet Maintenance";
+  }
+
+  return {
+    success: true,
+    fallbackKey: chosenKey,
+    labelAr,
+    labelEn,
+    modelUsed: "مكتبة أصول الأساطيل المعتمدة (Fleet Asset Engine)",
+    modelLabel: "Fleet Verified Library",
+    source: "library",
+    promptUsed: prompt || topic || labelAr,
+    aspectRatio: aspectRatio || "16:9"
+  };
+}
+
+// Imagen & AI Image Generation endpoint for Technical Articles
+app.post("/api/ai/generate-article-image", async (req, res) => {
+  try {
+    const { prompt, topic, aspectRatio = "16:9", style = "photorealistic" } = req.body;
+    
+    // Construct an ultra-professional, vivid prompt tailored for Imagen & commercial automotive/fleet engineering
+    let enhancedPrompt = prompt ? String(prompt).trim() : '';
+    if (!enhancedPrompt && topic) {
+      enhancedPrompt = `A high-end editorial commercial photograph representing "${topic}", commercial heavy transport trucks, modern fleet maintenance depot, hydraulic diagnostics, engineering workshop equipment, cinematic studio lighting, photorealistic, 8k resolution, professional automotive photography.`;
+    } else if (enhancedPrompt) {
+      enhancedPrompt = `${enhancedPrompt}, commercial transport fleet, automotive & heavy machinery engineering, modern industrial workshop, photorealistic, ultra-high resolution, cinematic lighting.`;
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      console.log("[Gemini Fallback] API key is absent. Using curated intelligent fleet asset fallback for article image.");
+      return res.json(getArticleImageFallback(enhancedPrompt, topic, aspectRatio));
+    }
+
+    const ai = getGeminiClient();
+
+    // 1. First attempt: Google Imagen 3 (imagen-3.0-generate-002)
+    try {
+      console.log("[Imagen API] Generating image with model: imagen-3.0-generate-002");
+      const imagenRes = await (ai.models as any).generateImages({
+        model: "imagen-3.0-generate-002",
+        prompt: enhancedPrompt,
+        config: {
+          numberOfImages: 1,
+          aspectRatio: (aspectRatio === "1:1" ? "1:1" : aspectRatio === "4:3" ? "4:3" : "16:9") as any,
+          outputMimeType: "image/jpeg"
+        }
+      });
+      if (imagenRes?.generatedImages?.[0]?.image?.imageBytes) {
+        console.log("[Imagen API] Successfully generated image with imagen-3.0-generate-002!");
+        return res.json({
+          success: true,
+          imageUrl: `data:image/jpeg;base64,${imagenRes.generatedImages[0].image.imageBytes}`,
+          modelUsed: "imagen-3.0-generate-002",
+          modelLabel: "Google Imagen 3 AI",
+          promptUsed: enhancedPrompt,
+          source: "imagen_ai"
+        });
+      }
+    } catch (imagenErr: any) {
+      safeLog("Imagen 3 generation attempt in server", imagenErr);
+    }
+
+    // 2. Second attempt: gemini-3.1-flash-image
+    try {
+      console.log("[Gemini API] Generating image with model: gemini-3.1-flash-image");
+      const flashRes = await ai.models.generateContent({
+        model: "gemini-3.1-flash-image",
+        contents: { parts: [{ text: enhancedPrompt }] },
+        config: {
+          imageConfig: {
+            aspectRatio: (aspectRatio === "1:1" ? "1:1" : aspectRatio === "4:3" ? "4:3" : "16:9") as any
+          }
+        }
+      });
+      for (const part of flashRes.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData) {
+          console.log("[Gemini API] Successfully generated image with gemini-3.1-flash-image!");
+          return res.json({
+            success: true,
+            imageUrl: `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}`,
+            modelUsed: "gemini-3.1-flash-image",
+            modelLabel: "Gemini Flash Image AI",
+            promptUsed: enhancedPrompt,
+            source: "imagen_ai"
+          });
+        }
+      }
+    } catch (flashErr: any) {
+      safeLog("Flash image generation attempt in server", flashErr);
+    }
+
+    // Fallback if AI models were unavailable
+    return res.json(getArticleImageFallback(enhancedPrompt, topic, aspectRatio));
+  } catch (err: any) {
+    safeLog("generate-article-image general catch", err);
+    return res.json(getArticleImageFallback(req.body?.prompt, req.body?.topic, req.body?.aspectRatio));
+  }
+});
+
 // Initialize Stripe safely on the server
 let stripeClient: any = null;
 function getStripeClient() {

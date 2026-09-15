@@ -67,7 +67,11 @@ import {
   Car,
   CheckCircle2,
   Share2,
-  Copy
+  Copy,
+  Image as ImageIcon,
+  Wand2,
+  Quote,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
@@ -93,6 +97,7 @@ import {
 } from '../services/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { DEFAULT_SUCCESS_STORIES, SuccessStory } from './CustomerSuccessStories';
+import { ArticleShareModal } from './ArticleShareModal';
 
 import heavyMachineryRepair from '../assets/images/heavy_machinery_repair_1783750018560.jpg';
 import dieselMaintenance from '../assets/images/diesel_maintenance_1783750031121.jpg';
@@ -104,6 +109,16 @@ import driverTruckInspection from '../assets/images/driver_truck_inspection_1786
 import aiFleetDiagnostics from '../assets/images/ai_fleet_diagnostics_1786785439472.jpg';
 import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
 import { CURATED_ARTICLE_IMAGES } from './MarketingArticlesSection';
+import { 
+  EnterprisePartner, 
+  DEFAULT_ENTERPRISE_PARTNERS, 
+  CURATED_PARTNER_IMAGES, 
+  migratePartners,
+  PartnerMetric,
+  PartnerQuote
+} from '../data/enterprisePartnersData';
+import EnterprisePartnerModal from './EnterprisePartnerModal';
+import MarketingArticlesManager from './MarketingArticlesManager';
 
 interface MarketingAdminProps {
   brandPrimaryColor: string;
@@ -159,88 +174,7 @@ const DEFAULT_FEATURES = [
   }
 ];
 
-const DEFAULT_CLIENTS = [
-  { 
-    id: 'c-1', 
-    name: 'مؤسسة الغد للشحن الذكي', 
-    nameAr: 'مؤسسة الغد للشحن الذكي',
-    nameEn: 'Al-Ghad Smart Transport Corp.',
-    industryAr: 'سلاسل التوريد وشحن المستقبل', 
-    industryEn: 'Supply Chain & Future Cargo', 
-    rating: 5, 
-    yearJoint: '2024', 
-    activeVehicles: '1,200', 
-    logoSeed: 'LG',
-    bgLight: 'bg-sky-50/70 hover:bg-sky-50 hover:shadow-sky-50 border-sky-100 hover:border-sky-300 text-sky-900',
-    bgDark: 'dark:bg-sky-950/20 dark:border-sky-900/30 dark:hover:border-sky-800',
-    badgeBg: 'text-sky-700 bg-sky-100 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-900/30',
-    avatarBg: 'bg-sky-600 text-white shadow-sky-100'
-  },
-  { 
-    id: 'c-2', 
-    name: 'فيوتشر تراك للخدمات البيئية', 
-    nameAr: 'فيوتشر تراك للخدمات البيئية',
-    nameEn: 'FutureTrack Eco Services',
-    industryAr: 'خدمات النقل النظيف والهجين', 
-    industryEn: 'Clean & Hybrid Mobility Hubs', 
-    rating: 5, 
-    yearJoint: '2023', 
-    activeVehicles: '450', 
-    logoSeed: 'FT',
-    bgLight: 'bg-emerald-50/70 hover:bg-emerald-50 hover:shadow-emerald-50 border-emerald-100 hover:border-emerald-300 text-emerald-900',
-    bgDark: 'dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:hover:border-emerald-800',
-    badgeBg: 'text-emerald-700 bg-emerald-100 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-900/30',
-    avatarBg: 'bg-emerald-600 text-white shadow-emerald-100'
-  },
-  { 
-    id: 'c-3', 
-    name: 'المسار المستدام للنقل اللوجستي', 
-    nameAr: 'المسار المستدام للنقل اللوجستي',
-    nameEn: 'Sustainable National Cargo',
-    industryAr: 'شحن مستدام وموثق للصناعات', 
-    industryEn: 'Certified Sustainable Logistics', 
-    rating: 5, 
-    yearJoint: '2024', 
-    activeVehicles: '820', 
-    logoSeed: 'SC',
-    bgLight: 'bg-indigo-50/70 hover:bg-indigo-50 hover:shadow-indigo-50 border-indigo-100 hover:border-indigo-300 text-indigo-900',
-    bgDark: 'dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:hover:border-indigo-800',
-    badgeBg: 'text-indigo-700 bg-indigo-100 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-900/30',
-    avatarBg: 'bg-indigo-600 text-white shadow-indigo-100'
-  },
-  { 
-    id: 'c-4', 
-    name: 'أوربت ترانزيت للنقل الطاقي', 
-    nameAr: 'أوربت ترانزيت للنقل الطاقي',
-    nameEn: 'TransOrbit Hybrid Transit',
-    industryAr: 'شحن الطاقة المسال والوقائيات', 
-    industryEn: 'Energy Cargo & Odometer Sync', 
-    rating: 4.9, 
-    yearJoint: '2025', 
-    activeVehicles: '310', 
-    logoSeed: 'OT',
-    bgLight: 'bg-amber-50/70 hover:bg-amber-50 hover:shadow-amber-50 border-amber-100 hover:border-amber-300 text-amber-900',
-    bgDark: 'dark:bg-amber-950/20 dark:border-amber-900/30 dark:hover:border-amber-800',
-    badgeBg: 'text-amber-700 bg-amber-100 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900/30',
-    avatarBg: 'bg-amber-600 text-white shadow-amber-100'
-  },
-  { 
-    id: 'c-5', 
-    name: 'ريدان للتكامل اللوجستي', 
-    nameAr: 'ريدان للتكامل اللوجستي',
-    nameEn: 'Raydan Eco-Transit Systems',
-    industryAr: 'شبكات النقل الكهربائي الموثوق', 
-    industryEn: 'Battery-Powered Net-Zero Transit', 
-    rating: 5, 
-    yearJoint: '2025', 
-    activeVehicles: '150', 
-    logoSeed: 'RE',
-    bgLight: 'bg-purple-50/70 hover:bg-purple-50 hover:shadow-purple-50 border-purple-100 hover:border-purple-300 text-purple-900',
-    bgDark: 'dark:bg-purple-950/20 dark:border-purple-900/30 dark:hover:border-purple-800',
-    badgeBg: 'text-purple-700 bg-purple-100 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-900/30',
-    avatarBg: 'bg-purple-600 text-white shadow-purple-100'
-  }
-];
+const DEFAULT_CLIENTS = DEFAULT_ENTERPRISE_PARTNERS;
 
 const DEFAULT_REVIEWS = [
   {
@@ -403,12 +337,13 @@ export function MarketingAdmin({
   const isRtl = dir === 'rtl';
 
   // Sub-navigation tabs
-  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots' | 'gallery' | 'tutorials'>('leads');
+  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots' | 'gallery' | 'tutorials' | 'articles'>('leads');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchMenuQuery, setSearchMenuQuery] = useState('');
 
   const menuItems = [
     { id: 'leads', label: 'المشتركون والطلبات المتلقاة', subLabel: 'متابعة الـ Leads وتحديث حالة الحسابات والمبيعات', icon: <Users size={15} /> },
+    { id: 'articles', label: '📰 وحدة إدارة وصياغة المقالات', subLabel: 'مكتبة المقالات، توليد صور Imagen، والدمج قبل النشر', icon: <PenTool size={15} className="text-purple-600" /> },
     { id: 'tutorials', label: 'مكتبة الفيديوهات والشروحات التدريبية', subLabel: 'إدارة وإضافة الشروحات المعتمدة وروابط الفيديو لكافة المشتركين', icon: <Video size={15} className="text-purple-600" /> },
     { id: 'launch-planner', label: 'دليل وخطة إطلاق الساس متكامل', subLabel: 'الخطة والتحقق ودليل التشغيل بالتفصيل', icon: <CheckSquare size={15} className="text-amber-500" /> },
     { id: 'robots', label: 'مكتبة الروبوتات والذكاء الاصطناعي', subLabel: 'أوتوماتونات ذكية ومعالجات خلفية لأتمتة النظام', icon: <Sparkles size={15} style={{ color: brandPrimaryColor }} className="animate-pulse" /> },
@@ -1376,10 +1311,13 @@ export function MarketingAdmin({
   const [articleAudience, setArticleAudience] = useState<string>('fleets');
   const [isGeneratingArticle, setIsGeneratingArticle] = useState<boolean>(false);
   const [selectedArticleForView, setSelectedArticleForView] = useState<any | null>(null);
+  const [adminShareArticle, setAdminShareArticle] = useState<any | null>(null);
   const [copiedArticleId, setCopiedArticleId] = useState<string | null>(null);
   const [articlePublishToast, setArticlePublishToast] = useState<string>('');
   const [showArticleImageModal, setShowArticleImageModal] = useState<boolean>(false);
   const [customArticleImageUrl, setCustomArticleImageUrl] = useState<string>('');
+  const [modalImagenPrompt, setModalImagenPrompt] = useState<string>('');
+  const [isModalGeneratingImage, setIsModalGeneratingImage] = useState<boolean>(false);
 
   const handleTogglePublishToMarketing = (articleId: string) => {
     setPublishedArticles(prev => {
@@ -1408,11 +1346,43 @@ export function MarketingAdmin({
     setTimeout(() => setArticlePublishToast(''), 3500);
   };
 
-  const handleChangeArticleImage = (articleId: string, newImage: string) => {
+  const [allActivatedInAdmin, setAllActivatedInAdmin] = useState<boolean>(false);
+
+  const handleActivateAllArticlesInAdmin = () => {
+    setPublishedArticles(prev => {
+      const updated = prev.map(art => ({
+        ...art,
+        isPublishedToMarketingSite: true,
+        status: 'published' as const
+      }));
+      localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+      return updated;
+    });
+    setAllActivatedInAdmin(true);
+    setArticlePublishToast(language === 'ar' ? '✓ تم تفعيل ونشر جميع المقالات على المنصة بنجاح!' : '✓ All articles activated & published live!');
+    setTimeout(() => {
+      setArticlePublishToast('');
+      setAllActivatedInAdmin(false);
+    }, 3500);
+  };
+
+  const handleChangeArticleImage = (articleId: string, newImage: string, meta?: any) => {
     setPublishedArticles(prev => {
       const updated = prev.map(art => {
         if (art.id === articleId) {
-          return { ...art, image: newImage, imageUrl: newImage };
+          return {
+            ...art,
+            image: newImage,
+            imageUrl: newImage,
+            ...(meta ? {
+              imageSource: meta.imageSource || art.imageSource,
+              imageModel: meta.imageModel || art.imageModel,
+              imagePrompt: meta.imagePrompt || art.imagePrompt
+            } : {})
+          };
         }
         return art;
       });
@@ -1427,12 +1397,17 @@ export function MarketingAdmin({
       setSelectedArticleForView((prev: any) => prev ? {
         ...prev,
         image: newImage,
-        imageUrl: newImage
+        imageUrl: newImage,
+        ...(meta ? {
+          imageSource: meta.imageSource || prev.imageSource,
+          imageModel: meta.imageModel || prev.imageModel,
+          imagePrompt: meta.imagePrompt || prev.imagePrompt
+        } : {})
       } : null);
     }
 
     setShowArticleImageModal(false);
-    setArticlePublishToast(language === 'ar' ? '✓ تم تعيين وتحديث صورة المقال الاحترافية' : '✓ Professional article image assigned');
+    setArticlePublishToast(language === 'ar' ? '✓ تم تعيين وتحديث صورة المقال الاحترافية ودمجها' : '✓ Professional article image assigned & merged');
     setTimeout(() => setArticlePublishToast(''), 3500);
   };
 
@@ -1567,13 +1542,26 @@ export function MarketingAdmin({
     }, 900);
   };
 
-  const handleCopyArticle = (article: any) => {
-    const fullText = `${article.title}\n\n${article.summary}\n\n${article.content}\n\n---\nنُشر بواسطة: ${article.author} • ${article.date}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(fullText);
+  const handleShareArticleInAdmin = async (article: any) => {
+    const shareTitle = article.title;
+    const shareText = `${article.title}\n\n${article.summary || ''}\n\nمنصة FleetAurvexis`;
+    const shareUrl = window.location.href;
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
     }
-    setCopiedArticleId(article.id);
-    setTimeout(() => setCopiedArticleId(null), 2500);
+
+    // Open full apps sharing sheet (WhatsApp, WA Business, Telegram, Messenger, Facebook, X, Gmail, Device)
+    setAdminShareArticle(article);
   };
 
   const handleDeleteArticle = (articleId: string) => {
@@ -1588,14 +1576,54 @@ export function MarketingAdmin({
   };
 
   const handleDownloadArticle = (article: any) => {
-    const text = `${article.title}\n${article.category} | ${article.readTime} | ${article.date}\n\n${article.summary}\n\n${article.content}\n\n---\nFleetAurvexis AI Articles Vault`;
+    const divider = '================================================================================';
+    const lines = [
+      divider,
+      `  ${article.title}`,
+      divider,
+      '',
+      `• التصنيف: ${article.category || ''}`,
+      `• تاريخ النشر: ${article.date || ''}`,
+      `• وقت القراءة: ${article.readTime || ''}`,
+      `• الكاتب: ${article.author || 'FleetAurvexis AI'}`,
+      article.tags ? `• الوسوم: ${Array.isArray(article.tags) ? article.tags.join('، ') : article.tags}` : '',
+      '',
+      '--------------------------------------------------------------------------------',
+      '  الملخص:',
+      '--------------------------------------------------------------------------------',
+      article.summary || '',
+      '',
+      '--------------------------------------------------------------------------------',
+      '  المحتوى الكامل:',
+      '--------------------------------------------------------------------------------',
+      article.content || '',
+      '',
+      divider,
+      '  FleetAurvexis - نظام إدارة الصيانة والأسطول',
+      `  ${window.location.origin}`,
+      divider
+    ].filter(Boolean);
+
+    const fileContent = lines.join('\r\n');
+    // Prepend UTF-8 BOM (\uFEFF) to guarantee proper Arabic rendering across all mobile/desktop readers
+    const file = new Blob(['\uFEFF' + fileContent], { type: 'text/plain;charset=utf-8' });
     const element = document.createElement("a");
-    const file = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const safeTitle = (article.title || 'article')
+      .replace(/[/\\?%*:|"<>#]/g, '-')
+      .replace(/\s+/g, '_')
+      .slice(0, 45);
     element.href = URL.createObjectURL(file);
-    element.download = `${article.title.substring(0, 30)}.txt`;
+    element.download = `مقال_${safeTitle}.txt`;
+    element.setAttribute('download', `مقال_${safeTitle}.txt`);
     document.body.appendChild(element);
     element.click();
-    document.body.removeChild(element);
+    setTimeout(() => {
+      document.body.removeChild(element);
+      URL.revokeObjectURL(element.href);
+    }, 300);
+
+    setArticlePublishToast(language === 'ar' ? '✓ تم تحميل الملف النصي بترميز UTF-8 سليم' : '✓ Text file downloaded with clean UTF-8');
+    setTimeout(() => setArticlePublishToast(''), 3000);
   };
 
   const handleToggleRobotActive = (id: string) => {
@@ -1925,8 +1953,9 @@ export function MarketingAdmin({
         listClients.push({ ...r, id: cId }); 
       });
       if (listClients.length > 0) {
-        setClients(listClients);
-        localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(listClients));
+        const migratedClients = migratePartners(listClients);
+        setClients(migratedClients);
+        localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(migratedClients));
       }
 
       // 5. Testimonials/Reviews
@@ -2025,10 +2054,17 @@ export function MarketingAdmin({
       localStorage.setItem('saas_marketing_features_v1', JSON.stringify(DEFAULT_FEATURES));
     }
 
-    // 2. Clients
+    // 2. Clients & Partner Articles
     const storedClients = localStorage.getItem('saas_marketing_clients_v2');
     if (storedClients) {
-      try { setClients(JSON.parse(storedClients)); } catch(e) {}
+      try { 
+        const parsed = JSON.parse(storedClients);
+        const migrated = migratePartners(parsed);
+        setClients(migrated);
+        localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(migrated));
+      } catch(e) {
+        setClients(DEFAULT_CLIENTS);
+      }
     } else {
       setClients(DEFAULT_CLIENTS);
       localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(DEFAULT_CLIENTS));
@@ -2212,6 +2248,8 @@ export function MarketingAdmin({
     setClients(items);
     localStorage.setItem('saas_marketing_clients_v2', JSON.stringify(items));
     triggerSaveNotification();
+    window.dispatchEvent(new Event('marketing-data-updated'));
+    window.dispatchEvent(new Event('storage'));
     if (useFirebase && isFirestoreConnected) {
       try {
         for (const c of items) {
@@ -2367,8 +2405,33 @@ export function MarketingAdmin({
   // UI Modal/Form States for Features CRUD
   const [featureForm, setFeatureForm] = useState<{ id?: string, titleAr: string, titleEn: string, descAr: string, descEn: string, iconName: string, badgeAr: string, badgeEn: string } | null>(null);
 
-  // UI Modal/Form States for Clients CRUD
-  const [clientForm, setClientForm] = useState<{ id?: string, name: string, industryAr: string, industryEn: string, rating: number, yearJoint: string, activeVehicles: string, logoSeed: string } | null>(null);
+  // UI Modal/Form States for Clients & Enterprise Partner Case Study Articles CRUD
+  const [clientForm, setClientForm] = useState<{
+    id?: string;
+    name: string;
+    nameAr?: string;
+    nameEn?: string;
+    industryAr: string;
+    industryEn: string;
+    rating: number;
+    yearJoint: string;
+    activeVehicles: string;
+    logoSeed: string;
+    image: string;
+    articleTitleAr: string;
+    articleTitleEn: string;
+    articleSummaryAr: string;
+    articleSummaryEn: string;
+    articleContentAr: string;
+    articleContentEn: string;
+    metrics: PartnerMetric[];
+    quote: PartnerQuote;
+  } | null>(null);
+
+  // Admin Preview modal state for Enterprise Partner case studies
+  const [selectedPartnerForAdminPreview, setSelectedPartnerForAdminPreview] = useState<EnterprisePartner | null>(null);
+  const [isGeneratingPartnerArticle, setIsGeneratingPartnerArticle] = useState(false);
+  const [customPartnerImageUrl, setCustomPartnerImageUrl] = useState('');
 
   // UI Modal/Form States for Testimonials CRUD
   const [reviewForm, setReviewForm] = useState<{ id?: string, authorName: string, roleAr: string, roleEn: string, company: string, contentAr: string, contentEn: string, rating: number } | null>(null);
@@ -2601,41 +2664,148 @@ export function MarketingAdmin({
     saveFeatures(updated);
   };
 
-  // Partners handles
+  // Enterprise Strategic Partners & Case Study Articles handles
+  const handleAIGeneratePartnerArticle = () => {
+    if (!clientForm) return;
+    setIsGeneratingPartnerArticle(true);
+    const company = clientForm.nameAr?.trim() || clientForm.name.trim() || 'الشركة الوطنية للخدمات اللوجستية';
+    const industry = clientForm.industryAr?.trim() || 'النقل وإدارة سلاسل الإمداد';
+    const vehicles = clientForm.activeVehicles?.trim() || '500';
+
+    setTimeout(() => {
+      setClientForm(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          articleTitleAr: `حوكمة الأساطيل الثقيلة: قصة نجاح ${company} في التحول نحو الصيانة الاستباقية المتصلة`,
+          articleTitleEn: `Heavy Fleet Governance: How ${company} Transitioned to Connected Predictive Maintenance`,
+          articleSummaryAr: `قادت منصة FleetAurvexis منظومة التشغيل والصيانة لأسطول ${company} البالغ قوامه ${vehicles} آلية متخصصة في قطاع ${industry} لتحقيق جاهزية تشغيلية بنسبة 99.4%، مع تقليص ملموس في هدر قطع الغيار والأعطال الطارئة بنسبة 35%.`,
+          articleSummaryEn: `FleetAurvexis spearheaded the predictive maintenance workflow for ${company}'s fleet of ${vehicles} active commercial units in the ${industry} sector, achieving 99.4% operational uptime and reducing emergency roadside breakdowns by 35%.`,
+          articleContentAr: `### خلفية الشراكة والتحديات التشغيلية\n\nتُعد شركة **${company}** إحدى الركائز الرائدة في قطاع **${industry}**، حيث تُدير يومياً أسطولاً استراتيجياً متنامياً يضم أكثر من **${vehicles} آلية** تعمل على مدار الساعة في مهام نقل حرجة.\n\nقبل اعتماد منظومة FleetAurvexis، واجهت الإدارة الفنية تحديات تتعلق بتباعد البيانات بين الورش المتفرقة، والاعتماد على الجداول الورقية، وصعوبة استشراف أعطال المحركات والأنظمة الهيدروليكية قبل وقوعها في الطرقات العامة.\n\n---\n\n### الحل التشغيلي والتحول الرقمي المطبق\n\n1. **الربط اللحظي للعدادات وأنظمة التتبع**: أتاحت المنصة أتمتة حساب الكيلومترات وساعات التشغيل لكل آلية بدقة دون تدخل يدوي.\n2. **أوامر العمل الذكية ومخزون قطع الغيار**: تم توحيد كود الصيانة عبر الورش المعتمدة، مع تفعيل تنبيهات نفاذ مخزون الفلاتر وزيوت المحركات.\n3. **فحص ما قبل الانطلاق الرقمي (DVIR)**: مكنت السائقين والمشرفين من إجراء فحص السلامة الميداني عبر الأجهزة اللوحية وتوثيق الملاحظات بالصور الفورية.\n\n---\n\n### النتائج المحققة والأثر المالي والبيئي\n\n- خفض نفقات الصيانة التصحيحية الطارئة بنسبة **35%** خلال أول 6 أشهر.\n- رفع معدل الجاهزية اليومية للأسطول إلى **99.4%**، مما أدى لالتزام استثنائي بمواعيد التسليم.\n- خفض استهلاك الوقود والانبعاثات الكربونية بنسبة **18%** نتيجة انتظام فترات غيار الزيوت وصيانة المحاقن.`,
+          articleContentEn: `### Operational Background & Challenges\n\nAs a front-runner in ${industry}, **${company}** oversees a fleet of over **${vehicles} commercial assets**. Operating round the clock, the company faced fragmented maintenance paper logs and unpredictable component wear.\n\n---\n\n### The Implemented Digital Architecture\n\nThrough FleetAurvexis, the technical team synchronized odometer metrics, instituted standardized digital work orders, and deployed mobile DVIR inspection tools for all frontline drivers.\n\n---\n\n### Measurable Outcomes\n\n- Achieved a **35% decline** in emergency breakdown expenses.\n- Sustained fleet availability at **99.4%**.\n- Lowered idle fuel consumption by **18%** through precise preventive servicing.`,
+          metrics: [
+            { labelAr: 'خفض نفقات الصيانة', labelEn: 'Cost Reduction', value: '35%' },
+            { labelAr: 'جاهزية الأسطول', labelEn: 'Fleet Availability', value: '99.4%' },
+            { labelAr: 'تقليص زمن الصيانة', labelEn: 'Turnaround Time', value: '42%' },
+            { labelAr: 'وفر سنوي مباشر', labelEn: 'Annual Direct ROI', value: '$340K' }
+          ],
+          quote: {
+            textAr: `لقد شكلت منصة FleetAurvexis نقلة محورية في كفاءة أسطولنا؛ حيث تحولنا من معالجة الأعطال بعد حدوثها إلى استباقها بحوكمة دقيقة وموثقة أراحت السائقين وفرق الصيانة على حد سواء.`,
+            textEn: `FleetAurvexis shifted our paradigm from reactive firefighting to deterministic predictive maintenance. Our uptime and operational margins have never been stronger.`,
+            authorAr: `م. ناصر الشمري`,
+            authorEn: `Eng. Nasser Al-Shammari`,
+            roleAr: `مدير عام العمليات والأسطول`,
+            roleEn: `VP of Fleet Logistics`
+          }
+        };
+      });
+      setIsGeneratingPartnerArticle(false);
+    }, 450);
+  };
+
   const handleClientSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientForm) return;
 
+    const finalImage = customPartnerImageUrl.trim() || clientForm.image || CURATED_PARTNER_IMAGES[0].url;
+    const finalNameAr = clientForm.nameAr?.trim() || clientForm.name.trim();
+    const finalNameEn = clientForm.nameEn?.trim() || clientForm.name.trim();
+
+    const partnerPayload: EnterprisePartner = {
+      id: clientForm.id || ('c-' + Date.now()),
+      name: finalNameAr,
+      nameAr: finalNameAr,
+      nameEn: finalNameEn,
+      industryAr: clientForm.industryAr.trim(),
+      industryEn: clientForm.industryEn.trim() || clientForm.industryAr.trim(),
+      rating: Number(clientForm.rating) || 5,
+      yearJoint: clientForm.yearJoint.trim() || '2026',
+      activeVehicles: clientForm.activeVehicles.trim() || '100',
+      logoSeed: (clientForm.logoSeed || 'CL').toUpperCase().slice(0, 2),
+      image: finalImage,
+      articleTitleAr: clientForm.articleTitleAr?.trim() || `قصة نجاح وحوكمة صيانة أسطول ${finalNameAr}`,
+      articleTitleEn: clientForm.articleTitleEn?.trim() || `Operational Success & Fleet Governance at ${finalNameEn}`,
+      articleSummaryAr: clientForm.articleSummaryAr?.trim() || `كيف قادت منظومة الفحص الذكي وبرامج الصيانة الوقائية شركة ${finalNameAr} لتحقيق كفاءة تشغيلية بنسبة 99% وخفض النفقات.`,
+      articleSummaryEn: clientForm.articleSummaryEn?.trim() || `How digital preventative maintenance elevated ${finalNameEn} to 99% uptime and streamlined overall fleet OPEX.`,
+      articleContentAr: clientForm.articleContentAr?.trim() || `تحقيق قفزة نوعية في إدارة العمليات والصيانة الوقائية لأسطول ${finalNameAr}. تم اعتماد جداول الصيانة المستندة إلى الحساسات المباشرة ومزامنة قراءات العدادات اللحظية، مما ساهم في تفادي التوقفات الفجائية وخفض هدر قطع الغيار بنسبة قياسية.`,
+      articleContentEn: clientForm.articleContentEn?.trim() || `A major breakthrough in predictive and preventive maintenance operations for ${finalNameEn}. Real-time telemetry monitoring and automated work orders eliminated unexpected breakdowns.`,
+      metrics: clientForm.metrics && clientForm.metrics.length > 0 ? clientForm.metrics : [
+        { labelAr: 'خفض نفقات الصيانة', labelEn: 'Cost Reduction', value: '32%' },
+        { labelAr: 'جاهزية الأسطول', labelEn: 'Fleet Availability', value: '99.4%' },
+        { labelAr: 'تقليص وقت الفحص', labelEn: 'Turnaround Time', value: '45%' },
+        { labelAr: 'توفير مالي سنوي', labelEn: 'Annual Cost Savings', value: '$260K' }
+      ],
+      quote: clientForm.quote || {
+        textAr: 'التحول الرقمي لمنظومة الصيانة أسهم في حوكمة تشغيلية متكاملة لأسطولنا وخفض الأعطال الطارئة بصورة استثنائية.',
+        textEn: 'Digital transformation of our maintenance regime yielded unprecedented fleet reliability.',
+        authorAr: 'مدير الصيانة والتشغيل',
+        authorEn: 'Director of Maintenance',
+        roleAr: 'الإدارة التشغيلية',
+        roleEn: 'Operational Leadership'
+      },
+      colorClass: clientForm.id ? (clients.find(c => c.id === clientForm.id)?.colorClass || 'text-purple-600 bg-purple-50 border-purple-100 dark:bg-purple-950/30') : 'text-purple-600 bg-purple-50 border-purple-100 dark:bg-purple-950/30'
+    };
+
+    let updated: EnterprisePartner[];
     if (clientForm.id) {
-      const updated = clients.map(c => c.id === clientForm.id ? { ...clientForm } : c);
-      saveClients(updated);
+      updated = clients.map(c => c.id === clientForm.id ? { ...c, ...partnerPayload } : c);
     } else {
-      const newC = {
-        ...clientForm,
-        id: 'c-' + Date.now()
-      };
-      saveClients([...clients, newC]);
+      updated = [...clients, partnerPayload];
     }
+
+    saveClients(updated);
     setClientForm(null);
+    setCustomPartnerImageUrl('');
   };
 
   const startEditClient = (c: any) => {
     setClientForm({
       id: c.id,
-      name: c.name || '',
+      name: c.name || c.nameAr || '',
+      nameAr: c.nameAr || c.name || '',
+      nameEn: c.nameEn || '',
       industryAr: c.industryAr || '',
       industryEn: c.industryEn || '',
-      rating: c.rating || 5,
+      rating: Number(c.rating) || 5,
       yearJoint: c.yearJoint || '2026',
-      activeVehicles: c.activeVehicles || '25',
-      logoSeed: c.logoSeed || 'CL'
+      activeVehicles: c.activeVehicles || '50',
+      logoSeed: c.logoSeed || 'CL',
+      image: c.image || CURATED_PARTNER_IMAGES[0].url,
+      articleTitleAr: c.articleTitleAr || '',
+      articleTitleEn: c.articleTitleEn || '',
+      articleSummaryAr: c.articleSummaryAr || '',
+      articleSummaryEn: c.articleSummaryEn || '',
+      articleContentAr: c.articleContentAr || '',
+      articleContentEn: c.articleContentEn || '',
+      metrics: Array.isArray(c.metrics) && c.metrics.length > 0 ? c.metrics : [
+        { labelAr: 'خفض نفقات الصيانة', labelEn: 'Cost Reduction', value: '30%' },
+        { labelAr: 'جاهزية الأسطول', labelEn: 'Fleet Uptime', value: '99.2%' },
+        { labelAr: 'تقليص زمن الانتظار', labelEn: 'Turnaround Time', value: '45%' },
+        { labelAr: 'التوفير السنوي', labelEn: 'Annual Savings', value: '$220K' }
+      ],
+      quote: c.quote || {
+        textAr: 'التحول الرقمي لمنظومة الصيانة أسهم في حوكمة تشغيلية متكاملة لأسطولنا وخفض الأعطال الطارئة بصورة استثنائية.',
+        textEn: 'Digital transformation of our maintenance regime yielded unprecedented fleet reliability.',
+        authorAr: 'مدير الصيانة والتشغيل',
+        authorEn: 'VP of Fleet Operations',
+        roleAr: 'الإدارة التشغيلية',
+        roleEn: 'Operational Leadership'
+      }
     });
+    setCustomPartnerImageUrl('');
   };
 
   const handleDeleteClient = (id: string) => {
-    if (!window.confirm(language === 'ar' ? 'هل تريد حذف العميل/الشركة من قائمة الموقع؟' : 'Remove company from site?')) return;
+    if (!window.confirm(language === 'ar' ? 'هل تريد حذف العميل/الشركة مع المقال من قائمة الموقع؟' : 'Remove company and article from site?')) return;
     const updated = clients.filter(c => c.id !== id);
     saveClients(updated);
+    if (useFirebase && isFirestoreConnected) {
+      try {
+        deleteDocument('saas_clients', id);
+      } catch (e) {
+        console.error("Firestore client delete error:", e);
+      }
+    }
   };
 
   // Reviews/Testimonials handlers
@@ -3050,6 +3220,7 @@ export function MarketingAdmin({
                   <div className="bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-2xl">
                     <span className="text-[10px] font-black" style={{ color: brandPrimaryColor }}>
                       {activeSubTab === 'leads' ? 'المشتركون' :
+                       activeSubTab === 'articles' ? 'إدارة المقالات وصور Imagen' :
                        activeSubTab === 'tutorials' ? 'مكتبة الفيديوهات' :
                        activeSubTab === 'launch-planner' ? 'خطة الإطلاق' :
                        activeSubTab === 'identity' ? 'الهوية والألوان' :
@@ -4519,7 +4690,7 @@ export function MarketingAdmin({
                             
                             {/* Studio Header */}
                             <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-black tracking-wider uppercase font-mono">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                   {language === 'ar' ? 'جاهز للتوليد والنشر الفوري' : 'Ready to Generate'}
@@ -4527,6 +4698,14 @@ export function MarketingAdmin({
                                 <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-[10px] font-bold">
                                   {publishedArticles.length} {language === 'ar' ? 'مقالات بالأرشيف' : 'Articles'}
                                 </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveSubTab('articles')}
+                                  className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black rounded-full transition cursor-pointer flex items-center gap-1 shadow-sm"
+                                >
+                                  <Sparkles size={11} className="text-amber-300" />
+                                  <span>{language === 'ar' ? 'فتح وحدة إدارة المقالات وتوليد صور Imagen' : 'Open Articles & Imagen Studio'}</span>
+                                </button>
                               </div>
                               <div className="text-right">
                                 <h4 className="text-sm font-black text-white flex items-center gap-2 justify-end">
@@ -4709,29 +4888,29 @@ export function MarketingAdmin({
                                     <div className="flex items-center gap-2">
                                       <button
                                         type="button"
-                                        onClick={() => handleCopyArticle(activeArt)}
-                                        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                        onClick={() => handleShareArticleInAdmin(activeArt)}
+                                        className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
+                                        title={language === 'ar' ? 'مشاركة عبر تطبيقات الموبايل' : 'Share via apps'}
                                       >
-                                        {isCopied ? (
-                                          <>
-                                            <CheckCircle2 size={12} className="text-emerald-400" />
-                                            <span className="text-emerald-300">{language === 'ar' ? 'تم النسخ!' : 'Copied!'}</span>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Copy size={12} />
-                                            <span>{language === 'ar' ? 'نسخ نص المقال' : 'Copy Text'}</span>
-                                          </>
-                                        )}
+                                        <Share2 size={13} />
+                                        <span>{language === 'ar' ? 'مشاركة المقال' : 'Share Article'}</span>
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleDownloadArticle(activeArt)}
-                                        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                                        title={language === 'ar' ? 'تحميل كملف نصي' : 'Download text file'}
+                                        onClick={handleActivateAllArticlesInAdmin}
+                                        className={`px-3 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer border shadow-xs active:scale-95 ${
+                                          allActivatedInAdmin
+                                            ? 'bg-emerald-600 text-white border-emerald-600'
+                                            : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                        }`}
+                                        title={language === 'ar' ? 'تفعيل ونشر جميع المقالات على الموقع حياً' : 'Activate all articles live'}
                                       >
-                                        <Download size={12} />
-                                        <span>{language === 'ar' ? 'تحميل' : 'Download'}</span>
+                                        <CheckCircle2 size={12} className={allActivatedInAdmin ? 'text-white' : 'text-emerald-400'} />
+                                        <span>
+                                          {allActivatedInAdmin
+                                            ? (language === 'ar' ? '✓ تم التفعيل' : '✓ All Active')
+                                            : (language === 'ar' ? 'تفعيل جميع المقالات' : 'Activate All')}
+                                        </span>
                                       </button>
                                     </div>
                                     <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -4892,15 +5071,103 @@ export function MarketingAdmin({
                                   </button>
                                   <div className="flex items-center gap-2">
                                     <h4 className="text-base font-black text-white">
-                                      {language === 'ar' ? 'اختيار صورة احترافية للمقال' : 'Select Professional Article Image'}
+                                      {language === 'ar' ? 'اختيار أو توليد صورة احترافية للمقال' : 'Select or Generate Article Image'}
                                     </h4>
                                     <Sparkles size={16} className="text-amber-400" />
                                   </div>
                                 </div>
 
+                                {/* Shortcut banner to full studio */}
+                                <div className="bg-purple-950/60 border border-purple-500/40 p-3 rounded-2xl flex items-center justify-between gap-2">
+                                  <p className="text-[11px] text-purple-200">
+                                    {language === 'ar' 
+                                      ? 'يتوفر محرر متكامل للمقالات وصور Imagen وتنسيق الـ Markdown في وحدة إدارة المقالات:' 
+                                      : 'Full Article Studio with Imagen generation & markdown editor is available:'}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setShowArticleImageModal(false);
+                                      setActiveSubTab('articles');
+                                    }}
+                                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-black rounded-xl transition cursor-pointer shrink-0 flex items-center gap-1 shadow-sm"
+                                  >
+                                    <span>{language === 'ar' ? 'فتح المحرر المتكامل' : 'Open Full Studio'}</span>
+                                    <ExternalLink size={12} />
+                                  </button>
+                                </div>
+
+                                {/* AI Imagen Quick Generation Block inside modal */}
+                                <div className="bg-slate-800/80 border border-indigo-500/30 p-4 rounded-2xl space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-mono text-purple-300 font-bold flex items-center gap-1.5">
+                                      <Wand2 size={13} className="text-amber-400" />
+                                      <span>Google Imagen 3 AI</span>
+                                    </span>
+                                    <span className="text-[10px] text-slate-400">
+                                      {language === 'ar' ? 'توليد ذكي فوري' : 'Instant AI Generation'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={modalImagenPrompt}
+                                      onChange={e => setModalImagenPrompt(e.target.value)}
+                                      placeholder={language === 'ar' ? 'اكتب وصف الصورة المطلوبة أو اتركها فارغة للاعتماد على عنوان المقال...' : 'Prompt for Imagen AI...'}
+                                      className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                                    />
+                                    <button
+                                      type="button"
+                                      disabled={isModalGeneratingImage}
+                                      onClick={async () => {
+                                        const activeArt = selectedArticleForView || publishedArticles[0];
+                                        if (!activeArt) return;
+                                        setIsModalGeneratingImage(true);
+                                        try {
+                                          const promptText = modalImagenPrompt.trim() || activeArt.title;
+                                          const res = await fetch('/api/ai/generate-article-image', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                              prompt: promptText,
+                                              topic: activeArt.title,
+                                              aspectRatio: '16:9'
+                                            })
+                                          });
+                                          const data = await res.json();
+                                          if (data.imageUrl) {
+                                            handleChangeArticleImage(activeArt.id, data.imageUrl, {
+                                              imageSource: 'imagen_ai',
+                                              imageModel: data.modelLabel || 'Google Imagen 3 AI',
+                                              imagePrompt: promptText
+                                            });
+                                          }
+                                        } catch (err) {
+                                          console.error(err);
+                                        } finally {
+                                          setIsModalGeneratingImage(false);
+                                        }
+                                      }}
+                                      className="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-60 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm"
+                                    >
+                                      {isModalGeneratingImage ? (
+                                        <>
+                                          <RefreshCw size={13} className="animate-spin" />
+                                          <span>{language === 'ar' ? 'جاري التوليد...' : 'Generating...'}</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Sparkles size={13} className="text-amber-300" />
+                                          <span>{language === 'ar' ? 'توليد بنموذج Imagen' : 'Generate with Imagen'}</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+
                                 <p className="text-xs text-slate-400 leading-relaxed">
                                   {language === 'ar'
-                                    ? 'اختر صورة فوتوغرافية معتمدة عالية الدقة من مكتبة صور الأساطيل والورش الهندسية لإرفاقها بالمقال ونشرها على الموقع التسويقي:'
+                                    ? 'أو اختر صورة فوتوغرافية معتمدة عالية الدقة من مكتبة صور الأساطيل والورش الهندسية لإرفاقها بالمقال ونشرها على الموقع التسويقي:'
                                     : 'Choose a verified high-resolution photograph to accompany your article on the marketing site:'}
                                 </p>
 
@@ -5722,118 +5989,618 @@ export function MarketingAdmin({
           </div>
         )}
 
-        {/* TAB 4: CLIENT COMPANIES CRUD */}
+        {/* TAB 4: CLIENT COMPANIES & ENTERPRISE PARTNERS CASE STUDY ARTICLES CRUD */}
         {activeSubTab === 'clients' && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center bg-white border border-slate-200 p-4 rounded-2xl shadow-xs">
-              <span className="text-[10.5px] text-slate-600 font-bold text-right w-full sm:w-auto">أضف الشعارات والشركات والبلديات الكبرى المستفيدة والمعتمدة للموقع</span>
-              <button
-                onClick={() => setClientForm({ name: '', industryAr: '', industryEn: '', rating: 5, yearJoint: '2026', activeVehicles: '25', logoSeed: 'CL' })}
-                className="p-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0"
-              >
-                <Plus size={14} />
-                <span>إضافة شعار عميل</span>
-              </button>
+          <div className="space-y-5">
+            {/* Header & Controls Bar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white border border-slate-200 p-4.5 rounded-2xl shadow-xs">
+              <div className="text-right space-y-0.5">
+                <h3 className="text-sm font-black text-slate-900 flex items-center justify-end gap-2">
+                  <Building2 size={16} className="text-purple-600" />
+                  <span>{language === 'ar' ? 'إدارة المؤسسات والشركاء ومقالات دراسات الحالة' : 'Enterprise Partners & Case Study Articles'}</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {language === 'ar' 
+                    ? 'إدارة بيانات الشركات الكبرى، صور أساطيلهم الميدانية، ومقالات التحول الرقمي وقصص النجاح المعروضة على الموقع.'
+                    : 'Manage enterprise partners, fleet operations photography, ROI metrics, and executive case studies.'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(language === 'ar' ? 'هل تريد استعادة قائمة الشركاء الافتراضية مع مقالاتهم وصورهم المتكاملة؟' : 'Restore default partners and case studies?')) {
+                      saveClients(DEFAULT_ENTERPRISE_PARTNERS);
+                    }
+                  }}
+                  className="p-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap"
+                  title="استعادة الشركاء الافتراضيين"
+                >
+                  <RefreshCw size={13} />
+                  <span>{language === 'ar' ? 'الاستعادة الافتراضية' : 'Restore Defaults'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClientForm({
+                      name: '',
+                      nameAr: '',
+                      nameEn: '',
+                      industryAr: '',
+                      industryEn: '',
+                      rating: 5,
+                      yearJoint: '2026',
+                      activeVehicles: '120',
+                      logoSeed: 'SA',
+                      image: CURATED_PARTNER_IMAGES[0].url,
+                      articleTitleAr: '',
+                      articleTitleEn: '',
+                      articleSummaryAr: '',
+                      articleSummaryEn: '',
+                      articleContentAr: '',
+                      articleContentEn: '',
+                      metrics: [
+                        { labelAr: 'خفض نفقات الصيانة', labelEn: 'Cost Reduction', value: '30%' },
+                        { labelAr: 'جاهزية الأسطول', labelEn: 'Fleet Availability', value: '99.2%' },
+                        { labelAr: 'تقليص زمن الصيانة', labelEn: 'Turnaround Time', value: '45%' },
+                        { labelAr: 'التوفير السنوي', labelEn: 'Annual Savings', value: '$220K' }
+                      ],
+                      quote: {
+                        textAr: 'التحول الرقمي لمنظومة الصيانة أسهم في حوكمة تشغيلية متكاملة لأسطولنا وخفض الأعطال الطارئة بصورة استثنائية.',
+                        textEn: 'Digital transformation of our maintenance regime yielded unprecedented fleet reliability.',
+                        authorAr: 'مدير الصيانة والتشغيل',
+                        authorEn: 'Director of Maintenance',
+                        roleAr: 'الإدارة التشغيلية',
+                        roleEn: 'Operational Leadership'
+                      }
+                    });
+                    setCustomPartnerImageUrl('');
+                  }}
+                  className="p-2 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5 whitespace-nowrap shadow-xs shadow-purple-600/20"
+                >
+                  <Plus size={14} />
+                  <span>{language === 'ar' ? 'إضافة شريك ومقال جديد' : 'Add Partner & Article'}</span>
+                </button>
+              </div>
             </div>
 
-            {/* Editor client popup section */}
+            {/* Editor client & article popup section */}
             <AnimatePresence>
               {clientForm && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="bg-white border border-slate-200 p-6 rounded-2xl space-y-4 shadow-sm text-right"
+                  className="bg-white border-2 border-purple-200 p-6 rounded-3xl space-y-6 shadow-md text-right relative overflow-hidden"
                 >
-                  <h4 className="text-xs font-black text-slate-900">
-                    {clientForm.id ? 'تعديل بيانات العميل الحالي' : 'إدراج عميل جديد للشركاء'}
-                  </h4>
+                  {/* Decorative top accent bar */}
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-sky-500" />
 
-                  <form onSubmit={handleClientSubmit} className="space-y-4 font-sans text-xs">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
+                  {/* Modal Header with AI Polish Action */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-150 pb-4">
+                    <div className="space-y-1 text-right">
+                      <h4 className="text-sm font-black text-slate-900 flex items-center justify-end gap-2">
+                        <FileText size={16} className="text-purple-600" />
+                        <span>
+                          {clientForm.id 
+                            ? (language === 'ar' ? `تعديل بيانات ومقال الشريك: ${clientForm.nameAr || clientForm.name}` : `Edit Partner & Article: ${clientForm.nameEn || clientForm.name}`) 
+                            : (language === 'ar' ? 'إدراج مؤسسة شريكة جديدة مع مقال متكامل ودراسة حالة' : 'Create New Enterprise Partner & Case Study Article')}
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        {language === 'ar' 
+                          ? 'أكمل تفاصيل الهوية، صورة الأسطول، وصياغة مقال التحول الرقمي ومؤشرات الأداء لتظهر مباشرة على واجهة الموقع.'
+                          : 'Complete identity details, fleet imagery, case study article copy, and operational KPIs.'}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* AI Polish Button */}
+                      <button
+                        type="button"
+                        onClick={handleAIGeneratePartnerArticle}
+                        disabled={isGeneratingPartnerArticle}
+                        className="p-2 px-3.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl font-black text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+                      >
+                        <Sparkles size={13} className={`text-purple-600 ${isGeneratingPartnerArticle ? 'animate-spin' : ''}`} />
+                        <span>
+                          {isGeneratingPartnerArticle 
+                            ? (language === 'ar' ? 'جاري الصياغة...' : 'Generating...') 
+                            : (language === 'ar' ? 'توليد / تحسين المقال بالذكاء الاصطناعي' : 'AI Generate / Polish Article')}
+                        </span>
+                      </button>
+
+                      {/* Live Preview Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const previewPartner: EnterprisePartner = {
+                            id: clientForm.id || 'preview-temp',
+                            name: clientForm.nameAr || clientForm.name || 'شريك تجريبي',
+                            nameAr: clientForm.nameAr || clientForm.name || 'شريك تجريبي',
+                            nameEn: clientForm.nameEn || 'Enterprise Partner',
+                            industryAr: clientForm.industryAr || 'النقل وإدارة سلاسل الإمداد',
+                            industryEn: clientForm.industryEn || 'Logistics & Supply Chain',
+                            rating: Number(clientForm.rating) || 5,
+                            yearJoint: clientForm.yearJoint || '2026',
+                            activeVehicles: clientForm.activeVehicles || '100',
+                            logoSeed: (clientForm.logoSeed || 'CL').toUpperCase(),
+                            image: customPartnerImageUrl.trim() || clientForm.image || CURATED_PARTNER_IMAGES[0].url,
+                            articleTitleAr: clientForm.articleTitleAr || 'عنوان مقال الشراكة التجريبي',
+                            articleTitleEn: clientForm.articleTitleEn || 'Case Study Title Preview',
+                            articleSummaryAr: clientForm.articleSummaryAr || 'ملخص تنفيذي للمقال ودراسة الحالة التشغيلية.',
+                            articleSummaryEn: clientForm.articleSummaryEn || 'Executive summary preview.',
+                            articleContentAr: clientForm.articleContentAr || 'تفاصيل قصة النجاح والتحول الرقمي المطبق...',
+                            articleContentEn: clientForm.articleContentEn || 'Case study details and methodology...',
+                            metrics: clientForm.metrics,
+                            quote: clientForm.quote
+                          };
+                          setSelectedPartnerForAdminPreview(previewPartner);
+                        }}
+                        className="p-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
+                      >
+                        <Eye size={13} className="text-slate-600" />
+                        <span>{language === 'ar' ? 'معاينة المقال' : 'Preview Article'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleClientSubmit} className="space-y-6 font-sans text-xs">
+                    {/* SECTION 1: Basic Company & Partnership Info */}
+                    <div className="space-y-3 bg-slate-50/70 p-4.5 rounded-2xl border border-slate-200/80">
+                      <h5 className="font-extrabold text-slate-800 text-xs flex items-center justify-end gap-1.5">
+                        <Building2 size={13} className="text-purple-600" />
+                        <span>{language === 'ar' ? '1. الهوية الأساسية للمؤسسة الشريكة' : '1. Enterprise Basic Identity'}</span>
+                      </h5>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 block">اسم المنشأة/الشركة (عربي)</label>
+                          <input
+                            type="text"
+                            required
+                            value={clientForm.nameAr || clientForm.name}
+                            onChange={(e) => setClientForm({ ...clientForm, name: e.target.value, nameAr: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+                            placeholder="مثال: مؤسسة الغد للشحن الذكي"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 block">اسم المنشأة (English)</label>
+                          <input
+                            type="text"
+                            required
+                            value={clientForm.nameEn || ''}
+                            onChange={(e) => setClientForm({ ...clientForm, nameEn: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors text-left font-sans"
+                            placeholder="e.g. Al-Ghad Smart Transport Corp."
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 block">رمز الاختصار الثنائي (شعار اللوتس)</label>
+                          <input
+                            type="text"
+                            required
+                            maxLength={2}
+                            value={clientForm.logoSeed}
+                            onChange={(e) => setClientForm({ ...clientForm, logoSeed: e.target.value.toUpperCase() })}
+                            className="w-full p-2.5 bg-white border border-slate-200 text-center font-black text-purple-700 text-sm rounded-xl focus:border-purple-500 transition-colors font-mono uppercase"
+                            placeholder="LG"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 block">القطاع والنشاط التجاري (عربي)</label>
+                          <input
+                            type="text"
+                            required
+                            value={clientForm.industryAr}
+                            onChange={(e) => setClientForm({ ...clientForm, industryAr: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:border-purple-500 transition-colors"
+                            placeholder="مثال: سلاسل التوريد وشحن المستقبل"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 block">القطاع والنشاط (English)</label>
+                          <input
+                            type="text"
+                            required
+                            value={clientForm.industryEn}
+                            onChange={(e) => setClientForm({ ...clientForm, industryEn: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:border-purple-500 transition-colors text-left"
+                            placeholder="e.g. Supply Chain & Future Cargo"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 block text-[10px]">حجم الأسطول</label>
+                            <input
+                              type="text"
+                              value={clientForm.activeVehicles}
+                              onChange={(e) => setClientForm({ ...clientForm, activeVehicles: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center font-bold text-slate-800"
+                              placeholder="1,200"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 block text-[10px]">سنة الانضمام</label>
+                            <input
+                              type="text"
+                              value={clientForm.yearJoint}
+                              onChange={(e) => setClientForm({ ...clientForm, yearJoint: e.target.value })}
+                              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center font-bold text-slate-800"
+                              placeholder="2024"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700 block text-[10px]">التقييم (1-5)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="1"
+                              max="5"
+                              value={clientForm.rating}
+                              onChange={(e) => setClientForm({ ...clientForm, rating: parseFloat(e.target.value) || 5 })}
+                              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl font-mono text-center font-bold text-amber-600"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION 2: Fleet & Operational Photo Selector */}
+                    <div className="space-y-3 bg-slate-50/70 p-4.5 rounded-2xl border border-slate-200/80">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] text-slate-500 font-semibold">
+                          {language === 'ar' ? 'اختر صورة من أسطول المركبات والعمليات أو أدرج رابطاً خارجياً مخصصاً' : 'Select a curated fleet operations photo or enter custom URL'}
+                        </span>
+                        <h5 className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+                          <ImageIcon size={13} className="text-purple-600" />
+                          <span>{language === 'ar' ? '2. صورة الأسطول والعمليات المعتمدة' : '2. Fleet & Operations Photo'}</span>
+                        </h5>
+                      </div>
+
+                      {/* Curated Fleet Image Gallery Selector */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {CURATED_PARTNER_IMAGES.map((imgItem) => {
+                          const isSelected = (clientForm.image === imgItem.url) && !customPartnerImageUrl.trim();
+                          return (
+                            <div
+                              key={imgItem.id}
+                              onClick={() => {
+                                setClientForm({ ...clientForm, image: imgItem.url });
+                                setCustomPartnerImageUrl('');
+                              }}
+                              className={`group relative rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-200 ${
+                                isSelected 
+                                  ? 'border-purple-600 ring-2 ring-purple-600/30 shadow-md scale-102' 
+                                  : 'border-slate-200 hover:border-purple-300 opacity-80 hover:opacity-100'
+                              }`}
+                            >
+                              <div className="h-20 w-full overflow-hidden bg-slate-900">
+                                <img
+                                  src={imgItem.url}
+                                  alt={imgItem.labelAr}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                              <div className="p-1.5 bg-white text-right">
+                                <p className="text-[10px] font-bold text-slate-800 truncate">
+                                  {language === 'ar' ? imgItem.labelAr : imgItem.labelEn}
+                                </p>
+                              </div>
+                              {isSelected && (
+                                <div className="absolute top-1.5 right-1.5 bg-purple-600 text-white rounded-full p-0.5 shadow-xs">
+                                  <Check size={11} strokeWidth={3} />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom Photo URL Input */}
+                      <div className="pt-2 flex flex-col sm:flex-row gap-2 items-center">
+                        <div className="relative flex-grow w-full">
+                          <input
+                            type="url"
+                            value={customPartnerImageUrl}
+                            onChange={(e) => setCustomPartnerImageUrl(e.target.value)}
+                            placeholder="أو ضع رابط صورة خارجية مخصصة للأسطول (https://...)"
+                            className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs text-left font-mono focus:border-purple-500"
+                          />
+                        </div>
+                        {customPartnerImageUrl.trim() && (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 shrink-0">
+                            ✓ تم اعتماد الرابط المخصص
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* SECTION 3: Detailed Case Study & Operational Article */}
+                    <div className="space-y-4 bg-purple-50/40 p-4.5 rounded-2xl border border-purple-200/80">
+                      <div className="flex justify-between items-center border-b border-purple-100 pb-2">
+                        <span className="text-[10px] text-purple-800 font-bold bg-purple-100/70 px-2.5 py-0.5 rounded-full">
+                          {language === 'ar' ? 'يظهر المقال عند نقر الزائر على كارت الشريك بالموقع' : 'Displayed inside interactive modal on click'}
+                        </span>
+                        <h5 className="font-extrabold text-purple-950 text-xs flex items-center gap-1.5">
+                          <BookOpen size={13} className="text-purple-600" />
+                          <span>{language === 'ar' ? '3. مقال قصة الشراكة والتحول الرقمي' : '3. Partnership Story & Case Study Article'}</span>
+                        </h5>
+                      </div>
+
+                      {/* Titles Ar & En */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-800 block">عنوان المقال ودراسة الحالة (عربي)</label>
+                          <input
+                            type="text"
+                            required
+                            value={clientForm.articleTitleAr || ''}
+                            onChange={(e) => setClientForm({ ...clientForm, articleTitleAr: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-purple-200 rounded-xl focus:border-purple-600 font-bold text-slate-900"
+                            placeholder="مثال: حوكمة الأساطيل الثقيلة: قصة نجاح مؤسسة الغد للشحن الذكي"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-800 block">عنوان المقال (English)</label>
+                          <input
+                            type="text"
+                            required
+                            value={clientForm.articleTitleEn || ''}
+                            onChange={(e) => setClientForm({ ...clientForm, articleTitleEn: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-purple-200 rounded-xl focus:border-purple-600 font-bold text-slate-900 text-left"
+                            placeholder="e.g. Enterprise Fleet Governance: Operational Success at Al-Ghad"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Summaries Ar & En */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-800 block">الملخص التنفيذي للمقال (عربي)</label>
+                          <textarea
+                            rows={2}
+                            value={clientForm.articleSummaryAr || ''}
+                            onChange={(e) => setClientForm({ ...clientForm, articleSummaryAr: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-purple-200 rounded-xl focus:border-purple-600 text-slate-800 leading-relaxed"
+                            placeholder="ملخص مكثف عن التحدي والحل والنتائج يظهر كتمهيد للمقال..."
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-800 block">Executive Summary (English)</label>
+                          <textarea
+                            rows={2}
+                            value={clientForm.articleSummaryEn || ''}
+                            onChange={(e) => setClientForm({ ...clientForm, articleSummaryEn: e.target.value })}
+                            className="w-full p-2.5 bg-white border border-purple-200 rounded-xl focus:border-purple-600 text-slate-800 leading-relaxed text-left"
+                            placeholder="Executive briefing on challenges, implementation, and impact..."
+                          />
+                        </div>
+                      </div>
+
+                      {/* Full Article Content Ar */}
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700">اسم الشركة/الهيئة التجارية</label>
-                        <input
-                          type="text"
+                        <label className="font-bold text-slate-800 flex justify-between items-center">
+                          <span className="text-[10px] text-slate-400 font-normal">يدعم التنسيق بأسطر وفقرات وعناوين فرعية (Markdown)</span>
+                          <span>المحتوى الكامل للمقال وتفاصيل الصيانة الوقائية (عربي)</span>
+                        </label>
+                        <textarea
+                          rows={6}
                           required
-                          value={clientForm.name}
-                          onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
-                          placeholder="مثال: أرامكو للخدمات الأرضية"
+                          value={clientForm.articleContentAr || ''}
+                          onChange={(e) => setClientForm({ ...clientForm, articleContentAr: e.target.value })}
+                          className="w-full p-3 bg-white border border-purple-200 rounded-xl focus:border-purple-600 text-slate-800 leading-relaxed font-sans text-xs"
+                          placeholder="اكتب تفاصيل التحديات، الحلول الرقمية، والنتائج الاستراتيجية المحققة بالتفصيل..."
                         />
                       </div>
 
+                      {/* Full Article Content En */}
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700">رمز الاختصار الثنائي (لشعار اللوتس التجريدي)</label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={2}
-                          value={clientForm.logoSeed}
-                          onChange={(e) => setClientForm({ ...clientForm, logoSeed: e.target.value.toUpperCase() })}
-                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 text-center font-bold text-slate-800 rounded-xl transition-colors"
-                          placeholder="مثال: AR"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="font-bold text-slate-700">القطاع الصناعي (عربي)</label>
-                        <input
-                          type="text"
-                          required
-                          value={clientForm.industryAr}
-                          onChange={(e) => setClientForm({ ...clientForm, industryAr: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="font-bold text-slate-700">القطاع الصناعي (English)</label>
-                        <input
-                          type="text"
-                          required
-                          value={clientForm.industryEn}
-                          onChange={(e) => setClientForm({ ...clientForm, industryEn: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl transition-colors"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="font-bold text-slate-700">سنة الانضمام للتطبيق</label>
-                        <input
-                          type="text"
-                          value={clientForm.yearJoint}
-                          onChange={(e) => setClientForm({ ...clientForm, yearJoint: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl font-mono text-center transition-colors"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="font-bold text-slate-700">حجم المعدات/الشاحنات النشط لديهم</label>
-                        <input
-                          type="text"
-                          value={clientForm.activeVehicles}
-                          onChange={(e) => setClientForm({ ...clientForm, activeVehicles: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl font-mono text-center transition-colors"
-                          placeholder="مثال: 320 سيارة"
+                        <label className="font-bold text-slate-800 block text-left">Full Case Study & Implementation Details (English)</label>
+                        <textarea
+                          rows={4}
+                          value={clientForm.articleContentEn || ''}
+                          onChange={(e) => setClientForm({ ...clientForm, articleContentEn: e.target.value })}
+                          className="w-full p-3 bg-white border border-purple-200 rounded-xl focus:border-purple-600 text-slate-800 leading-relaxed font-sans text-xs text-left"
+                          placeholder="Full article content in English..."
                         />
                       </div>
                     </div>
 
-                    <div className="flex gap-2 justify-end pt-3">
+                    {/* SECTION 4: 4 Operational Metrics (KPIs) */}
+                    <div className="space-y-3 bg-slate-50/70 p-4.5 rounded-2xl border border-slate-200/80">
+                      <h5 className="font-extrabold text-slate-800 text-xs flex items-center justify-end gap-1.5">
+                        <CheckCircle2 size={13} className="text-emerald-600" />
+                        <span>{language === 'ar' ? '4. مؤشرات الأداء والوفورات المحققة (4 مؤشرات رئيسية)' : '4. Operational Impact Metrics (KPIs)'}</span>
+                      </h5>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {(clientForm.metrics || []).map((metric, mIdx) => (
+                          <div key={mIdx} className="bg-white p-3 rounded-xl border border-slate-200 space-y-2 text-right">
+                            <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                              <span>المؤشر #{mIdx + 1}</span>
+                              <span className="text-emerald-600 font-mono font-black">{metric.value}</span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-600 block">القيمة الرقمية (النسبة/الوفر)</label>
+                              <input
+                                type="text"
+                                value={metric.value}
+                                onChange={(e) => {
+                                  const updatedMetrics = [...clientForm.metrics];
+                                  updatedMetrics[mIdx] = { ...metric, value: e.target.value };
+                                  setClientForm({ ...clientForm, metrics: updatedMetrics });
+                                }}
+                                className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-center font-mono font-black text-emerald-700 text-xs"
+                                placeholder="35%"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-600 block">الوصف (عربي)</label>
+                              <input
+                                type="text"
+                                value={metric.labelAr}
+                                onChange={(e) => {
+                                  const updatedMetrics = [...clientForm.metrics];
+                                  updatedMetrics[mIdx] = { ...metric, labelAr: e.target.value };
+                                  setClientForm({ ...clientForm, metrics: updatedMetrics });
+                                }}
+                                className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-right font-bold text-[10.5px]"
+                                placeholder="خفض نفقات الصيانة"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-slate-600 block text-left">Label (English)</label>
+                              <input
+                                type="text"
+                                value={metric.labelEn}
+                                onChange={(e) => {
+                                  const updatedMetrics = [...clientForm.metrics];
+                                  updatedMetrics[mIdx] = { ...metric, labelEn: e.target.value };
+                                  setClientForm({ ...clientForm, metrics: updatedMetrics });
+                                }}
+                                className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-left text-[10.5px]"
+                                placeholder="Cost Reduction"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* SECTION 5: Executive Quote */}
+                    <div className="space-y-3 bg-slate-50/70 p-4.5 rounded-2xl border border-slate-200/80">
+                      <h5 className="font-extrabold text-slate-800 text-xs flex items-center justify-end gap-1.5">
+                        <Quote size={13} className="text-purple-600" />
+                        <span>{language === 'ar' ? '5. اقتباس القيادة التنفيذية للشريك' : '5. Executive Leadership Quote'}</span>
+                      </h5>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 block">نص الاقتباس (عربي)</label>
+                          <textarea
+                            rows={2}
+                            value={clientForm.quote?.textAr || ''}
+                            onChange={(e) => setClientForm({
+                              ...clientForm,
+                              quote: { ...(clientForm.quote || { textEn: '', authorAr: '', authorEn: '', roleAr: '', roleEn: '' }), textAr: e.target.value }
+                            })}
+                            className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:border-purple-500"
+                            placeholder="اقتباس مسؤول الصيانة أو الرئيس التنفيذي حول التجربة..."
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 block text-left">Quote Text (English)</label>
+                          <textarea
+                            rows={2}
+                            value={clientForm.quote?.textEn || ''}
+                            onChange={(e) => setClientForm({
+                              ...clientForm,
+                              quote: { ...(clientForm.quote || { textAr: '', authorAr: '', authorEn: '', roleAr: '', roleEn: '' }), textEn: e.target.value }
+                            })}
+                            className="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:border-purple-500 text-left"
+                            placeholder="Executive quote in English..."
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-700 block">اسم صاحب الاقتباس (عربي)</label>
+                            <input
+                              type="text"
+                              value={clientForm.quote?.authorAr || ''}
+                              onChange={(e) => setClientForm({
+                                ...clientForm,
+                                quote: { ...(clientForm.quote || { textAr: '', textEn: '', authorEn: '', roleAr: '', roleEn: '' }), authorAr: e.target.value }
+                              })}
+                              className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                              placeholder="م. ناصر الشمري"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-700 block">المسمى الوظيفي (عربي)</label>
+                            <input
+                              type="text"
+                              value={clientForm.quote?.roleAr || ''}
+                              onChange={(e) => setClientForm({
+                                ...clientForm,
+                                quote: { ...(clientForm.quote || { textAr: '', textEn: '', authorAr: '', authorEn: '', roleEn: '' }), roleAr: e.target.value }
+                              })}
+                              className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                              placeholder="مدير عام العمليات والأسطول"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-700 block text-left">Author (English)</label>
+                            <input
+                              type="text"
+                              value={clientForm.quote?.authorEn || ''}
+                              onChange={(e) => setClientForm({
+                                ...clientForm,
+                                quote: { ...(clientForm.quote || { textAr: '', textEn: '', authorAr: '', roleAr: '', roleEn: '' }), authorEn: e.target.value }
+                              })}
+                              className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs text-left"
+                              placeholder="Eng. Nasser Al-Shammari"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-700 block text-left">Role (English)</label>
+                            <input
+                              type="text"
+                              value={clientForm.quote?.roleEn || ''}
+                              onChange={(e) => setClientForm({
+                                ...clientForm,
+                                quote: { ...(clientForm.quote || { textAr: '', textEn: '', authorAr: '', authorEn: '', roleAr: '' }), roleEn: e.target.value }
+                              })}
+                              className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs text-left"
+                              placeholder="VP of Fleet Logistics"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="flex gap-2.5 justify-end pt-3 border-t border-slate-200">
                       <button
                         type="button"
-                        onClick={() => setClientForm(null)}
-                        className="p-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl cursor-pointer"
+                        onClick={() => {
+                          setClientForm(null);
+                          setCustomPartnerImageUrl('');
+                        }}
+                        className="p-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer transition-colors"
                       >
-                        إلغاء الأمر
+                        {language === 'ar' ? 'إلغاء الأمر' : 'Cancel'}
                       </button>
+
                       <button
                         type="submit"
-                        className="p-2 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                        className="p-2.5 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-xl cursor-pointer flex items-center gap-2 shadow-md shadow-purple-600/30 transition-all"
                       >
-                        <Save size={13} />
-                        <span>حفظ الشريك</span>
+                        <Save size={14} />
+                        <span>{language === 'ar' ? 'حفظ الشريك والمقال ومزامنة الواجهة' : 'Save Partner, Article & Sync'}</span>
                       </button>
                     </div>
                   </form>
@@ -5841,48 +6608,116 @@ export function MarketingAdmin({
               )}
             </AnimatePresence>
 
-            {/* Client Lists elements */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {clients.map((c, idx) => (
-                <div key={c.id || idx} className="bg-white border border-slate-200 p-4 rounded-2xl text-center space-y-3 shadow-xs relative group">
-                  <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                    <button
-                      onClick={() => startEditClient(c)}
-                      className="p-1 bg-white hover:bg-indigo-600 hover:text-white border border-slate-200 text-slate-600 rounded-md cursor-pointer text-[9px]"
-                      title="تحرير"
-                    >
-                      <Edit3 size={10} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClient(c.id)}
-                      className="p-1 bg-white hover:bg-rose-600 hover:text-white border border-slate-200 text-slate-600 rounded-md cursor-pointer text-[9px]"
-                      title="إزالة"
-                    >
-                      ✕
-                    </button>
-                  </div>
+            {/* Client Lists Elements Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {clients.map((c, idx) => {
+                const hasArticle = Boolean(c.articleTitleAr || c.articleContentAr);
+                const displayPhoto = c.image || CURATED_PARTNER_IMAGES[0].url;
 
-                  <div className="w-11 h-11 rounded-full bg-indigo-50 text-indigo-700 font-extrabold mx-auto flex items-center justify-center border border-indigo-100 font-mono text-sm leading-none shrink-0 select-none shadow-xs">
-                    {c.logoSeed}
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <h5 className="text-[11.5px] font-black text-slate-900 truncate px-1">{c.name}</h5>
-                    <p className="text-[9px] text-slate-500 truncate">{c.industryAr}</p>
-                  </div>
-
-                  <div className="p-1.5 bg-slate-50 rounded-xl border border-slate-100 text-[9px] text-slate-600 font-mono space-y-0.5">
-                    <div className="flex justify-between flex-row-reverse">
-                      <span>المركبات:</span>
-                      <span className="font-bold text-indigo-600">{c.activeVehicles}</span>
+                return (
+                  <div 
+                    key={c.id || idx} 
+                    className="bg-white border border-slate-200 rounded-2xl overflow-hidden text-right space-y-0 shadow-xs relative group flex flex-col justify-between hover:shadow-md transition-all hover:border-purple-200"
+                  >
+                    {/* Top Action overlay buttons */}
+                    <div className="absolute top-2.5 left-2.5 z-20 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPartnerForAdminPreview(c)}
+                        className="p-1.5 bg-slate-900/80 hover:bg-purple-600 text-white backdrop-blur-md rounded-lg cursor-pointer text-[10px] transition-colors shadow-xs"
+                        title="معاينة المقال الكامل"
+                      >
+                        <Eye size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEditClient(c)}
+                        className="p-1.5 bg-slate-900/80 hover:bg-indigo-600 text-white backdrop-blur-md rounded-lg cursor-pointer text-[10px] transition-colors shadow-xs"
+                        title="تعديل الشريك والمقال"
+                      >
+                        <Edit3 size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClient(c.id)}
+                        className="p-1.5 bg-slate-900/80 hover:bg-rose-600 text-white backdrop-blur-md rounded-lg cursor-pointer text-[10px] transition-colors shadow-xs"
+                        title="حذف"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     </div>
-                    <div className="flex justify-between flex-row-reverse">
-                      <span>انضمام:</span>
-                      <span className="font-bold text-slate-700">{c.yearJoint}</span>
+
+                    {/* Fleet Photo Thumbnail */}
+                    <div className="relative h-28 w-full bg-slate-900 overflow-hidden">
+                      <img 
+                        src={displayPhoto} 
+                        alt={c.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+
+                      <div className="absolute bottom-2 right-2 flex items-center gap-1.5 text-white">
+                        <div className="w-7 h-7 rounded-lg bg-purple-600 text-white font-black flex items-center justify-center text-xs font-mono shadow-xs border border-white/20">
+                          {c.logoSeed || 'CL'}
+                        </div>
+                        <span className="font-mono text-[10px] font-bold bg-slate-900/70 px-1.5 py-0.5 rounded backdrop-blur-xs">
+                          {c.activeVehicles} آلية
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content details */}
+                    <div className="p-3.5 space-y-2 flex-grow flex flex-col justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9.5px] font-mono font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/50 flex items-center gap-0.5">
+                            <Star size={9} fill="currentColor" />
+                            <span>{c.rating || 5}</span>
+                          </span>
+                          <h5 className="text-xs font-black text-slate-900 truncate">{c.name || c.nameAr}</h5>
+                        </div>
+                        <p className="text-[10px] text-slate-500 truncate">{c.industryAr}</p>
+
+                        {/* Article status badge */}
+                        <div className="pt-1">
+                          {hasArticle ? (
+                            <div className="p-1.5 bg-emerald-50 border border-emerald-200/70 rounded-lg text-[9.5px] text-emerald-800 font-bold flex items-center gap-1">
+                              <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
+                              <span className="truncate">{c.articleTitleAr ? 'المقال متوفر ✓' : 'دراسة الحالة مكتملة ✓'}</span>
+                            </div>
+                          ) : (
+                            <div className="p-1.5 bg-amber-50 border border-amber-200/70 rounded-lg text-[9.5px] text-amber-800 font-bold flex items-center gap-1">
+                              <AlertCircle size={11} className="text-amber-600 shrink-0" />
+                              <span className="truncate">المقال بحاجة للصياغة</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Card Action footer */}
+                      <div className="pt-2 border-t border-slate-150 grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPartnerForAdminPreview(c)}
+                          className="w-full py-1.5 px-2 bg-purple-50 hover:bg-purple-600 text-purple-700 hover:text-white rounded-lg text-[10px] font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Eye size={10} />
+                          <span>معاينة</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => startEditClient(c)}
+                          className="w-full py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Edit3 size={10} />
+                          <span>تعديل</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -6925,6 +7760,21 @@ export function MarketingAdmin({
           </div>
         )}
 
+        {/* ----------------- TAB: ARTICLES MANAGEMENT & IMAGEN MEDIA HUB ----------------- */}
+        {activeSubTab === 'articles' && (
+          <MarketingArticlesManager
+            language={language}
+            brandPrimaryColor={brandPrimaryColor}
+            publishedArticles={publishedArticles}
+            setPublishedArticles={setPublishedArticles}
+            selectedArticleForView={selectedArticleForView}
+            setSelectedArticleForView={setSelectedArticleForView}
+            onPublishToggle={handleTogglePublishToMarketing}
+            onChangeArticleImage={handleChangeArticleImage}
+            onGenerateNewArticle={handleGenerateNewArticle}
+          />
+        )}
+
         {/* ----------------- TAB 10: VIDEO TUTORIALS & ACADEMY CMS ----------------- */}
         {activeSubTab === 'tutorials' && (
           <div className="space-y-6">
@@ -7707,6 +8557,23 @@ export function MarketingAdmin({
             </div>
           </div>
         )}
+
+        {/* Enterprise Partner Article & Case Study Live Modal Preview */}
+        {selectedPartnerForAdminPreview && (
+          <EnterprisePartnerModal
+            partner={selectedPartnerForAdminPreview}
+            onClose={() => setSelectedPartnerForAdminPreview(null)}
+            language={language}
+          />
+        )}
+
+        {/* Mobile Apps Share Modal */}
+        <ArticleShareModal
+          isOpen={!!adminShareArticle}
+          onClose={() => setAdminShareArticle(null)}
+          article={adminShareArticle}
+          language={language}
+        />
         </div>
       {/* End of side-by-side wrapper */}
       </div>

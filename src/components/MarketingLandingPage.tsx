@@ -49,6 +49,12 @@ import CustomerSuccessStories from './CustomerSuccessStories';
 import MarketingArticlesSection from './MarketingArticlesSection';
 import FleetAurvexisLogo, { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
+import { 
+  EnterprisePartner, 
+  DEFAULT_ENTERPRISE_PARTNERS, 
+  migratePartners 
+} from '../data/enterprisePartnersData';
+import EnterprisePartnerModal from './EnterprisePartnerModal';
 
 import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
 import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
@@ -116,68 +122,7 @@ const DEFAULT_FEATURES = [
   }
 ];
 
-const DEFAULT_CLIENTS = [
-  { 
-    id: 'c-1', 
-    nameAr: 'مؤسسة الغد للشحن الذكي',
-    nameEn: 'Al-Ghad Smart Transport Corp.',
-    industryAr: 'سلاسل التوريد وشحن المستقبل', 
-    industryEn: 'Supply Chain & Future Cargo', 
-    rating: 5, 
-    yearJoint: '2024', 
-    activeVehicles: '1,200', 
-    logoSeed: 'LG',
-    colorClass: 'text-brand-blue-600 bg-brand-blue-50 border-brand-blue-100 dark:bg-brand-blue-950/30'
-  },
-  { 
-    id: 'c-2', 
-    nameAr: 'فيوتشر تراك للخدمات البيئية',
-    nameEn: 'FutureTrack Eco Services',
-    industryAr: 'خدمات النقل النظيف والهجين', 
-    industryEn: 'Clean & Hybrid Mobility Hubs', 
-    rating: 5, 
-    yearJoint: '2023', 
-    activeVehicles: '450', 
-    logoSeed: 'FT',
-    colorClass: 'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/30'
-  },
-  { 
-    id: 'c-3', 
-    nameAr: 'المسار المستدام للنقل اللوجستي',
-    nameEn: 'Sustainable National Cargo',
-    industryAr: 'شحن مستدام وموثق للصناعات', 
-    industryEn: 'Certified Sustainable Logistics', 
-    rating: 5, 
-    yearJoint: '2024', 
-    activeVehicles: '820', 
-    logoSeed: 'SC',
-    colorClass: 'text-sky-600 bg-sky-50 border-sky-100 dark:bg-sky-950/30'
-  },
-  { 
-    id: 'c-4', 
-    nameAr: 'أوربت ترانزيت للنقل الطاقي',
-    nameEn: 'TransOrbit Hybrid Transit',
-    industryAr: 'شحن الطاقة المسال والوقائيات', 
-    industryEn: 'Energy Cargo & Odometer Sync', 
-    rating: 4.9, 
-    yearJoint: '2025', 
-    activeVehicles: '310', 
-    logoSeed: 'OT',
-    colorClass: 'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-950/30'
-  },
-  { 
-    id: 'c-5', 
-    nameAr: 'ريدان للتكامل اللوجستي',
-    nameEn: 'Raydan Eco-Transit Systems',
-    industryAr: 'شبكات النقل الكهربائي الموثوق', 
-    industryEn: 'Battery-Powered Net-Zero Transit', 
-    rating: 5, 
-    yearJoint: '2025', 
-    activeVehicles: '150', 
-    logoSeed: 'RE',
-    colorClass: 'text-purple-600 bg-purple-50 border-purple-100 dark:bg-purple-950/30'
-  }
-];
+const DEFAULT_CLIENTS = DEFAULT_ENTERPRISE_PARTNERS;
 
 const DEFAULT_REVIEWS = [
   {
@@ -358,15 +303,21 @@ export default function MarketingLandingPage({
     return DEFAULT_FEATURES;
   });
 
-  const [clientsList, setClientsList] = useState(() => {
+  const [clientsList, setClientsList] = useState<EnterprisePartner[]>(() => {
     const stored = localStorage.getItem('saas_marketing_clients_v2');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return migratePartners(parsed);
+        }
       } catch (e) {}
     }
-    return DEFAULT_CLIENTS;
+    return DEFAULT_ENTERPRISE_PARTNERS;
   });
+
+  // Selected partner for viewing complete case study & operational article modal
+  const [selectedPartnerForStory, setSelectedPartnerForStory] = useState<EnterprisePartner | null>(null);
 
   const [reviewsList, setReviewsList] = useState(() => {
     const stored = localStorage.getItem('saas_marketing_reviews_v1');
@@ -409,7 +360,12 @@ export default function MarketingLandingPage({
       }
       const storedClients = localStorage.getItem('saas_marketing_clients_v2');
       if (storedClients) {
-        try { setClientsList(JSON.parse(storedClients)); } catch (e) {}
+        try { 
+          const parsed = JSON.parse(storedClients);
+          if (Array.isArray(parsed)) {
+            setClientsList(migratePartners(parsed));
+          }
+        } catch (e) {}
       }
       const storedReviews = localStorage.getItem('saas_marketing_reviews_v1');
       if (storedReviews) {
@@ -1158,7 +1114,7 @@ export default function MarketingLandingPage({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {clientsList.map((client) => {
               // Determine elegant color matching based on client seed or color class
               const isIndigo = client.colorClass?.includes('brand-blue') || client.colorClass?.includes('indigo') || client.id === 'c-1';
@@ -1169,68 +1125,123 @@ export default function MarketingLandingPage({
 
               let barBg = 'bg-brand-blue-500';
               let badgeBg = 'bg-brand-blue-500/10 text-brand-blue-700 border-brand-blue-500/20';
-              let shadowAccent = 'hover:shadow-brand-blue-500/5 hover:border-brand-blue-200';
+              let shadowAccent = 'hover:shadow-brand-blue-500/10 hover:border-brand-blue-200';
 
               if (isEmerald) {
                 barBg = 'bg-emerald-500';
                 badgeBg = 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20';
-                shadowAccent = 'hover:shadow-emerald-500/5 hover:border-emerald-200';
+                shadowAccent = 'hover:shadow-emerald-500/10 hover:border-emerald-200';
               } else if (isSky) {
                 barBg = 'bg-sky-500';
                 badgeBg = 'bg-sky-500/10 text-sky-700 border-sky-500/20';
-                shadowAccent = 'hover:shadow-sky-500/5 hover:border-sky-200';
+                shadowAccent = 'hover:shadow-sky-500/10 hover:border-sky-200';
               } else if (isAmber) {
                 barBg = 'bg-amber-500';
                 badgeBg = 'bg-amber-500/10 text-amber-700 border-amber-500/20';
-                shadowAccent = 'hover:shadow-amber-500/5 hover:border-amber-200';
+                shadowAccent = 'hover:shadow-amber-500/10 hover:border-amber-200';
               } else if (isPurple) {
                 barBg = 'bg-purple-500';
                 badgeBg = 'bg-purple-500/10 text-purple-700 border-purple-500/20';
-                shadowAccent = 'hover:shadow-purple-500/5 hover:border-purple-200';
+                shadowAccent = 'hover:shadow-purple-500/10 hover:border-purple-200';
               }
+
+              const articleHeadline = language === 'ar' 
+                ? (client.articleTitleAr || client.articleSummaryAr || 'قصة نجاح وحوكمة الصيانة الوقائية') 
+                : (client.articleTitleEn || client.articleSummaryEn || 'Maintenance Governance Case Study');
+
+              const primaryMetric = client.metrics && client.metrics.length > 0 
+                ? client.metrics[0] 
+                : null;
 
               return (
                 <div 
                   key={client.id}
-                  className={`group relative border border-slate-150/90 p-5 rounded-2xl bg-white space-y-4 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between overflow-hidden ${shadowAccent}`}
+                  onClick={() => setSelectedPartnerForStory(client)}
+                  className={`group relative border border-slate-200 rounded-2xl bg-white hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between overflow-hidden cursor-pointer ${shadowAccent}`}
                 >
                   {/* Decorative top colored border line */}
-                  <div className={`absolute top-0 left-0 right-0 h-1.5 ${barBg} opacity-80 group-hover:opacity-100 transition-opacity`} />
+                  <div className={`absolute top-0 left-0 right-0 h-1.5 ${barBg} opacity-90 group-hover:opacity-100 transition-opacity z-10`} />
 
-                  <div className="flex items-center justify-between">
-                    {/* Visual Avatar Placeholder */}
-                    <div className={`w-11 h-11 rounded-xl font-bold flex items-center justify-center text-xs shadow-3xs border transition-transform duration-300 group-hover:scale-105 ${client.colorClass}`}>
-                      {client.logoSeed}
+                  {/* Partner Fleet Photo Header */}
+                  <div className="relative h-36 w-full overflow-hidden bg-slate-900">
+                    <img 
+                      src={client.image} 
+                      alt={language === 'ar' ? client.nameAr : client.nameEn}
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+
+                    {/* Floating Badges over Photo */}
+                    <div className="absolute top-3 right-3 left-3 flex items-center justify-between pointer-events-none">
+                      <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-white bg-slate-900/80 backdrop-blur-md border border-white/20 px-2 py-0.5 rounded-full shadow-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        {language === 'ar' ? 'معتمد' : 'Verified'}
+                      </span>
+
+                      <div className="flex items-center gap-1 text-[9.5px] font-black text-amber-300 bg-slate-900/80 backdrop-blur-md border border-amber-400/30 px-2 py-0.5 rounded-full shadow-xs">
+                        <Star size={9} fill="currentColor" className="text-amber-400" />
+                        <span>{client.rating}</span>
+                      </div>
                     </div>
 
-                    {/* Active verified badge */}
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full select-none">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                      {language === 'ar' ? 'معتمد' : 'Verified'}
-                    </span>
+                    {/* Fleet Size Tag on Photo */}
+                    <div className="absolute bottom-2.5 right-3 left-3 flex items-center justify-between text-white pointer-events-none">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-xl font-black flex items-center justify-center text-[11px] shadow-md border border-white/40 backdrop-blur-md ${client.colorClass || 'bg-purple-600 text-white'}`}>
+                          {client.logoSeed}
+                        </div>
+                        <span className="font-mono text-[10.5px] font-extrabold bg-slate-900/70 px-2 py-0.5 rounded-lg border border-white/10 backdrop-blur-xs">
+                          {client.activeVehicles} {language === 'ar' ? 'آلية' : 'Assets'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5 flex-grow text-right pt-1">
-                    <h4 className="font-extrabold text-xs text-slate-900 line-clamp-1 group-hover:text-slate-950 transition-colors">
-                      {language === 'ar' ? client.nameAr : client.nameEn}
-                    </h4>
-                    <span className="text-[10px] text-slate-500 font-semibold block truncate">
-                      {language === 'ar' ? client.industryAr : client.industryEn}
-                    </span>
-                  </div>
+                  {/* Card Content & Article Preview */}
+                  <div className="p-4 space-y-3 flex-grow flex flex-col justify-between text-right">
+                    <div className="space-y-1.5">
+                      <h4 className="font-extrabold text-[13px] text-slate-900 group-hover:text-purple-700 transition-colors line-clamp-1">
+                        {language === 'ar' ? client.nameAr : client.nameEn}
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-semibold block truncate">
+                        {language === 'ar' ? client.industryAr : client.industryEn} • {language === 'ar' ? `منذ ${client.yearJoint}` : `Since ${client.yearJoint}`}
+                      </p>
 
-                  {/* Divider line */}
-                  <div className="border-t border-dashed border-slate-100 pt-3 flex items-center justify-between text-[10px] font-mono">
-                    {/* Asset count badge */}
-                    <div className={`px-2 py-0.5 rounded-lg border text-[9.5px] font-black ${badgeBg}`}>
-                      <span className="font-mono">{client.activeVehicles}</span>{' '}
-                      <span className="font-sans text-[8.5px] font-bold">{language === 'ar' ? 'آلية' : 'Assets'}</span>
+                      {/* Article Excerpt Box */}
+                      <div className="p-2.5 bg-slate-50 group-hover:bg-purple-50/50 rounded-xl border border-slate-100 group-hover:border-purple-100 transition-colors space-y-1 text-right">
+                        <div className="flex items-center gap-1 text-[9.5px] font-bold text-purple-700">
+                          <BookOpen size={11} className="text-purple-600" />
+                          <span>{language === 'ar' ? 'مقال وقصة الشراكة:' : 'Case Study & Story:'}</span>
+                        </div>
+                        <p className="text-[10.5px] text-slate-700 font-medium line-clamp-2 leading-relaxed">
+                          {articleHeadline}
+                        </p>
+                      </div>
+
+                      {/* Primary Achievement Metric */}
+                      {primaryMetric && (
+                        <div className="flex items-center justify-between text-[10px] bg-emerald-50/70 border border-emerald-150 px-2 py-1 rounded-lg text-emerald-800 font-bold">
+                          <span className="truncate">{language === 'ar' ? primaryMetric.labelAr : primaryMetric.labelEn}:</span>
+                          <span className="font-mono font-black text-emerald-700 shrink-0 mr-1">{primaryMetric.value}</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Rating badge */}
-                    <div className="flex items-center gap-1 text-[9.5px] font-black text-amber-600 bg-amber-500/5 border border-amber-500/10 px-2 py-0.5 rounded-lg">
-                      <Star size={9} fill="currentColor" className="text-amber-500" />
-                      <span>{client.rating}</span>
+                    {/* Action Button: Open Partner Story */}
+                    <div className="pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPartnerForStory(client);
+                        }}
+                        className="w-full py-2 px-3 bg-purple-50 hover:bg-purple-600 text-purple-700 hover:text-white border border-purple-200/70 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs group/btn"
+                      >
+                        <FileText size={12} className="text-purple-600 group-hover/btn:text-white" />
+                        <span>{language === 'ar' ? 'قراءة قصة الشراكة والمقال' : 'Read Case Study & Story'}</span>
+                        {language === 'ar' ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1664,6 +1675,19 @@ export default function MarketingLandingPage({
 
       {/* Customer Success Stories & Case Studies */}
       <CustomerSuccessStories />
+
+      {/* Enterprise Strategic Partner Case Study & Article Modal */}
+      {selectedPartnerForStory && (
+        <EnterprisePartnerModal
+          partner={selectedPartnerForStory}
+          onClose={() => setSelectedPartnerForStory(null)}
+          language={language}
+          onBookDemo={() => {
+            setSelectedPartnerForStory(null);
+            setShowSignupModal(true);
+          }}
+        />
+      )}
 
       {/* Comprehensive Standard Footer with Brighter Vibrant Purple Gradient */}
       <footer className="bg-gradient-to-b from-[#4c1d95] via-[#3b0764] to-[#2e1065] text-purple-100/90 text-xs py-16 border-t border-purple-400/30 mt-auto relative overflow-hidden">
