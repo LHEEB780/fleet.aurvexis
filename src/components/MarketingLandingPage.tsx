@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowRight, 
   Check, 
@@ -55,6 +55,9 @@ import {
   migratePartners 
 } from '../data/enterprisePartnersData';
 import EnterprisePartnerModal from './EnterprisePartnerModal';
+import { CookieConsentBanner } from './legal/CookieConsentBanner';
+import { LegalDocument } from '../types/legal';
+import { getStoredLegalDocuments } from '../data/legalDocumentsData';
 
 import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
 import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
@@ -66,12 +69,13 @@ interface MarketingLandingPageProps {
   onNavigateToCRM?: () => void;
   onNavigateToSaaS: (autoLogin?: boolean) => void;
   onNavigateToSuperAdmin?: () => void;
+  onNavigateToLegal?: (docId?: string) => void;
   brandPrimaryColor?: string;
   brandName?: string;
   brandDesc?: string;
   isInsideApp?: boolean;
   onNavigateToTab?: (tab: string) => void;
-  portalMode?: 'marketing' | 'saas' | 'super-admin';
+  portalMode?: 'marketing' | 'saas' | 'super-admin' | 'legal';
 }
 
 // Reconstructed high-fidelity default lists from MarketingAdmin
@@ -256,6 +260,7 @@ const getReviewInitials = (name: string) => {
 export default function MarketingLandingPage({
   onNavigateToSaaS,
   onNavigateToSuperAdmin,
+  onNavigateToLegal,
   brandPrimaryColor = '#6d28d9',
   brandName = '',
   brandDesc = '',
@@ -328,6 +333,27 @@ export default function MarketingLandingPage({
     }
     return DEFAULT_REVIEWS;
   });
+
+  // Dynamic Legal Documents synchronized with Admin & Public Portal
+  const [legalDocs, setLegalDocs] = useState<LegalDocument[]>(() => getStoredLegalDocuments());
+
+  useEffect(() => {
+    const handleLegalUpdate = () => {
+      setLegalDocs(getStoredLegalDocuments());
+    };
+    window.addEventListener('fleet_legal_documents_updated', handleLegalUpdate);
+    window.addEventListener('storage', handleLegalUpdate);
+    return () => {
+      window.removeEventListener('fleet_legal_documents_updated', handleLegalUpdate);
+      window.removeEventListener('storage', handleLegalUpdate);
+    };
+  }, []);
+
+  const footerLegalDocs = useMemo(() => {
+    return legalDocs
+      .filter(d => d.status === 'published' && d.showInFooter !== false)
+      .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  }, [legalDocs]);
 
   const [footerColumnsList, setFooterColumnsList] = useState(() => {
     const activeBrand = brandName || 'FleetAurvexis';
@@ -621,7 +647,7 @@ export default function MarketingLandingPage({
   const calculatedDowntimeDays = Math.round(calcVehicles * 4.5);
 
   return (
-    <div className={`min-h-screen bg-white text-slate-900 font-sans antialiased flex flex-col selection:bg-brand-blue-500/10 selection:text-brand-blue-500 transition-colors duration-300`}>
+    <div className={`min-h-screen w-full max-w-full overflow-x-clip bg-white text-slate-900 font-sans antialiased flex flex-col selection:bg-brand-blue-500/10 selection:text-brand-blue-500 transition-colors duration-300`}>
       
       {/* Live Preview Banner if inside app */}
       {isInsideApp && (
@@ -645,10 +671,10 @@ export default function MarketingLandingPage({
       
       {/* Main Responsive Unified Sticky Header in Brand Purple Gradient */}
       <header className="sticky top-0 z-40 bg-gradient-to-r from-[#1b0c36] via-[#2d1254] to-[#43147a] text-white backdrop-blur-xl border-b border-purple-400/20 shadow-lg shadow-purple-950/25 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 sm:h-20 flex items-center justify-between gap-3 sm:gap-4">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Logo Brand with Official Emblem & Modal Trigger */}
-          <div className="shrink-0">
+          <div className="shrink min-w-0">
             <FleetAurvexisLogo 
               size="md" 
               isDarkBg={true}
@@ -692,30 +718,32 @@ export default function MarketingLandingPage({
           </nav>
 
           {/* Actions: Equal-Height Compact Buttons & Status */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Live Operational Status Indicator (Hidden on small mobile) */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 h-8 bg-purple-900/60 border border-purple-400/30 rounded-lg text-[10px] font-bold text-purple-200 shadow-inner select-none">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Live Operational Status Indicator (Hidden on mobile) */}
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 h-8 bg-purple-900/60 border border-purple-400/30 rounded-lg text-[10px] font-bold text-purple-200 shadow-inner select-none">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] animate-pulse shrink-0"></span>
               <span>{language === 'ar' ? 'متصل 2026' : 'Live Active'}</span>
             </div>
 
-            {/* Arabic / English Language Switcher (Compact Equal Size) */}
+            {/* Arabic / English Language Switcher */}
             <button
+              type="button"
               onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              className="h-8 px-2.5 sm:px-3 bg-white/10 hover:bg-white/20 active:bg-white/25 text-white border border-purple-300/35 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer backdrop-blur-md shadow-xs hover:border-purple-200/60 shrink-0"
+              className="h-8 sm:h-9 px-2 sm:px-3 bg-purple-900/40 hover:bg-purple-800/60 active:bg-purple-800/80 text-white border border-purple-300/30 hover:border-purple-300/60 rounded-lg sm:rounded-xl text-[10.5px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer backdrop-blur-md shadow-xs shrink-0 whitespace-nowrap"
               title={language === 'ar' ? 'Switch to English' : 'التحويل للعربية'}
             >
-              <Globe2 size={12} className="text-purple-200" />
+              <Globe2 size={13} className="text-purple-300 shrink-0" />
               <span>{language === 'ar' ? 'English' : 'العربية'}</span>
             </button>
 
-            {/* Single Primary Action: Launch Console / System (Compact Equal Size) */}
+            {/* Single Primary Action: Launch Console / System */}
             <button
+              type="button"
               onClick={() => {
                 syncLocalBranding();
                 onNavigateToSaaS(true);
               }}
-              className="h-8 px-3 sm:px-3.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:from-purple-400 hover:via-indigo-400 hover:to-purple-500 active:scale-[0.98] text-white text-[11px] font-black rounded-lg shadow-sm shadow-purple-950/50 border border-purple-300/40 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 hover:shadow-purple-500/25 shrink-0"
+              className="h-8 sm:h-9 px-2.5 sm:px-3.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:from-purple-400 hover:via-indigo-400 hover:to-purple-500 active:scale-[0.98] text-white text-[10.5px] sm:text-xs font-black rounded-lg sm:rounded-xl shadow-sm shadow-purple-950/50 border border-purple-300/40 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 hover:shadow-purple-500/25 shrink-0 whitespace-nowrap"
             >
               <span>{language === 'ar' ? 'دخول النظام' : 'Launch System'}</span>
             </button>
@@ -1771,12 +1799,68 @@ export default function MarketingLandingPage({
             ))}
           </div>
 
-          <div className="border-t border-purple-500/30 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap text-[11px] text-purple-200/90 font-medium">
+          {/* Lower Section: Legal Policies & Compliance Portal Quick Gateways */}
+          <div className="border-t border-purple-500/20 pt-8 pb-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-[11.5px]">
+              
+              {/* Button 1: Regulatory Legal Policies (السياسات والشروط النظامية) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (onNavigateToLegal) onNavigateToLegal('privacy-policy');
+                  else window.dispatchEvent(new CustomEvent('open-legal-portal', { detail: { docId: 'privacy-policy' } }));
+                }}
+                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-purple-950/50 hover:bg-purple-900/70 border border-purple-500/30 hover:border-purple-400/50 transition-all text-start group cursor-pointer shadow-xs active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-300 group-hover:text-white shrink-0 transition-colors">
+                    <FileText size={15} />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="font-bold text-white text-xs sm:text-sm block truncate">
+                      {language === 'ar' ? 'السياسات والشروط النظامية' : 'Legal Policies & Terms'}
+                    </span>
+                    <span className="text-[10.5px] text-purple-300/80 block font-medium">
+                      {language === 'ar' ? `${footerLegalDocs.length} وثيقة معتمدة (انقر للعرض)` : `${footerLegalDocs.length} Verified Policies (Click to view)`}
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {/* Button 2: Governance, Compliance & Privacy (الحوكمة وإدارة الامتثال) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (onNavigateToLegal) onNavigateToLegal('data-processing');
+                  else window.dispatchEvent(new CustomEvent('open-legal-portal', { detail: { docId: 'data-processing' } }));
+                }}
+                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-purple-950/50 hover:bg-purple-900/70 border border-purple-500/30 hover:border-purple-400/50 transition-all text-start group cursor-pointer shadow-xs active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-300 group-hover:text-white shrink-0 transition-colors">
+                    <Shield size={15} />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="font-bold text-white text-xs sm:text-sm block truncate">
+                      {language === 'ar' ? 'الحوكمة وإدارة الامتثال' : 'Governance & Compliance'}
+                    </span>
+                    <span className="text-[10.5px] text-purple-300/80 block font-medium">
+                      {language === 'ar' ? '4 بوابات وخدمات حوكمة (انقر للعرض)' : '4 Services & Portals (Click to view)'}
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+            </div>
+          </div>
+
+          {/* Bottom-most Bar: Brand, Copyright & Subtle Gateway */}
+          <div className="border-t border-purple-500/25 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-purple-200/70 font-medium">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl overflow-hidden border border-purple-400/50 shadow-md shrink-0 bg-[#090D16] p-0.5">
+              <div className="w-7 h-7 rounded-xl overflow-hidden border border-purple-400/40 shadow-xs shrink-0 bg-[#090D16] p-0.5">
                 <FleetAurvexisVectorEmblem className="w-full h-full" />
               </div>
-              <span className="font-mono text-white tracking-widest font-black text-sm">
+              <span className="font-mono text-white tracking-widest font-black text-xs">
                 {effectiveBrandName.toUpperCase()}
               </span>
               <span>
@@ -1784,36 +1868,36 @@ export default function MarketingLandingPage({
               </span>
             </div>
 
-            <div className="flex gap-4 items-center flex-wrap">
+            <div className="flex items-center gap-3 text-purple-300/60 text-[10px]">
+              <span>{language === 'ar' ? 'منظومة الحوكمة والامتثال المعتمدة' : 'Verified Governance & Compliance'}</span>
               {onNavigateToSuperAdmin && (
-                <button 
+                <button
                   type="button"
                   onClick={onNavigateToSuperAdmin}
-                  className="hover:text-white transition-all font-bold text-slate-300 border border-purple-500/40 rounded-full px-3 py-1 bg-purple-950/60 hover:bg-purple-900/80 shadow-xs flex items-center gap-1.5 cursor-pointer text-[10.5px]"
-                  title={language === 'ar' ? 'بوابة مدير المنصة والمالك (Super Admin)' : 'Platform Super Admin Gateway'}
+                  className="opacity-30 hover:opacity-100 transition-opacity p-1 text-purple-300 hover:text-white rounded-sm hover:bg-purple-900/40 cursor-pointer"
+                  title={language === 'ar' ? 'مدير المنصة (Super Admin)' : 'Super Admin Portal'}
                 >
-                  <Shield size={12} className="text-purple-400" />
-                  <span>{language === 'ar' ? 'بوابة مدير المنصة (Super Admin)' : 'Super Admin Portal'}</span>
+                  <Lock size={11} />
                 </button>
               )}
-              <a 
-                href="#/" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  onNavigateToSaaS();
-                }} 
-                style={{ display: effectivePortalMode === 'saas' ? 'inline-block' : 'none' }}
-                className="hover:text-white transition-all font-extrabold text-purple-100 border border-purple-300/40 rounded-full px-3.5 py-1 bg-purple-700/60 hover:bg-purple-600/80 shadow-xs"
-              >
-                {language === 'ar' ? 'لوحة التحكم للمنشأة' : 'Organization Control Panel'}
-              </a>
-              <a href="#/" onClick={(e) => {e.preventDefault(); setShowSignupModal(true);}} className="hover:text-white transition">{language === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}</a>
-              <a href="#/" onClick={(e) => {e.preventDefault(); setShowSignupModal(true);}} className="hover:text-white transition">{language === 'ar' ? 'شروط الخدمة' : 'Terms of Service'}</a>
             </div>
           </div>
 
         </div>
       </footer>
+
+      {/* Global Enterprise Cookie Consent Banner */}
+      <CookieConsentBanner
+        brandPrimaryColor={brandPrimaryColor}
+        onOpenPrivacyPolicy={() => {
+          if (onNavigateToLegal) onNavigateToLegal('privacy-policy');
+          else window.dispatchEvent(new CustomEvent('open-legal-portal', { detail: { docId: 'privacy-policy' } }));
+        }}
+        onOpenCookiePolicy={() => {
+          if (onNavigateToLegal) onNavigateToLegal('cookie-policy');
+          else window.dispatchEvent(new CustomEvent('open-legal-portal', { detail: { docId: 'cookie-policy' } }));
+        }}
+      />
 
     </div>
   );

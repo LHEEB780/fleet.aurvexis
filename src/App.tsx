@@ -30,6 +30,8 @@ import { MarketingAdmin } from './components/MarketingAdmin';
 import SuperAdminPortal from './components/SuperAdminPortal';
 import VideoTutorialsModal from './components/VideoTutorialsModal';
 import HelpCenter from './components/HelpCenter';
+import PublicLegalPortal from './components/legal/PublicLegalPortal';
+import AdminLegalManager from './components/legal/AdminLegalManager';
 import {
   adjustColorBrightness,
   generateBrandPalette,
@@ -121,10 +123,17 @@ function useBrowserLanguageDetector(language: 'ar' | 'en', setLanguage: (lang: '
 }
 
 export default function App() {
-  const [portalMode, setPortalMode] = useState<'marketing' | 'saas' | 'super-admin'>(() => {
+  const [portalMode, setPortalMode] = useState<'marketing' | 'saas' | 'super-admin' | 'legal'>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('portal') === 'legal' || window.location.hash === '#legal' || window.location.pathname.startsWith('/legal')) {
+        return 'legal';
+      }
+    } catch (e) {}
     const saved = localStorage.getItem('saas_portal_mode');
-    return (saved === 'marketing' || saved === 'saas' || saved === 'super-admin' ? saved : 'marketing') as 'marketing' | 'saas' | 'super-admin';
+    return (saved === 'marketing' || saved === 'saas' || saved === 'super-admin' || saved === 'legal' ? saved : 'marketing') as 'marketing' | 'saas' | 'super-admin' | 'legal';
   });
+  const [activeLegalDocId, setActiveLegalDocId] = useState<string>('privacy-policy');
   const [activeTab, setActiveTabState] = useState(() => {
     return localStorage.getItem('saas_active_tab') || 'dashboard';
   });
@@ -502,12 +511,21 @@ export default function App() {
     window.addEventListener('maintenance-offline-added', updateQueueCount);
     window.addEventListener('open-video-tutorial', handleOpenTutorial as EventListener);
 
+    const handleOpenLegalPortal = (e: any) => {
+      const docId = e?.detail?.docId || 'privacy-policy';
+      setActiveLegalDocId(docId);
+      setPortalMode('legal');
+      localStorage.setItem('saas_portal_mode', 'legal');
+    };
+    window.addEventListener('open-legal-portal', handleOpenLegalPortal as EventListener);
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('trigger-offline-sync', handleManualSyncTrigger);
       window.removeEventListener('maintenance-offline-added', updateQueueCount);
       window.removeEventListener('open-video-tutorial', handleOpenTutorial as EventListener);
+      window.removeEventListener('open-legal-portal', handleOpenLegalPortal as EventListener);
     };
   }, [language]);
   
@@ -879,13 +897,31 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    const handleStorageChange = () => {
-      setSaasBrandName(sanitizeBrandName(localStorage.getItem('saas_brand_name')));
-      setSaasBrandDesc(sanitizeBrandDesc(localStorage.getItem('saas_brand_desc')));
-      setSaasBrandLogo(localStorage.getItem('saas_brand_logo') || '');
-      setBrandPrimaryColor(localStorage.getItem('saas_brand_primary_color') || '#6d28d9');
-      setSyncThresholdMB(parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5'));
-      setCurrentOfflineWeightMB(getPendingDataVolumeMB());
+    const handleStorageChange = (e?: StorageEvent | Event) => {
+      // If it's a specific storage event for an unrelated key, ignore it
+      if (e && 'key' in e && e.key && ![
+        'saas_brand_name',
+        'saas_brand_desc',
+        'saas_brand_logo',
+        'saas_brand_primary_color',
+        'saas_sync_threshold_mb'
+      ].includes(e.key)) {
+        return;
+      }
+
+      const newName = sanitizeBrandName(localStorage.getItem('saas_brand_name'));
+      const newDesc = sanitizeBrandDesc(localStorage.getItem('saas_brand_desc'));
+      const newLogo = localStorage.getItem('saas_brand_logo') || '';
+      const newColor = localStorage.getItem('saas_brand_primary_color') || '#6d28d9';
+      const newThreshold = parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5');
+      const newWeight = getPendingDataVolumeMB();
+
+      setSaasBrandName(prev => prev !== newName ? newName : prev);
+      setSaasBrandDesc(prev => prev !== newDesc ? newDesc : prev);
+      setSaasBrandLogo(prev => prev !== newLogo ? newLogo : prev);
+      setBrandPrimaryColor(prev => prev !== newColor ? newColor : prev);
+      setSyncThresholdMB(prev => prev !== newThreshold ? newThreshold : prev);
+      setCurrentOfflineWeightMB(prev => prev !== newWeight ? newWeight : prev);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -894,11 +930,25 @@ export default function App() {
   // Handle active modules verification & redirect
   React.useEffect(() => {
     const checkActiveTabEnabled = () => {
+      // Never redirect standalone/administrative portals and modal views
+      const standaloneTabs = [
+        'dashboard',
+        'saas-billing',
+        'marketing-admin',
+        'marketing-portal',
+        'super-admin',
+        'video-tutorials',
+        'help-center'
+      ];
+      if (standaloneTabs.includes(activeTab)) {
+        return;
+      }
+
       const saved = localStorage.getItem('saas_enabled_modules');
       if (saved) {
         try {
           const enabledIds = JSON.parse(saved);
-          if (activeTab !== 'dashboard' && activeTab !== 'saas-billing' && !enabledIds.includes(activeTab)) {
+          if (Array.isArray(enabledIds) && !enabledIds.includes(activeTab)) {
             setActiveTab('dashboard');
           }
         } catch (e) {}
@@ -1337,6 +1387,11 @@ export default function App() {
             <style>{renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}</style>
             <MarketingLandingPage 
               onNavigateToSaaS={() => setActiveTab('dashboard')}
+              onNavigateToLegal={(docId) => {
+                setActiveLegalDocId(docId || 'privacy-policy');
+                setPortalMode('legal');
+                localStorage.setItem('saas_portal_mode', 'legal');
+              }}
               brandPrimaryColor={brandPrimaryColor}
               brandName={saasBrandName}
               brandDesc={saasBrandDesc}
@@ -1345,6 +1400,32 @@ export default function App() {
               portalMode={portalMode}
             />
           </>
+        );
+      case 'legal':
+      case 'legal-compliance':
+        return (
+          <div className="p-2 sm:p-4">
+            <PublicLegalPortal
+              initialDocId={activeLegalDocId}
+              brandPrimaryColor={brandPrimaryColor}
+              isDark={isDarkMode}
+              onClose={() => setActiveTab('dashboard')}
+            />
+          </div>
+        );
+      case 'legal-admin':
+        return (
+          <div className="p-2 sm:p-4">
+            <AdminLegalManager
+              brandPrimaryColor={brandPrimaryColor}
+              currentUser={currentUser}
+              onPreviewPublicDoc={(docId) => {
+                setActiveLegalDocId(docId);
+                setPortalMode('legal');
+                localStorage.setItem('saas_portal_mode', 'legal');
+              }}
+            />
+          </div>
         );
       case 'marketing-admin':
         return (
@@ -1392,6 +1473,20 @@ export default function App() {
   };
 
   // --- MULTI-PORTAL ROUTER GATES ---
+  if (portalMode === 'legal') {
+    return (
+      <PublicLegalPortal
+        initialDocId={activeLegalDocId}
+        brandPrimaryColor={brandPrimaryColor}
+        isDark={isDarkMode}
+        onClose={() => {
+          setPortalMode('marketing');
+          localStorage.setItem('saas_portal_mode', 'marketing');
+        }}
+      />
+    );
+  }
+
   if (portalMode === 'super-admin') {
     return (
       <>
@@ -1439,6 +1534,11 @@ export default function App() {
             setPortalMode('super-admin');
             localStorage.setItem('saas_portal_mode', 'super-admin');
           }}
+          onNavigateToLegal={(docId) => {
+            setActiveLegalDocId(docId || 'privacy-policy');
+            setPortalMode('legal');
+            localStorage.setItem('saas_portal_mode', 'legal');
+          }}
           brandPrimaryColor={brandPrimaryColor}
           brandName={saasBrandName}
           brandDesc={saasBrandDesc}
@@ -1465,10 +1565,17 @@ export default function App() {
           .animate-scan {
             animation: scanBeam 1.8s ease-in-out infinite;
           }
+          @keyframes slideDownEntrance {
+            0% { opacity: 0; transform: translateY(-14px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          .animate-slide-down-entrance {
+            animation: slideDownEntrance 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
         `}</style>
         
         {/* ENHANCED TOP CONSOLE SWITCHER BAR */}
-        <div className="absolute top-4 right-4 left-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="fixed top-4 right-4 left-4 z-40 flex flex-wrap items-center justify-between gap-3 animate-slide-down-entrance transition-transform duration-300 hover:-translate-y-0.5">
           <div className="flex items-center gap-2 font-sans">
             <button
               type="button"

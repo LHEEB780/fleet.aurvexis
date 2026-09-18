@@ -28,10 +28,13 @@ import {
   ChevronLeft,
   Camera,
   UploadCloud,
-  AlertCircle
+  AlertCircle,
+  FileDown,
+  Loader2
 } from 'lucide-react';
 import { MarketingArticle, CURATED_ARTICLE_IMAGES, DEFAULT_MARKETING_ARTICLES } from './MarketingArticlesSection';
 import { ArticleShareModal } from './ArticleShareModal';
+import { downloadArticleAsPDF } from '../utils/articlePdfGenerator';
 
 // Curated Fleet & Machinery Photography Assets
 import heavyMachineryRepair from '../assets/images/heavy_machinery_repair_1783750018560.jpg';
@@ -264,6 +267,43 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
   // Full Live Article Preview Modal
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [shareModalData, setShareModalData] = useState<any | null>(null);
+  const [isManagerSavingPdf, setIsManagerSavingPdf] = useState<boolean>(false);
+
+  const getArticlePayload = (articleData?: any) => {
+    return articleData || {
+      id: activeArticleId,
+      title: formData.title || 'مقال بدون عنوان',
+      summary: formData.summary,
+      content: formData.content,
+      category: formData.category,
+      readTime: formData.readTime,
+      date: formData.date,
+      author: formData.author,
+      tags: formData.tags,
+      image: formData.image || formData.imageUrl
+    };
+  };
+
+  const handleManagerSavePdf = async (articleData?: any) => {
+    const art = getArticlePayload(articleData);
+    if (!art || isManagerSavingPdf) return;
+
+    try {
+      setIsManagerSavingPdf(true);
+      showToast(language === 'ar' ? '⏳ جاري تنزيل ملف PDF مباشرة في جهازك...' : '⏳ Downloading PDF file directly to device...');
+      await downloadArticleAsPDF(art, language);
+      showToast(
+        language === 'ar' 
+          ? '✓ تم تنزيل ملف PDF مباشرة في جهازك بترميز UTF-8!' 
+          : '✓ PDF file downloaded directly to your device!'
+      );
+    } catch (error) {
+      console.error('Failed to export article PDF:', error);
+      showToast(language === 'ar' ? '⚠️ تعذر تحميل ملف PDF، يرجى المحاولة لاحقاً' : '⚠️ Failed to download PDF');
+    } finally {
+      setIsManagerSavingPdf(false);
+    }
+  };
 
   const handlePreviewShare = async () => {
     const title = formData.title || 'مقال FleetAurvexis';
@@ -299,8 +339,10 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
       }));
       setPublishedArticles(updated);
       localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
-      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
-      window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+        window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+      }, 0);
       setAllActivatedInManager(true);
       showToast(
         language === 'ar'
@@ -510,9 +552,10 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
 
     setPublishedArticles(updatedArticles);
     localStorage.setItem('saas_articles_catalog', JSON.stringify(updatedArticles));
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent('marketing-data-updated'));
-    window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+    }, 0);
 
     showToast(language === 'ar' ? '✓ تم حفظ وتحديث بيانات المقال والصور بنجاح!' : '✓ Article and image data saved successfully!');
   };
@@ -546,9 +589,10 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
     setPublishedArticles(updated);
     setActiveArticleId(newId);
     localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent('marketing-data-updated'));
-    window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+    }, 0);
 
     showToast(language === 'ar' ? '✓ تم إنشاء مسودة مقال جديد! يمكنك اختيار صورته والبدء بالصياغة' : '✓ New article draft created!');
   };
@@ -566,9 +610,10 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
       setActiveArticleId(updated[0].id);
     }
     localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent('marketing-data-updated'));
-    window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+    }, 0);
 
     showToast(language === 'ar' ? '✓ تم حذف المقال من المستودع' : '✓ Article deleted');
   };
@@ -578,9 +623,10 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
     setPublishedArticles(DEFAULT_MARKETING_ARTICLES);
     setActiveArticleId(DEFAULT_MARKETING_ARTICLES[0].id);
     localStorage.setItem('saas_articles_catalog', JSON.stringify(DEFAULT_MARKETING_ARTICLES));
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent('marketing-data-updated'));
-    window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('marketing-data-updated'));
+      window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
+    }, 0);
     showToast(language === 'ar' ? '✓ تم استعادة المقالات الافتراضية للنظام' : '✓ Default articles restored');
   };
 
@@ -1274,11 +1320,26 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
 
                 <button
                   type="button"
-                  onClick={handleSaveArticle}
-                  className="p-2.5 px-5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-black rounded-xl shadow-xs transition cursor-pointer flex items-center gap-2"
+                  disabled={isManagerSavingPdf}
+                  onClick={() => handleManagerSavePdf()}
+                  className="p-2 px-3 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                  title={language === 'ar' ? 'تحميل PDF مباشرة في جهازك بترميز UTF-8' : 'Download PDF directly to your device with UTF-8 support'}
                 >
-                  <CheckCircle2 size={14} />
-                  <span>{language === 'ar' ? 'حفظ المقال والصورة المدمجة' : 'Save Article & Visuals'}</span>
+                  {isManagerSavingPdf ? (
+                    <Loader2 size={13} className="animate-spin text-purple-600" />
+                  ) : (
+                    <FileDown size={13} className="text-purple-600" />
+                  )}
+                  <span>{isManagerSavingPdf ? (language === 'ar' ? 'جاري التحميل...' : 'Downloading...') : (language === 'ar' ? 'تحميل PDF' : 'Download PDF')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveArticle}
+                  className="p-2 px-4 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <CheckCircle2 size={13} />
+                  <span>{language === 'ar' ? 'حفظ المقال' : 'Save Article'}</span>
                 </button>
               </div>
             </div>
@@ -1492,12 +1553,33 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
                     <button
                       type="button"
                       onClick={handlePreviewShare}
-                      className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-                      title={language === 'ar' ? 'مشاركة عبر تطبيقات الموبايل' : 'Share via apps'}
+                      className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                      title={language === 'ar' ? 'مشاركة مقال' : 'Share Article'}
                     >
                       <Share2 size={13} />
-                      <span>{language === 'ar' ? 'مشاركة المقال' : 'Share Article'}</span>
+                      <span>{language === 'ar' ? 'مشاركة مقال' : 'Share Article'}</span>
                     </button>
+
+                    <button
+                      type="button"
+                      disabled={isManagerSavingPdf}
+                      onClick={() => handleManagerSavePdf()}
+                      className="px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 disabled:opacity-60"
+                      title={language === 'ar' ? 'تحميل PDF مباشرة في جهازك بترميز UTF-8' : 'Download PDF'}
+                    >
+                      {isManagerSavingPdf ? (
+                        <Loader2 size={13} className="animate-spin text-purple-600" />
+                      ) : (
+                        <FileDown size={13} className="text-purple-600" />
+                      )}
+                      <span>
+                        {isManagerSavingPdf
+                          ? (language === 'ar' ? 'جاري التحميل...' : 'Downloading...')
+                          : (language === 'ar' ? 'تحميل PDF' : 'Download PDF')}
+                      </span>
+                    </button>
+
+
                     <button
                       type="button"
                       onClick={handleActivateAllArticlesInManager}

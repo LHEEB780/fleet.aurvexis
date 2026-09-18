@@ -293,7 +293,17 @@ export function hasGranularPermission(permissionId: string, userRole: string): b
     'bypass-safety-checklist': { admin: true, fleet_manager: false, technician: false, viewer: false },
     'approve-parts-issuance': { admin: true, fleet_manager: true, technician: false, viewer: false },
     'edit-completed-orders': { admin: true, fleet_manager: false, technician: false, viewer: false },
-    'force-reset-password': { admin: true, fleet_manager: false, technician: false, viewer: false }
+    'force-reset-password': { admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.view': { admin: true, super_admin: true, fleet_manager: true, technician: false, viewer: true },
+    'legal.create': { admin: true, super_admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.edit': { admin: true, super_admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.publish': { admin: true, super_admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.unpublish': { admin: true, super_admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.archive': { admin: true, super_admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.restore': { admin: true, super_admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.manage_settings': { admin: true, super_admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.manage_cookies': { admin: true, super_admin: true, fleet_manager: false, technician: false, viewer: false },
+    'legal.view_history': { admin: true, super_admin: true, fleet_manager: true, technician: false, viewer: true }
   };
   
   const permDefault = defaults[permissionId];

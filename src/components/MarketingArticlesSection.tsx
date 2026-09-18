@@ -17,10 +17,13 @@ import {
   Eye,
   Check,
   Globe2,
-  FileText
+  FileDown,
+  Printer,
+  Loader2
 } from 'lucide-react';
 import { useLanguage } from '../services/LanguageContext';
 import { ArticleShareModal } from './ArticleShareModal';
+import { downloadArticleAsPDF } from '../utils/articlePdfGenerator';
 
 // Import high-fidelity local assets for fleet articles
 import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
@@ -207,6 +210,28 @@ export default function MarketingArticlesSection({
   const [selectedArticle, setSelectedArticle] = useState<MarketingArticle | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [actionToast, setActionToast] = useState<string>('');
+  const [isExportingPdf, setIsExportingPdf] = useState<boolean>(false);
+
+  const handleSaveArticlePdf = async (article: MarketingArticle) => {
+    if (!article || isExportingPdf) return;
+    try {
+      setIsExportingPdf(true);
+      setActionToast(language === 'ar' ? '⏳ جاري تنزيل ملف PDF مباشرة في جهازك...' : '⏳ Downloading PDF file directly to device...');
+      await downloadArticleAsPDF(article, language);
+      setActionToast(
+        language === 'ar' 
+          ? '✓ تم تنزيل ملف PDF مباشرة في جهازك بترميز UTF-8 سليم' 
+          : '✓ PDF file downloaded directly to your device!'
+      );
+      setTimeout(() => setActionToast(''), 4500);
+    } catch (error) {
+      console.error('Failed to export article PDF:', error);
+      setActionToast(language === 'ar' ? '⚠️ تعذر تحميل ملف PDF، يرجى المحاولة لاحقاً' : '⚠️ Failed to download PDF, please try again');
+      setTimeout(() => setActionToast(''), 4500);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   // Sync with Admin panel articles updates
   useEffect(() => {
@@ -494,16 +519,36 @@ export default function MarketingArticlesSection({
                 {/* Toolbar (Share Article Only) */}
                 <div className="flex flex-col gap-3 border-b border-slate-100 pb-4">
                   <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {/* Apps Share Button (Opens mobile apps drawer: WhatsApp, WA Business, Telegram, Messenger, Facebook, X, Gmail, Device) */}
+                    <div className="flex items-center gap-2">
+                      {/* Apps Share Button */}
                       <button
                         type="button"
                         onClick={() => handleShareArticle(selectedArticle)}
-                        className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
-                        title={language === 'ar' ? 'مشاركة عبر تطبيقات الموبايل (واتساب، تليجرام، فيسبوك...)' : 'Share via mobile apps'}
+                        className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                        title={language === 'ar' ? 'مشاركة مقال عبر التطبيقات والروابط' : 'Share article'}
                       >
-                        <Share2 size={16} />
-                        <span>{language === 'ar' ? 'مشاركة المقال' : 'Share Article'}</span>
+                        <Share2 size={13} />
+                        <span>{language === 'ar' ? 'مشاركة مقال' : 'Share Article'}</span>
+                      </button>
+
+                      {/* Direct PDF Download Button */}
+                      <button
+                        type="button"
+                        disabled={isExportingPdf}
+                        onClick={() => handleSaveArticlePdf(selectedArticle)}
+                        className="px-3 py-1.5 bg-white hover:bg-purple-50 text-purple-700 hover:text-purple-800 border border-purple-200 hover:border-purple-300 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                        title={language === 'ar' ? 'تحميل PDF مباشرة في جهازك بترميز UTF-8' : 'Download PDF directly to your device'}
+                      >
+                        {isExportingPdf ? (
+                          <Loader2 size={13} className="animate-spin text-purple-600" />
+                        ) : (
+                          <FileDown size={13} className="text-purple-600" />
+                        )}
+                        <span>
+                          {isExportingPdf
+                            ? (language === 'ar' ? 'جاري التحميل...' : 'Downloading...')
+                            : (language === 'ar' ? 'تحميل PDF' : 'Download PDF')}
+                        </span>
                       </button>
                     </div>
 

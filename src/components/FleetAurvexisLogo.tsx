@@ -146,9 +146,9 @@ export default function FleetAurvexisLogo({
 
   // Size mappings
   const sizeMap = {
-    sm: { icon: 'w-10 h-10', text: 'text-base', sub: 'text-[9.5px]', gap: 'gap-2.5' },
-    md: { icon: 'w-13 h-13 sm:w-14 sm:h-14', text: 'text-lg sm:text-xl', sub: 'text-[11px]', gap: 'gap-3.5' },
-    lg: { icon: 'w-16 h-16 sm:w-20 sm:h-20', text: 'text-2xl sm:text-3xl', sub: 'text-xs', gap: 'gap-4' },
+    sm: { icon: 'w-8 h-8 sm:w-10 sm:h-10', text: 'text-sm sm:text-base', sub: 'text-[9px] sm:text-[9.5px]', gap: 'gap-2 sm:gap-2.5' },
+    md: { icon: 'w-8.5 h-8.5 sm:w-13 sm:h-13', text: 'text-sm sm:text-lg', sub: 'text-[9px] sm:text-[11px]', gap: 'gap-2 sm:gap-3' },
+    lg: { icon: 'w-14 h-14 sm:w-20 sm:h-20', text: 'text-xl sm:text-3xl', sub: 'text-xs', gap: 'gap-3 sm:gap-4' },
     xl: { icon: 'w-24 h-24 sm:w-28 sm:h-28', text: 'text-3xl sm:text-4xl', sub: 'text-sm', gap: 'gap-5' },
     '2xl': { icon: 'w-32 h-32 sm:w-36 sm:h-36', text: 'text-4xl sm:text-5xl', sub: 'text-base', gap: 'gap-6' },
     hero: { icon: 'w-40 h-40 sm:w-48 sm:h-48', text: 'text-5xl sm:text-6xl', sub: 'text-lg', gap: 'gap-7' }
@@ -236,7 +236,7 @@ export default function FleetAurvexisLogo({
         onClick={() => enableModalOnPress && setIsModalOpen(true)}
       >
         {/* High-Resolution Emblem Container */}
-        <div className={`relative ${currentSize.icon} shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl group-hover:shadow-indigo-500/50 group-hover:scale-105 transition-all duration-300 border-2 border-indigo-400/50 bg-[#090D16]`}>
+        <div className={`relative ${currentSize.icon} shrink-0 rounded-xl sm:rounded-3xl overflow-hidden shadow-xl group-hover:shadow-indigo-500/50 group-hover:scale-105 transition-all duration-300 border-2 border-indigo-400/50 bg-[#090D16]`}>
           <img
             src={officialLogoImg}
             alt="FleetAurvexis Logo"
@@ -244,25 +244,25 @@ export default function FleetAurvexisLogo({
             referrerPolicy="no-referrer"
           />
           {/* Subtle Outer Cyber Glow */}
-          <div className="absolute inset-0 ring-1 ring-inset ring-white/20 pointer-events-none rounded-2xl sm:rounded-3xl" />
+          <div className="absolute inset-0 ring-1 ring-inset ring-white/20 pointer-events-none rounded-xl sm:rounded-3xl" />
         </div>
 
         {/* High-Contrast Bold Typography */}
         {showText && (
-          <div className="flex flex-col select-none text-right justify-center">
-            <div className="flex items-center gap-2">
-              <span className={`font-black font-sans tracking-tight leading-tight ${currentSize.text} ${
+          <div className="flex flex-col select-none text-right justify-center min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className={`font-black font-sans tracking-tight leading-tight truncate ${currentSize.text} ${
                 isDarkBg 
                   ? 'text-white group-hover:text-cyan-300 drop-shadow-sm' 
                   : 'text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 drop-shadow-xs'
               } transition-colors`}>
                 {brandTitle}
               </span>
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee] animate-pulse" />
+              <span className="inline-block w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee] animate-pulse shrink-0" />
             </div>
 
             {showSubtitle && (
-              <span className={`font-extrabold tracking-wider uppercase mt-0.5 leading-none ${currentSize.sub} ${
+              <span className={`font-extrabold tracking-wider uppercase mt-0.5 leading-none truncate ${currentSize.sub} ${
                 isDarkBg 
                   ? 'text-purple-200/90' 
                   : 'text-indigo-700 dark:text-indigo-300'

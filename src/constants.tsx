@@ -57,6 +57,7 @@ export const MENU_ITEMS: MenuItem[] = [
 
   // 5. الحوكمة والتفتيش والأمان (Governance & Compliance)
   { id: 'security-audit', label: 'صلاحيات الموظفين والامتثال', icon: <ShieldCheck size={16} />, roles: ['admin'], group: 'governance' },
+  { id: 'legal-admin', label: 'الشؤون القانونية والامتثال (Legal & Compliance)', icon: <ShieldCheck size={16} />, roles: ['admin'], group: 'governance' },
   { id: 'firebase-sync', label: 'بوابة المزامنة والربط السحابي (Firebase)', icon: <Cloud size={16} />, roles: ['admin'], group: 'governance' },
   { id: 'saas-billing', label: 'إدارة الاشتراك والفوترة', icon: <CreditCard size={16} />, roles: ['admin'], group: 'governance' },
 ];

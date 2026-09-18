@@ -71,13 +71,16 @@ import {
   Image as ImageIcon,
   Wand2,
   Quote,
-  AlertCircle
+  AlertCircle,
+  FileDown,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 import { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
+import { downloadArticleAsPDF } from '../utils/articlePdfGenerator';
 import VideoTutorialsModal, { 
   VIDEO_TUTORIALS_DATA, 
   VideoTutorial, 
@@ -119,6 +122,7 @@ import {
 } from '../data/enterprisePartnersData';
 import EnterprisePartnerModal from './EnterprisePartnerModal';
 import MarketingArticlesManager from './MarketingArticlesManager';
+import AdminLegalManager from './legal/AdminLegalManager';
 
 interface MarketingAdminProps {
   brandPrimaryColor: string;
@@ -337,7 +341,7 @@ export function MarketingAdmin({
   const isRtl = dir === 'rtl';
 
   // Sub-navigation tabs
-  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots' | 'gallery' | 'tutorials' | 'articles'>('leads');
+  const [activeSubTab, setActiveSubTab] = useState<'leads' | 'identity' | 'features' | 'clients' | 'testimonials' | 'footer' | 'launch-planner' | 'robots' | 'gallery' | 'tutorials' | 'articles' | 'legal'>('leads');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchMenuQuery, setSearchMenuQuery] = useState('');
 
@@ -345,6 +349,7 @@ export function MarketingAdmin({
     { id: 'leads', label: 'المشتركون والطلبات المتلقاة', subLabel: 'متابعة الـ Leads وتحديث حالة الحسابات والمبيعات', icon: <Users size={15} /> },
     { id: 'articles', label: '📰 وحدة إدارة وصياغة المقالات', subLabel: 'مكتبة المقالات، توليد صور Imagen، والدمج قبل النشر', icon: <PenTool size={15} className="text-purple-600" /> },
     { id: 'tutorials', label: 'مكتبة الفيديوهات والشروحات التدريبية', subLabel: 'إدارة وإضافة الشروحات المعتمدة وروابط الفيديو لكافة المشتركين', icon: <Video size={15} className="text-purple-600" /> },
+    { id: 'legal', label: '⚖️ النظام القانوني والامتثال (Enterprise)', subLabel: 'إدارة وتعديل الوثائق والسياسات، الامتثال وحقوق DSR', icon: <ShieldCheck size={15} className="text-indigo-600" /> },
     { id: 'launch-planner', label: 'دليل وخطة إطلاق الساس متكامل', subLabel: 'الخطة والتحقق ودليل التشغيل بالتفصيل', icon: <CheckSquare size={15} className="text-amber-500" /> },
     { id: 'robots', label: 'مكتبة الروبوتات والذكاء الاصطناعي', subLabel: 'أوتوماتونات ذكية ومعالجات خلفية لأتمتة النظام', icon: <Sparkles size={15} style={{ color: brandPrimaryColor }} className="animate-pulse" /> },
     { id: 'identity', label: 'إعدادات الهوية والألوان', subLabel: 'تعديل شعار، ودرجات السحابة وسير اللوفر', icon: <Settings size={15} /> },
@@ -1320,20 +1325,19 @@ export function MarketingAdmin({
   const [isModalGeneratingImage, setIsModalGeneratingImage] = useState<boolean>(false);
 
   const handleTogglePublishToMarketing = (articleId: string) => {
-    setPublishedArticles(prev => {
-      const updated = prev.map(art => {
-        if (art.id === articleId) {
-          const newState = art.isPublishedToMarketingSite === false ? true : false;
-          return { ...art, isPublishedToMarketingSite: newState };
-        }
-        return art;
-      });
-      localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
-      window.dispatchEvent(new Event('storage'));
+    const updated = publishedArticles.map(art => {
+      if (art.id === articleId) {
+        const newState = art.isPublishedToMarketingSite === false ? true : false;
+        return { ...art, isPublishedToMarketingSite: newState };
+      }
+      return art;
+    });
+    setPublishedArticles(updated);
+    localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
+    setTimeout(() => {
       window.dispatchEvent(new CustomEvent('marketing-data-updated'));
       window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
-      return updated;
-    });
+    }, 0);
 
     if (selectedArticleForView?.id === articleId) {
       setSelectedArticleForView((prev: any) => prev ? {
@@ -1349,19 +1353,18 @@ export function MarketingAdmin({
   const [allActivatedInAdmin, setAllActivatedInAdmin] = useState<boolean>(false);
 
   const handleActivateAllArticlesInAdmin = () => {
-    setPublishedArticles(prev => {
-      const updated = prev.map(art => ({
-        ...art,
-        isPublishedToMarketingSite: true,
-        status: 'published' as const
-      }));
-      localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
-      window.dispatchEvent(new Event('storage'));
+    const updated = publishedArticles.map(art => ({
+      ...art,
+      isPublishedToMarketingSite: true,
+      status: 'published' as const
+    }));
+    setPublishedArticles(updated);
+    localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
+    setAllActivatedInAdmin(true);
+    setTimeout(() => {
       window.dispatchEvent(new CustomEvent('marketing-data-updated'));
       window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
-      return updated;
-    });
-    setAllActivatedInAdmin(true);
+    }, 0);
     setArticlePublishToast(language === 'ar' ? '✓ تم تفعيل ونشر جميع المقالات على المنصة بنجاح!' : '✓ All articles activated & published live!');
     setTimeout(() => {
       setArticlePublishToast('');
@@ -1370,28 +1373,27 @@ export function MarketingAdmin({
   };
 
   const handleChangeArticleImage = (articleId: string, newImage: string, meta?: any) => {
-    setPublishedArticles(prev => {
-      const updated = prev.map(art => {
-        if (art.id === articleId) {
-          return {
-            ...art,
-            image: newImage,
-            imageUrl: newImage,
-            ...(meta ? {
-              imageSource: meta.imageSource || art.imageSource,
-              imageModel: meta.imageModel || art.imageModel,
-              imagePrompt: meta.imagePrompt || art.imagePrompt
-            } : {})
-          };
-        }
-        return art;
-      });
-      localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
-      window.dispatchEvent(new Event('storage'));
+    const updated = publishedArticles.map(art => {
+      if (art.id === articleId) {
+        return {
+          ...art,
+          image: newImage,
+          imageUrl: newImage,
+          ...(meta ? {
+            imageSource: meta.imageSource || art.imageSource,
+            imageModel: meta.imageModel || art.imageModel,
+            imagePrompt: meta.imagePrompt || art.imagePrompt
+          } : {})
+        };
+      }
+      return art;
+    });
+    setPublishedArticles(updated);
+    localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
+    setTimeout(() => {
       window.dispatchEvent(new CustomEvent('marketing-data-updated'));
       window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
-      return updated;
-    });
+    }, 0);
 
     if (selectedArticleForView?.id === articleId) {
       setSelectedArticleForView((prev: any) => prev ? {
@@ -1499,14 +1501,13 @@ export function MarketingAdmin({
         targetAudience: articleAudience
       };
 
-      setPublishedArticles(prev => {
-        const updated = [newArticle, ...prev];
-        localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
-        window.dispatchEvent(new Event('storage'));
+      const updated = [newArticle, ...publishedArticles];
+      setPublishedArticles(updated);
+      localStorage.setItem('saas_articles_catalog', JSON.stringify(updated));
+      setTimeout(() => {
         window.dispatchEvent(new CustomEvent('marketing-data-updated'));
         window.dispatchEvent(new CustomEvent('articles-catalog-updated'));
-        return updated;
-      });
+      }, 0);
       setSelectedArticleForView(newArticle);
       setIsGeneratingArticle(false);
 
@@ -1575,55 +1576,27 @@ export function MarketingAdmin({
     }
   };
 
-  const handleDownloadArticle = (article: any) => {
-    const divider = '================================================================================';
-    const lines = [
-      divider,
-      `  ${article.title}`,
-      divider,
-      '',
-      `• التصنيف: ${article.category || ''}`,
-      `• تاريخ النشر: ${article.date || ''}`,
-      `• وقت القراءة: ${article.readTime || ''}`,
-      `• الكاتب: ${article.author || 'FleetAurvexis AI'}`,
-      article.tags ? `• الوسوم: ${Array.isArray(article.tags) ? article.tags.join('، ') : article.tags}` : '',
-      '',
-      '--------------------------------------------------------------------------------',
-      '  الملخص:',
-      '--------------------------------------------------------------------------------',
-      article.summary || '',
-      '',
-      '--------------------------------------------------------------------------------',
-      '  المحتوى الكامل:',
-      '--------------------------------------------------------------------------------',
-      article.content || '',
-      '',
-      divider,
-      '  FleetAurvexis - نظام إدارة الصيانة والأسطول',
-      `  ${window.location.origin}`,
-      divider
-    ].filter(Boolean);
+  const [isAdminSavingPdf, setIsAdminSavingPdf] = useState<boolean>(false);
 
-    const fileContent = lines.join('\r\n');
-    // Prepend UTF-8 BOM (\uFEFF) to guarantee proper Arabic rendering across all mobile/desktop readers
-    const file = new Blob(['\uFEFF' + fileContent], { type: 'text/plain;charset=utf-8' });
-    const element = document.createElement("a");
-    const safeTitle = (article.title || 'article')
-      .replace(/[/\\?%*:|"<>#]/g, '-')
-      .replace(/\s+/g, '_')
-      .slice(0, 45);
-    element.href = URL.createObjectURL(file);
-    element.download = `مقال_${safeTitle}.txt`;
-    element.setAttribute('download', `مقال_${safeTitle}.txt`);
-    document.body.appendChild(element);
-    element.click();
-    setTimeout(() => {
-      document.body.removeChild(element);
-      URL.revokeObjectURL(element.href);
-    }, 300);
-
-    setArticlePublishToast(language === 'ar' ? '✓ تم تحميل الملف النصي بترميز UTF-8 سليم' : '✓ Text file downloaded with clean UTF-8');
-    setTimeout(() => setArticlePublishToast(''), 3000);
+  const handleDownloadArticle = async (article: any) => {
+    if (!article || isAdminSavingPdf) return;
+    try {
+      setIsAdminSavingPdf(true);
+      setArticlePublishToast(language === 'ar' ? '⏳ جاري تنزيل ملف PDF مباشرة في جهازك...' : '⏳ Downloading PDF file directly to device...');
+      await downloadArticleAsPDF(article, language);
+      setArticlePublishToast(
+        language === 'ar' 
+          ? '✓ تم تنزيل ملف PDF مباشرة في جهازك بترميز UTF-8!' 
+          : '✓ PDF file downloaded directly to your device!'
+      );
+      setTimeout(() => setArticlePublishToast(''), 4500);
+    } catch (error) {
+      console.error('Failed to export article PDF:', error);
+      setArticlePublishToast(language === 'ar' ? '⚠️ تعذر تحميل ملف PDF، يرجى المحاولة لاحقاً' : '⚠️ Failed to download PDF');
+      setTimeout(() => setArticlePublishToast(''), 4500);
+    } finally {
+      setIsAdminSavingPdf(false);
+    }
   };
 
   const handleToggleRobotActive = (id: string) => {
@@ -1917,15 +1890,15 @@ export function MarketingAdmin({
       const brandDoc = await getDoc(doc(db, 'saas_settings', 'branding'));
       if (brandDoc.exists()) {
         const b = brandDoc.data();
-        if (b.name) {
+        if (b.name && b.name !== saasBrandName) {
           setSaasBrandName(b.name);
           localStorage.setItem('saas_brand_name', b.name);
         }
-        if (b.description) {
+        if (b.description && b.description !== saasBrandDesc) {
           setSaasBrandDesc(b.description);
           localStorage.setItem('saas_brand_desc', b.description);
         }
-        if (b.color) {
+        if (b.color && b.color !== brandPrimaryColor) {
           setBrandPrimaryColor(b.color);
           localStorage.setItem('saas_brand_primary_color', b.color);
         }
@@ -3222,6 +3195,7 @@ export function MarketingAdmin({
                       {activeSubTab === 'leads' ? 'المشتركون' :
                        activeSubTab === 'articles' ? 'إدارة المقالات وصور Imagen' :
                        activeSubTab === 'tutorials' ? 'مكتبة الفيديوهات' :
+                       activeSubTab === 'legal' ? '⚖️ النظام القانوني والامتثال' :
                        activeSubTab === 'launch-planner' ? 'خطة الإطلاق' :
                        activeSubTab === 'identity' ? 'الهوية والألوان' :
                        activeSubTab === 'features' ? 'المميزات' :
@@ -4889,12 +4863,32 @@ export function MarketingAdmin({
                                       <button
                                         type="button"
                                         onClick={() => handleShareArticleInAdmin(activeArt)}
-                                        className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
-                                        title={language === 'ar' ? 'مشاركة عبر تطبيقات الموبايل' : 'Share via apps'}
+                                        className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
+                                        title={language === 'ar' ? 'مشاركة مقال' : 'Share Article'}
                                       >
-                                        <Share2 size={13} />
-                                        <span>{language === 'ar' ? 'مشاركة المقال' : 'Share Article'}</span>
+                                        <Share2 size={12} />
+                                        <span>{language === 'ar' ? 'مشاركة مقال' : 'Share Article'}</span>
                                       </button>
+
+                                      <button
+                                        type="button"
+                                        disabled={isAdminSavingPdf}
+                                        onClick={() => handleDownloadArticle(activeArt)}
+                                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border shadow-xs active:scale-95 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border-purple-500/30 disabled:opacity-50"
+                                        title={language === 'ar' ? 'تحميل PDF مباشرة في جهازك بترميز UTF-8' : 'Download PDF'}
+                                      >
+                                        {isAdminSavingPdf ? (
+                                          <Loader2 size={12} className="animate-spin text-purple-400" />
+                                        ) : (
+                                          <FileDown size={12} className="text-purple-400" />
+                                        )}
+                                        <span>
+                                          {isAdminSavingPdf
+                                            ? (language === 'ar' ? 'جاري التحميل...' : 'Downloading...')
+                                            : (language === 'ar' ? 'تحميل PDF' : 'Download PDF')}
+                                        </span>
+                                      </button>
+
                                       <button
                                         type="button"
                                         onClick={handleActivateAllArticlesInAdmin}
@@ -8115,6 +8109,21 @@ export function MarketingAdmin({
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 12: LEGAL & COMPLIANCE (SaaS Enterprise Compliance Desk) */}
+        {activeSubTab === 'legal' && (
+          <div className="space-y-6">
+            <AdminLegalManager 
+              brandPrimaryColor={brandPrimaryColor}
+              onPreviewPublicDoc={(docId) => {
+                if (onNavigateToTab) {
+                  onNavigateToTab('legal');
+                }
+                window.dispatchEvent(new CustomEvent('open-legal-portal', { detail: { docId } }));
+              }}
+            />
           </div>
         )}
 
