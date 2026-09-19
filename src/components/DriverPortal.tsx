@@ -54,6 +54,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import DriverLiveMap from './driver/DriverLiveMap';
 import DriverTripsLog from './driver/DriverTripsLog';
 import DriverAssignedProjects from './driver/DriverAssignedProjects';
+import MaintenancePushNotificationCorner from './MaintenancePushNotificationCorner';
 
 interface DriverPortalProps {
   user: AppUser;
@@ -1719,6 +1720,13 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
 
         </AnimatePresence>
       </div>
+
+      {/* Floating Approaching Periodic Maintenance Push Notification */}
+      <MaintenancePushNotificationCorner
+        onNavigateToTab={() => {
+          setActiveSubTab('history');
+        }}
+      />
 
     </div>
   );

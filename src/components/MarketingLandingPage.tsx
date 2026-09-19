@@ -47,6 +47,7 @@ import FleetManagersShowcaseModal from './FleetManagersShowcaseModal';
 import VideoTutorialsModal from './VideoTutorialsModal';
 import CustomerSuccessStories from './CustomerSuccessStories';
 import MarketingArticlesSection from './MarketingArticlesSection';
+import MarketingFooter, { FooterColumnItem } from './MarketingFooter';
 import FleetAurvexisLogo, { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 import { 
@@ -181,7 +182,8 @@ const DEFAULT_FOOTER_COLUMNS = [
       { id: "item-1-3", labelAr: "قطاع الإنشاءات والبناء", labelEn: "Construction Sector" },
       { id: "item-1-4", labelAr: "مقدمو الخدمات التشغيلية", labelEn: "Service Providers" },
       { id: "item-1-5", labelAr: "البلديات والجهات الحكومية", labelEn: "Municipalities & Government" },
-      { id: "item-1-6", labelAr: "النقل اللوجستي والشاحنات", labelEn: "Logistics & Trucking" }
+      { id: "item-1-6", labelAr: "النقل اللوجستي والشاحنات", labelEn: "Logistics & Trucking" },
+      { id: "item-1-7", labelAr: "قطاع المدارس والتعليم", labelEn: "Schools & Education" }
     ]
   },
   {
@@ -205,7 +207,8 @@ const DEFAULT_FOOTER_COLUMNS = [
       { id: "item-3-1", labelAr: "قصص ودراسات نجاح العملاء", labelEn: "Validated Customer Case Stories" },
       { id: "item-3-2", labelAr: "مدونة FleetAurvexis للفنيين", labelEn: "FleetAurvexis Engineering Blog" },
       { id: "item-3-3", labelAr: "مكتبة الفيديوهات والشروحات", labelEn: "Platform Video Library" },
-      { id: "item-3-4", labelAr: "أدلة وركائز الاستخدام التشغيلي", labelEn: "Operations Guides" }
+      { id: "item-3-4", labelAr: "أدلة وركائز الاستخدام التشغيلي", labelEn: "Operations Guides" },
+      { id: "item-3-art-5", labelAr: "دليل حافلات المدارس والتعليم", labelEn: "School Bus Safety & Governance Guide" }
     ]
   },
   {
@@ -215,8 +218,10 @@ const DEFAULT_FOOTER_COLUMNS = [
     items: [
       { id: "item-4-1", labelAr: "نبذة عن شركة FleetAurvexis", labelEn: "About FleetAurvexis" },
       { id: "item-4-2", labelAr: "غرفة المركز الإعلامي والأخبار", labelEn: "Corporate Press Room" },
-      { id: "item-4-3", labelAr: "الاتصال المباشر بالدعم الفني", labelEn: "24/7 Engineers Helpdesk" },
-      { id: "item-4-4", labelAr: "تنسيق وحجز عرض تقديمي ديمو للمنصة", labelEn: "Request a Dynamic Demo Run" }
+      { id: "item-4-3", labelAr: "الشراكات اللوجستية والتحالفات", labelEn: "Strategic Supply Partnerships" },
+      { id: "item-4-4", labelAr: "الاتصال المباشر بالدعم الفني", labelEn: "24/7 Engineers Helpdesk" },
+      { id: "item-4-5", labelAr: "بوابة فنيي الصيانة وشركاء الخدمة", labelEn: "Service Providers Portal" },
+      { id: "item-4-6", labelAr: "تنسيق وحجز عرض تقديمي ديمو للمنصة", labelEn: "Request a Dynamic Demo Run" }
     ]
   }
 ];
@@ -224,9 +229,8 @@ const DEFAULT_FOOTER_COLUMNS = [
 const sanitizeFooterColumns = (cols: any[], activeBrandName: string = 'FleetAurvexis') => {
   if (!Array.isArray(cols)) return DEFAULT_FOOTER_COLUMNS;
   const brand = activeBrandName || 'FleetAurvexis';
-  return cols.map(col => ({
-    ...col,
-    items: Array.isArray(col.items) ? col.items.map((item: any) => {
+  return cols.map(col => {
+    let items = Array.isArray(col.items) ? col.items.map((item: any) => {
       let labelAr = (item.labelAr || '')
         .replace(/ميكانيك 360/g, brand)
         .replace(/ميكانيك360/g, brand)
@@ -243,8 +247,51 @@ const sanitizeFooterColumns = (cols: any[], activeBrandName: string = 'FleetAurv
         labelAr,
         labelEn
       };
-    }) : []
-  }));
+    }) : [];
+
+    // Ensure item-1-7 (قطاع المدارس والتعليم) is present in col-1
+    if (col.id === 'col-1') {
+      const hasEducation = items.some((it: any) => it.id === 'item-1-7');
+      if (!hasEducation) {
+        items.push({ id: "item-1-7", labelAr: "قطاع المدارس والتعليم", labelEn: "Schools & Education" });
+      }
+    }
+
+    // Ensure item-3-art-5 (دليل حافلات المدارس والتعليم) is present in col-3 and remove unwanted items
+    if (col.id === 'col-3') {
+      // Filter out removed items (Fleetio, ROI Calculator, Daily log worksheets)
+      items = items.filter((it: any) => 
+        it.id !== 'item-3-5' && 
+        it.id !== 'item-3-6' && 
+        it.id !== 'item-3-7' && 
+        !it.labelAr?.includes('فليتيو') && 
+        !it.labelAr?.includes('العائد الاستثماري') && 
+        !it.labelAr?.includes('سجلات الحركة')
+      );
+
+      const hasSchoolArticle = items.some((it: any) => it.id === 'item-3-art-5');
+      if (!hasSchoolArticle) {
+        items.push({ id: "item-3-art-5", labelAr: "دليل حافلات المدارس والتعليم", labelEn: "School Bus Safety & Governance Guide" });
+      }
+    }
+
+    // Ensure item-4-2 and item-4-3 are present in col-4
+    if (col.id === 'col-4') {
+      const hasMediaCenter = items.some((it: any) => it.id === 'item-4-2' || it.labelAr?.includes('المركز الإعلامي'));
+      if (!hasMediaCenter) {
+        items.splice(1, 0, { id: "item-4-2", labelAr: "غرفة المركز الإعلامي والأخبار", labelEn: "Corporate Press Room" });
+      }
+      const hasPartnerships = items.some((it: any) => it.id === 'item-4-3' || it.labelAr?.includes('الشراكات اللوجستية'));
+      if (!hasPartnerships) {
+        items.splice(2, 0, { id: "item-4-3", labelAr: "الشراكات اللوجستية والتحالفات", labelEn: "Strategic Supply Partnerships" });
+      }
+    }
+
+    return {
+      ...col,
+      items
+    };
+  });
 };
 
 const getReviewInitials = (name: string) => {
@@ -1717,174 +1764,82 @@ export default function MarketingLandingPage({
         />
       )}
 
-      {/* Comprehensive Standard Footer with Brighter Vibrant Purple Gradient */}
-      <footer className="bg-gradient-to-b from-[#4c1d95] via-[#3b0764] to-[#2e1065] text-purple-100/90 text-xs py-16 border-t border-purple-400/30 mt-auto relative overflow-hidden">
-        {/* Ambient Gradient Glows */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl pointer-events-none -translate-y-1/2"></div>
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none translate-y-1/2"></div>
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-300/50 to-transparent"></div>
+      {/* Comprehensive Standard Footer with Categorized Legal Columns & Mobile Accordion */}
+      <MarketingFooter
+        footerColumnsList={footerColumnsList}
+        language={language}
+        effectiveBrandName={effectiveBrandName}
+        brandName={brandName}
+        footerLegalDocs={footerLegalDocs}
+        onNavigateToLegal={onNavigateToLegal}
+        onNavigateToSuperAdmin={onNavigateToSuperAdmin}
+        onShowSignup={() => setShowSignupModal(true)}
+        onItemClick={(e, item) => {
+          e.preventDefault();
+          if (item.id === "item-3-1") {
+            const elem = document.getElementById('success-stories-section');
+            if (elem) {
+              elem.scrollIntoView({ behavior: 'smooth' });
+              return;
+            }
+          }
 
-        <div className="max-w-7xl mx-auto px-6 space-y-12 relative z-10">
+          if (item.id === "item-3-2") {
+            const elem = document.getElementById('articles-section');
+            if (elem) {
+              elem.scrollIntoView({ behavior: 'smooth' });
+              return;
+            }
+          }
+
+          if (item.id === "item-3-3") {
+            setIsVideoLibraryOpen(true);
+            return;
+          }
+
+          if (item.id === "item-3-art-5" || item.id === "art-5") {
+            const elem = document.getElementById('articles-section');
+            if (elem) {
+              elem.scrollIntoView({ behavior: 'smooth' });
+            }
+            window.dispatchEvent(new CustomEvent('open-article', { detail: { articleId: 'art-5', category: 'النقل المدرسي والتعليم' } }));
+            return;
+          }
+
+          if (item.id === "item-3-4" || item.id === "art-6") {
+            const elem = document.getElementById('articles-section');
+            if (elem) {
+              elem.scrollIntoView({ behavior: 'smooth' });
+            }
+            window.dispatchEvent(new CustomEvent('open-article', { detail: { articleId: 'art-6', category: 'أدلة وركائز الاستخدام التشغيلي' } }));
+            return;
+          }
+
+          // Map footer item IDs to activeTab inside FleetManagersShowcaseModal
+          let mappedTab: string | null = null;
+          if (item?.id === "item-1-1") mappedTab = "owners";
+          else if (item?.id === "item-1-2") mappedTab = "large-fleets";
+          else if (item?.id === "item-1-3") mappedTab = "construction";
+          else if (item?.id === "item-1-4") mappedTab = "service-providers";
+          else if (item?.id === "item-1-5") mappedTab = "municipalities";
+          else if (item?.id === "item-1-6") mappedTab = "logistics";
+          else if (item?.id === "item-1-7") mappedTab = "education";
+          else if (item?.id && item.id.startsWith("item-2-")) mappedTab = item.id;
+          else if (item?.id === "item-3-1") mappedTab = "large-fleets";
+          else if (item?.id === "item-3-2") mappedTab = "item-2-6";
+          else if (item?.id === "item-4-1") mappedTab = "about-company";
+          else if (item?.id === "item-4-2") mappedTab = "item-2-6";
+          else if (item?.id === "item-4-3") mappedTab = "item-2-5";
+          else if (item?.id === "item-4-4") mappedTab = "item-2-8";
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {footerColumnsList.map((col) => (
-              <div key={col.id} className="space-y-4">
-                <h4 className="font-extrabold text-white text-[11.5px] uppercase tracking-wider flex items-center gap-1.5 drop-shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-purple-300 shadow-xs shadow-purple-300/50"></span>
-                  <span>{language === 'ar' ? col.titleAr : col.titleEn}</span>
-                </h4>
-                <ul className="space-y-2 text-[11px] leading-relaxed">
-                  {col.items.map((item) => (
-                    <li key={item.id}>
-                      <a 
-                        href="#/" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (item.id === "item-3-1") {
-                            const elem = document.getElementById('success-stories-section');
-                            if (elem) {
-                              elem.scrollIntoView({ behavior: 'smooth' });
-                              return;
-                            }
-                          }
-
-                          if (item.id === "item-3-2") {
-                            const elem = document.getElementById('articles-section');
-                            if (elem) {
-                              elem.scrollIntoView({ behavior: 'smooth' });
-                              return;
-                            }
-                          }
-
-                          if (item.id === "item-3-3") {
-                            setIsVideoLibraryOpen(true);
-                            return;
-                          }
-
-                          // Map footer item IDs to activeTab inside FleetManagersShowcaseModal
-                          let mappedTab: string | null = null;
-                          if (item?.id === "item-1-1") mappedTab = "owners";
-                          else if (item?.id === "item-1-2") mappedTab = "large-fleets";
-                          else if (item?.id === "item-1-3") mappedTab = "construction";
-                          else if (item?.id === "item-1-4") mappedTab = "service-providers";
-                          else if (item?.id === "item-1-5") mappedTab = "municipalities";
-                          else if (item?.id === "item-1-6") mappedTab = "logistics";
-                          else if (item?.id && item.id.startsWith("item-2-")) mappedTab = item.id; // e.g. item-2-1, item-2-2...
-                          else if (item?.id === "item-3-1") mappedTab = "large-fleets"; // Validated Customer Case Stories -> map to Enterprise
-                          else if (item?.id === "item-3-2") mappedTab = "item-2-6";      // Blog -> map to Compliance Audit
-                          else if (item?.id === "item-3-4") mappedTab = "item-2-1";      // Operations Guides -> map to Preventative PM
-                          else if (item?.id === "item-4-1") mappedTab = "about-company"; // About FleetAurvexis -> map to About Company Profile
-                          else if (item?.id === "item-4-2") mappedTab = "item-2-6";      // Press Room -> map to Compliance Audit
-                          else if (item?.id === "item-4-3") mappedTab = "item-2-5";      // Helpdesk -> map to Asset Management
-                          else if (item?.id === "item-4-4") mappedTab = "item-2-8";      // Demo Request -> map to QR label printing & checkup demo
-                          
-                          if (mappedTab) {
-                            setSelectedShowcaseTab(mappedTab);
-                            setIsShowcaseOpen(true);
-                          } else {
-                            setShowSignupModal(true);
-                          }
-                        }}
-                        className="text-purple-200 hover:text-white hover:translate-x-0.5 rtl:hover:-translate-x-0.5 transition-all inline-block font-medium"
-                      >
-                        {language === 'ar' 
-                          ? (item.id === 'item-4-1' ? `نبذة عن شركة ${brandName || 'FleetAurvexis'}` : (item.labelAr || '').replace(/ميكانيك 360/g, brandName || 'FleetAurvexis'))
-                          : (item.id === 'item-4-1' ? `About ${brandName || 'FleetAurvexis'}` : (item.labelEn || '').replace(/Mechanic 360/g, brandName || 'FleetAurvexis'))
-                        }
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          {/* Lower Section: Legal Policies & Compliance Portal Quick Gateways */}
-          <div className="border-t border-purple-500/20 pt-8 pb-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-[11.5px]">
-              
-              {/* Button 1: Regulatory Legal Policies (السياسات والشروط النظامية) */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (onNavigateToLegal) onNavigateToLegal('privacy-policy');
-                  else window.dispatchEvent(new CustomEvent('open-legal-portal', { detail: { docId: 'privacy-policy' } }));
-                }}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-purple-950/50 hover:bg-purple-900/70 border border-purple-500/30 hover:border-purple-400/50 transition-all text-start group cursor-pointer shadow-xs active:scale-[0.99]"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-300 group-hover:text-white shrink-0 transition-colors">
-                    <FileText size={15} />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="font-bold text-white text-xs sm:text-sm block truncate">
-                      {language === 'ar' ? 'السياسات والشروط النظامية' : 'Legal Policies & Terms'}
-                    </span>
-                    <span className="text-[10.5px] text-purple-300/80 block font-medium">
-                      {language === 'ar' ? `${footerLegalDocs.length} وثيقة معتمدة (انقر للعرض)` : `${footerLegalDocs.length} Verified Policies (Click to view)`}
-                    </span>
-                  </div>
-                </div>
-              </button>
-
-              {/* Button 2: Governance, Compliance & Privacy (الحوكمة وإدارة الامتثال) */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (onNavigateToLegal) onNavigateToLegal('data-processing');
-                  else window.dispatchEvent(new CustomEvent('open-legal-portal', { detail: { docId: 'data-processing' } }));
-                }}
-                className="w-full flex items-center justify-between p-3.5 rounded-xl bg-purple-950/50 hover:bg-purple-900/70 border border-purple-500/30 hover:border-purple-400/50 transition-all text-start group cursor-pointer shadow-xs active:scale-[0.99]"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-300 group-hover:text-white shrink-0 transition-colors">
-                    <Shield size={15} />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="font-bold text-white text-xs sm:text-sm block truncate">
-                      {language === 'ar' ? 'الحوكمة وإدارة الامتثال' : 'Governance & Compliance'}
-                    </span>
-                    <span className="text-[10.5px] text-purple-300/80 block font-medium">
-                      {language === 'ar' ? '4 بوابات وخدمات حوكمة (انقر للعرض)' : '4 Services & Portals (Click to view)'}
-                    </span>
-                  </div>
-                </div>
-              </button>
-
-            </div>
-          </div>
-
-          {/* Bottom-most Bar: Brand, Copyright & Subtle Gateway */}
-          <div className="border-t border-purple-500/25 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-purple-200/70 font-medium">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-xl overflow-hidden border border-purple-400/40 shadow-xs shrink-0 bg-[#090D16] p-0.5">
-                <FleetAurvexisVectorEmblem className="w-full h-full" />
-              </div>
-              <span className="font-mono text-white tracking-widest font-black text-xs">
-                {effectiveBrandName.toUpperCase()}
-              </span>
-              <span>
-                © {new Date().getFullYear()} {effectiveBrandName}. {language === 'ar' ? 'جميع الحقوق محفوظة.' : 'All rights reserved.'}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 text-purple-300/60 text-[10px]">
-              <span>{language === 'ar' ? 'منظومة الحوكمة والامتثال المعتمدة' : 'Verified Governance & Compliance'}</span>
-              {onNavigateToSuperAdmin && (
-                <button
-                  type="button"
-                  onClick={onNavigateToSuperAdmin}
-                  className="opacity-30 hover:opacity-100 transition-opacity p-1 text-purple-300 hover:text-white rounded-sm hover:bg-purple-900/40 cursor-pointer"
-                  title={language === 'ar' ? 'مدير المنصة (Super Admin)' : 'Super Admin Portal'}
-                >
-                  <Lock size={11} />
-                </button>
-              )}
-            </div>
-          </div>
-
-        </div>
-      </footer>
+          if (mappedTab) {
+            setSelectedShowcaseTab(mappedTab);
+            setIsShowcaseOpen(true);
+          } else {
+            setShowSignupModal(true);
+          }
+        }}
+      />
 
       {/* Global Enterprise Cookie Consent Banner */}
       <CookieConsentBanner

@@ -111,7 +111,7 @@ import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782
 import driverTruckInspection from '../assets/images/driver_truck_inspection_1786784371761.jpg';
 import aiFleetDiagnostics from '../assets/images/ai_fleet_diagnostics_1786785439472.jpg';
 import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
-import { CURATED_ARTICLE_IMAGES } from './MarketingArticlesSection';
+import { CURATED_ARTICLE_IMAGES, DEFAULT_MARKETING_ARTICLES } from './MarketingArticlesSection';
 import { 
   EnterprisePartner, 
   DEFAULT_ENTERPRISE_PARTNERS, 
@@ -308,9 +308,7 @@ const DEFAULT_FOOTER_COLUMNS = [
       { id: "item-3-2", labelAr: "مدونة FleetAurvexis للفنيين", labelEn: "FleetAurvexis Engineering Blog" },
       { id: "item-3-3", labelAr: "مكتبة الفيديوهات والشروحات", labelEn: "Platform Video Library" },
       { id: "item-3-4", labelAr: "أدلة وركائز الاستخدام التشغيلي", labelEn: "Operations Guides" },
-      { id: "item-3-5", labelAr: "FleetAurvexis مقابل فليتيو", labelEn: "FleetAurvexis vs Fleetio Comparison" },
-      { id: "item-3-6", labelAr: "أداة حاسبة العائد الاستثماري ROI", labelEn: "Interactive Earnings ROI Tool" },
-      { id: "item-3-7", labelAr: "نماذج وقوالب سجلات الحركة", labelEn: "Worksheets & Daily Logs" }
+      { id: "item-3-art-5", labelAr: "دليل حافلات المدارس والتعليم", labelEn: "School Bus Safety & Governance Guide" }
     ]
   },
   {
@@ -1223,93 +1221,18 @@ export function MarketingAdmin({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingIds = new Set(parsed.map((a: any) => a.id));
+          const missing = DEFAULT_MARKETING_ARTICLES.filter(def => !existingIds.has(def.id));
+          const combined = [...parsed, ...missing];
+          if (missing.length > 0) {
+            localStorage.setItem('saas_articles_catalog', JSON.stringify(combined));
+          }
+          return combined;
+        }
       } catch (e) {}
     }
-    return [
-      {
-        id: 'art-1',
-        title: 'الدليل الشامل للصيانة الوقائية للشاحنات والمعدات الثقيلة: خطة الـ 5 خطوات لتفادي الأعطال المفاجئة',
-        titleEn: 'Comprehensive Preventive Maintenance Guide for Heavy Trucks & Fleet Assets',
-        category: 'صيانة وقائية وأساطيل',
-        categoryEn: 'Preventive Fleet Maintenance',
-        readTime: '4 دقائق قراءة',
-        date: '2026-09-12',
-        tags: ['صيانة_الشاحنات', 'إدارة_الأساطيل', 'فحص_وقائي', 'محركات_الديزل'],
-        summary: 'تعد الصيانة الوقائية الركيزة الأولى لاستدامة أساطيل النقل والمعدات الثقيلة؛ حيث توفر ما يزيد عن 35% من تكاليف الإصلاحات الطارئة وترفع العمر التشغيلي للمركبات.',
-        content: `### مقدمة: لماذا تعد الصيانة الوقائية استثماراً وليست تكلفة؟
-في قطاع النقل البري والمقاولات، يعني توقف شاحنة واحدة خسائر تشغيلية تتجاوز تكلفة الإصلاح الميكانيكي. الصيانة الوقائية المبرمجة تضمن جاهزية الأسطول بنسبة تتجاوز 95%.
-
-#### المحور الأول: الفحص اليومي ما قبل الانطلاق (Pre-trip Inspection)
-- قياس منسوب الزيوت وسوائل التبريد وفحص مضخة الهيدروليك.
-- فحص ضغط الإطارات وعمق المداس لمنع الانفجارات الحرارية على الطرق السريعة.
-- اختبار ضغط الهواء لمنظومة المكابح الهوائية (Air Brake System) والتأكد من عدم وجود تسريب.
-
-#### المحور الثاني: دورات الصيانة المجدولة بناءً على الكيلومترات وساعات التشغيل
-- كل 10,000 كم: استبدال زيت المحرك وفلاتر الوقود وفلتر الهواء الأساسي.
-- كل 40,000 كم: فحص منظومة التعليق، ميزان الدوران، وتشحيم محاور الكردان.
-- كل 80,000 كم: فحص كامل لناقل الحركة (القيربوكس) وسائل التوجيه الهيدروليكي واستبدال سائل الفرامل.
-
-#### المحور الثالث: دور الرقمنة ونظام FleetAurvexis في حماية الأسطول
-بفضل تفعيل بطاقة الفحص الفني الرقمية بنظام باركود QR، يستطيع السائق أو الفني إتمام الفحص في أقل من دقيقتين مع توثيق الصور والبيانات الحية، وتنبيه مدير الصيانة فوراً لأي خلل طارئ قبل تفاقمه.
-
-#### الخلاصة ودعوة للعمل:
-استدامة الأسطول تبدأ من الالتزام بالجدول الدوري. انضم إلى المنظومة الرقمية وارفع أمان أسطولك اليوم.`,
-        author: 'بوت كتابة المقالات - FleetAurvexis AI',
-        status: 'published',
-        isPublishedToMarketingSite: true,
-        image: highwayLogisticsTruck
-      },
-      {
-        id: 'art-2',
-        title: 'كيف ترفع مراكز الصيانة إنتاجيتها بنسبة 40% عبر الفحص الرقمي بنظام QR الذكي',
-        titleEn: 'Boosting Workshop Productivity by 40% with Intelligent QR Digital Inspections',
-        category: 'التحول الرقمي للورش',
-        categoryEn: 'Workshop Digital Transformation',
-        readTime: '3 دقائق قراءة',
-        date: '2026-09-10',
-        tags: ['فحص_رقمي', 'إدارة_الورش', 'باركود_QR', 'إنتاجية_الصيانة'],
-        summary: 'استبدال النماذج الورقية بنظام بطاقات QR الممسوحة ذكياً يقضي على أخطاء الفحص ويسرع تسليم أوامر العمل وربط الفنيين بقطع الغيار الفورية.',
-        content: `### التحول من الورق إلى الأتمتة الميدانية
-عانت الورش التقليدية لسنوات من ضياع أوراق الفحص وبطء وصول التقارير للمشرفين، مما يتسبب في تأخر تسليم المركبات لأيام إضافية.
-
-#### مزايا بطاقة الفحص الرقمية بـ QR:
-1. مسح فوري بهاتف الفني دون الحاجة لتثبيت برامج معقدة.
-2. تسجيل الأعطال وتصويرها حياً لرفع الموثوقية مع العميل.
-3. الربط الفوري بمستودع قطع الغيار لتقليل زمن الانتظار.
-
-#### النتائج الميدانية:
-أظهرت النتائج ارتفاع سرعة معالجة أوامر العمل بنسبة 40%، وتقليص النزاعات مع ملاك المركبات بنسبة 85% بفضل التوثيق المصور الشفاف.`,
-        author: 'بوت كتابة المقالات - FleetAurvexis AI',
-        status: 'published',
-        isPublishedToMarketingSite: true,
-        image: driverTruckInspection
-      },
-      {
-        id: 'art-3',
-        title: '5 استراتيجيات مجربة لخفض استهلاك الوقود وتكاليف التشغيل لأساطيل النقل',
-        titleEn: '5 Proven Strategies to Cut Fuel Consumption and Fleet Operational Costs',
-        category: 'كفاءة الطاقة والتشغيل',
-        categoryEn: 'Energy & Fuel Efficiency',
-        readTime: '5 دقائق قراءة',
-        date: '2026-09-08',
-        tags: ['استهلاك_الوقود', 'تكاليف_التشغيل', 'أساطيل_النقل', 'سلوك_السائق'],
-        summary: 'يشكل الوقود أكثر من 30% من تكاليف تشغيل الأساطيل. استعرض أهم الخطوات التقنية لتقليل هذا العبء المالي باستخدام مستشعرات الصيانة والتدريب الذكي.',
-        content: `### تكلفة الوقود: التحدي الأكبر لمديري الأساطيل
-مع ارتفاع تكاليف الوقود، تصبح أي نسبة توفير عاملاً حاسماً في ربحية الشركة واستمراريتها.
-
-#### الاستراتيجيات الخمس الأساسية:
-1. معايرة ضغط الإطارات بدقة لتفادي زيادة استهلاك الوقود واهتراء المداس.
-2. مراقبة سلوك القيادة والتسارع العنيف وتجنب فترات التوقف مع تشغيل المحرك (Idling).
-3. الصيانة الدورية لفلاتر الهواء وشمعات الاحتراق وحواقن الديزل.
-4. تخطيط المسارات الذكي وتفادي الاختناقات المرورية.
-5. استخدام زيوت محركات تخليقية ذات لزوجة محسنة.`,
-        author: 'بوت كتابة المقالات - FleetAurvexis AI',
-        status: 'published',
-        isPublishedToMarketingSite: true,
-        image: dieselMaintenance
-      }
-    ];
+    return DEFAULT_MARKETING_ARTICLES;
   });
 
   const [articlePromptTopic, setArticlePromptTopic] = useState<string>('الدليل الشامل للصيانة الوقائية للشاحنات والمعدات الثقيلة');
@@ -2114,8 +2037,31 @@ export function MarketingAdmin({
 
     // 5. Footer Columns
     const storedFooterCols = localStorage.getItem('saas_marketing_footer_columns_v2');
-    if (storedFooterCols && storedFooterCols.includes("item-3-7")) {
-      try { setFooterColumns(JSON.parse(storedFooterCols)); } catch(e) {}
+    if (storedFooterCols) {
+      try {
+        const parsed = JSON.parse(storedFooterCols);
+        const cleaned = parsed.map((col: any) => {
+          if (col.id === 'col-3') {
+            return {
+              ...col,
+              items: col.items.filter((it: any) => 
+                it.id !== 'item-3-5' && 
+                it.id !== 'item-3-6' && 
+                it.id !== 'item-3-7' && 
+                !it.labelAr?.includes('فليتيو') && 
+                !it.labelAr?.includes('العائد الاستثماري') && 
+                !it.labelAr?.includes('سجلات الحركة')
+              )
+            };
+          }
+          return col;
+        });
+        setFooterColumns(cleaned);
+        localStorage.setItem('saas_marketing_footer_columns_v2', JSON.stringify(cleaned));
+      } catch(e) {
+        setFooterColumns(DEFAULT_FOOTER_COLUMNS);
+        localStorage.setItem('saas_marketing_footer_columns_v2', JSON.stringify(DEFAULT_FOOTER_COLUMNS));
+      }
     } else {
       setFooterColumns(DEFAULT_FOOTER_COLUMNS);
       localStorage.setItem('saas_marketing_footer_columns_v2', JSON.stringify(DEFAULT_FOOTER_COLUMNS));

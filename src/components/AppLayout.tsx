@@ -72,6 +72,7 @@ import {
   getNotificationSettings
 } from '../services/browserNotifications';
 import { BrowserNotificationModal } from './BrowserNotificationModal';
+import { MaintenancePushNotificationCorner } from './MaintenancePushNotificationCorner';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 import { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 import { renderBrandInlineStyle, adjustColorBrightness } from '../services/themeEngine';
@@ -5757,6 +5758,13 @@ export default function AppLayout({
       <BrowserNotificationModal
         isOpen={isBrowserNotifModalOpen}
         onClose={() => setIsBrowserNotifModalOpen(false)}
+      />
+
+      {/* Approaching Fleet Periodic Maintenance Push Notification Banner with Add to Calendar */}
+      <MaintenancePushNotificationCorner
+        onNavigateToTab={(tab) => {
+          setActiveTab(tab);
+        }}
       />
     </div>
   );

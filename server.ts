@@ -23,6 +23,11 @@ const PORT = 3000;
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 // Initialize Gemini safely on the server
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient() {

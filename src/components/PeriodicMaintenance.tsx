@@ -25,7 +25,10 @@ import {
   ArrowUpDown,
   Package,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  CalendarPlus,
+  ExternalLink,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Vehicle, InventoryItem, User } from '../types';
@@ -38,6 +41,11 @@ import {
   getNotificationPermission,
   playNotificationSound
 } from '../services/browserNotifications';
+import {
+  openGoogleCalendar,
+  downloadIcsCalendarFile,
+  CalendarEventDetails
+} from '../utils/calendarReminder';
 
 export interface PeriodicSchedule {
   id: string;
@@ -279,6 +287,32 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
       }
     }
   }, [schedules, inventoryItems, notificationsEnabled]);
+
+  // Calendar reminder export handler
+  const handleExportToCalendar = (sched: PeriodicSchedule, provider: 'google' | 'ics' = 'google') => {
+    const v = vehicles.find(item => item.id === sched.vehicleId);
+    const eventDetails: CalendarEventDetails = {
+      id: sched.id,
+      title: sched.title,
+      serviceTitle: sched.title,
+      vehicleName: v ? v.name : `مركبة #${sched.vehicleId}`,
+      plateNumber: v?.plateNumber,
+      dueDate: sched.dueDate,
+      dueTime: '09:00',
+      durationMinutes: 120,
+      category: sched.category,
+      notes: sched.notes,
+      location: 'مركز الصيانة والورشة الفنية - Fleet Aurvexis'
+    };
+
+    if (provider === 'google') {
+      openGoogleCalendar(eventDetails);
+      showToast(language === 'ar' ? 'تم فتح تقويم Google بنجاح 📅' : 'Google Calendar opened successfully 📅', 'success');
+    } else {
+      downloadIcsCalendarFile(eventDetails);
+      showToast(language === 'ar' ? 'تم تحميل ملف التقويم (.ics) بنجاح 📥' : 'Calendar file (.ics) downloaded 📥', 'success');
+    }
+  };
 
   // Filters state
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -979,52 +1013,75 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                     )}
                   </div>
 
-                  {/* Actions buttons under permission check */}
-                  {user?.role !== 'viewer' ? (
-                    <div className="pt-3 border-t border-slate-150 dark:border-slate-850 flex items-center justify-end gap-2">
-                      {user?.role === 'admin' && (
+                  {/* Actions buttons */}
+                  <div className="pt-3 border-t border-slate-150 dark:border-slate-850 flex items-center justify-between gap-2 flex-wrap">
+                    {/* Add to Calendar Button */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleExportToCalendar(sched, 'google')}
+                        className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer border border-indigo-200/60 dark:border-indigo-800/40"
+                        title="إضافة التذكير إلى تقويم Google"
+                      >
+                        <CalendarPlus size={13} />
+                        <span>{language === 'ar' ? 'تقويم Google' : 'Google Cal'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExportToCalendar(sched, 'ics')}
+                        className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black transition-all cursor-pointer"
+                        title={language === 'ar' ? 'تحميل ملف تقويم (.ics) لـ Apple/Outlook' : 'Download .ics Calendar'}
+                      >
+                        <Download size={13} />
+                      </button>
+                    </div>
+
+                    {user?.role !== 'viewer' ? (
+                      <div className="flex items-center gap-2">
+                        {user?.role === 'admin' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleDelete(sched.id);
+                              setSelectedCalendarSchedule(null);
+                            }}
+                            className="px-3.5 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-red-500 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Trash2 size={13} />
+                            <span>حذف</span>
+                          </button>
+                        )}
+                        
                         <button
                           type="button"
                           onClick={() => {
-                            handleDelete(sched.id);
+                            handleEditIntent(sched);
                             setSelectedCalendarSchedule(null);
                           }}
-                          className="px-3.5 py-2 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-red-500 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="px-4 py-2 bg-slate-150 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-705 text-slate-705 dark:text-slate-250 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer"
                         >
-                          <Trash2 size={13} />
-                          <span>حذف</span>
+                          <Edit size={13} />
+                          <span>تعديل</span>
                         </button>
-                      )}
-                      
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleEditIntent(sched);
-                          setSelectedCalendarSchedule(null);
-                        }}
-                        className="px-4 py-2 bg-slate-150 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-705 text-slate-705 dark:text-slate-250 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Edit size={13} />
-                        <span>تعديل</span>
-                      </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleMarkCompletedIntent(sched);
-                          setSelectedCalendarSchedule(null);
-                        }}
-                        className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-purple-500/15"
-                      >
-                        <Check size={13} />
-                        <span>إنجاز الصيانة</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-center pt-2 text-[10px] text-slate-400 font-bold">
-                      {language === 'ar' ? 'نمط العرض فقط لا يتيح لك تعديل الصيانة الوقائية' : 'Viewer account mode does not allow scheduling updates'}
-                    </div>
-                  )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleMarkCompletedIntent(sched);
+                            setSelectedCalendarSchedule(null);
+                          }}
+                          className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-purple-500/15"
+                        >
+                          <Check size={13} />
+                          <span>إنجاز الصيانة</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center pt-2 text-[10px] text-slate-400 font-bold">
+                        {language === 'ar' ? 'نمط العرض فقط' : 'Viewer mode'}
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               </div>
             );
@@ -1858,6 +1915,15 @@ export default function PeriodicMaintenance({ user }: { user?: User }) {
                               >
                                 <Check size={13} />
                                 <span>إنجاز الصيانة</span>
+                              </button>
+
+                              {/* Add to Calendar */}
+                              <button
+                                onClick={() => handleExportToCalendar(sched, 'google')}
+                                title={language === 'ar' ? 'إضافة التذكير للتقويم (Google / Outlook / Apple)' : 'Add to Calendar'}
+                                className="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <CalendarPlus size={12} />
                               </button>
 
                               <button

@@ -13,6 +13,7 @@ import constructionHeavyMachinery from '../assets/images/construction_heavy_mach
 import mechanicTruckWorkshop from '../assets/images/mechanic_truck_workshop_1782935168167.jpg';
 import municipalCleanFleet from '../assets/images/municipal_clean_fleet_1782935178050.jpg';
 import highwayLogisticsTruck from '../assets/images/highway_logistics_truck_1782935190395.jpg';
+import schoolBusFleet from '../assets/images/school_bus_fleet_1789852878362.jpg';
 import dashboardMarketingPreview from '../assets/images/dashboard_marketing_preview_1780862794942.png';
 import saasWorkflowIllustration from '../assets/images/saas_workflow_illustration_1780862810991.png';
 import AboutCompanyView from './AboutCompanyView';
@@ -326,7 +327,7 @@ export default function FleetManagersShowcaseModal({
       toneAr: 'النبرة: مطمئنة، ودودة جداً، دقيقة ومحبة للسلامة والأطفال.',
       toneEn: 'Tone of voice: Warm, reassuring, precision safety oriented, compassionate, and highly validated.',
       imagePrompt: 'Clean modern yellow school buses parked on a clean schoolyard, morning sun light, a technical supervisor checking tires with a mobile application displaying clean white paper design, soft blue tones, photorealistic 4K resolution --ar 16:9',
-      imageMockUrl: municipalCleanFleet,
+      imageMockUrl: schoolBusFleet,
       beforeAfterAr: [
         { before: 'حافلات تتحرك دون تدقيق وتفاجؤ بأعطال في الأبواب أو تعطل المكيف أثناء النقل الصباحي للأطفال.', after: 'فحص صارم ومريح بالباركود، سيطرة تامة على سلامة المكابح والتكيف، واطمئنان أسر الطلاب والمدارة بالكامل.' }
       ],
@@ -1654,6 +1655,39 @@ export default function FleetManagersShowcaseModal({
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Dedicated Callout for Education Sector Article */}
+                  {activeTab === 'education' && (
+                    <div className="pt-6 mt-6 border-t border-slate-150 flex flex-col sm:flex-row items-center justify-between gap-4 bg-amber-50/80 border border-amber-200/80 rounded-2xl p-5" dir={isRtl ? 'rtl' : 'ltr'}>
+                      <div className="space-y-1 text-right">
+                        <div className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                          <School size={15} className="text-amber-700" />
+                          <span>{isRtl ? 'المقالة التوجيهية لقطاع المدارس والتعليم' : 'Specialized Education Fleet Article'}</span>
+                        </div>
+                        <p className="text-[11px] text-amber-850 font-medium">
+                          {isRtl 
+                            ? 'اطلع على الدليل الميداني الشامل لحوكمة وسلامة حافلات المدارس وبروتوكول الفحص الصباحي بـ QR ومعايير تصفير الأعطال المفاجئة.' 
+                            : 'Read the full guide on school bus governance, smart morning QR inspections, and student safety.'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          setTimeout(() => {
+                            const el = document.getElementById('articles-section');
+                            if (el) {
+                              el.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }, 150);
+                        }}
+                        className="shrink-0 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition-transform hover:scale-105 cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>{isRtl ? 'قراءة مقال قطاع المدارس والتعليم' : 'Read Education Article'}</span>
+                        <ArrowRight size={13} className={isRtl ? 'rotate-180' : ''} />
+                      </button>
                     </div>
                   )}
 

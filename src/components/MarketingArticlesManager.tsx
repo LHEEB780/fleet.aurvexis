@@ -48,6 +48,9 @@ import aiFleetDiagnostics from '../assets/images/ai_fleet_diagnostics_1786785439
 import enterpriseFleetDepot from '../assets/images/enterprise_fleet_depot_1782935136613.jpg';
 import municipalCleanFleet from '../assets/images/municipal_clean_fleet_1782935178050.jpg';
 import municipalWorkshopParts from '../assets/images/municipal_workshop_parts_1786785099442.jpg';
+import operationsControlHub from '../assets/images/operations_playbook_command_hub_1789855182819.jpg';
+import corporatePressMediaCenter from '../assets/images/corporate_press_media_center_1789856295995.jpg';
+import logisticsPartnershipsAlliances from '../assets/images/logistics_partnerships_alliances_1789856307803.jpg';
 
 export interface ExtendedLibraryItem {
   id: string;
@@ -121,6 +124,33 @@ export const EXTENDED_FLEET_IMAGE_LIBRARY: ExtendedLibraryItem[] = [
     category: 'fleet',
     categoryLabelAr: 'أساطيل وشاحنات',
     url: enterpriseFleetDepot,
+    aspect: '16:9'
+  },
+  {
+    id: 'lib-operations-hub',
+    labelAr: 'مركز قيادة العمليات والأدلة التشغيلية للأساطيل',
+    labelEn: 'Fleet Operations Command Hub & Operational Playbook',
+    category: 'fleet',
+    categoryLabelAr: 'أساطيل وشاحنات',
+    url: operationsControlHub,
+    aspect: '16:9'
+  },
+  {
+    id: 'lib-press-room',
+    labelAr: 'غرفة المركز الإعلامي والأخبار للشركة',
+    labelEn: 'Corporate Press Room & Media Center',
+    category: 'fleet',
+    categoryLabelAr: 'أساطيل وشاحنات',
+    url: corporatePressMediaCenter,
+    aspect: '16:9'
+  },
+  {
+    id: 'lib-partnerships',
+    labelAr: 'الشراكات اللوجستية والتحالفات الاستراتيجية',
+    labelEn: 'Strategic Logistics Partnerships & Alliances',
+    category: 'fleet',
+    categoryLabelAr: 'أساطيل وشاحنات',
+    url: logisticsPartnershipsAlliances,
     aspect: '16:9'
   },
   {

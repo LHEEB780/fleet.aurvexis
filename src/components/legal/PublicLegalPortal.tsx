@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Shield,
   FileText,
-  Download,
-  Share2,
   Search,
   ChevronRight,
   ChevronLeft,
@@ -29,7 +27,6 @@ import {
   getStoredLegalDocuments,
   getStoredLegalSettings
 } from '../../data/legalDocumentsData';
-import { downloadLegalDocumentAsPDF, shareLegalDocument } from '../../utils/legalPdfExporter';
 import { PrivacyRequestModal } from './PrivacyRequestModal';
 
 interface PublicLegalPortalProps {
@@ -50,7 +47,6 @@ export function PublicLegalPortal({
   const [selectedDocId, setSelectedDocId] = useState<string>(initialDocId);
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isCopied, setIsCopied] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string>('');
 
@@ -107,20 +103,6 @@ export function PublicLegalPortal({
       return title.includes(q) || content.includes(q);
     });
   }, [activeDoc, searchQuery, isAr]);
-
-  const handleDownloadPDF = () => {
-    if (!activeDoc) return;
-    downloadLegalDocumentAsPDF(activeDoc, settings, lang);
-  };
-
-  const handleShare = async () => {
-    if (!activeDoc) return;
-    const ok = await shareLegalDocument(activeDoc, lang);
-    if (ok) {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2500);
-    }
-  };
 
   const scrollToSection = (sectionId: string) => {
     setActiveSectionId(sectionId);
@@ -323,52 +305,12 @@ export function PublicLegalPortal({
                 {docSummary}
               </div>
 
-              {/* ACTION BUTTONS (As specifically requested by user:
-                  "مشاركة مقال, تحميل PDF, ويكون زرين متجاورين و أصغر قليل") */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span>{isAr ? 'رقم الإصدار المعتمد:' : 'Certified Version:'}</span>
-                  <span className="font-mono font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                    v{activeDoc.version}
-                  </span>
-                </div>
-
-                {/* The Two Adjacent, Smaller Action Buttons */}
-                <div className="flex items-center gap-2">
-                  {/* Button 1: Share Article/Document */}
-                  <button
-                    type="button"
-                    id="btn-share-legal-doc"
-                    onClick={handleShare}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300/80 dark:border-slate-700 transition shadow-xs active:scale-95"
-                    title={isAr ? 'مشاركة رابط المستند أو نسخه' : 'Share or copy document link'}
-                  >
-                    {isCopied ? (
-                      <>
-                        <Check size={13} className="text-emerald-600" />
-                        <span className="text-emerald-600">{isAr ? 'تم النسخ!' : 'Copied!'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Share2 size={13} className="text-purple-600 dark:text-purple-400" />
-                        <span>{isAr ? 'مشاركة مقال' : 'Share Document'}</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Button 2: Download PDF */}
-                  <button
-                    type="button"
-                    id="btn-download-legal-pdf"
-                    onClick={handleDownloadPDF}
-                    style={{ backgroundColor: brandPrimaryColor }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold text-white shadow-xs hover:brightness-110 active:scale-95 transition"
-                    title={isAr ? 'تنزيل أو طباعة المستند بصيغة PDF' : 'Download or print as PDF'}
-                  >
-                    <Download size={13} />
-                    <span>{isAr ? 'تحميل PDF' : 'Download PDF'}</span>
-                  </button>
-                </div>
+              {/* Certified Version Info */}
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <span>{isAr ? 'رقم الإصدار المعتمد:' : 'Certified Version:'}</span>
+                <span className="font-mono font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                  v{activeDoc.version}
+                </span>
               </div>
             </div>
 
