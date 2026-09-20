@@ -46,7 +46,7 @@ import { InventoryItem, User } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
-import { formatCurrency } from '../services/formatters';
+import { formatCurrency, getCurrencyLabel } from '../services/formatters';
 import { 
   safeSetItem, 
   safeGetItem, 
@@ -1643,9 +1643,9 @@ export default function Inventory({ user }: InventoryProps) {
     let csvContent = "\uFEFF"; // Add UTF-8 BOM for Arabic characters compatibility in Excel
     
     if (language === 'ar') {
-      csvContent += "الرمز التعريفي,اسم القطعة,رقم القطعة/الباركود,الفئة,الكمية الحالية,حد الأمان,سعر الوحدة (ريال),القيمة الإجمالية (ريال),الموقع بالرفوف,الحالة,المورد,العلامة التجارية,آخر تاريخ طلب\n";
+      csvContent += `الرمز التعريفي,اسم القطعة,رقم القطعة/الباركود,الفئة,الكمية الحالية,حد الأمان,سعر الوحدة (${getCurrencyLabel(language)}),القيمة الإجمالية (${getCurrencyLabel(language)}),الموقع بالرفوف,الحالة,المورد,العلامة التجارية,آخر تاريخ طلب\n`;
     } else {
-      csvContent += "ID,Part Name,Part/Barcode Number,Category,In Stock,Min Stock,Unit Price (SAR),Total Value (SAR),Shelf Location,Stock Status,Supplier,Brand,Last Ordered Date\n";
+      csvContent += `ID,Part Name,Part/Barcode Number,Category,In Stock,Min Stock,Unit Price (${getCurrencyLabel(language)}),Total Value (${getCurrencyLabel(language)}),Shelf Location,Stock Status,Supplier,Brand,Last Ordered Date\n`;
     }
 
     filteredItems.forEach(item => {
@@ -2535,7 +2535,7 @@ export default function Inventory({ user }: InventoryProps) {
                             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/60 p-1.5 rounded-lg border border-slate-100/50 dark:border-slate-800/40">
                               <DollarSign size={10} className="text-slate-455 dark:text-slate-400" />
                               <span className="text-slate-500">السعر:</span>
-                              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-450">{item.price ? `${item.price} ر.س` : 'اتصل'}</span>
+                              <span className="font-mono font-bold text-emerald-600 dark:text-emerald-450">{item.price ? formatCurrency(item.price, language, 'SAR') : (language === 'ar' ? 'اتصل' : 'Contact')}</span>
                             </div>
 
                             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900/60 p-1.5 rounded-lg border border-slate-100/50 dark:border-slate-800/40">
@@ -2766,7 +2766,7 @@ export default function Inventory({ user }: InventoryProps) {
                         <div>
                           <span className="text-slate-400 text-[8.5px] block font-sans">السعر:</span>
                           <span className="text-emerald-600 dark:text-emerald-400 font-mono">
-                            {item.price ? `${item.price} ر.س` : 'اتصل'}
+                            {item.price ? formatCurrency(item.price, language, 'SAR') : (language === 'ar' ? 'اتصل' : 'Contact')}
                           </span>
                         </div>
 
@@ -3586,7 +3586,7 @@ export default function Inventory({ user }: InventoryProps) {
                             <div>
                               <span className="text-slate-400 block font-bold">{language === 'ar' ? 'قيمة القطعة والعملة:' : 'Part Price Valuation:'}</span>
                               <strong className="text-emerald-600 dark:text-emerald-400 font-extrabold block mt-0.5 font-mono">
-                                {scannerResult.price || '0'} {language === 'ar' ? 'ر.س' : 'SAR'}
+                                {formatCurrency(scannerResult.price || 0, language, 'SAR')}
                               </strong>
                             </div>
                           </div>
@@ -3988,7 +3988,7 @@ export default function Inventory({ user }: InventoryProps) {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 block">سعر الوحدة المعياري (ر.س)</label>
+                      <label className="text-[10px] font-black text-slate-500 block">سعر الوحدة المعياري ({getCurrencyLabel(language)})</label>
                       <input 
                         type="number" 
                         placeholder="مثال: 120"
@@ -4447,7 +4447,7 @@ export default function Inventory({ user }: InventoryProps) {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-500 block">سعر الوحدة المعياري (ر.س)</label>
+                      <label className="text-[10px] font-black text-slate-500 block">سعر الوحدة المعياري ({getCurrencyLabel(language)})</label>
                       <input 
                         type="number" 
                         placeholder="0"

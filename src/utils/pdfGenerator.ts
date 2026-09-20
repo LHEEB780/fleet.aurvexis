@@ -120,9 +120,25 @@ export function generateInvoicePDF(invoice: InvoiceData): void {
     // 4. Line Items Table using autoTable
     currentY = 98;
 
-    const subtotal = Number((invoice.amount / 1.15).toFixed(2));
-    const vatAmount = Number((invoice.amount - subtotal).toFixed(2));
-    const totalAmount = Number(invoice.amount.toFixed(2));
+    const isIqd = invoice.currency?.includes('IQD') || invoice.currency?.includes('د.ع');
+    const isJod = invoice.currency?.includes('JOD') || invoice.currency?.includes('د.أ');
+    const isSar = invoice.currency?.includes('SAR') || invoice.currency?.includes('ر.س');
+    const isAed = invoice.currency?.includes('AED') || invoice.currency?.includes('د.إ');
+
+    const currencyPrefix = isSar
+      ? 'SAR ' 
+      : isAed
+        ? 'AED ' 
+        : isIqd
+          ? 'IQD '
+          : isJod
+            ? 'JOD '
+            : '$';
+
+    const decimals = isIqd ? 0 : isJod ? 3 : 2;
+    const subtotal = Number((invoice.amount / 1.15).toFixed(decimals));
+    const vatAmount = Number((invoice.amount - subtotal).toFixed(decimals));
+    const totalAmount = Number(invoice.amount.toFixed(decimals));
 
     autoTable(doc, {
       startY: currentY,
@@ -134,8 +150,8 @@ export function generateInvoicePDF(invoice: InvoiceData): void {
           `SaaS Fleet Subscription (${invoice.plan})\nIncludes GPS Live Tracking, AI Diagnostics & Maintenance Orders Management`,
           invoice.billingCycle === 'yearly' ? '1 Year' : '1 Month',
           '1',
-          `$${subtotal.toFixed(2)}`,
-          `$${subtotal.toFixed(2)}`
+          `${currencyPrefix}${subtotal.toFixed(decimals)}`,
+          `${currencyPrefix}${subtotal.toFixed(decimals)}`
         ]
       ],
       headStyles: {
@@ -179,9 +195,9 @@ export function generateInvoicePDF(invoice: InvoiceData): void {
 
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(15, 23, 42);
-    doc.text(`$${subtotal.toFixed(2)}`, 188, finalTableY + 8, { align: 'right' });
-    doc.text(`$${vatAmount.toFixed(2)}`, 188, finalTableY + 16, { align: 'right' });
-    doc.text('$0.00', 188, finalTableY + 24, { align: 'right' });
+    doc.text(`${currencyPrefix}${subtotal.toFixed(decimals)}`, 188, finalTableY + 8, { align: 'right' });
+    doc.text(`${currencyPrefix}${vatAmount.toFixed(decimals)}`, 188, finalTableY + 16, { align: 'right' });
+    doc.text(`${currencyPrefix}${(0).toFixed(decimals)}`, 188, finalTableY + 24, { align: 'right' });
 
     // Total Line
     doc.setDrawColor(203, 213, 225);
@@ -191,7 +207,7 @@ export function generateInvoicePDF(invoice: InvoiceData): void {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(79, 70, 229); // Indigo 600
     doc.text('TOTAL PAID:', 125, finalTableY + 34);
-    doc.text(`$${totalAmount.toFixed(2)}`, 188, finalTableY + 34, { align: 'right' });
+    doc.text(`${currencyPrefix}${totalAmount.toFixed(decimals)}`, 188, finalTableY + 34, { align: 'right' });
 
     // 6. Security Seal & QR Code simulation box
     const sealY = finalTableY;

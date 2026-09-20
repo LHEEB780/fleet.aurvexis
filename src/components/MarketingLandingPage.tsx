@@ -1806,12 +1806,30 @@ export default function MarketingLandingPage({
             return;
           }
 
-          if (item.id === "item-3-4" || item.id === "art-6") {
+          if (item.id === "item-3-4" || item.id === "art-6" || item.labelAr?.includes('الاستخدام التشغيلي')) {
             const elem = document.getElementById('articles-section');
             if (elem) {
               elem.scrollIntoView({ behavior: 'smooth' });
             }
             window.dispatchEvent(new CustomEvent('open-article', { detail: { articleId: 'art-6', category: 'أدلة وركائز الاستخدام التشغيلي' } }));
+            return;
+          }
+
+          if (item.id === "item-4-2" || item.id === "art-7" || item.labelAr?.includes('المركز الإعلامي')) {
+            const elem = document.getElementById('articles-section');
+            if (elem) {
+              elem.scrollIntoView({ behavior: 'smooth' });
+            }
+            window.dispatchEvent(new CustomEvent('open-article', { detail: { articleId: 'art-7', category: 'المركز الإعلامي والأخبار' } }));
+            return;
+          }
+
+          if (item.id === "item-4-3" || item.id === "art-8" || item.labelAr?.includes('الشراكات اللوجستية')) {
+            const elem = document.getElementById('articles-section');
+            if (elem) {
+              elem.scrollIntoView({ behavior: 'smooth' });
+            }
+            window.dispatchEvent(new CustomEvent('open-article', { detail: { articleId: 'art-8', category: 'الشراكات والتحالفات اللوجستية' } }));
             return;
           }
 

@@ -839,6 +839,10 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
                     onChange={e => setFormData({ ...formData, category: e.target.value })}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:border-purple-500 focus:outline-none transition"
                   >
+                    <option value="المركز الإعلامي والأخبار">غرفة المركز الإعلامي والأخبار</option>
+                    <option value="الشراكات والتحالفات اللوجستية">الشراكات اللوجستية والتحالفات الاستراتيجية</option>
+                    <option value="أدلة وركائز الاستخدام التشغيلي">أدلة وركائز الاستخدام التشغيلي</option>
+                    <option value="النقل المدرسي والتعليم">النقل المدرسي والتعليم</option>
                     <option value="صيانة وقائية وأساطيل">صيانة وقائية وأساطيل</option>
                     <option value="التحول الرقمي للورش">التحول الرقمي للورش وبطاقات QR</option>
                     <option value="كفاءة الطاقة والتشغيل">كفاءة الطاقة واستهلاك الوقود</option>

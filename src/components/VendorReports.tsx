@@ -31,6 +31,7 @@ import {
   ThumbsUp
 } from 'lucide-react';
 import { Vendor, SupplyOrder } from '../types';
+import { formatCurrency, getCurrencyLabel } from '../services/formatters';
 
 interface VendorReportsProps {
   vendors: Vendor[];
@@ -223,7 +224,7 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
           <div className="space-y-1">
             <span className="text-[10px] text-slate-400 block font-bold">إجمالي التوريدات (آخر 12 شهراً)</span>
             <h3 className="text-xl font-black text-slate-850 dark:text-white font-mono">
-              {totalTwelveMonthSpend.toLocaleString()} ر.س
+              {formatCurrency(totalTwelveMonthSpend, undefined, 'SAR')}
             </h3>
             <p className="text-[9px] text-slate-500">مجموع قيم عمليات الشراء المؤرشفة بالرفوف</p>
           </div>
@@ -246,7 +247,7 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
                     🏢 {bestValueVendor.name}
                   </h3>
                   <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
-                    معدل موثوقية مرتفع <strong className="text-amber-500">({bestValueVendor.reliability} نجوم)</strong> مقابل متوسط سعر توريد <strong className="text-emerald-600 font-mono">{bestValueVendor.avgUnitCost} ر.س</strong> للوحدة.
+                    معدل موثوقية مرتفع <strong className="text-amber-500">({bestValueVendor.reliability} نجوم)</strong> مقابل متوسط سعر توريد <strong className="text-emerald-600 font-mono">{formatCurrency(bestValueVendor.avgUnitCost, undefined, 'SAR')}</strong> للوحدة.
                   </p>
                 </div>
                 <div className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-black rounded-xl">
@@ -308,7 +309,7 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
                   <YAxis 
                     tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 'bold' }}
                     axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
-                    tickFormatter={(val) => `${val.toLocaleString()} ر.س`}
+                    tickFormatter={(val) => formatCurrency(val, undefined, 'SAR')}
                   />
                   <Tooltip
                     contentStyle={{
@@ -321,7 +322,7 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
                       border: 'none',
                       boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                     }}
-                    formatter={(value: any, name: any) => [`${value.toLocaleString()} ر.س`, name]}
+                    formatter={(value: any, name: any) => [formatCurrency(Number(value) || 0, undefined, 'SAR'), name]}
                   />
                   <Legend 
                     verticalAlign="bottom" 
@@ -356,7 +357,7 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
                     yAxisId="left"
                     tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 'bold' }}
                     axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
-                    tickFormatter={(val) => `${val.toLocaleString()} ر.س`}
+                    tickFormatter={(val) => formatCurrency(val, undefined, 'SAR')}
                   />
                   <YAxis 
                     yAxisId="right"
@@ -494,9 +495,9 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
                 <th className="py-3 px-4">اسم المورّد المعتمد</th>
                 <th className="py-3 px-4 text-center">الالتزام بمواعيد الشحن (الموثوقية)</th>
                 <th className="py-3 px-4 text-center">عدد شحنات التوريد الناجحة</th>
-                <th className="py-3 px-4 text-center">متوسط الفاتورة الفعلي (ر.س)</th>
-                <th className="py-3 px-4 text-center">إجمالي التدفق المالي (ر.س)</th>
-                <th className="py-3 px-4 text-center">تكلفة النجمة من الموثوقية (ر.س)*</th>
+                <th className="py-3 px-4 text-center">متوسط الفاتورة الفعلي ({getCurrencyLabel()})</th>
+                <th className="py-3 px-4 text-center">إجمالي التدفق المالي ({getCurrencyLabel()})</th>
+                <th className="py-3 px-4 text-center">تكلفة النجمة من الموثوقية ({getCurrencyLabel()})*</th>
                 <th className="py-3 px-4 text-center">كفاءة الإنفاق الكلية</th>
                 <th className="py-3 px-4 text-center">تصنيف الجدوى التشغيلية</th>
               </tr>
@@ -527,18 +528,18 @@ export default function VendorReports({ vendors, supplyOrders }: VendorReportsPr
 
                     {/* Average unit price */}
                     <td className="py-3.5 px-4 text-center font-mono font-extrabold text-slate-900 dark:text-slate-200">
-                      {perf.avgUnitCost.toLocaleString()} ر.س
+                      {formatCurrency(perf.avgUnitCost, undefined, 'SAR')}
                     </td>
 
                     {/* Total spent */}
                     <td className="py-3.5 px-4 text-center font-mono font-semibold">
-                      {perf.totalSpend.toLocaleString()} ر.س
+                      {formatCurrency(perf.totalSpend, undefined, 'SAR')}
                     </td>
 
                     {/* Cost PER reliability point (Avg Cost / Reliability) -> lower is better! */}
                     <td className="py-3.5 px-4 text-center font-mono font-black text-slate-900 dark:text-white">
                       <div className="space-y-1">
-                        <span>{perf.costToReliability.toLocaleString()} ر.س</span>
+                        <span>{formatCurrency(perf.costToReliability, undefined, 'SAR')}</span>
                         {perf.ordersCount > 0 && perf.costToReliability <= 100 && (
                           <span className="block text-[8px] text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-500/5 py-0.5 rounded">
                             جدوى اقتصادية ممتازة

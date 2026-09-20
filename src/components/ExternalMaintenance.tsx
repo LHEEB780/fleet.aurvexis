@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, MaintenanceOrder, Vendor } from '../types';
+import { formatCurrency, getCurrencyLabel } from '../services/formatters';
 
 interface ExternalMaintenanceProps {
   user: User;
@@ -459,10 +460,10 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
           <div className="space-y-1">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">إجمالي الالتزامات المالية</span>
             <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400 block">
-              {totalFinancials.toLocaleString()} <span className="text-[10px]">ر.س</span>
+              {formatCurrency(totalFinancials, undefined, 'SAR')}
             </span>
             <span className="text-[8px] text-slate-450 dark:text-slate-500 font-bold block">
-              المسدد منها: {paidFinancials.toLocaleString()} ر.س
+              المسدد منها: {formatCurrency(paidFinancials, undefined, 'SAR')}
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
@@ -475,7 +476,7 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
           <div className="space-y-1">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">الفواتير المعلقة والذمم</span>
             <span className="text-xl font-black font-mono text-rose-500 block">
-              {unpaidFinancials.toLocaleString()} <span className="text-[10px]">ر.س</span>
+              {formatCurrency(unpaidFinancials, undefined, 'SAR')}
             </span>
             <span className="text-[8px] text-rose-500 font-bold block">
               {pendingInvoicesCount} عمليات صيانة بانتظار الفاتورة
@@ -644,7 +645,7 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
                         <div className="text-left space-y-1 pl-3 border-l border-slate-100 dark:border-slate-800">
                           <span className="text-[8.5px] text-slate-400 font-bold block">التكلفة الفعلية والمطالبة:</span>
                           <span className="text-xs font-black font-mono text-slate-800 dark:text-slate-200 block">
-                            {order.cost ? `${order.cost.toLocaleString()} ر.س` : 'غير محددة'}
+                            {order.cost ? formatCurrency(order.cost, undefined, 'SAR') : 'غير محددة'}
                           </span>
                           {order.externalInvoiceNo && (
                             <span className="text-[8px] font-mono text-purple-600 dark:text-purple-400 font-black block">
@@ -861,7 +862,7 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
 
                 {/* Input 2: Cost */}
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-500 dark:text-slate-400 font-black block">التكلفة الفعلية النهائية (ر.س):</label>
+                  <label className="text-[10px] text-slate-500 dark:text-slate-400 font-black block">التكلفة الفعلية النهائية ({getCurrencyLabel()}):</label>
                   <input
                     type="number"
                     required
@@ -870,7 +871,7 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
                     placeholder="0.00"
                     className="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs rounded-xl font-mono text-left outline-none focus:border-purple-500/50 text-slate-900 dark:text-white"
                   />
-                  <span className="text-[8.5px] text-slate-400 dark:text-slate-500 block">المبلغ الإجمالي الفعلي للفاتورة بالريال السعودي</span>
+                  <span className="text-[8.5px] text-slate-400 dark:text-slate-500 block">المبلغ الإجمالي الفعلي للفاتورة ({getCurrencyLabel()})</span>
                 </div>
 
                 {/* Input 3: Invoice Status Selector */}

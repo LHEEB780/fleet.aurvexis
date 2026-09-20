@@ -60,6 +60,7 @@ import ContextualHelp from './ContextualHelp';
 import SmartDiagnostic from './SmartDiagnostic';
 import { notifyNewMaintenanceOrder } from '../services/browserNotifications';
 import { safeSetItem } from '../utils/storage';
+import { formatCurrency, getCurrencyLabel } from '../services/formatters';
 
 const SYSTEM_ANCHOR_DATE = '2026-05-19';
 
@@ -2611,7 +2612,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                               </span>
                             </td>
                             <td className="p-3 font-mono font-bold text-slate-900 dark:text-white">
-                              {order.cost ? `${order.cost} ر.س` : 'غير محدد'}
+                              {order.cost ? formatCurrency(order.cost, language, 'SAR') : (language === 'ar' ? 'غير محدد' : 'Not specified')}
                             </td>
                             <td className="p-3 text-left">
                               <div className="flex items-center justify-end gap-2">
@@ -2847,7 +2848,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                             <PriorityBadge priority={order.priority} />
                           </td>
                           <td className="p-3 text-left font-mono font-black">
-                            {order.cost ? `${order.cost.toLocaleString()} ر.س` : 'معلق'}
+                            {order.cost ? formatCurrency(order.cost, language, 'SAR') : (language === 'ar' ? 'معلق' : 'Pending')}
                           </td>
                           <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                             {order.status === 'completed' && !isArchivedItem ? (
@@ -4270,7 +4271,7 @@ const SparklineTrend = ({ data }: { data: number[] }) => {
         <span className={isUp ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>
           {isUp ? '▲' : '▼'} {Math.round(((currentVal - firstVal) / (firstVal || 1)) * 100)}%
         </span>
-        <span className="text-slate-400 dark:text-slate-450 mt-0.5 font-mono">{currentVal.toLocaleString()} ر.س</span>
+        <span className="text-slate-400 dark:text-slate-450 mt-0.5 font-mono">{formatCurrency(currentVal, undefined, 'SAR')}</span>
       </div>
     </div>
   );

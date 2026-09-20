@@ -91,6 +91,7 @@ import SmartDiagnostic from './SmartDiagnostic';
 import VoiceNoteField from './VoiceNoteField';
 import TechnicalInspectionChecklist from './TechnicalInspectionChecklist';
 import { safeSetItem } from '../utils/storage';
+import { formatCurrency } from '../services/formatters';
 
 interface StatCardProps {
   label: string;
@@ -1347,7 +1348,7 @@ export function SparePartsConsumptionWidget({ inventory, language, orders = [], 
         <div className="p-3 bg-slate-50 dark:bg-[#0c101c] border border-slate-100 dark:border-slate-800/80 rounded-2xl flex items-center justify-between">
           <div className="space-y-0.5">
             <span className="text-[9px] text-slate-400 block font-bold">{language === 'ar' ? 'القيمة التقديرية للمخازن' : 'Estimated Stock Value'}</span>
-            <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-sans">{totalPartsValue.toLocaleString('ar-AE')} {language === 'ar' ? 'ر.س' : 'SAR'}</span>
+            <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-sans">{formatCurrency(totalPartsValue, language, 'SAR')}</span>
           </div>
           <Database size={15} className="text-emerald-500" />
         </div>

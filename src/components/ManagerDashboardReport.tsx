@@ -66,7 +66,7 @@ export function ManagerDashboardReport({ vehicles, orders, language, isDarkMode 
     availabilityTrendTitle: language === 'ar' ? 'منحنى معدل توفر وجاهزية الأسطول الميداني' : 'Field Fleet Availability Rate & SLA Timeline',
     currentAvailabilityGauge: language === 'ar' ? 'معدل التوفر التشغيلي اللحظي' : 'Real-time Fleet Availability Gauge',
     monthlyCost: language === 'ar' ? 'تكلفة الصيانة' : 'Maintenance Cost',
-    monthlyCostSub: language === 'ar' ? 'المبالغ المصروفة على قطع الغيار والأجور بالريال السعودي' : 'Actual expenditures on spare parts and labor in SAR',
+    monthlyCostSub: language === 'ar' ? `المبالغ المصروفة على قطع الغيار والأجور بـ (${getCurrencyLabel(language)})` : `Actual expenditures on spare parts and labor in ${getCurrencyLabel(language)}`,
     avgCostLine: language === 'ar' ? 'خط متوسط الإنفاق' : 'Average Spending Line',
     targetSlaLine: language === 'ar' ? 'معدل الجاهزية المستهدف (SLA)' : 'Target SLA Availability (95%)',
     currentAvailabilityVal: language === 'ar' ? 'معدل التوفر الحالي' : 'Current Availability Rate',

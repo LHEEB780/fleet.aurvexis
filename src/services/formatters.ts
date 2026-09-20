@@ -9,6 +9,17 @@ export function getBaseCurrency(): string {
 }
 
 /**
+ * Sets the active base currency in local storage and notifies listeners.
+ */
+export function setBaseCurrency(currency: string): void {
+  if (typeof window !== 'undefined') {
+    safeLocalStorage.setItem('saas_base_currency', currency);
+    window.dispatchEvent(new CustomEvent('base-currency-changed', { detail: { currency } }));
+    window.dispatchEvent(new Event('storage'));
+  }
+}
+
+/**
  * Gets the localized currency label/symbol based on selected currency and language.
  */
 export function getCurrencyLabel(language: 'ar' | 'en' = 'ar'): string {
@@ -17,6 +28,8 @@ export function getCurrencyLabel(language: 'ar' | 'en' = 'ar'): string {
     'SAR': 'ر.س',
     'USD': '$',
     'AED': 'د.إ',
+    'IQD': 'د.ع',
+    'JOD': 'د.أ',
     'EGP': 'ج.م',
     'QAR': 'ر.ق',
     'KWD': 'د.ك',
@@ -29,6 +42,8 @@ export function getCurrencyLabel(language: 'ar' | 'en' = 'ar'): string {
     'SAR': 'SAR',
     'USD': 'USD',
     'AED': 'AED',
+    'IQD': 'IQD',
+    'JOD': 'JOD',
     'EGP': 'EGP',
     'QAR': 'QAR',
     'KWD': 'KWD',
@@ -53,6 +68,8 @@ export function getConversionRateFromSAR(): number {
     'SAR': 1.0,
     'USD': 0.27,      // 1 SAR = 0.266 USD
     'AED': 0.98,      // 1 SAR = 0.979 AED
+    'IQD': 349.33,    // 1 SAR = ~349.33 IQD (1310 / 3.75)
+    'JOD': 0.189,     // 1 SAR = ~0.189 JOD (0.709 / 3.75)
     'EGP': 12.80,     // 1 SAR = ~12.80 EGP
     'QAR': 0.97,      // 1 SAR = 0.97 QAR
     'KWD': 0.082,     // 1 SAR = 0.082 KWD
@@ -74,6 +91,8 @@ export function getConversionRateFromUSD(): number {
     'SAR': 3.75,
     'USD': 1.0,
     'AED': 3.67,
+    'IQD': 1310.0,    // 1 USD = 1,310 IQD (Official Central Bank rate)
+    'JOD': 0.709,     // 1 USD = 0.709 JOD (Official Pegged rate)
     'EGP': 48.0,
     'QAR': 3.64,
     'KWD': 0.31,
@@ -101,9 +120,12 @@ export function formatCurrency(
     num = num * getConversionRateFromUSD();
   }
 
+  const baseCurrency = getBaseCurrency();
+  const maxDecimals = baseCurrency === 'IQD' ? 0 : baseCurrency === 'JOD' ? 3 : 2;
+
   const formatted = num.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US', {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2
+    maximumFractionDigits: maxDecimals
   });
   
   const label = getCurrencyLabel(language);

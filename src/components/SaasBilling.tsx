@@ -29,12 +29,38 @@ import {
   Phone,
   Send,
   ExternalLink,
-  Wallet
+  Wallet,
+  Coins,
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { loadStripe } from '@stripe/stripe-js';
-import { formatCurrency } from '../services/formatters';
+import { 
+  formatCurrency, 
+  getBaseCurrency, 
+  setBaseCurrency, 
+  getCurrencyLabel 
+} from '../services/formatters';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
+
+export interface CurrencyOption {
+  id: 'SAR' | 'AED' | 'USD' | 'IQD' | 'JOD';
+  code: string;
+  nameAr: string;
+  nameEn: string;
+  symbolAr: string;
+  symbolEn: string;
+  flag: string;
+  rateVsUsd: number;
+}
+
+export const SAAS_CURRENCY_OPTIONS: CurrencyOption[] = [
+  { id: 'SAR', code: 'SAR', nameAr: 'ريال سعودي', nameEn: 'Saudi Riyal', symbolAr: 'ر.س', symbolEn: 'SAR', flag: '🇸🇦', rateVsUsd: 3.75 },
+  { id: 'AED', code: 'AED', nameAr: 'درهم إماراتي', nameEn: 'UAE Dirham', symbolAr: 'د.إ', symbolEn: 'AED', flag: '🇦🇪', rateVsUsd: 3.67 },
+  { id: 'USD', code: 'USD', nameAr: 'دولار أمريكي', nameEn: 'US Dollar', symbolAr: '$', symbolEn: 'USD', flag: '🇺🇸', rateVsUsd: 1.0 },
+  { id: 'IQD', code: 'IQD', nameAr: 'دينار عراقي', nameEn: 'Iraqi Dinar', symbolAr: 'د.ع', symbolEn: 'IQD', flag: '🇮🇶', rateVsUsd: 1310 },
+  { id: 'JOD', code: 'JOD', nameAr: 'دينار أردني', nameEn: 'Jordanian Dinar', symbolAr: 'د.أ', symbolEn: 'JOD', flag: '🇯🇴', rateVsUsd: 0.709 },
+];
 
 interface BillingInvoice {
   id: string;
@@ -43,6 +69,7 @@ interface BillingInvoice {
   amount: number;
   status: 'paid' | 'pending' | 'failed';
   plan: string;
+  currency?: string;
 }
 
 export default function SaasBilling({ user }: { user?: User }) {
@@ -155,9 +182,22 @@ export default function SaasBilling({ user }: { user?: User }) {
     localStorage.setItem('saas_quotas', JSON.stringify(quotas));
   }, [quotas]);
 
+  // Active currency selection (SAR, AED, USD, IQD, JOD)
+  type CurrencyId = 'SAR' | 'AED' | 'USD' | 'IQD' | 'JOD';
+
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyId>(() => {
+    const cur = getBaseCurrency();
+    if (['SAR', 'AED', 'USD', 'IQD', 'JOD'].includes(cur)) return cur as CurrencyId;
+    return 'SAR';
+  });
+
   const [currencyTrigger, setCurrencyTrigger] = useState(0);
   useEffect(() => {
     const handleCurrencyChange = () => {
+      const cur = getBaseCurrency();
+      if (['SAR', 'AED', 'USD', 'IQD', 'JOD'].includes(cur)) {
+        setSelectedCurrency(cur as CurrencyId);
+      }
       setCurrencyTrigger(prev => prev + 1);
     };
     window.addEventListener('storage', handleCurrencyChange);
@@ -167,6 +207,34 @@ export default function SaasBilling({ user }: { user?: User }) {
       window.removeEventListener('base-currency-changed', handleCurrencyChange);
     };
   }, []);
+
+  const handleSelectCurrency = (newCurrency: CurrencyId) => {
+    setSelectedCurrency(newCurrency);
+    setBaseCurrency(newCurrency);
+    setCurrencyTrigger(prev => prev + 1);
+  };
+
+  const getCurrencyRate = (curr: CurrencyId): number => {
+    if (curr === 'SAR') return 3.75;
+    if (curr === 'AED') return 3.67;
+    if (curr === 'IQD') return 1310;
+    if (curr === 'JOD') return 0.709;
+    return 1.0;
+  };
+
+  const getConvertedInvoiceAmount = (usdAmount: number): number => {
+    const rate = getCurrencyRate(selectedCurrency);
+    const converted = usdAmount * rate;
+    return selectedCurrency === 'IQD' ? Math.round(converted) : Number(converted.toFixed(2));
+  };
+
+  const getInvoiceCurrencyLabel = (): string => {
+    if (selectedCurrency === 'SAR') return 'SAR (ر.س)';
+    if (selectedCurrency === 'AED') return 'AED (د.إ)';
+    if (selectedCurrency === 'IQD') return 'IQD (د.ع)';
+    if (selectedCurrency === 'JOD') return 'JOD (د.أ)';
+    return 'USD ($)';
+  };
 
   // Hook to handle success callback from Stripe redirections
   useEffect(() => {
@@ -525,7 +593,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                   تم شحن اشتراك مؤسستك وترقية المستويات بنجاح!
                 </h3>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                  الباقة المفتوحة: <strong className="text-emerald-500 font-black">{successCelebration.plan}</strong> | قيمة المعاملة: <strong className="font-mono text-emerald-550 dark:text-emerald-400">${successCelebration.amount}</strong> | رقم الفاتورة: <strong className="font-mono text-slate-700 dark:text-slate-300">{successCelebration.invoiceNo}</strong>
+                  الباقة المفتوحة: <strong className="text-emerald-500 font-black">{successCelebration.plan}</strong> | قيمة المعاملة: <strong className="font-mono text-emerald-550 dark:text-emerald-400">{formatCurrency(successCelebration.amount, language, 'USD')}</strong> | رقم الفاتورة: <strong className="font-mono text-slate-700 dark:text-slate-300">{successCelebration.invoiceNo}</strong>
                 </p>
               </div>
             </div>
@@ -537,8 +605,8 @@ export default function SaasBilling({ user }: { user?: User }) {
                     invoiceNo: successCelebration.invoiceNo,
                     date: new Date().toISOString().split('T')[0],
                     plan: successCelebration.plan,
-                    amount: successCelebration.amount,
-                    currency: 'USD ($)',
+                    amount: getConvertedInvoiceAmount(successCelebration.amount),
+                    currency: getInvoiceCurrencyLabel(),
                     status: 'paid',
                     companyName: user?.name || 'مؤسسة إدارة الأسطول المتقدمة',
                     billingCycle: billingCycle
@@ -561,7 +629,7 @@ export default function SaasBilling({ user }: { user?: User }) {
         )}
       </AnimatePresence>
 
-      {/* Title */}
+      {/* Title & Controls Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -603,29 +671,60 @@ export default function SaasBilling({ user }: { user?: User }) {
           </p>
         </div>
 
-        {/* Billing Plan toggler */}
-        <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-[#0f1422] border border-slate-150 dark:border-slate-800 rounded-xl max-w-xs self-start shrink-0 select-none shadow-xs">
-          <button
-            onClick={() => setBillingCycle('yearly')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-              billingCycle === 'yearly'
-                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white shadow-md shadow-violet-500/20'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <span>دفع سنوي 🎉</span>
-            <span className="bg-emerald-500 text-white text-[8.5px] px-1 py-0.1 rounded font-black">وفر 20%</span>
-          </button>
-          <button
-            onClick={() => setBillingCycle('monthly')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-              billingCycle === 'monthly'
-                ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white shadow-md shadow-violet-500/20'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            دفع شهري 🗓️
-          </button>
+        {/* Action Controls: Currency Selector + Billing Plan toggler */}
+        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-center shrink-0">
+          {/* Currency Selector (SAR, AED, USD) */}
+          <div className="flex items-center gap-1 p-1 bg-white dark:bg-[#0f1422] border border-slate-150 dark:border-slate-800 rounded-xl select-none shadow-xs">
+            <span className="text-[10px] font-bold text-slate-400 px-2 flex items-center gap-1">
+              <Coins size={12} className="text-amber-500" />
+              <span>{language === 'ar' ? 'العملة:' : 'Currency:'}</span>
+            </span>
+            {SAAS_CURRENCY_OPTIONS.map((c) => {
+              const isActive = selectedCurrency === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => handleSelectCurrency(c.id)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    isActive
+                      ? 'bg-amber-500 text-white shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                  }`}
+                  title={`${c.nameAr} (${c.code}) - ${c.rateVsUsd === 1 ? 'العملة المرجعية' : `1 USD = ${c.rateVsUsd} ${c.code}`}`}
+                >
+                  <span className="text-xs leading-none">{c.flag}</span>
+                  <span className="font-mono">{c.code}</span>
+                  <span className="text-[9px] opacity-80 font-sans">({language === 'ar' ? c.symbolAr : c.symbolEn})</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Billing Plan toggler */}
+          <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-[#0f1422] border border-slate-150 dark:border-slate-800 rounded-xl select-none shadow-xs">
+            <button
+              onClick={() => setBillingCycle('yearly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                billingCycle === 'yearly'
+                  ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white shadow-md shadow-violet-500/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>دفع سنوي 🎉</span>
+              <span className="bg-emerald-500 text-white text-[8.5px] px-1 py-0.1 rounded font-black">وفر 20%</span>
+            </button>
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                billingCycle === 'monthly'
+                  ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white shadow-md shadow-violet-500/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              دفع شهري 🗓️
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1023,12 +1122,84 @@ export default function SaasBilling({ user }: { user?: User }) {
 
       {/* Invoices History section */}
       <div className="bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800 rounded-3xl p-5 md:p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between font-sans">
-          <div className="flex items-center gap-1.5">
-            <History size={16} className="text-purple-500" />
-            <h3 className="text-sm font-black text-slate-900 dark:text-white">سجل الفواتير والدفع للحساب</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-sans">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+              <History size={16} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                  {language === 'ar' ? 'سجل الفواتير والدفع للحساب' : 'Invoices & Billing History'}
+                </h3>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  {selectedCurrency} ({selectedCurrency === 'SAR' ? 'ر.س' : selectedCurrency === 'AED' ? 'د.إ' : selectedCurrency === 'IQD' ? 'د.ع' : selectedCurrency === 'JOD' ? 'د.أ' : '$'})
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {language === 'ar' 
+                  ? `يتم تحديث مبالغ الفواتير تلقائياً وفقاً للعملة المختارة (${selectedCurrency})`
+                  : `Invoices and receipts automatically reflect the selected currency (${selectedCurrency})`}
+              </p>
+            </div>
           </div>
-          <span className="text-[10px] font-bold text-slate-500">تم رصد آخر 3 عمليات تلقائية</span>
+
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            {/* Quick currency switch pills */}
+            <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/50 text-[11px] font-mono font-bold">
+              {SAAS_CURRENCY_OPTIONS.map((c) => {
+                const isActive = selectedCurrency === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleSelectCurrency(c.id)}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                      isActive
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-black'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title={c.nameAr}
+                  >
+                    <span>{c.flag}</span>
+                    <span>{c.code}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Currency & Invoice Summary Strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50/80 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs font-sans">
+          <div className="flex items-center justify-between p-1.5 px-2.5">
+            <span className="text-slate-500 font-medium">
+              {language === 'ar' ? 'إجمالي المدفوعات المسددة:' : 'Total Invoiced:'}
+            </span>
+            <span className="font-mono font-black text-slate-900 dark:text-white text-[13px]">
+              {formatCurrency(invoices.reduce((acc, inv) => acc + (inv.status === 'paid' ? inv.amount : 0), 0), language, 'USD')}
+            </span>
+          </div>
+          <div className="flex items-center justify-between p-1.5 px-2.5 border-t sm:border-t-0 sm:border-x border-slate-200/60 dark:border-slate-800">
+            <span className="text-slate-500 font-medium">
+              {language === 'ar' ? 'سعر الصرف المطبق:' : 'Exchange Rate:'}
+            </span>
+            <span className="font-mono font-bold text-violet-600 dark:text-violet-400 text-[11.5px]">
+              {selectedCurrency === 'SAR' ? '1 USD = 3.75 SAR' 
+                : selectedCurrency === 'AED' ? '1 USD = 3.67 AED' 
+                : selectedCurrency === 'IQD' ? '1 USD = 1,310 IQD'
+                : selectedCurrency === 'JOD' ? '1 USD = 0.709 JOD'
+                : '1 USD = 1.00 USD'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between p-1.5 px-2.5 border-t sm:border-t-0 border-slate-200/60 dark:border-slate-800">
+            <span className="text-slate-500 font-medium">
+              {language === 'ar' ? 'الفواتير الضريبية:' : 'Paid Invoices:'}
+            </span>
+            <span className="font-mono font-black text-emerald-600 dark:text-emerald-400">
+              {invoices.filter(i => i.status === 'paid').length} {language === 'ar' ? 'مسددة بنجاح ✓' : 'Settled ✓'}
+            </span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -1038,7 +1209,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                 <th className="py-2.5 px-3">رقم الفاتورة</th>
                 <th className="py-2.5 px-3">التاريخ</th>
                 <th className="py-2.5 px-3">تفاصيل الخطة</th>
-                <th className="py-2.5 px-3">القيمة الإجمالية</th>
+                <th className="py-2.5 px-3">القيمة الإجمالية ({selectedCurrency})</th>
                 <th className="py-2.5 px-3">الحالة المالية</th>
                 <th className="py-2.5 px-3 text-left">مستندات</th>
               </tr>
@@ -1060,12 +1231,13 @@ export default function SaasBilling({ user }: { user?: User }) {
                   <td className="py-3 px-3 text-left">
                     <button 
                       onClick={() => {
+                        const convertedAmount = getConvertedInvoiceAmount(inv.amount);
                         generateInvoicePDF({
                           invoiceNo: inv.invoiceNo,
                           date: inv.date,
                           plan: inv.plan,
-                          amount: inv.amount,
-                          currency: 'USD ($)',
+                          amount: convertedAmount,
+                          currency: getInvoiceCurrencyLabel(),
                           status: inv.status,
                           companyName: user?.name || 'مؤسسة إدارة الأسطول المتقدمة',
                           billingCycle: billingCycle
@@ -1075,7 +1247,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                       title="تحميل كـ PDF"
                     >
                       <Download size={13} />
-                      <span className="text-[9.5px] font-bold">تحميل PDF</span>
+                      <span className="text-[9.5px] font-bold">تحميل PDF ({selectedCurrency})</span>
                     </button>
                   </td>
                 </tr>
@@ -1175,7 +1347,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                     <div className="flex justify-between text-[13px] font-black">
                       <span className="text-slate-800 dark:text-slate-200">الإجمالي المستحق للدفع:</span>
                       <span className="font-mono text-emerald-500 font-extrabold flex items-center gap-0.5">
-                        <span>${getPlanPrice(modalTargetPlan, billingCycle)}</span>
+                        <span>{formatCurrency(getPlanPrice(modalTargetPlan, billingCycle), language, 'USD')}</span>
                         <span className="text-[10px] text-slate-400 font-medium">/ {billingCycle === 'yearly' ? 'سنة' : 'شهر'}</span>
                       </span>
                     </div>
@@ -1307,6 +1479,12 @@ export default function SaasBilling({ user }: { user?: User }) {
                                 <span>{copiedIban ? 'تم النسخ' : 'نسخ'}</span>
                               </button>
                             </div>
+                          </div>
+                          <div className="flex justify-between items-center bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20 mt-1.5">
+                            <span className="text-emerald-300 text-[10.5px] font-sans font-bold">المبلغ المطلوب تحويله ({selectedCurrency}):</span>
+                            <span className="text-white font-mono font-black text-xs">
+                              {formatCurrency(getPlanPrice(modalTargetPlan, billingCycle), language, 'USD')}
+                            </span>
                           </div>
                         </div>
                       </div>

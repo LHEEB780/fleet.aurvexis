@@ -239,7 +239,8 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
 
     const monthlyChartData = Object.entries(monthlyAllocations).map(([name, sum]) => ({
       name,
-      'تكلفة الصيانة (ر.س)': sum
+      cost: sum,
+      'تكلفة الصيانة': sum
     }));
 
     // Category distribution cost audit
@@ -1375,8 +1376,15 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? '#334155' : '#f1f5f9'} />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} unit=" ر.س" />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tickFormatter={(val) => `${Math.round(val * getConversionRateFromSAR()).toLocaleString()}`}
+                        tick={{ fontSize: 10, fill: '#64748B' }} 
+                        unit={` ${getCurrencyLabel(language)}`} 
+                      />
                       <Tooltip 
+                        formatter={(val: any) => [formatCurrency(Number(val) || 0, language, 'SAR'), language === 'ar' ? 'تكلفة الصيانة' : 'Maintenance Cost']}
                         contentStyle={{ 
                           backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', 
                           borderRadius: '16px', 
@@ -1387,7 +1395,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                         }}
                         itemStyle={{ color: isDarkMode ? '#f1f5f9' : '#1e293b' }}
                       />
-                      <Area type="monotone" dataKey="تكلفة الصيانة (ر.س)" stroke="#6366F1" strokeWidth={3} fillOpacity={1} fill="url(#colorCost)" />
+                      <Area type="monotone" dataKey="cost" name={language === 'ar' ? 'تكلفة الصيانة' : 'Maintenance Cost'} stroke="#6366F1" strokeWidth={3} fillOpacity={1} fill="url(#colorCost)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -1404,9 +1412,17 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={analysis.categoryCostChartData} layout="vertical" margin={{ top: 5, right: 15, left: 5, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDarkMode ? '#334155' : '#f1f5f9'} />
-                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
+                      <XAxis 
+                        type="number" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tickFormatter={(val) => `${Math.round(val * getConversionRateFromSAR()).toLocaleString()}`}
+                        tick={{ fontSize: 10, fill: '#64748B' }} 
+                        unit={` ${getCurrencyLabel(language)}`}
+                      />
                       <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold', fill: '#64748B' }} width={90} />
                       <Tooltip 
+                        formatter={(val: any) => [formatCurrency(Number(val) || 0, language, 'SAR'), language === 'ar' ? 'إجمالي التكلفة' : 'Total Cost']}
                         contentStyle={{ 
                           backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', 
                           borderRadius: '12px',

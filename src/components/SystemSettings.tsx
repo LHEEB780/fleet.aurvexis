@@ -601,11 +601,13 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
         </div>
 
         {/* Currencies Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-9 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 lg:grid-cols-11 gap-2">
           {[
             { id: 'SAR', labelAr: 'ريال سعودي', labelEn: 'Saudi Riyal', symbolAr: 'ر.س', symbolEn: 'SAR' },
             { id: 'USD', labelAr: 'دولار أمريكي', labelEn: 'US Dollar', symbolAr: '$', symbolEn: 'USD' },
             { id: 'AED', labelAr: 'درهم إماراتي', labelEn: 'UAE Dirham', symbolAr: 'د.إ', symbolEn: 'AED' },
+            { id: 'IQD', labelAr: 'دينار عراقي', labelEn: 'Iraqi Dinar', symbolAr: 'د.ع', symbolEn: 'IQD' },
+            { id: 'JOD', labelAr: 'دينار أردني', labelEn: 'Jordanian Dinar', symbolAr: 'د.أ', symbolEn: 'JOD' },
             { id: 'EGP', labelAr: 'جنيه مصري', labelEn: 'Egyptian Pound', symbolAr: 'ج.م', symbolEn: 'EGP' },
             { id: 'QAR', labelAr: 'ريال قطري', labelEn: 'Qatari Riyal', symbolAr: 'ر.ق', symbolEn: 'QAR' },
             { id: 'KWD', labelAr: 'دينار كويتي', labelEn: 'Kuwaiti Dinar', symbolAr: 'د.ك', symbolEn: 'KWD' },
