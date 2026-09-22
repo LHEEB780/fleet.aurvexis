@@ -54,7 +54,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import DriverLiveMap from './driver/DriverLiveMap';
 import DriverTripsLog from './driver/DriverTripsLog';
 import DriverAssignedProjects from './driver/DriverAssignedProjects';
-import MaintenancePushNotificationCorner from './MaintenancePushNotificationCorner';
+import { MaintenanceAlertTriangleButton } from './MaintenancePushNotificationCorner';
 
 interface DriverPortalProps {
   user: AppUser;
@@ -644,6 +644,14 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Driver Vehicle Maintenance Alert Triangle Button (Turns from RED to WHITE on click, strictly Driver's Vehicle) */}
+            <MaintenanceAlertTriangleButton
+              filterDriverVehicle={true}
+              onNavigateToTab={() => {
+                setActiveSubTab('history');
+              }}
+            />
+
             <div className="text-left hidden sm:block">
               <span className="block text-[8px] text-slate-400 font-black uppercase tracking-wider">{language === 'ar' ? 'بوابة السائق الميدانية' : 'Driver Portal Live'}</span>
               <span className="block text-[10px] text-slate-600 dark:text-slate-400 font-mono font-bold">2026-05-30 • GPS Live</span>
@@ -1720,13 +1728,6 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
 
         </AnimatePresence>
       </div>
-
-      {/* Floating Approaching Periodic Maintenance Push Notification */}
-      <MaintenancePushNotificationCorner
-        onNavigateToTab={() => {
-          setActiveSubTab('history');
-        }}
-      />
 
     </div>
   );

@@ -72,7 +72,7 @@ import {
   getNotificationSettings
 } from '../services/browserNotifications';
 import { BrowserNotificationModal } from './BrowserNotificationModal';
-import { MaintenancePushNotificationCorner } from './MaintenancePushNotificationCorner';
+import { MaintenanceAlertTriangleButton } from './MaintenancePushNotificationCorner';
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 import { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 import { renderBrandInlineStyle, adjustColorBrightness } from '../services/themeEngine';
@@ -1902,27 +1902,17 @@ export default function AppLayout({
 
             {/* Right: Notifications, Alert Badge, and System Admin Profile */}
             <div className="flex items-center gap-2 shrink-0">
-              {/* Overdue Maintenance Warning Badge */}
-              {overdueMaintenanceCount > 0 && (
-                <button
-                  id="overdue-maintenance-warning-badge"
-                  onClick={() => {
-                    setActiveTab('periodic-maintenance');
-                    setTimeout(() => {
-                      const scrollOption = { behavior: 'smooth' as ScrollBehavior };
-                      document.getElementById('periodic-maintenance-section')?.scrollIntoView(scrollOption);
-                      window.dispatchEvent(new CustomEvent('notification-navigate', { detail: { tab: 'periodic-maintenance', overdueOnly: true } }));
-                    }, 150);
-                  }}
-                  className="h-9 px-2.5 flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-red-650 dark:text-rose-400 border border-red-200/60 dark:border-rose-900/50 rounded-xl transition-all cursor-pointer shadow-2xs shrink-0 animate-pulse active:scale-95"
-                  title={language === 'ar' ? `تنبيه: يوجد ${overdueMaintenanceCount} خدمات صيانة متأخرة!` : `System Alert: ${overdueMaintenanceCount} periodic maintenance services are overdue!`}
-                >
-                  <AlertTriangle size={14} className="shrink-0 text-red-650 dark:text-rose-400" />
-                  <span className="text-[11px] font-black leading-none text-red-750 dark:text-rose-300">
-                    {overdueMaintenanceCount}
-                  </span>
-                </button>
-              )}
+              {/* Overdue Maintenance Alert Triangle Button (Turns from RED to WHITE on click, opens details modal) */}
+              <MaintenanceAlertTriangleButton
+                onNavigateToTab={(tab) => {
+                  setActiveTab(tab);
+                  setTimeout(() => {
+                    const scrollOption = { behavior: 'smooth' as ScrollBehavior };
+                    document.getElementById('periodic-maintenance-section')?.scrollIntoView(scrollOption);
+                    window.dispatchEvent(new CustomEvent('notification-navigate', { detail: { tab: 'periodic-maintenance', overdueOnly: true } }));
+                  }, 150);
+                }}
+              />
 
               {/* Notifications Bell Button */}
               <div className="relative">
@@ -5760,12 +5750,6 @@ export default function AppLayout({
         onClose={() => setIsBrowserNotifModalOpen(false)}
       />
 
-      {/* Approaching Fleet Periodic Maintenance Push Notification Banner with Add to Calendar */}
-      <MaintenancePushNotificationCorner
-        onNavigateToTab={(tab) => {
-          setActiveTab(tab);
-        }}
-      />
     </div>
   );
 }

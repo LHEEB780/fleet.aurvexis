@@ -60,9 +60,10 @@ interface HandoverRecord {
 
 interface DriverHandoverProps {
   user: any;
+  language?: 'ar' | 'en';
 }
 
-export default function DriverHandover({ user }: DriverHandoverProps) {
+export default function DriverHandover({ user, language = 'ar' }: DriverHandoverProps) {
   // Lists
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -452,7 +453,9 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const checklistLabels: Record<keyof HandoverRecord['checklist'], string> = {
+    const isAr = language === 'ar';
+
+    const checklistLabels: Record<keyof HandoverRecord['checklist'], string> = isAr ? {
       engineHydraulics: 'سلامة المحرك وهيدروليك الرفع وتدفق الضغط',
       brakesBattery: 'سلامة الفرامل، البطارية، وأنظمة السلامة الكهربائية',
       bodyPaint: 'حالة هيكل المركبة الخارجي والدهانات والخدوش',
@@ -460,12 +463,24 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
       lightsIndicators: 'الأنوار الرئيسية، الإشارات الجانبية والتنبيه الكهربائي',
       safetyEquipment: 'حقيبة الطوارئ، طفاية المعايرة ومعدات الاستباط',
       cleanliness: 'نظافة الكبينة الداخلية وأجهزة الكونسول ومستوى الراحة',
+    } : {
+      engineHydraulics: 'Engine, Hydraulics & System Pressure Integrity',
+      brakesBattery: 'Braking System, Battery & Electrical Reliability',
+      bodyPaint: 'Chassis, Paint & Bodywork Condition',
+      tiresAxles: 'Tire Tread, Air Pressure & Axle Alignment',
+      lightsIndicators: 'Headlights, Turn Indicators & Warning Signals',
+      safetyEquipment: 'Emergency Kit, Fire Extinguisher & Tools',
+      cleanliness: 'Cabin Cleanliness, Dashboard & Comfort Controls',
     };
 
-    const statusLabels = {
+    const statusLabels = isAr ? {
       ok: '✅ سليم وصالح للاستعمال',
       fail: '❌ يوجد عطل أو خلل فني',
       na: '➖ غير متوفر / لا ينطبق',
+    } : {
+      ok: '✅ Operational & Safe',
+      fail: '❌ Fault / Defect Detected',
+      na: '➖ N/A / Not Applicable',
     };
 
     const statusBadgeClass = {
@@ -475,17 +490,20 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
     };
 
     printWindow.document.write(`
-      <html>
+      <!DOCTYPE html>
+      <html dir="${isAr ? 'rtl' : 'ltr'}" lang="${isAr ? 'ar' : 'en'}">
         <head>
-          <title>${record.orderNumber} - محضر استلام فني</title>
-          <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+          <meta charset="utf-8" />
+          <title>${record.orderNumber} - ${isAr ? 'محضر استلام فني' : 'Handover Inspection Protocol'}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
           <style>
             body { 
-              font-family: 'Cairo', sans-serif; 
-              direction: rtl; 
+              font-family: ${isAr ? "'Cairo', sans-serif" : "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"}; 
+              direction: ${isAr ? 'rtl' : 'ltr'}; 
               padding: 40px; 
               color: #1e293b;
               background-color: #fff;
+              margin: 0;
             }
             .header {
               display: flex;
@@ -500,7 +518,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
             }
             .title h1 {
               margin: 0;
-              font-size: 22px;
+              font-size: 20px;
               font-weight: 900;
               color: #0c4a6e;
             }
@@ -523,6 +541,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
             .meta-item {
               font-size: 13px;
               line-height: 1.8;
+              text-align: ${isAr ? 'right' : 'left'};
             }
             .meta-item strong {
               color: #0f172a;
@@ -535,6 +554,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
               padding-bottom: 8px;
               margin-top: 30px;
               margin-bottom: 15px;
+              text-align: ${isAr ? 'right' : 'left'};
             }
             .checklist-table {
               width: 100%;
@@ -544,7 +564,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
             .checklist-table th, .checklist-table td {
               border: 1px solid #e2e8f0;
               padding: 10px 12px;
-              text-align: right;
+              text-align: ${isAr ? 'right' : 'left'};
               font-size: 12px;
             }
             .checklist-table th {
@@ -561,6 +581,7 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
               line-height: 1.6;
               margin-bottom: 30px;
               min-height: 60px;
+              text-align: ${isAr ? 'right' : 'left'};
             }
             .sign-section {
               display: flex;
@@ -592,18 +613,18 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
               display: inline-flex;
               align-items: center;
               justify-content: center;
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 900;
               text-transform: uppercase;
               transform: rotate(-15deg);
               opacity: 0.65;
               top: 60px;
-              left: 60px;
+              ${isAr ? 'left: 60px;' : 'right: 60px;'};
             }
             .banner {
               background-color: #e0f2fe;
               color: #0369a1;
-              padding: 8px 15px;
+              padding: 10px 15px;
               border-radius: 6px;
               font-size: 12px;
               font-weight: bold;
@@ -615,82 +636,94 @@ export default function DriverHandover({ user }: DriverHandoverProps) {
         </head>
         <body>
           <div style="position: relative;">
-            <div class="stamp">معتمد ومأمور</div>
+            <div class="stamp">${isAr ? 'معتمد ومأمور' : 'APPROVED'}</div>
             <div class="header">
-              <div>
+              <div style="text-align: ${isAr ? 'right' : 'left'};">
                 <h3 style="margin: 0; color: #6d28d9; font-weight: 900; font-size: 16px;">FleetAurvexis</h3>
-                <p style="margin: 3px 0 0 0; font-size: 10px; color: #64748b;">حفظ أمان وجودة أسطول المركبات</p>
+                <p style="margin: 3px 0 0 0; font-size: 10px; color: #64748b;">${isAr ? 'حفظ أمان وجودة أسطول المركبات' : 'Fleet Integrity & Safety Platform'}</p>
               </div>
               <div class="title">
-                <h1>محضر رسمي لتسليم واستلام العجلات الفنية</h1>
+                <h1>${isAr ? 'محضر رسمي لتسليم واستلام العجلات الفنية' : 'Official Vehicle Handover & Custody Protocol'}</h1>
                 <p>DOCUMENT ID: ${record.orderNumber}</p>
               </div>
-              <div style="text-align: left;">
-                <p style="margin: 0; font-size: 11px; font-weight: bold;">بتاريخ: ${record.date}</p>
-                <p style="margin: 3px 0 0 0; font-size: 10px; color: #64748b;">حالة المستند: <span style="color:#059669;font-weight:bold;">موقّع ورسمي</span></p>
+              <div style="text-align: ${isAr ? 'left' : 'right'};">
+                <p style="margin: 0; font-size: 11px; font-weight: bold;">${isAr ? 'بتاريخ:' : 'Date:'} ${record.date}</p>
+                <p style="margin: 3px 0 0 0; font-size: 10px; color: #64748b;">${isAr ? 'حالة المستند:' : 'Status:'} <span style="color:#059669;font-weight:bold;">${isAr ? 'موقّع ورسمي' : 'Signed & Verified'}</span></p>
               </div>
             </div>
 
             <div class="banner">
-              ${record.type === 'outgoing' ? 'تعهد تسليم المركبة ونقل المسؤولية التقنية والمدنية بذمة السائق' : 'محضر فك المسؤولية وإرجاع الآلية لعهدة قسم الصيانة والمجموعة الفنية'}
+              ${record.type === 'outgoing' 
+                ? (isAr ? 'تعهد تسليم المركبة ونقل المسؤولية التقنية والمدنية بذمة السائق' : 'Vehicle Custody Handover & Transfer of Operational Responsibility')
+                : (isAr ? 'محضر فك المسؤولية وإرجاع الآلية لعهدة قسم الصيانة والمجموعة الفنية' : 'Release of Custody & Return of Asset to Fleet Maintenance Division')}
             </div>
 
-            <div class="section-title">بيانات الأطراف والآلية الميكانيكية</div>
+            <div class="section-title">${isAr ? 'بيانات الأطراف والآلية الميكانيكية' : 'Vehicle & Custody Details'}</div>
             <div class="meta-grid">
               <div class="meta-item">
-                <strong>المركبة / الآلية الميكانيكية:</strong> ${record.vehicleName}<br/>
-                <strong>لوحة الآلية الرسمية:</strong> ${record.vehiclePlate}<br/>
-                <strong>قراءة العداد عند الإجراء:</strong> ${record.odometer.toLocaleString()} كم
+                <strong>${isAr ? 'المركبة / الآلية الميكانيكية:' : 'Vehicle Unit:'}</strong> ${record.vehicleName}<br/>
+                <strong>${isAr ? 'لوحة الآلية الرسمية:' : 'License Plate:'}</strong> ${record.vehiclePlate}<br/>
+                <strong>${isAr ? 'قراءة العداد عند الإجراء:' : 'Odometer Reading:'}</strong> ${record.odometer.toLocaleString()} ${isAr ? 'كم' : 'km'}
               </div>
               <div class="meta-item">
-                <strong>اسم السائق المفوض بالعهدة:</strong> ${record.driverName}<br/>
-                <strong>ضابط المزامنة والمراقبة:</strong> ${record.employeeName}<br/>
-                <strong>حالة الوقود الحالية:</strong> ${record.fuelLevel}% من سعة الخزان القصوى
+                <strong>${isAr ? 'اسم السائق المفوض بالعهدة:' : 'Assigned Driver:'}</strong> ${record.driverName}<br/>
+                <strong>${isAr ? 'ضابط المزامنة والمراقبة:' : 'Supervising Officer:'}</strong> ${record.employeeName}<br/>
+                <strong>${isAr ? 'حالة الوقود الحالية:' : 'Current Fuel Level:'}</strong> ${record.fuelLevel}%
               </div>
             </div>
 
-            <div class="section-title">جدول الفحص الفني والتحقق من الجودة الشاملة</div>
+            <div class="section-title">${isAr ? 'جدول الفحص الفني والتحقق من الجودة الشاملة' : 'Inspection Checklist & Quality Assurance'}</div>
             <table class="checklist-table">
               <thead>
                 <tr>
-                  <th style="width: 50%;">العناصر والأنظمة المفحوصة في الآلية</th>
-                  <th style="width: 50%; text-align: center;">التقييم التقني وحالة الأمان</th>
+                  <th style="width: 50%;">${isAr ? 'العناصر والأنظمة المفحوصة في الآلية' : 'Inspected Component / System'}</th>
+                  <th style="width: 50%; text-align: center;">${isAr ? 'التقييم التقني وحالة الأمان' : 'Assessment & Safety Status'}</th>
                 </tr>
               </thead>
               <tbody>
                 ${Object.entries(record.checklist).map(([key, value]) => `
                   <tr>
-                    <td>${checklistLabels[key as keyof HandoverRecord['checklist']]}</td>
+                    <td>${checklistLabels[key as keyof HandoverRecord['checklist']] || key}</td>
                     <td style="text-align: center; ${statusBadgeClass[value as 'ok'|'fail'|'na']}">${statusLabels[value as 'ok'|'fail'|'na']}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
 
-            <div class="section-title text-sm">ملاحظات العيوب والكسور والتلفيات الموصوفة</div>
+            <div class="section-title text-sm">${isAr ? 'ملاحظات العيوب والكسور والتلفيات الموصوفة' : 'Observed Defects & Inspection Notes'}</div>
             <div class="notes-box">
-              ${record.damageNotes || 'لا توجد أية ملاحظات استثنائية أو عيوب مرصودة بالهيكل أو الأنظمة الميكانيكية. تم التسليم بالوضع السليم الكلي.'}
+              ${record.damageNotes || (isAr ? 'لا توجد أية ملاحظات استثنائية أو عيوب مرصودة بالهيكل أو الأنظمة الميكانيكية. تم التسليم بالوضع السليم الكلي.' : 'No exceptional defects or damage recorded. Vehicle handed over in standard sound operational condition.')}
             </div>
 
             <div class="sign-section">
               <div class="signature-box">
-                <strong>توقيع مصادقة سائق العجلة الرسمية</strong>
-                <p style="font-size:10px; color:#64748b; margin-top:2px;">لقد قمت بفحص العجلة الميكانيكية الموضحة أعلاه وأقر بتحمل كامل المسؤولية المدنية والجنائية طوال فترة حيازتي لها.</p>
-                ${record.signatureData && record.signatureData !== 'mock' ? `<img src="${record.signatureData}" class="signature-img"/>` : `<div style="margin: 25px 0; color:#cbd5e1; font-style:italic;">تم التوقيع الإلكتروني بمطابقة بصمة الـ SaaS</div>`}
-                <span style="font-size: 11px; font-weight: bold;">(السائق: ${record.driverName})</span>
+                <strong>${isAr ? 'توقيع مصادقة سائق العجلة الرسمية' : 'Driver Signature & Custody Acknowledgment'}</strong>
+                <p style="font-size:10px; color:#64748b; margin-top:2px;">
+                  ${isAr 
+                    ? 'لقد قمت بفحص العجلة الميكانيكية الموضحة أعلاه وأقر بتحمل كامل المسؤولية المدنية والجنائية طوال فترة حيازتي لها.'
+                    : 'I have inspected the mechanical vehicle indicated above and acknowledge full operational custody throughout my assignment.'}
+                </p>
+                ${record.signatureData && record.signatureData !== 'mock' ? `<img src="${record.signatureData}" class="signature-img"/>` : `<div style="margin: 25px 0; color:#cbd5e1; font-style:italic;">${isAr ? 'تم التوقيع الإلكتروني بمطابقة بصمة الـ SaaS' : 'Digitally Signed & Confirmed via SaaS'}</div>`}
+                <span style="font-size: 11px; font-weight: bold;">(${isAr ? 'السائق:' : 'Driver:'} ${record.driverName})</span>
               </div>
               <div class="signature-box">
-                <strong>توقيع واعتماد ضابط الفحص الفني</strong>
-                <p style="font-size:10px; color:#64748b; margin-top:2px;">أصادق أنا الفني المشرف على مطابقتي للبيانات المذكورة وحياديتها وسلامة عجلات وسلامة فحص الآلية بالقسم.</p>
+                <strong>${isAr ? 'توقيع واعتماد ضابط الفحص الفني' : 'Fleet Technical Officer Endorsement'}</strong>
+                <p style="font-size:10px; color:#64748b; margin-top:2px;">
+                  ${isAr 
+                    ? 'أصادق أنا الفني المشرف على مطابقتي للبيانات المذكورة وحياديتها وسلامة عجلات وسلامة فحص الآلية بالقسم.'
+                    : 'I certify that I have supervised this inspection and verified the technical and safety condition of this vehicle.'}
+                </p>
                 <div style="margin: 20px 0; font-family:'Courier New', monospace; font-size:11px; font-weight:bold; color:#6d28d9;">
-                  [FleetAurvexis - تم الفحص والاعتداد]<br/>ID: SIG-8594-SEC
+                  [FleetAurvexis - ${isAr ? 'تم الفحص والاعتداد' : 'Verified & Sealed'}]<br/>ID: SIG-8594-SEC
                 </div>
-                <span style="font-size: 11px; font-weight: bold;">(المراقب: ${record.employeeName})</span>
+                <span style="font-size: 11px; font-weight: bold;">(${isAr ? 'المراقب:' : 'Supervisor:'} ${record.employeeName})</span>
               </div>
             </div>
 
             <div style="margin-top:40px; text-align:center; font-size:10px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:15px;">
-              مطابق لنظام الحوكمة الرقمي لحساب الأساطيل ومدرج آلياً بالسجل الموحد لجرائم وهدر المركبات.
+              ${isAr 
+                ? 'مطابق لنظام الحوكمة الرقمي لحساب الأساطيل ومدرج آلياً بالسجل الموحد لجرائم وهدر المركبات.'
+                : 'Compliant with digital fleet governance standards and registered in the unified fleet management audit log.'}
             </div>
           </div>
           <script>

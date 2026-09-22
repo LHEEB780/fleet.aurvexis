@@ -1350,7 +1350,7 @@ export default function App() {
       case 'projects':
         return <Projects user={currentUser} />;
       case 'driver-handover':
-        return <DriverHandover user={currentUser} />;
+        return <DriverHandover user={currentUser} language={language} />;
       case 'maintenance-bot':
         return <AiHub />;
       case 'maintenance':

@@ -41,6 +41,7 @@ import { vehicles as initialVehicles } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 import ContextualHelp from './ContextualHelp';
 import DriverScorecard, { calculateDriverScorecard } from './DriverScorecard';
+import { exportDriverProfilePDF } from '../utils/driverReportPdfGenerator';
 
 // Anchor System Date is 2026-05-30T19:20:00Z
 const SYSTEM_ANCHOR_DATE = '2026-05-30';
@@ -1884,19 +1885,33 @@ export default function Drivers({ user }: DriversProps) {
                     <button
                       type="button"
                       disabled={isExporting}
-                      onClick={() => {
-                        setIsExporting(true);
-                        setTimeout(() => {
-                          setIsExporting(false);
-                          const downloadMsg = language === 'ar' ? 'تم تحميل ملف التقرير الفني القيادي القياسي بنجاح!' : 'Technical driver evaluation summary document ready for download!';
+                      onClick={async () => {
+                        try {
+                          setIsExporting(true);
+                          await exportDriverProfilePDF(selectedDetailDriver, metrics, language === 'en' ? 'en' : 'ar');
+                          const downloadMsg = language === 'ar' 
+                            ? 'تم تنزيل ملف التقرير الفني والميداني للسائق بنجاح!' 
+                            : 'Driver technical and field profile report downloaded successfully!';
                           const notifyDiv = document.createElement('div');
                           notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-purple-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 animate-bounce border border-purple-500 text-xs font-black dir-rtl";
                           notifyDiv.innerHTML = `<span>✔ ${downloadMsg}</span>`;
                           document.body.appendChild(notifyDiv);
                           setTimeout(() => notifyDiv.remove(), 4000);
-                        }, 1500);
+                        } catch (err) {
+                          console.error('Error generating driver profile PDF:', err);
+                          const errMsg = language === 'ar'
+                            ? 'حدث خطأ أثناء إنشاء ملف PDF. يرجى المحاولة مرة أخرى.'
+                            : 'An error occurred while generating the PDF. Please try again.';
+                          const notifyDiv = document.createElement('div');
+                          notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-rose-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 border border-rose-500 text-xs font-black dir-rtl";
+                          notifyDiv.innerHTML = `<span>✖ ${errMsg}</span>`;
+                          document.body.appendChild(notifyDiv);
+                          setTimeout(() => notifyDiv.remove(), 4000);
+                        } finally {
+                          setIsExporting(false);
+                        }
                       }}
-                      className="px-4 py-2.5 bg-indigo-55 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-slate-900 dark:text-indigo-400 dark:hover:bg-slate-800 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                      className="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-slate-900 dark:text-indigo-400 dark:hover:bg-slate-800 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                     >
                       <Award size={13} className={isExporting ? "animate-spin" : ""} />
                       <span>{isExporting ? (language === 'ar' ? 'جاري تحضير PDF...' : 'Compiling PDF...') : (language === 'ar' ? 'تصدير التقرير الميداني PDF 💾' : 'Export Profile as PDF 💾')}</span>

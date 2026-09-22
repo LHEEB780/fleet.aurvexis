@@ -473,60 +473,86 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
   // -------------------------------------------------------------
   // Simulated Export Spreadsheet Handler
   // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // Bilingual Export Spreadsheet Handler (CSV)
+  // -------------------------------------------------------------
   const handleExportCSV = () => {
-    // Header schema
+    const isAr = language === 'ar';
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // Include UTF-8 BOM for Excel support in Arabic
-    csvContent += "المؤشر الفني،القيمة الإحصائية،ملاحظة الجودة\n";
-    csvContent += `إجمالي مصروفات الصيانة,${formatCurrency(analysis.totalExpenditures, language, 'SAR')},منجز بالكامل بالأسطول\n`;
-    csvContent += `متوسط تكلفة الإصلاح لكل أمر,${formatCurrency(analysis.averageRepairCost, language, 'SAR')},معدل الربع السنوي المالي\n`;
-    csvContent += `إجمالي أوامر التشغيل المسجلة,${analysis.totalOrders} أمر,نطاق البحث المحدد\n`;
-    csvContent += `الأوامر المنجزة,${analysis.completedCount} أمر مفرغ,كفاءة الورشة\n`;
-    csvContent += `الأوامر الجارية,${analysis.inProgressCount} تحت الفحص والتركيب,تحميل العمل المباشر\n`;
-    csvContent += `قطع الغيار المهددة بالنقص الحرج,${analysis.criticalUnderstock} أطقم,تنبيه المستودعات الذكي\n`;
-    csvContent += `وقيمة رأس المال الحالي للبضائع بالمخازن,${formatCurrency(analysis.totalInventoryValue, language, 'SAR')},قيمة تقديرية على الرف\n`;
+
+    if (isAr) {
+      csvContent += "المؤشر الفني,القيمة الإحصائية,ملاحظة الجودة\n";
+      csvContent += `إجمالي مصروفات الصيانة,${formatCurrency(analysis.totalExpenditures, language, 'SAR')},منجز بالكامل بالأسطول\n`;
+      csvContent += `متوسط تكلفة الإصلاح لكل أمر,${formatCurrency(analysis.averageRepairCost, language, 'SAR')},معدل الربع السنوي المالي\n`;
+      csvContent += `إجمالي أوامر التشغيل المسجلة,${analysis.totalOrders} أمر,نطاق البحث المحدد\n`;
+      csvContent += `الأوامر المنجزة,${analysis.completedCount} أمر مفرغ,كفاءة الورشة\n`;
+      csvContent += `الأوامر الجارية,${analysis.inProgressCount} تحت الفحص والتركيب,تحميل العمل المباشر\n`;
+      csvContent += `قطع الغيار المهددة بالنقص الحرج,${analysis.criticalUnderstock} أطقم,تنبيه المستودعات الذكي\n`;
+      csvContent += `وقيمة رأس المال الحالي للبضائع بالمخازن,${formatCurrency(analysis.totalInventoryValue, language, 'SAR')},قيمة تقديرية على الرف\n`;
+    } else {
+      csvContent += "KPI Metric,Statistical Value,Quality Audit Note\n";
+      csvContent += `Total Maintenance Expenditures,${formatCurrency(analysis.totalExpenditures, language, 'SAR')},Fleet Certified\n`;
+      csvContent += `Average Repair Cost per Order,${formatCurrency(analysis.averageRepairCost, language, 'SAR')},Quarterly Fleet Average\n`;
+      csvContent += `Total Logged Work Orders,${analysis.totalOrders} Orders,Selected Scope\n`;
+      csvContent += `Completed Orders,${analysis.completedCount} Closed Orders,Workshop Efficiency\n`;
+      csvContent += `In-Progress Orders,${analysis.inProgressCount} Under Active Repair,Direct Workload\n`;
+      csvContent += `Critical Low Stock Items,${analysis.criticalUnderstock} Parts,Smart Warehouse Alert\n`;
+      csvContent += `Current Warehouse Inventory Capital Value,${formatCurrency(analysis.totalInventoryValue, language, 'SAR')},Estimated Shelf Value\n`;
+    }
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `تقرير_معدل_صيانة_المجمع_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", isAr 
+      ? `تقرير_معدل_صيانة_المجمع_${new Date().toISOString().split('T')[0]}.csv` 
+      : `Fleet_Maintenance_Report_${new Date().toISOString().split('T')[0]}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    alert('تم توليد وتنزيل ملف التقرير بتنسيق Excel CSV متوافق بالكامل.');
+    alert(isAr ? 'تم توليد وتنزيل ملف التقرير بتنسيق Excel CSV متوافق بالكامل.' : 'Comprehensive CSV report generated and downloaded successfully.');
   };
 
   const handleExportPDF = () => {
+    const isAr = language === 'ar';
     const activeBrandName = localStorage.getItem('saas_brand_name') || 'FleetAurvexis';
-    const tabLabels: Record<string, string> = {
-      financial: 'مركز التحليل المالي والنفقات',
-      manager_dashboard: 'لوحة مؤشرات المديرين (الكلفة والجاهزية)',
-      fleet: 'كفاءة الحركة وحالة الأسطول',
-      techs: 'أداء المهندسين وحصاد الورش',
-      inventory: 'صحة وجودة تموين المستودعات',
-      parts_analysis: 'تحليل استهلاك قطع الغيار للمركبات',
-      monthly_breakdown: 'توزيع تكاليف الصيانة الشهرية (قطع غيار، أجور، صيانة خارجية)',
-      safety: 'تدقيق الأمان وضمان جودة الصيانة',
+    
+    const tabLabels: Record<string, { ar: string; en: string }> = {
+      financial: { ar: 'مركز التحليل المالي والنفقات', en: 'Financial Analysis & Expenditures Center' },
+      manager_dashboard: { ar: 'لوحة مؤشرات المديرين (الكلفة والجاهزية)', en: 'Executive Dashboard (Cost & Readiness)' },
+      fleet: { ar: 'كفاءة الحركة وحالة الأسطول', en: 'Fleet Readiness & Operational Status' },
+      techs: { ar: 'أداء المهندسين وحصاد الورش', en: 'Technician Workload & Workshop Output' },
+      inventory: { ar: 'صحة وجودة تموين المستودعات', en: 'Warehouse Inventory & Stock Quality' },
+      parts_analysis: { ar: 'تحليل استهلاك قطع الغيار للمركبات', en: 'Vehicle Parts Consumption Analysis' },
+      monthly_breakdown: { ar: 'توزيع تكاليف الصيانة الشهرية (قطع غيار، أجور، صيانة خارجية)', en: 'Monthly Maintenance Cost Breakdown (Parts, Labor, External)' },
+      safety: { ar: 'تدقيق الأمان وضمان جودة الصيانة', en: 'Safety Audit & Quality Assurance' },
     };
 
-    const activeTabName = tabLabels[activeSubTab] || activeSubTab;
+    const activeTabName = tabLabels[activeSubTab] 
+      ? (isAr ? tabLabels[activeSubTab].ar : tabLabels[activeSubTab].en)
+      : activeSubTab;
+
     let timeframeLabel = '';
     if (timeframe === 'all') {
-      timeframeLabel = 'جميع الأوقات';
+      timeframeLabel = isAr ? 'جميع الأوقات' : 'All Time';
     } else if (timeframe === 'weekly') {
-      timeframeLabel = 'آخر 7 أيام (أسبوعي)';
+      timeframeLabel = isAr ? 'آخر 7 أيام (أسبوعي)' : 'Last 7 Days (Weekly)';
     } else if (timeframe === 'monthly') {
-      timeframeLabel = 'آخر 30 يوماً (شهري)';
+      timeframeLabel = isAr ? 'آخر 30 يوماً (شهري)' : 'Last 30 Days (Monthly)';
     } else if (timeframe === 'yearly') {
-      timeframeLabel = 'آخر 365 يوماً (سنوي)';
+      timeframeLabel = isAr ? 'آخر 365 يوماً (سنوي)' : 'Last 365 Days (Yearly)';
     } else if (timeframe === 'custom') {
-      timeframeLabel = `فترة مخصصة من: ${startDate || 'البداية'} إلى: ${endDate || 'اليوم'}`;
+      timeframeLabel = isAr
+        ? `فترة مخصصة من: ${startDate || 'البداية'} إلى: ${endDate || 'اليوم'}`
+        : `Custom Period: ${startDate || 'Start'} to ${endDate || 'Today'}`;
     }
+
     const categoryLabel = categoryNames[selectedCategoryFilter] || selectedCategoryFilter;
-    const vehicleTypeLabel = selectedVehicleType === 'all' ? 'جميع الفئات' : selectedVehicleType;
+    const vehicleTypeLabel = selectedVehicleType === 'all' ? (isAr ? 'جميع الفئات' : 'All Types') : selectedVehicleType;
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('الرجاء السماح بفتح النوافذ المنبثقة لتوليد ملف الـ PDF الشامل.');
+      alert(isAr ? 'الرجاء السماح بفتح النوافذ المنبثقة لتوليد ملف الـ PDF الشامل.' : 'Please allow popups to generate the comprehensive PDF report.');
       return;
     }
 
@@ -534,34 +560,34 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
 
     if (activeSubTab === 'financial') {
       tabSpecificContentHtml = `
-        <div class="section-title">📊 تفاصيل النفقات التشغيلية والتكلفة الفئوية</div>
+        <div class="section-title">📊 ${isAr ? 'تفاصيل النفقات التشغيلية والتكلفة الفئوية' : 'Operational Expenditures & Category Cost Breakdown'}</div>
         <table class="report-table">
           <thead>
             <tr>
-              <th>اسم الفئة الفنية</th>
-              <th style="text-align: left;">إجمالي كلفة الصيانة المعتمدة</th>
+              <th>${isAr ? 'اسم الفئة الفنية' : 'Category'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'إجمالي كلفة الصيانة المعتمدة' : 'Approved Maintenance Cost'}</th>
             </tr>
           </thead>
           <tbody>
             ${analysis.categoryCostChartData.map(c => `
               <tr>
                 <td><strong>${c.name}</strong></td>
-                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #b91c1c;">${formatCurrency(c['إجمالي التكلفة'] || 0, language, 'SAR')}</td>
+                <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; font-weight: bold; color: #b91c1c;">${formatCurrency(c['إجمالي التكلفة'] || 0, language, 'SAR')}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
 
-        <div class="section-title" style="margin-top: 30px;">🏆 تصنيف المركبات الأكثر استنزافاً للميزانية (أغلى 5 مركبات)</div>
+        <div class="section-title" style="margin-top: 30px;">🏆 ${isAr ? 'تصنيف المركبات الأكثر استنزافاً للميزانية (أعلى 5 مركبات)' : 'Highest Maintenance Cost Vehicles (Top 5)'}</div>
         <table class="report-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>المركبة</th>
-              <th>اللوحة</th>
-              <th>النوع</th>
-              <th style="text-align: center;">عدد الأوامر</th>
-              <th style="text-align: left;">إجمالي الإنفاق</th>
+              <th>${isAr ? 'المركبة' : 'Vehicle'}</th>
+              <th>${isAr ? 'اللوحة' : 'Plate'}</th>
+              <th>${isAr ? 'النوع' : 'Type'}</th>
+              <th style="text-align: center;">${isAr ? 'عدد الأوامر' : 'Orders Count'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'إجمالي الإنفاق' : 'Total Spent'}</th>
             </tr>
           </thead>
           <tbody>
@@ -571,8 +597,8 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                 <td><strong>${v.name}</strong></td>
                 <td style="font-family: monospace; color: #475569;">${v.plate}</td>
                 <td><span class="badge badge-info">${v.type}</span></td>
-                <td style="text-align: center; font-family: monospace;">${v.ordersCount} أمر</td>
-                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #ef4444;">${formatCurrency(v.totalCost, language, 'SAR')}</td>
+                <td style="text-align: center; font-family: monospace;">${v.ordersCount} ${isAr ? 'أمر' : 'orders'}</td>
+                <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; font-weight: bold; color: #ef4444;">${formatCurrency(v.totalCost, language, 'SAR')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -580,25 +606,25 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       `;
     } else if (activeSubTab === 'monthly_breakdown') {
       tabSpecificContentHtml = `
-        <div class="section-title">📊 توزيع تكاليف الصيانة الشهرية (قطع غيار، أجور عمالة، صيانة خارجية)</div>
+        <div class="section-title">📊 ${isAr ? 'توزيع تكاليف الصيانة الشهرية (قطع غيار، أجور عمالة، صيانة خارجية)' : 'Monthly Cost Distribution (Parts, Labor, External Services)'}</div>
         <table class="report-table">
           <thead>
             <tr>
-              <th>الشهر</th>
-              <th style="text-align: left;">قطع الغيار</th>
-              <th style="text-align: left;">أجور العمالة</th>
-              <th style="text-align: left;">صيانة خارجية</th>
-              <th style="text-align: left;">إجمالي التكلفة</th>
+              <th>${isAr ? 'الشهر' : 'Month'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'قطع الغيار' : 'Spare Parts'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'أجور العمالة' : 'Labor Wages'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'صيانة خارجية' : 'External'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'إجمالي التكلفة' : 'Total Cost'}</th>
             </tr>
           </thead>
           <tbody>
             ${analysis.monthlyChartData.map(m => `
               <tr>
-                <td><strong>${m.month}</strong></td>
-                <td style="text-align: left; font-family: monospace; color: #d97706;">${formatCurrency(m.cost * 0.5, language, 'SAR')}</td>
-                <td style="text-align: left; font-family: monospace; color: #2563eb;">${formatCurrency(m.cost * 0.3, language, 'SAR')}</td>
-                <td style="text-align: left; font-family: monospace; color: #7c3aed;">${formatCurrency(m.cost * 0.2, language, 'SAR')}</td>
-                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #059669;">${formatCurrency(m.cost, language, 'SAR')}</td>
+                <td><strong>${m.month || m.name}</strong></td>
+                <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; color: #d97706;">${formatCurrency(m.cost * 0.5, language, 'SAR')}</td>
+                <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; color: #2563eb;">${formatCurrency(m.cost * 0.3, language, 'SAR')}</td>
+                <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; color: #7c3aed;">${formatCurrency(m.cost * 0.2, language, 'SAR')}</td>
+                <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; font-weight: bold; color: #059669;">${formatCurrency(m.cost, language, 'SAR')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -606,29 +632,29 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       `;
     } else if (activeSubTab === 'fleet') {
       tabSpecificContentHtml = `
-        <div class="section-title">🚛 حالة جاهزية الأسطول ومعدلات الكفاءة</div>
+        <div class="section-title">🚛 ${isAr ? 'حالة جاهزية الأسطول ومعدلات الكفاءة' : 'Fleet Readiness & Availability Metrics'}</div>
         <div style="display: flex; gap: 15px; margin-bottom: 20px;">
           <div style="flex: 1; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; text-align: center; background: #f0fdf4;">
-            <div style="font-size: 11px; font-weight: bold; color: #15803d; margin-bottom: 5px;">نشط وتشغيلي</div>
+            <div style="font-size: 11px; font-weight: bold; color: #15803d; margin-bottom: 5px;">${isAr ? 'نشط وتشغيلي' : 'Active & Operational'}</div>
             <div style="font-size: 24px; font-weight: 950; color: #166534; font-family: monospace;">${analysis.statusCounts.active}</div>
           </div>
           <div style="flex: 1; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; text-align: center; background: #fffbeb;">
-            <div style="font-size: 11px; font-weight: bold; color: #b45309; margin-bottom: 5px;">أعمال صيانة جارية</div>
+            <div style="font-size: 11px; font-weight: bold; color: #b45309; margin-bottom: 5px;">${isAr ? 'أعمال صيانة جارية' : 'Under Maintenance'}</div>
             <div style="font-size: 24px; font-weight: 955; color: #92400e; font-family: monospace;">${analysis.statusCounts.maintenance}</div>
           </div>
           <div style="flex: 1; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; text-align: center; background: #fef2f2;">
-            <div style="font-size: 11px; font-weight: bold; color: #b91c1c; margin-bottom: 5px;">متوقف لخلل فني كلي</div>
+            <div style="font-size: 11px; font-weight: bold; color: #b91c1c; margin-bottom: 5px;">${isAr ? 'متوقف لخلل فني كلي' : 'Grounded / Out of Service'}</div>
             <div style="font-size: 24px; font-weight: 955; color: #991b1b; font-family: monospace;">${analysis.statusCounts.stopped}</div>
           </div>
         </div>
 
-        <div class="section-title">📁 تصنيف ونسب توزيع الآليات بالأسطول</div>
+        <div class="section-title">📁 ${isAr ? 'تصنيف ونسب توزيع الآليات بالأسطول' : 'Fleet Vehicle Classification & Distribution'}</div>
         <table class="report-table">
           <thead>
             <tr>
-              <th>الفئة</th>
-              <th style="text-align: center;">العدد الكلي للآليات</th>
-              <th style="text-align: left;">نسبة الاستحواذ بالأسطول</th>
+              <th>${isAr ? 'الفئة' : 'Category / Type'}</th>
+              <th style="text-align: center;">${isAr ? 'العدد الكلي للآليات' : 'Total Vehicles'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'نسبة الاستحواذ بالأسطول' : 'Fleet Share'}</th>
             </tr>
           </thead>
           <tbody>
@@ -638,8 +664,8 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
               return `
                 <tr>
                   <td><strong>${type}</strong></td>
-                  <td style="text-align: center; font-family: monospace; font-weight: bold;">${count} مركبة</td>
-                  <td style="text-align: left;">
+                  <td style="text-align: center; font-family: monospace; font-weight: bold;">${count} ${isAr ? 'مركبة' : 'vehicles'}</td>
+                  <td style="text-align: ${isAr ? 'left' : 'right'};">
                     <span style="font-family: monospace; font-weight: bold;">${pct}%</span>
                   </td>
                 </tr>
@@ -648,14 +674,14 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
           </tbody>
         </table>
 
-        <div class="section-title" style="margin-top: 30px;">📋 كشف تفصيلي بمركبات الأسطول والوضعية التشغيلية</div>
+        <div class="section-title" style="margin-top: 30px;">📋 ${isAr ? 'كشف تفصيلي بمركبات الأسطول والوضعية التشغيلية' : 'Detailed Fleet Vehicles Status Manifest'}</div>
         <table class="report-table">
           <thead>
             <tr>
-              <th>اسم المركبة</th>
-              <th>رقم اللوحة</th>
-              <th>التصنيف</th>
-              <th style="text-align: left;">الحالة التشغيلية الحالية</th>
+              <th>${isAr ? 'اسم المركبة' : 'Vehicle Name'}</th>
+              <th>${isAr ? 'رقم اللوحة' : 'Plate Number'}</th>
+              <th>${isAr ? 'التصنيف' : 'Classification'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'الحالة التشغيلية الحالية' : 'Current Status'}</th>
             </tr>
           </thead>
           <tbody>
@@ -664,12 +690,16 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                 <td><strong>${v.name}</strong></td>
                 <td style="font-family: monospace; font-weight: bold; color: #1e293b;">${v.plateNumber}</td>
                 <td><span class="badge badge-info">${v.type}</span></td>
-                <td style="text-align: left;">
+                <td style="text-align: ${isAr ? 'left' : 'right'};">
                   <span class="status-indicator" style="background-color: ${
                     v.status === 'active' ? '#10b981' : v.status === 'maintenance' ? '#f59e0b' : '#ef4444'
                   };"></span>
                   <strong>${
-                    v.status === 'active' ? 'جاهزية تشغيلية كاملة' : v.status === 'maintenance' ? 'قيد الصيانة بالورش' : 'متوقف للخلل الفني'
+                    v.status === 'active' 
+                      ? (isAr ? 'جاهزية تشغيلية كاملة' : 'Active & Operational')
+                      : v.status === 'maintenance' 
+                      ? (isAr ? 'قيد الصيانة بالورش' : 'Under Maintenance')
+                      : (isAr ? 'متوقف للخلل الفني' : 'Grounded')
                   }</strong>
                 </td>
               </tr>
@@ -679,32 +709,34 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       `;
     } else if (activeSubTab === 'techs') {
       tabSpecificContentHtml = `
-        <div class="section-title">🔧 كفاءة الكادر الفني وتحميل المهام المباشر بالورش</div>
+        <div class="section-title">🔧 ${isAr ? 'كفاءة الكادر الفني وتحميل المهام المباشر بالورش' : 'Technical Staff Workload & Workshop Output'}</div>
         <table class="report-table">
           <thead>
             <tr>
-              <th>المهندس الفني</th>
-              <th>التخصص الأساسي المعتمد</th>
-              <th style="text-align: center;">المهام منجزة بالكامل</th>
-              <th style="text-align: center;">المهام جارية الآن</th>
-              <th style="text-align: left;">الحالة الحالية</th>
+              <th>${isAr ? 'المهندس الفني' : 'Technician'}</th>
+              <th>${isAr ? 'التخصص الأساسي المعتمد' : 'Primary Specialization'}</th>
+              <th style="text-align: center;">${isAr ? 'المهام منجزة بالكامل' : 'Completed Tasks'}</th>
+              <th style="text-align: center;">${isAr ? 'المهام جارية الآن' : 'Active Tasks'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'الحالة الحالية' : 'Current Status'}</th>
             </tr>
           </thead>
           <tbody>
             ${analysis.technicianWorkload.map(t => {
               const matchedTech = techniciansList.find(x => x.name === t.name);
-              const statusAr = matchedTech && matchedTech.status === 'available' ? 'متاح للاستلام' : 'منشغل ومكلف بحالة صيانة';
+              const statusLabel = matchedTech && matchedTech.status === 'available' 
+                ? (isAr ? 'متاح للاستلام' : 'Available') 
+                : (isAr ? 'منشغل بحالة صيانة' : 'Busy on Task');
               return `
                 <tr>
                   <td><strong>${t.name}</strong></td>
                   <td><span class="badge badge-info">${categoryNames[t.special] || t.special}</span></td>
-                  <td style="text-align: center; font-family: monospace; color: #15803d; font-weight: bold;">${t['المهام المنجزة']} مهمة</td>
-                  <td style="text-align: center; font-family: monospace; color: #b45309; font-weight: bold;">${t['المهام الجارية']} تحت التدخل</td>
-                  <td style="text-align: left;">
+                  <td style="text-align: center; font-family: monospace; color: #15803d; font-weight: bold;">${t['المهام المنجزة']} ${isAr ? 'مهمة' : 'tasks'}</td>
+                  <td style="text-align: center; font-family: monospace; color: #b45309; font-weight: bold;">${t['المهام الجارية']} ${isAr ? 'تحت التدخل' : 'active'}</td>
+                  <td style="text-align: ${isAr ? 'left' : 'right'};">
                     <span class="status-indicator" style="background-color: ${
                       matchedTech && matchedTech.status === 'available' ? '#10b981' : '#f59e0b'
                     };"></span>
-                    <strong>${statusAr}</strong>
+                    <strong>${statusLabel}</strong>
                   </td>
                 </tr>
               `;
@@ -714,15 +746,15 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       `;
     } else if (activeSubTab === 'inventory') {
       tabSpecificContentHtml = `
-        <div class="section-title">📦 صحة وجودة تموين المستودعات وقطع الغيار</div>
+        <div class="section-title">📦 ${isAr ? 'صحة وجودة تموين المستودعات وقطع الغيار' : 'Warehouse Spare Parts Inventory Health'}</div>
         <table class="report-table">
           <thead>
             <tr>
-              <th>العنصر / الجزء الفني</th>
-              <th>الرقم المميز SKU</th>
-              <th style="text-align: center;">المخزون الحالي</th>
-              <th style="text-align: center;">الحد الأدنى الآمن</th>
-              <th style="text-align: left;">الوضعية وقيمة رأس المال</th>
+              <th>${isAr ? 'العنصر / الجزء الفني' : 'Part / Item'}</th>
+              <th>${isAr ? 'الرقم المميز SKU' : 'SKU / Part Number'}</th>
+              <th style="text-align: center;">${isAr ? 'المخزون الحالي' : 'In Stock'}</th>
+              <th style="text-align: center;">${isAr ? 'الحد الأدنى الآمن' : 'Min Threshold'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'الوضعية وقيمة رأس المال' : 'Status & Capital Value'}</th>
             </tr>
           </thead>
           <tbody>
@@ -733,10 +765,12 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                 <tr>
                   <td><strong>${item.name}</strong></td>
                   <td style="font-family: monospace; color: #64748b;">${item.partNumber || 'N/A'}</td>
-                  <td style="text-align: center; font-family: monospace; font-weight: bold; color: ${isLow ? '#ef4444' : '#1e293b'}">${item.quantity} وحدة</td>
-                  <td style="text-align: center; font-family: monospace; color: #64748b;">${item.minQuantity} وحدة</td>
-                  <td style="text-align: left; font-family: monospace;">
-                    ${isLow ? '<span class="badge badge-danger">عجز حرج!</span>' : '<span class="badge badge-success">مستقر بالرف</span>'}
+                  <td style="text-align: center; font-family: monospace; font-weight: bold; color: ${isLow ? '#ef4444' : '#1e293b'}">${item.quantity} ${isAr ? 'وحدة' : 'units'}</td>
+                  <td style="text-align: center; font-family: monospace; color: #64748b;">${item.minQuantity} ${isAr ? 'وحدة' : 'units'}</td>
+                  <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace;">
+                    ${isLow 
+                      ? (isAr ? '<span class="badge badge-danger">عجز حرج!</span>' : '<span class="badge badge-danger">Critical!</span>')
+                      : (isAr ? '<span class="badge badge-success">مستقر</span>' : '<span class="badge badge-success">Healthy</span>')}
                     <strong>${formatCurrency(totalVal, language, 'SAR')}</strong>
                   </td>
                 </tr>
@@ -745,19 +779,21 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
           </tbody>
         </table>
 
-        <div class="section-title" style="margin-top: 30px;">🔥 قائمة قطع الغيار الأكثر طلباً واستهلاكاً</div>
+        <div class="section-title" style="margin-top: 30px;">🔥 ${isAr ? 'قائمة قطع الغيار الأكثر طلباً واستهلاكاً' : 'Most Frequently Replaced Spare Parts'}</div>
         <table class="report-table">
           <thead>
             <tr>
-              <th>العنصر الفني</th>
-              <th style="text-align: left;">معدل سحب القطعة بالأسطول</th>
+              <th>${isAr ? 'العنصر الفني' : 'Spare Part Item'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'معدل سحب القطعة بالأسطول' : 'Total Fleet Usage'}</th>
             </tr>
           </thead>
           <tbody>
             ${analysis.topPartsRanking.map(part => `
               <tr>
                 <td><strong>${part.name}</strong></td>
-                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #4f46e5;">استخدمت عدد ${part.count} مرات</td>
+                <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; font-weight: bold; color: #4f46e5;">
+                  ${isAr ? `استخدمت عدد ${part.count} مرات` : `Replaced ${part.count} times`}
+                </td>
               </tr>
             `).join('')}
           </tbody>
@@ -765,62 +801,103 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       `;
     } else if (activeSubTab === 'safety') {
       tabSpecificContentHtml = `
-        <div class="section-title">🛡️ سجل وتقارير الفحص الرقمي وضمان جودة الصيانة</div>
+        <div class="section-title">🛡️ ${isAr ? 'سجل وتقارير الفحص الرقمي وضمان جودة الصيانة' : 'Digital Safety Inspections & QA Audit Log'}</div>
         <table class="report-table">
           <thead>
             <tr>
-              <th>رقم الأمر</th>
-              <th>المفتش الفني</th>
-              <th>تاريخ الفحص</th>
-              <th style="text-align: center;">النوع</th>
-              <th style="text-align: left;">شهادة السلامة</th>
+              <th>${isAr ? 'رقم الأمر' : 'Order ID'}</th>
+              <th>${isAr ? 'المفتش الفني' : 'Inspector'}</th>
+              <th>${isAr ? 'تاريخ الفحص' : 'Date'}</th>
+              <th style="text-align: center;">${isAr ? 'النوع' : 'Inspection Type'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'شهادة السلامة' : 'Safety Certificate'}</th>
             </tr>
           </thead>
           <tbody>
             ${safetyInspectionsList.map((insp: any) => `
               <tr>
                 <td style="font-family: monospace; font-weight: bold;">#${insp.orderId}</td>
-                <td><strong>${insp.checkedBy || 'مشرف الجودة'}</strong></td>
+                <td><strong>${insp.checkedBy || (isAr ? 'مشرف الجودة' : 'QA Supervisor')}</strong></td>
                 <td style="font-family: monospace; color: #64748b;">${insp.timestamp ? insp.timestamp.replace('T', ' ').substring(0, 16) : 'N/A'}</td>
                 <td style="text-align: center;">
-                  <span class="badge badge-info">${insp.type === 'before' ? 'قبل الصيانة' : 'بعد الصيانة'}</span>
+                  <span class="badge badge-info">${insp.type === 'before' ? (isAr ? 'قبل الصيانة' : 'Pre-Repair') : (isAr ? 'بعد الصيانة' : 'Post-Repair')}</span>
                 </td>
-                <td style="text-align: left;">
+                <td style="text-align: ${isAr ? 'left' : 'right'};">
                   <span class="status-indicator" style="background-color: ${
                     insp.overallStatus === 'safe' ? '#10b981' : insp.overallStatus === 'warn' ? '#f59e0b' : '#ef4444'
                   };"></span>
                   <strong>${
-                    insp.overallStatus === 'safe' ? 'آمن كلياً' : insp.overallStatus === 'warn' ? 'ملاحظات طفيفة' : 'غير آمن / توقف'
+                    insp.overallStatus === 'safe' 
+                      ? (isAr ? 'آمن كلياً' : 'Fully Safe') 
+                      : insp.overallStatus === 'warn' 
+                      ? (isAr ? 'ملاحظات طفيفة' : 'Minor Observations') 
+                      : (isAr ? 'غير آمن / توقف' : 'Failed / Grounded')
                   }</strong>
                 </td>
               </tr>
             `).join('')}
             ${safetyInspectionsList.length === 0 ? `
               <tr>
-                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">لا يوجد سجل فحوصات جودة رقمية حتى الآن.</td>
+                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">
+                  ${isAr ? 'لا يوجد سجل فحوصات جودة رقمية حتى الآن.' : 'No digital safety inspections recorded yet.'}
+                </td>
               </tr>
             ` : ''}
           </tbody>
         </table>
       `;
+    } else {
+      // Default / fallback summary tab
+      tabSpecificContentHtml = `
+        <div class="section-title">📊 ${isAr ? 'الملخص التنفيذي ومؤشرات الأداء الرئيسية' : 'Executive Overview & Key Operational Indices'}</div>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>${isAr ? 'المؤشر التشغيلي' : 'Operational Metric'}</th>
+              <th style="text-align: center;">${isAr ? 'القيمة المحققة' : 'Current Value'}</th>
+              <th style="text-align: ${isAr ? 'left' : 'right'};">${isAr ? 'المعيار المستهدف' : 'Target Standard'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>${isAr ? 'إجمالي النفقات المعتمدة' : 'Total Approved Expenditures'}</strong></td>
+              <td style="text-align: center; font-family: monospace; font-weight: bold; color: #4f46e5;">${formatCurrency(analysis.totalExpenditures, language, 'SAR')}</td>
+              <td style="text-align: ${isAr ? 'left' : 'right'}; color: #16a34a; font-weight: bold;">✔ ${isAr ? 'ضمن الميزانية' : 'Within Budget'}</td>
+            </tr>
+            <tr>
+              <td><strong>${isAr ? 'معدل إغلاق البلاغات' : 'Work Order Completion Rate'}</strong></td>
+              <td style="text-align: center; font-family: monospace; font-weight: bold;">${analysis.completedCount} / ${analysis.totalOrders}</td>
+              <td style="text-align: ${isAr ? 'left' : 'right'}; color: #16a34a; font-weight: bold;">✔ ${isAr ? 'أداء ممتاز' : 'Target Met'}</td>
+            </tr>
+            <tr>
+              <td><strong>${isAr ? 'جاهزية الأسطول الميدانية' : 'Fleet Availability Index'}</strong></td>
+              <td style="text-align: center; font-family: monospace; font-weight: bold;">${vehiclesList.length > 0 ? Math.round((analysis.statusCounts.active / vehiclesList.length) * 100) : 100}%</td>
+              <td style="text-align: ${isAr ? 'left' : 'right'}; color: #16a34a; font-weight: bold;">✔ >= 90%</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
     }
+
+    const documentTitle = isAr 
+      ? `تقرير صيانة الأسطول الشامل - ${activeTabName}` 
+      : `Comprehensive Fleet Maintenance Report - ${activeTabName}`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
-      <html dir="rtl" lang="ar">
+      <html dir="${isAr ? 'rtl' : 'ltr'}" lang="${isAr ? 'ar' : 'en'}">
       <head>
         <meta charset="utf-8">
-        <title>تقرير صيانة الأسطول الشامل - ${activeTabName}</title>
+        <title>${documentTitle}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
           
           body {
-            font-family: 'Cairo', sans-serif;
+            font-family: ${isAr ? "'Cairo', sans-serif" : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"};
             background-color: #ffffff;
             color: #1e293b;
             margin: 0;
             padding: 40px;
-            direction: rtl;
+            direction: ${isAr ? 'rtl' : 'ltr'};
           }
           
           .print-header {
@@ -846,11 +923,11 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
             background: #eef2ff;
             padding: 2px 8px;
             border-radius: 4px;
-            margin-right: 6px;
+            margin-${isAr ? 'right' : 'left'}: 6px;
           }
           
           .document-title {
-            text-align: left;
+            text-align: ${isAr ? 'left' : 'right'};
           }
           
           .document-title h1 {
@@ -869,7 +946,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
 
           .meta-grid {
             display: grid;
-            grid-template-cols: repeat(4, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -879,7 +956,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
           }
           
           .meta-card {
-            text-align: right;
+            text-align: ${isAr ? 'right' : 'left'};
           }
           
           .meta-card label {
@@ -895,102 +972,234 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
             font-size: 12px;
             color: #0f172a;
           }
-          
-             .badge-success {
+
+          .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+          }
+
+          .kpi-card {
+            border: 1px solid #e2e8f0;
+            padding: 14px;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            text-align: ${isAr ? 'right' : 'left'};
+          }
+
+          .kpi-card label {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
+          }
+
+          .kpi-card .val {
+            font-size: 18px;
+            font-weight: 900;
+            font-family: monospace;
+          }
+
+          .kpi-card .desc {
+            font-size: 9px;
+            color: #94a3b8;
+            margin-top: 4px;
+          }
+
+          .section-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1e1b4b;
+            margin-bottom: 12px;
+          }
+
+          .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 24px;
+          }
+
+          .report-table th {
+            background-color: #312e81;
+            color: #ffffff;
+            padding: 10px 14px;
+            text-align: ${isAr ? 'right' : 'left'};
+            font-weight: 800;
+          }
+
+          .report-table td {
+            padding: 9px 14px;
+            border-bottom: 1px solid #e2e8f0;
+          }
+
+          .report-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+          }
+
+          .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 9.5px;
+            font-weight: 700;
+          }
+
+          .badge-info {
+            background-color: #e0e7ff;
+            color: #4338ca;
+          }
+
+          .badge-success {
             background-color: #dcfce7;
             color: #166534;
+          }
+
+          .badge-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+          }
+
+          .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-${isAr ? 'left' : 'right'}: 6px;
+            vertical-align: middle;
+          }
+
+          .meeting-signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            border-top: 2px dashed #cbd5e1;
+            padding-top: 20px;
+          }
+
+          .signature-box {
+            text-align: center;
+            width: 200px;
+          }
+
+          .signature-box strong {
+            display: block;
+            font-size: 11px;
+            color: #1e293b;
+            margin-bottom: 40px;
+          }
+
+          .signature-box .line {
+            border-bottom: 1px solid #94a3b8;
+            margin-bottom: 6px;
+          }
+
+          .signature-box span {
+            font-size: 9.5px;
+            color: #64748b;
+          }
+
+          .print-footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 9.5px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
           }
         </style>
       </head>
       <body>
         <div class="print-header">
           <div class="brand-logo">
-            ${activeBrandName} <span class="brand-tag">صيانة والأسطول الذك�        </div>            <div class="desc">أصناف قطع الغيار: ${inventoryList.length} نوعاً</div>
-          </div>
-          <div class="kpi-card" style="border-right: 4px solid #ef4444;">
-            <label>أصناف حرجة النقص بالرف</label>
-            <div class="val" style="color: #ef4444;">${analysis.criticalUnderstock} أصناف</div>
-            <div class="desc">تطلب تعبئة تموينية فورية</div>
-          </div>
-        </div>� والأسطول الذكي</span>
+            ${activeBrandName} <span class="brand-tag">${isAr ? 'إدارة الأسطول والصيانة الذكية' : 'Smart Fleet & Maintenance'}</span>
           </div>
           <div class="document-title">
-            <h1>تقرير جودة وأداء الصيانة الدوري - لجان الصيانة</h1>
-            <p>مفرغ رسمياً لقرارات الإدارة والاجتماعات القيادية</p>
+            <h1>${isAr ? 'تقرير جودة وأداء الصيانة الدوري' : 'Periodic Maintenance Quality & Fleet Report'}</h1>
+            <p>${isAr ? 'مفرغ رسمياً لقرارات الإدارة والاجتماعات القيادية' : 'Official Document for Executive & Operations Review'}</p>
           </div>
         </div>
 
         <div class="meta-grid">
           <div class="meta-card">
-            <label>سياق وقسم التقرير</label>
+            <label>${isAr ? 'سياق وقسم التقرير' : 'Report Module Context'}</label>
             <span>${activeTabName}</span>
           </div>
           <div class="meta-card">
-            <label>تاريخ التدقيق والتصدير</label>
-            <span>${new Date().toISOString().split('T')[0]} - ${new Date().toLocaleTimeString('ar-SA')}</span>
+            <label>${isAr ? 'تاريخ التدقيق والتصدير' : 'Export & Audit Date'}</label>
+            <span>${new Date().toISOString().split('T')[0]} - ${new Date().toLocaleTimeString(isAr ? 'ar-SA' : 'en-US')}</span>
           </div>
           <div class="meta-card">
-            <label>المسؤول التقني المصدر</label>
-            <span>${user.name} (${user.role === 'admin' ? 'المدير العام' : 'المشرف'})</span>
+            <label>${isAr ? 'المسؤول التقني المصدر' : 'Authorized Officer'}</label>
+            <span>${user.name} (${user.role === 'admin' ? (isAr ? 'المدير العام' : 'Fleet Director') : (isAr ? 'المشرف' : 'Supervisor')})</span>
           </div>
           <div class="meta-card">
-            <label>معايير التصفية المطبقة</label>
+            <label>${isAr ? 'معايير التصفية المطبقة' : 'Applied Scope & Filter'}</label>
             <span>${timeframeLabel} | ${categoryLabel} | ${vehicleTypeLabel}</span>
           </div>
         </div>
 
         <div class="kpi-grid">
-          <div class="kpi-card" style="border-right: 4px solid #10b981;">
-            <label>إجمالي نفقات الصيانة</label>
+          <div class="kpi-card" style="border-${isAr ? 'right' : 'left'}: 4px solid #10b981;">
+            <label>${isAr ? 'إجمالي نفقات الصيانة' : 'Total Expenditures'}</label>
             <div class="val" style="color: #10b981;">${formatCurrency(analysis.totalExpenditures, language, 'SAR')}</div>
-            <div class="desc">متوسط للأمر: ${formatCurrency(analysis.averageRepairCost, language, 'SAR')}</div>
+            <div class="desc">${isAr ? 'متوسط للأمر:' : 'Avg per order:'} ${formatCurrency(analysis.averageRepairCost, language, 'SAR')}</div>
           </div>
-          <div class="kpi-card" style="border-right: 4px solid #4f46e5;">
-            <label>معدل إنجاز وإغلاق الأوامر</label>
-            <div class="val" style="color: #4f46e5;">${analysis.completedCount} أمر مغلق</div>
-            <div class="desc">مرتبط بـ ${analysis.totalOrders} إجمالي البلاغات</div>
+          <div class="kpi-card" style="border-${isAr ? 'right' : 'left'}: 4px solid #4f46e5;">
+            <label>${isAr ? 'معدل إنجاز وإغلاق الأوامر' : 'Completed Work Orders'}</label>
+            <div class="val" style="color: #4f46e5;">${analysis.completedCount} ${isAr ? 'أمر مغلق' : 'closed'}</div>
+            <div class="desc">${isAr ? `من إجمالي ${analysis.totalOrders} بلاغ` : `Out of ${analysis.totalOrders} orders`}</div>
           </div>
-          <div class="kpi-card" style="border-right: 4px solid #f59e0b;">
-            <label>رأس المال السلعي بالمخزن</label>
+          <div class="kpi-card" style="border-${isAr ? 'right' : 'left'}: 4px solid #f59e0b;">
+            <label>${isAr ? 'رأس المال السلعي بالمخزن' : 'Inventory Shelf Capital'}</label>
             <div class="val" style="color: #f59e0b;">${formatCurrency(analysis.totalInventoryValue, language, 'SAR')}</div>
-            <div class="desc">أصناف قطع الغيار: ${inventoryList.length} نوعاً</div>
+            <div class="desc">${isAr ? `أصناف قطع الغيار: ${inventoryList.length}` : `Catalog items: ${inventoryList.length}`}</div>
           </div>
-          <div class="kpi-card" style="border-right: 4px solid #ef4444;">
-            <label>أصناف حرجة النقص بالرف</label>
-            <div class="val" style="color: #ef4444;">${analysis.criticalUnderstock} أصناف</div>
-            <div class="desc">تطلب تعبئة تموينية فورية</div>
+          <div class="kpi-card" style="border-${isAr ? 'right' : 'left'}: 4px solid #ef4444;">
+            <label>${isAr ? 'أصناف حرجة النقص بالرف' : 'Critical Low Stock'}</label>
+            <div class="val" style="color: #ef4444;">${analysis.criticalUnderstock} ${isAr ? 'أصناف' : 'parts'}</div>
+            <div class="desc">${isAr ? 'تتطلب تعبئة تموينية فورية' : 'Immediate restock required'}</div>
           </div>
         </div>
 
         ${tabSpecificContentHtml}
 
-        <div style="background-color: #f1f5f9; border-radius: 16px; padding: 20px; font-size: 11px; margin-top: 40px; border-left: 5px solid #4f46e5;">
-          <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 900; color: #1e1b4b;">💡 الملخص التنفيذي وتوصيات لجنة الصيانة والأسطول (منشأ تلقائياً):</h4>
+        <div style="background-color: #f1f5f9; border-radius: 16px; padding: 20px; font-size: 11px; margin-top: 40px; border-${isAr ? 'right' : 'left'}: 5px solid #4f46e5;">
+          <h4 style="margin: 0 0 8px 0; font-size: 12px; font-weight: 900; color: #1e1b4b;">💡 ${isAr ? 'الملخص التنفيذي وتوصيات لجنة الصيانة والأسطول (منشأ تلقائياً):' : 'Executive Fleet Appraisal & Recommendations:'}</h4>
           <p style="margin: 0; line-height: 1.6; color: #334155; font-weight: 600;">
-            بناءً على تفريغ ${analysis.totalOrders} من طلبات العمل المبرهنة وأنشطة المستودعات؛ يوصى مجلس الصيانة بالدراسة الإستراتيجية لنفقات "صيانة ${categoryLabel}" لتقوية مؤشر الفحص الوقائي وتقليص تكاليف الأعطال الحرجة المفاجئة. نوصي بمجابهة التحديات مع الموردين لحل عجز ${analysis.criticalUnderstock} من المستلزمات المخزنية الهامة لتقديم أفضل جاهزية بالأسطول والحد من هدر الوقت الفني لشركائنا وعملائنا.
+            ${isAr 
+              ? `بناءً على تدقيق ${analysis.totalOrders} من طلبات العمل المبرهنة وأنشطة المستودعات؛ يوصى مجلس الصيانة بالدراسة الإستراتيجية لنفقات "صيانة ${categoryLabel}" لتقوية مؤشر الفحص الوقائي وتقليص تكاليف الأعطال الحرجة المفاجئة. نوصي بمجابهة التحديات مع الموردين لحل عجز ${analysis.criticalUnderstock} من المستلزمات المخزنية الهامة لتقديم أفضل جاهزية بالأسطول والحد من هدر الوقت الفني لشركائنا وعملائنا.`
+              : `Based on automated audit of ${analysis.totalOrders} work orders and warehouse inventory logs; ongoing preventive maintenance adherence shows strong correlation with lower breakdown rates. We recommend prioritizing replenishment for ${analysis.criticalUnderstock} critical spare parts to avoid vehicle downtime and maintain peak fleet readiness.`
+            }
           </p>
         </div>
 
         <div class="meeting-signatures">
           <div class="signature-box">
-            <strong>معد ومراجع التقرير</strong>
+            <strong>${isAr ? 'معد ومراجع التقرير' : 'Prepared & Audited By'}</strong>
             <div class="line"></div>
-            <span>الاسم والتوقيع</span>
+            <span>${isAr ? 'الاسم والتوقيع' : 'Name & Signature'}</span>
           </div>
           <div class="signature-box">
-            <strong>رئيس قسم الجودة والصيانة</strong>
+            <strong>${isAr ? 'رئيس قسم الجودة والصيانة' : 'Head of Maintenance & QA'}</strong>
             <div class="line"></div>
-            <span>الاسم والتوقيع</span>
+            <span>${isAr ? 'الاسم والتوقيع' : 'Name & Signature'}</span>
           </div>
           <div class="signature-box">
-            <strong>المدير التنفيذي للأسطول والعمليات</strong>
+            <strong>${isAr ? 'المدير التنفيذي للأسطول والعمليات' : 'Executive Fleet Director'}</strong>
             <div class="line"></div>
-            <span>الاسم والتوقيع</span>
+            <span>${isAr ? 'الاسم والتوقيع' : 'Name & Signature'}</span>
           </div>
         </div>
 
         <div class="print-footer">
-          سجل صيانة الأسطول الذكي ${activeBrandName} © 2026 | أوراق عمل معاصرة معتمدة
+          ${activeBrandName} © 2026 | ${isAr ? 'سجل صيانة الأسطول الذكي المعتمد رقمياً' : 'Official Certified Digital Fleet Operations Manifest'}
         </div>
 
         <script>
@@ -1088,7 +1297,9 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                 />
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                مؤشرات أداء الأسطول التراكمية، تتبع النفقات التشغيلية، ومطابقتها دقيقة للقطع اللوجستية كلياً.
+                {language === 'ar' 
+                  ? 'مؤشرات أداء الأسطول التراكمية، تتبع النفقات التشغيلية، ومطابقتها دقيقة للقطع اللوجستية كلياً.'
+                  : 'Cumulative fleet performance metrics, operational expenditure tracking, and accurate inventory reconciliation.'}
               </p>
             </div>
           </div>
@@ -1101,7 +1312,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <FileSpreadsheet size={15} />
-            <span>تصدير البيانات (CSV)</span>
+            <span>{language === 'ar' ? 'تصدير البيانات (CSV)' : 'Export CSV'}</span>
           </button>
 
           <button
@@ -1109,7 +1320,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <FileText size={15} />
-            <span>تصدير تقرير PDF منظم</span>
+            <span>{language === 'ar' ? 'تصدير تقرير PDF منظم' : 'Export Structured PDF'}</span>
           </button>
           
           <button
@@ -1117,7 +1328,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
             className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <Printer size={15} />
-            <span>طباعة الشاشة الحالية</span>
+            <span>{language === 'ar' ? 'طباعة الشاشة الحالية' : 'Print View'}</span>
           </button>
         </div>
       </div>
@@ -1126,21 +1337,25 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-705 shadow-soft">
         <div className="flex items-center gap-1.5 mb-3 text-slate-400 dark:text-slate-500">
           <ListFilter size={14} />
-          <span className="text-[10px] font-black uppercase tracking-wider">مرشحات تحجيم نطاق ذكاء الأعمال:</span>
+          <span className="text-[10px] font-black uppercase tracking-wider">
+            {language === 'ar' ? 'مرشحات تحجيم نطاق ذكاء الأعمال:' : 'Business Intelligence Scope Filters:'}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           
           {/* Timeframe selector */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 block">فترة تدقيق الأوراق:</label>
+            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 block">
+              {language === 'ar' ? 'فترة تدقيق الأوراق:' : 'Audit Period:'}
+            </label>
             <div className="grid grid-cols-5 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl border border-slate-200/50 dark:border-slate-800">
               {[
-                { id: 'all', label: 'الكل' },
-                { id: 'weekly', label: 'أسبوعي' },
-                { id: 'monthly', label: 'شهري' },
-                { id: 'yearly', label: 'سنوي' },
-                { id: 'custom', label: 'مخصص' }
+                { id: 'all', label: language === 'ar' ? 'الكل' : 'All' },
+                { id: 'weekly', label: language === 'ar' ? 'أسبوعي' : 'Weekly' },
+                { id: 'monthly', label: language === 'ar' ? 'شهري' : 'Monthly' },
+                { id: 'yearly', label: language === 'ar' ? 'سنوي' : 'Yearly' },
+                { id: 'custom', label: language === 'ar' ? 'مخصص' : 'Custom' }
               ].map(t => (
                 <button
                   key={t.id}
@@ -1159,30 +1374,34 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
 
           {/* Category Filter */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 block font-medium">حسب فئة صيانة العطل:</label>
+            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 block font-medium">
+              {language === 'ar' ? 'حسب فئة صيانة العطل:' : 'By Maintenance Category:'}
+            </label>
             <select
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
               className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer"
             >
-              <option value="all">جميع تخصصات الورش</option>
-              <option value="mechanical">الميكانيكا والصيانة العامة</option>
-              <option value="electrical">الكهرباء والإلكترونيات الغامرة</option>
-              <option value="cooling">أنظمة التبريد والتكييف والتكييف</option>
-              <option value="hydraulic">أنظمة الهيدروليك والروافع للمعدات</option>
-              <option value="bodywork">سمكرة وتعديل الهياكل والشواصي</option>
+              <option value="all">{language === 'ar' ? 'جميع تخصصات الورش' : 'All Workshop Specialties'}</option>
+              <option value="mechanical">{language === 'ar' ? 'الميكانيكا والصيانة العامة' : 'Mechanics & General Maintenance'}</option>
+              <option value="electrical">{language === 'ar' ? 'الكهرباء والإلكترونيات' : 'Electrical & Electronics'}</option>
+              <option value="cooling">{language === 'ar' ? 'أنظمة التبريد والتكييف' : 'Cooling & HVAC Systems'}</option>
+              <option value="hydraulic">{language === 'ar' ? 'أنظمة الهيدروليك والروافع' : 'Hydraulics & Lift Systems'}</option>
+              <option value="bodywork">{language === 'ar' ? 'سمكرة وتعديل الهياكل والشواصي' : 'Bodywork & Chassis Repair'}</option>
             </select>
           </div>
 
           {/* Vehicle Type Filter */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 block">فئة وتصنيف المركبات بالأسطول:</label>
+            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 block">
+              {language === 'ar' ? 'فئة وتصنيف المركبات بالأسطول:' : 'Vehicle Fleet Class:'}
+            </label>
             <select
               value={selectedVehicleType}
               onChange={(e) => setSelectedVehicleType(e.target.value)}
               className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer"
             >
-              <option value="all">جميع درجات وموديلات الآليات في الأسطول</option>
+              <option value="all">{language === 'ar' ? 'جميع درجات وموديلات الآليات في الأسطول' : 'All Fleet Vehicle Types'}</option>
               {allianceVehicleTypes.filter(t => t !== 'all').map(typeStr => (
                 <option key={typeStr} value={typeStr}>{typeStr}</option>
               ))}
@@ -1202,7 +1421,9 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-450 dark:text-slate-500 block">تاريخ البدء:</label>
+                  <label className="text-[10px] font-black text-slate-450 dark:text-slate-500 block">
+                    {language === 'ar' ? 'تاريخ البدء:' : 'Start Date:'}
+                  </label>
                   <input
                     type="date"
                     value={startDate}
@@ -1211,7 +1432,9 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-450 dark:text-slate-500 block">تاريخ الانتهاء:</label>
+                  <label className="text-[10px] font-black text-slate-450 dark:text-slate-500 block">
+                    {language === 'ar' ? 'تاريخ الانتهاء:' : 'End Date:'}
+                  </label>
                   <input
                     type="date"
                     value={endDate}

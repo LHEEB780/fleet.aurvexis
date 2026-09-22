@@ -448,7 +448,11 @@ export function MonthlyCostBreakdownChart({
   // Export CSV handler
   // -------------------------------------------------------------
   const handleExportCSV = () => {
-    const headers = ['الشهر', 'السنة', 'قطع غيار (ر.س)', 'أجور عمالة (ر.س)', 'صيانة خارجية (ر.س)', 'الإجمالي (ر.س)'];
+    const isAr = language === 'ar';
+    const headers = isAr
+      ? ['الشهر', 'السنة', 'قطع غيار (ر.س)', 'أجور عمالة (ر.س)', 'صيانة خارجية (ر.س)', 'الإجمالي (ر.س)']
+      : ['Month', 'Year', 'Spare Parts (SAR)', 'Labor Wages (SAR)', 'External Maintenance (SAR)', 'Total (SAR)'];
+
     const rows = monthlyData.map(m => [
       m.name,
       m.year,
@@ -464,7 +468,10 @@ export function MonthlyCostBreakdownChart({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `توزيع_تكاليف_الصيانة_الشهرية_${selectedYear}.csv`);
+    link.setAttribute('download', isAr 
+      ? `توزيع_تكاليف_الصيانة_الشهرية_${selectedYear}.csv`
+      : `Monthly_Maintenance_Cost_Breakdown_${selectedYear}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -51,9 +51,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../services/LanguageContext';
 import { Driver, Vehicle, User as AppUser } from '../types';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import QRCode from 'qrcode';
+import { exportDriverScorecardPDF } from '../utils/scorecardPdfGenerator';
 
 export interface DriverScorecardData {
   driver: Driver;
@@ -518,118 +516,11 @@ export default function DriverScorecard({
     return Math.round(scoredDrivers.reduce((acc, c) => acc + c.inspectionMetrics.adherenceRate, 0) / scoredDrivers.length);
   }, [scoredDrivers]);
 
-  // Export Driver Scorecard PDF
+  // Export Driver Scorecard PDF (Language-Aware & Zero Mojibake)
   const handleExportScorecardPDF = async (card: DriverScorecardData) => {
     try {
       setIsExportingPDF(true);
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      // Generate QR Code verification string
-      const qrData = `AURVEXIS-SCORECARD:${card.driver.id}:${card.overallScore}:${new Date().toISOString()}`;
-      const qrDataUrl = await QRCode.toDataURL(qrData, { width: 100, margin: 1 });
-
-      // Header Colors
-      doc.setFillColor(15, 23, 42); // slate-900
-      doc.rect(0, 0, 210, 40, 'F');
-
-      // Title & Branding
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(18);
-      doc.text('AURVEXIS FLEET INTELLIGENCE', 14, 18);
-      doc.setFontSize(10);
-      doc.setTextColor(192, 132, 252);
-      doc.text('OFFICIAL DRIVER EFFICIENCY SCORECARD & AUDIT REPORT', 14, 25);
-      doc.setTextColor(148, 163, 184);
-      doc.text(`Generated: ${new Date().toLocaleDateString()} | System Anchor: 2026-05-30`, 14, 32);
-
-      // Add QR Code
-      doc.addImage(qrDataUrl, 'PNG', 170, 6, 28, 28);
-
-      // Driver Profile Summary Box
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(14, 48, 182, 35, 3, 3, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(14, 48, 182, 35, 3, 3, 'S');
-
-      doc.setTextColor(15, 23, 42);
-      doc.setFontSize(13);
-      doc.text(`Driver: ${card.driver.name}`, 20, 58);
-      doc.setFontSize(9);
-      doc.setTextColor(71, 85, 105);
-      doc.text(`ID: ${card.driver.identityNumber}  |  License: ${card.driver.licenseNumber} (${card.driver.licenseType})`, 20, 66);
-      doc.text(`Department: ${card.driver.department || 'Operations'}  |  Phone: ${card.driver.phone}`, 20, 74);
-
-      // Overall Score Badge
-      doc.setFillColor(109, 40, 217);
-      doc.roundedRect(145, 52, 45, 26, 3, 3, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
-      doc.text('OVERALL SCORE', 152, 60);
-      doc.setFontSize(16);
-      doc.text(`${card.overallScore}/100`, 152, 70);
-      doc.setFontSize(10);
-      doc.text(`Grade: ${card.grade}`, 174, 70);
-
-      // 3 Core Pillars Summary Table
-      autoTable(doc, {
-        startY: 90,
-        head: [['Pillar Dimension', 'Assigned Weight', 'Performance Score', 'Evaluation Status']],
-        body: [
-          ['1. Vehicle Handover History', '35%', `${card.handoverScore} / 100`, card.handoverScore >= 85 ? 'Excellent (Clean Custody)' : 'Acceptable'],
-          ['2. Reported Maintenance & Care', '35%', `${card.maintenanceScore} / 100`, card.maintenanceScore >= 85 ? 'Proactive Defect Care' : 'Needs Follow-up'],
-          ['3. Inspection Schedule Adherence', '30%', `${card.inspectionScore} / 100`, card.inspectionScore >= 85 ? 'Strictly Compliant' : 'Occasional Delays']
-        ],
-        theme: 'striped',
-        headStyles: { fillColor: [109, 40, 217], textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 3.5 }
-      });
-
-      // Detailed Metrics Table
-      const finalY = (doc as any).lastAutoTable.finalY || 135;
-      autoTable(doc, {
-        startY: finalY + 8,
-        head: [['Key Metric Indicator', 'Logged Metric Value', 'Operational Target', 'Compliance']],
-        body: [
-          ['Clean Handover Rate', `${Math.round((card.handoverMetrics.cleanHandovers / (card.handoverMetrics.totalHandovers || 1)) * 100)}%`, '>= 90%', card.handoverMetrics.handoversWithDamage === 0 ? 'Pass' : 'Warning'],
-          ['Average Fuel Level at Return', `${card.handoverMetrics.avgFuelReturnPct}%`, '>= 70%', card.handoverMetrics.avgFuelReturnPct >= 70 ? 'Pass' : 'Attention'],
-          ['On-Time Inspection Rate', `${card.inspectionMetrics.adherenceRate}%`, '>= 95%', card.inspectionMetrics.adherenceRate >= 95 ? 'Pass' : 'Delayed'],
-          ['Early Defect Reporting Index', `${card.maintenanceMetrics.earlyReportedRate}%`, '>= 80%', 'Pass'],
-          ['Critical Negligence Breakdowns', `${card.maintenanceMetrics.criticalBreakdownsCount}`, '0 Incidents', card.maintenanceMetrics.criticalBreakdownsCount === 0 ? 'Zero' : 'Flagged']
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [30, 41, 59], textColor: 255 },
-        styles: { fontSize: 8.5, cellPadding: 3 }
-      });
-
-      // AI Recommendations Box
-      const recY = (doc as any).lastAutoTable.finalY + 10;
-      doc.setFillColor(243, 232, 255);
-      doc.roundedRect(14, recY, 182, 36, 3, 3, 'F');
-      doc.setDrawColor(216, 180, 254);
-      doc.roundedRect(14, recY, 182, 36, 3, 3, 'S');
-
-      doc.setTextColor(109, 40, 217);
-      doc.setFontSize(10);
-      doc.text('FLEET AI OPERATIONAL RECOMMENDATIONS:', 20, recY + 8);
-
-      doc.setTextColor(51, 65, 85);
-      doc.setFontSize(8.5);
-      card.aiActionRecommendations.slice(0, 2).forEach((rec, idx) => {
-        doc.text(`* ${rec}`, 20, recY + 17 + (idx * 8));
-      });
-
-      // Signature Area
-      const sigY = recY + 45;
-      doc.setTextColor(100, 116, 139);
-      doc.setFontSize(8);
-      doc.text('Operational Fleet Director Signature: _______________________', 14, sigY);
-      doc.text('Safety Officer Attestation: _______________________', 120, sigY);
-
-      doc.save(`Driver_Scorecard_${card.driver.name.replace(/\s+/g, '_')}.pdf`);
+      await exportDriverScorecardPDF(card, language === 'en' ? 'en' : 'ar');
     } catch (error) {
       console.error('Error generating scorecard PDF:', error);
     } finally {
