@@ -1106,12 +1106,12 @@ export default function App() {
   const handleConfirm2FA = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userEntered2fa || userEntered2fa.trim() === '') {
-      setLoginError(language === 'ar' ? '⚠️ يرجى إدخال رمز التحقق.' : '⚠️ Please enter the verification code.');
+      setLoginError(t('login.errors.enter2fa'));
       return;
     }
 
     if (userEntered2fa.trim() !== generated2faCode) {
-      setLoginError(language === 'ar' ? '⚠️ رمز التحقق غير صحيح، يرجى المحاولة مرة أخرى.' : '⚠️ Incorrect verification code, please try again.');
+      setLoginError(t('login.errors.invalid2fa'));
       return;
     }
 
@@ -1182,19 +1182,19 @@ export default function App() {
 
     if (regStep === 1) {
       if (!regCompanyAr.trim() || !regCompanyEn.trim()) {
-        setRegError(language === 'ar' ? '⚠️ يرجى إدخال اسم المنشأة باللغتين العربية والانجليزية.' : '⚠️ Please enter the company name in both Arabic and English.');
+        setRegError(t('login.errors.reqNames'));
         return;
       }
       if (!regCR.trim() || regCR.length < 4) {
-        setRegError(language === 'ar' ? '⚠️ يرجى إدخال رقم سجل تجاري صحيح ومكون من 4 خانات على الأقل.' : '⚠️ Please enter a valid Commercial Registration (CR) number.');
+        setRegError(t('login.errors.invalidCR'));
         return;
       }
       if (!regEmail.trim() || !regEmail.includes('@')) {
-        setRegError(language === 'ar' ? '⚠️ البريد الإلكتروني غير صالح.' : '⚠️ Invalid corporate email address.');
+        setRegError(t('login.errors.invalidEmail'));
         return;
       }
       if (!regPhone.trim()) {
-        setRegError(language === 'ar' ? '⚠️ رقم الهاتف مطلوب.' : '⚠️ Mobile number is required.');
+        setRegError(t('login.errors.reqPhone'));
         return;
       }
       setRegStep(2);
@@ -1208,11 +1208,11 @@ export default function App() {
 
     if (regStep === 3) {
       if (!regAdminName.trim()) {
-        setRegError(language === 'ar' ? '⚠️ يرجى كتابة اسم المشرف.' : '⚠️ Please enter the administrator name.');
+        setRegError(t('login.errors.reqAdmin'));
         return;
       }
       if (!regAdminPasscode.trim() || regAdminPasscode.length < 4) {
-        setRegError(language === 'ar' ? '⚠️ يرجى إدخال رمز مرور مكون من 4 أرقام أو أحرف على الأقل للأمان.' : '⚠️ Please enter at least a 4-digit/character passcode.');
+        setRegError(t('login.errors.reqPasscode'));
         return;
       }
 
@@ -1657,48 +1657,48 @@ export default function App() {
                         <span className="font-bold text-slate-400">#{regSuccessData.subscriptionId}</span>
                         <span className="font-black text-emerald-500 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          {language === 'ar' ? 'نشط (تبدأ الجدولة في نوفمبر ٢٠٢٦)' : 'Active (Starts Nov 2026)'}
+                          {t('registration.activeNov2026')}
                         </span>
                       </div>
 
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-center">
-                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{language === 'ar' ? 'المنشأة التجارية:' : 'Commercial Company:'}</span>
-                          <span className="text-[11.5px] font-black text-slate-850 dark:text-white">{regSuccessData.companyAr}</span>
+                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{t('registration.commercialCompany')}</span>
+                          <span className="text-[11.5px] font-black text-slate-850 dark:text-white">{language === 'ar' ? regSuccessData.companyAr : (regSuccessData.companyEn || regSuccessData.companyAr)}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{language === 'ar' ? 'رقم السجل التجاري:' : 'CR Number:'}</span>
+                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{t('registration.crNumberLabel')}</span>
                           <span className="text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300">{regSuccessData.cr}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{language === 'ar' ? 'الباقة المعتمدة:' : 'Selected Plan:'}</span>
+                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{t('registration.selectedPlanLabel')}</span>
                           <span className="text-[11.5px] font-extrabold text-brand-blue-500 dark:text-brand-blue-400 uppercase">
                             {regSuccessData.plan === 'basic' ? (language === 'ar' ? 'الأساسية' : 'Basic') : regSuccessData.plan === 'pro' ? (language === 'ar' ? 'المهنية Pro' : 'Professional Pro') : (language === 'ar' ? 'المؤسسات' : 'Enterprise')}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{language === 'ar' ? 'حجم أسطول النقل:' : 'Fleet Size:'}</span>
-                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{regSuccessData.fleetSize} {language === 'ar' ? 'شاحنة/مركبة' : 'Vehicles'}</span>
+                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{t('registration.fleetSizeLabel')}</span>
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{regSuccessData.fleetSize} {t('registration.truckUnit')}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{language === 'ar' ? 'دورة الاشتراك الكلية:' : 'Billing Cycle:'}</span>
+                          <span className="text-[10.5px] text-slate-450 dark:text-slate-500 font-semibold">{t('registration.billingCycleLabel')}</span>
                           <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                            {regSuccessData.cycle === 'monthly' ? (language === 'ar' ? 'شهرياً' : 'Monthly') : (language === 'ar' ? 'سنوياً (-20% خصم)' : 'Yearly (20% Off)')}
+                            {regSuccessData.cycle === 'monthly' ? t('billing.monthly') : t('billing.yearly')}
                           </span>
                         </div>
                       </div>
 
                       <div className="pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 flex justify-between items-end">
                         <div className="text-left">
-                          <span className="block text-[8.5px] text-slate-400 font-bold uppercase tracking-wider">{language === 'ar' ? 'قيمة الاشتراك المجدول' : 'Scheduled Core Fee'}</span>
+                          <span className="block text-[8.5px] text-slate-400 font-bold uppercase tracking-wider">{t('registration.scheduledFee')}</span>
                           <span className="text-base font-black text-slate-900 dark:text-white">
                             ${regSuccessData.plan === 'basic' ? (regSuccessData.cycle === 'yearly' ? '31.20' : '39') : regSuccessData.plan === 'pro' ? (regSuccessData.cycle === 'yearly' ? '95.20' : '119') : (regSuccessData.cycle === 'yearly' ? '319.20' : '399')}
                             <span className="text-[10px] text-slate-450 font-semibold">/{regSuccessData.cycle === 'yearly' ? (language === 'ar' ? 'عام' : 'yr') : (language === 'ar' ? 'شهر' : 'mo')}</span>
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[9px] text-slate-400 font-bold">{language === 'ar' ? 'تاريخ التفعيل التلقائي' : 'Auto Activation'}</span>
-                          <span className="text-[10.5px] font-black text-indigo-600 dark:text-indigo-400">1 {language === 'ar' ? 'نوفمبر ٢٠٢٦' : 'November 2026'}</span>
+                          <span className="block text-[9px] text-slate-400 font-bold">{t('registration.autoActivation')}</span>
+                          <span className="text-[10.5px] font-black text-indigo-600 dark:text-indigo-400">{t('registration.nov2026')}</span>
                         </div>
                       </div>
 
@@ -1717,11 +1717,11 @@ export default function App() {
                             <div className="flex items-center justify-between text-[10px]">
                               <span className="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
                                 <Timer size={13} className="text-indigo-500 shrink-0 animate-pulse" />
-                                <span>{language === 'ar' ? 'المدة المتبقية حتى بدء موعد التفعيل:' : 'Countdown to Activation Date:'}</span>
+                                <span>{t('registration.countdown')}</span>
                               </span>
                               <span className="font-black font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60 flex items-center gap-1 shadow-2xs">
                                 <span>{daysRemaining}</span>
-                                <span className="text-[9px] font-sans font-bold">{language === 'ar' ? 'يوم' : 'days left'}</span>
+                                <span className="text-[9px] font-sans font-bold">{t('registration.daysLeft')}</span>
                               </span>
                             </div>
 
@@ -1795,8 +1795,10 @@ export default function App() {
                                 iconBg: 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800/60',
                                 labelAr: 'سعة الأسطول والحد الأقصى للمركبات',
                                 labelEn: 'Fleet Limit & Vehicle Capacity',
-                                currentVal: currentPlanKey === 'basic' ? `${regSuccessData.fleetSize || 20} مركبة` : currentPlanKey === 'pro' ? `${regSuccessData.fleetSize || 100} مركبة` : 'أسطول غير محدود',
-                                nextVal: currentPlanKey === 'basic' ? 'حتى 100 مركبة (+80)' : currentPlanKey === 'pro' ? 'أسطول غير محدود Unlimited' : 'خوادم مخصصة ومركبات غير محدودة',
+                                currentValAr: currentPlanKey === 'basic' ? `${regSuccessData.fleetSize || 20} مركبة` : currentPlanKey === 'pro' ? `${regSuccessData.fleetSize || 100} مركبة` : 'أسطول غير محدود',
+                                currentValEn: currentPlanKey === 'basic' ? `${regSuccessData.fleetSize || 20} vehicles` : currentPlanKey === 'pro' ? `${regSuccessData.fleetSize || 100} vehicles` : 'Unlimited fleet',
+                                nextValAr: currentPlanKey === 'basic' ? 'حتى 100 مركبة (+80)' : currentPlanKey === 'pro' ? 'أسطول غير محدود Unlimited' : 'خوادم مخصصة ومركبات غير محدودة',
+                                nextValEn: currentPlanKey === 'basic' ? 'Up to 100 vehicles (+80)' : currentPlanKey === 'pro' ? 'Unlimited fleet' : 'Dedicated instances & unlimited fleet',
                                 isHighlight: true,
                               },
                               {
@@ -1805,8 +1807,10 @@ export default function App() {
                                 iconBg: 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800/60',
                                 labelAr: 'جدولة الصيانة الوقائية والتنبيهات',
                                 labelEn: 'Preventative Maintenance & PM Alerts',
-                                currentVal: 'مجدولة دورية قياسية',
-                                nextVal: currentPlanKey === 'basic' ? 'خوارزميات تنبؤية ذكية AI' : 'أنظمة تنبؤية متقدمة مع حساسات IoT',
+                                currentValAr: 'مجدولة دورية قياسية',
+                                currentValEn: 'Standard periodic schedules',
+                                nextValAr: currentPlanKey === 'basic' ? 'خوارزميات تنبؤية ذكية AI' : 'أنظمة تنبؤية متقدمة مع حساسات IoT',
+                                nextValEn: currentPlanKey === 'basic' ? 'Smart AI predictive alerts' : 'Advanced IoT telematics & predictive engine',
                                 isHighlight: false,
                               },
                               {
@@ -1815,8 +1819,10 @@ export default function App() {
                                 iconBg: 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800/60',
                                 labelAr: 'فحوصات السائقين اليومية ورموز QR',
                                 labelEn: 'Driver Daily Inspections & QR Codes',
-                                currentVal: 'فحص رقمي مع QR كود',
-                                nextVal: 'فحص متقدم مع صور وتوقيع إلكتروني وتوثيق سحابي',
+                                currentValAr: 'فحص رقمي مع QR كود',
+                                currentValEn: 'Digital daily check via QR',
+                                nextValAr: 'فحص متقدم مع صور وتوقيع إلكتروني وتوثيق سحابي',
+                                nextValEn: 'Advanced checks with photos & e-signatures',
                                 isHighlight: false,
                               },
                               {
@@ -1825,8 +1831,10 @@ export default function App() {
                                 iconBg: 'bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800/60',
                                 labelAr: 'إدارة المستودع وقطع الغيار والتكاليف',
                                 labelEn: 'Spare Parts & Inventory Analytics',
-                                currentVal: currentPlanKey === 'basic' ? 'جرد أساسي للقطع' : 'تتبع تلقائي للقطع مع باركود ونقاط إعادة الطلب',
-                                nextVal: currentPlanKey === 'basic' ? 'أتمتة أوامر الشراء ونقاط إعادة الطلب' : 'تكامل مالي ERP ومستودعات متعددة الفروع',
+                                currentValAr: currentPlanKey === 'basic' ? 'جرد أساسي للقطع' : 'تتبع تلقائي للقطع مع باركود ونقاط إعادة الطلب',
+                                currentValEn: currentPlanKey === 'basic' ? 'Basic inventory list' : 'Automated barcode tracking & reorder points',
+                                nextValAr: currentPlanKey === 'basic' ? 'أتمتة أوامر الشراء ونقاط إعادة الطلب' : 'تكامل مالي ERP ومستودعات متعددة الفروع',
+                                nextValEn: currentPlanKey === 'basic' ? 'Automated POs & reorder alerts' : 'ERP integration & multi-branch warehouses',
                                 isHighlight: currentPlanKey === 'basic',
                               },
                               {
@@ -1835,8 +1843,10 @@ export default function App() {
                                 iconBg: 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800/60',
                                 labelAr: 'تحليلات تكلفة التشغيل لكل كم/ساعة',
                                 labelEn: 'Cost Per KM/Hour Fleet Analytics',
-                                currentVal: currentPlanKey === 'basic' ? 'تقارير مبسطة' : 'لوحات بيانات تفاعلية وتفصيل التكلفة',
-                                nextVal: currentPlanKey === 'basic' ? 'تحليل عميق وتصدير PDF/Excel' : 'تقارير مالية وتنبؤات الميزانية بالذكاء الاصطناعي',
+                                currentValAr: currentPlanKey === 'basic' ? 'تقارير مبسطة' : 'لوحات بيانات تفاعلية وتفصيل التكلفة',
+                                currentValEn: currentPlanKey === 'basic' ? 'Simplified reports' : 'Interactive cost breakdowns & dashboards',
+                                nextValAr: currentPlanKey === 'basic' ? 'تحليل عميق وتصدير PDF/Excel' : 'تقارير مالية وتنبؤات الميزانية بالذكاء الاصطناعي',
+                                nextValEn: currentPlanKey === 'basic' ? 'Deep analytics & PDF/Excel export' : 'AI-driven financial forecasts',
                                 isHighlight: false,
                               },
                               {
@@ -1845,8 +1855,10 @@ export default function App() {
                                 iconBg: 'bg-sky-50 dark:bg-sky-950/60 border-sky-200 dark:border-sky-800/60',
                                 labelAr: 'مستوى الدعم الفني وتعيين مدير حساب',
                                 labelEn: 'Support SLA & Dedicated Account Mgr',
-                                currentVal: currentPlanKey === 'basic' ? 'دعم عبر البريد (خلال 24 س)' : 'دعم ذو أولوية عبر الشات والهاتف',
-                                nextVal: currentPlanKey === 'basic' ? 'دعم ذو أولوية مع هاتف مباشر' : 'مدير حساب مخصص 24/7 مع SLA 99.99%',
+                                currentValAr: currentPlanKey === 'basic' ? 'دعم عبر البريد (خلال 24 س)' : 'دعم ذو أولوية عبر الشات والهاتف',
+                                currentValEn: currentPlanKey === 'basic' ? 'Standard email (24h)' : 'Priority chat & phone support',
+                                nextValAr: currentPlanKey === 'basic' ? 'دعم ذو أولوية مع هاتف مباشر' : 'مدير حساب مخصص 24/7 مع SLA 99.99%',
+                                nextValEn: currentPlanKey === 'basic' ? 'Priority phone support' : 'Dedicated 24/7 manager with 99.99% SLA',
                                 isHighlight: true,
                               },
                             ];
@@ -1899,10 +1911,10 @@ export default function App() {
                                             <span className="truncate">{language === 'ar' ? item.labelAr : item.labelEn}</span>
                                           </div>
                                           <div className="col-span-3 text-center font-semibold text-slate-600 dark:text-slate-400">
-                                            {item.currentVal}
+                                            {language === 'ar' ? item.currentValAr : item.currentValEn}
                                           </div>
                                           <div className="col-span-4 text-center font-extrabold text-indigo-600 dark:text-indigo-400">
-                                            {item.nextVal}
+                                            {language === 'ar' ? item.nextValAr : item.nextValEn}
                                           </div>
                                         </div>
                                       );
@@ -1912,9 +1924,7 @@ export default function App() {
                                   {/* Upgrade Opportunity Footer Box */}
                                   <div className="p-2 bg-gradient-to-r from-purple-50 dark:from-purple-950/30 to-indigo-50 dark:to-indigo-950/30 rounded-xl border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between gap-2 text-[9.5px]">
                                     <span className="text-purple-800 dark:text-purple-300 font-bold">
-                                      {language === 'ar'
-                                        ? 'هل ترغب في ترقية اشتراكك قبل تفعيل موعد نوفمبر ٢٠٢٦؟'
-                                        : 'Would you like to upgrade before your Nov 2026 activation?'}
+                                      {t('registration.upgradePrompt')}
                                     </span>
                                     <button
                                       type="button"
@@ -1925,7 +1935,7 @@ export default function App() {
                                       className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-black transition-all cursor-pointer shadow-3xs shrink-0 flex items-center gap-1"
                                     >
                                       <Zap size={11} />
-                                      <span>{language === 'ar' ? 'طلب ترقية' : 'Request Upgrade'}</span>
+                                      <span>{t('registration.requestUpgrade')}</span>
                                     </button>
                                   </div>
                                 </div>
@@ -1947,9 +1957,9 @@ export default function App() {
                             <Headphones size={14} className="text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
                             <MessageSquare size={13} className="text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
                           </div>
-                          <span>{language === 'ar' ? 'التواصل مع المبيعات والدعم الفني' : 'Contact Sales & Inquiries'}</span>
+                          <span>{t('registration.contactSales')}</span>
                           <span className="text-[9.5px] bg-indigo-500/10 dark:bg-indigo-400/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-md font-bold">
-                            {language === 'ar' ? 'استفسار فوري' : 'Direct Support'}
+                            {t('registration.directSupport')}
                           </span>
                         </button>
                       </div>
@@ -1964,7 +1974,7 @@ export default function App() {
                         className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs"
                       >
                         <Printer size={13} />
-                        <span>{language === 'ar' ? 'طباعة تفاصيل الفاتورة' : 'Print Invoice'}</span>
+                        <span>{t('registration.printInvoice')}</span>
                       </button>
 
                       <button
@@ -1979,7 +1989,7 @@ export default function App() {
                         }}
                         className="p-2.5 bg-brand-blue-500 hover:bg-brand-blue-600 text-white rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-md shadow-brand-blue-500/15 cursor-pointer"
                       >
-                        <span>🚀 {language === 'ar' ? 'تسجيل الدخول الفوري مديراً' : 'Instant Login!'}</span>
+                        <span>{t('registration.instantLogin')}</span>
                       </button>
                     </div>
                   </div>
@@ -1990,13 +2000,13 @@ export default function App() {
                     <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2.5">
                       <div className="flex-1 space-y-1">
                         <div className="flex justify-between items-center text-[10px] font-black text-slate-500">
-                          <span>{language === 'ar' ? 'الخطوة' : 'Step'} {regStep} {language === 'ar' ? 'من 3' : 'of 3'}</span>
+                          <span>{t('registration.step')} {regStep} {t('registration.of')} 3</span>
                           <span className="text-brand-blue-500 font-extrabold">
                             {regStep === 1 
-                              ? (language === 'ar' ? 'ملف المنشأة' : 'Company Profile') 
+                              ? t('registration.companyProfile') 
                               : regStep === 2 
-                              ? (language === 'ar' ? 'اختيار باقة الاشتراك' : 'SaaS Plan Selection') 
-                              : (language === 'ar' ? 'حساب المشرف المسؤول' : 'Administrator Setup')
+                              ? t('registration.planSelection') 
+                              : t('registration.adminSetup')
                             }
                           </span>
                         </div>
@@ -2017,28 +2027,28 @@ export default function App() {
                       >
                         <div className="space-y-1">
                           <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                            {language === 'ar' ? 'اسم المنشأة باللغة العربية' : 'Company Name (Arabic)'} <span className="text-rose-500">*</span>
+                            {t('registration.companyAr')} <span className="text-rose-500">*</span>
                           </label>
                           <input 
                             type="text"
                             required
                             value={regCompanyAr}
                             onChange={(e) => setRegCompanyAr(e.target.value)}
-                            placeholder="مثال: شركة نقليات الوطن المحدودة"
+                            placeholder={t('registration.companyArPlaceholder')}
                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/90 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl text-xs font-semibold outline-none dark:text-white"
                           />
                         </div>
 
                         <div className="space-y-1">
                           <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                            {language === 'ar' ? 'اسم المنشأة باللغة الإنجليزية' : 'Company Name (English)'} <span className="text-rose-500">*</span>
+                            {t('registration.companyEn')} <span className="text-rose-500">*</span>
                           </label>
                           <input 
                             type="text"
                             required
                             value={regCompanyEn}
                             onChange={(e) => setRegCompanyEn(e.target.value)}
-                            placeholder="e.g. Al-Watan Transport Ltd."
+                            placeholder={t('registration.companyEnPlaceholder')}
                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/90 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl text-xs font-semibold outline-none dark:text-white text-left"
                           />
                         </div>
@@ -2046,7 +2056,7 @@ export default function App() {
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
                             <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                              {language === 'ar' ? 'رقم السجل التجاري' : 'CR Number'} <span className="text-rose-500">*</span>
+                              {t('registration.crNumber')} <span className="text-rose-500">*</span>
                             </label>
                             <input 
                               type="text"
@@ -2061,13 +2071,13 @@ export default function App() {
 
                           <div className="space-y-1">
                             <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                              {language === 'ar' ? 'المدينة (المقر الرئيسي)' : 'City (HQ)'}
+                              {t('registration.city')}
                             </label>
                             <input 
                               type="text"
                               value={regCity}
                               onChange={(e) => setRegCity(e.target.value)}
-                              placeholder={language === 'ar' ? 'الرياض' : 'Riyadh'}
+                              placeholder={t('registration.cityPlaceholder')}
                               className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/90 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl text-xs font-semibold outline-none dark:text-white text-center"
                             />
                           </div>
@@ -2075,7 +2085,7 @@ export default function App() {
 
                         <div className="space-y-1">
                           <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                            {language === 'ar' ? 'البريد الإلكتروني المعتمد للمراسلات' : 'Corporate Contact Email'} <span className="text-rose-500">*</span>
+                            {t('registration.email')} <span className="text-rose-500">*</span>
                           </label>
                           <input 
                             type="email"
@@ -2090,7 +2100,7 @@ export default function App() {
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
                             <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                              {language === 'ar' ? 'رقم الهاتف / الجوال' : 'Mobile Number'} <span className="text-rose-500">*</span>
+                              {t('registration.mobile')} <span className="text-rose-500">*</span>
                             </label>
                             <input 
                               type="text"
@@ -2104,16 +2114,16 @@ export default function App() {
 
                           <div className="space-y-1">
                             <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                              {language === 'ar' ? 'حجم أسطول النقل المجدول' : 'Planned Fleet Size'}
+                              {t('registration.fleetSize')}
                             </label>
                             <select
                               value={regFleetSize}
                               onChange={(e) => setRegFleetSize(e.target.value)}
                               className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/90 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl text-xs font-bold outline-none dark:text-white"
                             >
-                              <option value="1-10">1 - 10 {language === 'ar' ? 'مركبات' : 'vehicles'}</option>
-                              <option value="10-50">10-50 {language === 'ar' ? 'مركبة' : 'vehicles'}</option>
-                              <option value="50-200">50-200 {language === 'ar' ? 'مركبة' : 'vehicles'}</option>
+                              <option value="1-10">1 - 10 {t('registration.vehicles')}</option>
+                              <option value="10-50">10-50 {t('registration.vehicles')}</option>
+                              <option value="50-200">50-200 {t('registration.vehicles')}</option>
                               <option value="200+">200+ {language === 'ar' ? 'عملاق' : 'enterprise'}</option>
                             </select>
                           </div>
@@ -2129,21 +2139,21 @@ export default function App() {
                         className="space-y-3 text-right"
                       >
                         <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-150 dark:border-slate-800">
-                          <span className="text-xs font-black text-slate-800 dark:text-slate-200">{language === 'ar' ? 'دورة احتساب الرسوم' : 'Choose Billing Cycle'}</span>
+                          <span className="text-xs font-black text-slate-800 dark:text-slate-200">{t('registration.chooseBillingCycle')}</span>
                           <div className="flex bg-slate-200 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-300/40">
                             <button
                               type="button"
                               onClick={() => setRegCycle('monthly')}
                               className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${regCycle === 'monthly' ? 'bg-white dark:bg-[#0f1422] text-slate-900 dark:text-white shadow-3xs' : 'text-slate-500'}`}
                             >
-                              {language === 'ar' ? 'شهري' : 'Monthly'}
+                              {t('registration.monthly')}
                             </button>
                             <button
                               type="button"
                               onClick={() => setRegCycle('yearly')}
                               className={`px-3 py-1 rounded-md text-[10px] font-black transition-all flex items-center gap-1 ${regCycle === 'yearly' ? 'bg-white dark:bg-[#0f1422] text-slate-900 dark:text-white shadow-3xs' : 'text-slate-500'}`}
                             >
-                              <span>{language === 'ar' ? 'سنوي' : 'Yearly'}</span>
+                              <span>{t('registration.yearly')}</span>
                               <span className="px-1 py-0.2 bg-emerald-500 text-white text-[7.5px] font-black rounded">-20%</span>
                             </button>
                           </div>
@@ -2196,7 +2206,7 @@ export default function App() {
                               >
                                 {plan.popular && (
                                   <span className="absolute top-3 left-3 px-2 py-0.5 bg-brand-blue-500 text-white text-[8px] font-black rounded-full uppercase tracking-wider">
-                                    {language === 'ar' ? 'الموصى بها' : 'RECOMMENDED'}
+                                    {t('registration.recommended')}
                                   </span>
                                 )}
 
@@ -2228,9 +2238,7 @@ export default function App() {
                         <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2 text-[10px] text-amber-800 dark:text-amber-300 font-semibold leading-normal">
                           <span className="text-base shrink-0">⏳</span>
                           <div>
-                            {language === 'ar' 
-                              ? 'ملحوظة: اشتراكك المجدول مجاني حتى تفعيل التشغيل التجاري الفعلي مطلع شهر نوفمبر ٢٠٢٦.'
-                              : 'Note: Scheduled billing and active billing cards remain on pending schedule until live activation in November 2026.'}
+                            {t('registration.activationNote')}
                           </div>
                         </div>
                       </motion.div>
@@ -2245,21 +2253,21 @@ export default function App() {
                       >
                         <div className="space-y-1">
                           <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                            {language === 'ar' ? 'الاسم الكامل للمشرف المسؤول والمدير المعتمد' : 'Administrator Full Name'} <span className="text-rose-500">*</span>
+                            {t('registration.adminFullName')} <span className="text-rose-500">*</span>
                           </label>
                           <input 
                             type="text"
                             required
                             value={regAdminName}
                             onChange={(e) => setRegAdminName(e.target.value)}
-                            placeholder="مثال: م. فواز الرويلي"
+                            placeholder={t('registration.adminNamePlaceholder')}
                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/90 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl text-xs font-semibold outline-none dark:text-white"
                           />
                         </div>
 
                         <div className="space-y-1">
                           <label className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                            {language === 'ar' ? 'تعيين رمز مرور المشرف للأمان' : 'Set Admin Secure Passcode'} <span className="text-rose-500">*</span>
+                            {t('registration.adminPasscode')} <span className="text-rose-500">*</span>
                           </label>
                           <input 
                             type="password"
@@ -2271,17 +2279,15 @@ export default function App() {
                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/90 hover:border-slate-200 focus:border-brand-blue-500 rounded-xl text-xs font-mono font-bold outline-none dark:text-white text-center"
                           />
                           <p className="text-[9.5px] text-slate-400">
-                            {language === 'ar' ? 'رمز مرور آمن مكون من 4 أرقام لتسجيل الدخول الفوري.' : 'A secure 4-digit digital code for logging in immediately.'}
+                            {t('registration.adminPasscodeTip')}
                           </p>
                         </div>
 
                         {/* SUMMARIZED TERMS AGREEMENT */}
                         <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-800/80 text-[10px] text-slate-500 leading-normal space-y-1.5">
-                          <div className="font-bold text-slate-700 dark:text-slate-350">{language === 'ar' ? '🔒 إقرار وتأكيد تسجيل المنشأة:' : '🔒 Registration Confirmation:'}</div>
+                          <div className="font-bold text-slate-700 dark:text-slate-350">{t('registration.confirmTitle')}</div>
                           <p className="font-medium text-slate-450">
-                            {language === 'ar' 
-                              ? 'بالضغط على مفتاح "تأكيد وتفعيل الاشتراك"، أنت تؤكد تفويضك بتسجيل هذه المنشأة وتوافق على شروط الخدمة وجدولة تفعيل الحزم في نوفمبر المقبل.'
-                              : 'By clicking "Confirm Registration", you attest that you represent this commercial legal entity and agree to activate scheduled billing starting Nov 2026.'}
+                            {t('registration.confirmText')}
                           </p>
                         </div>
                       </motion.div>
@@ -2302,7 +2308,7 @@ export default function App() {
                           onClick={() => setRegStep((regStep - 1) as any)}
                           className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-350 hover:bg-slate-200 dark:hover:bg-slate-700 font-black text-xs rounded-xl transition-all cursor-pointer"
                         >
-                          {language === 'ar' ? 'السابق' : 'Back'}
+                          {t('registration.back')}
                         </button>
                       )}
                       
@@ -2317,11 +2323,11 @@ export default function App() {
                             <span>{language === 'ar' ? 'جاري تهيئة قاعدة البيانات والاشتراك...' : 'Provisioning company cloud schema...'}</span>
                           </>
                         ) : regStep < 3 ? (
-                          <span>{language === 'ar' ? 'المتابعة للخطوة التالية' : 'Proceed Next'} ➔</span>
+                          <span>{t('registration.nextStep')} ➔</span>
                         ) : (
                           <>
                             <Building2 size={13} />
-                            <span>{language === 'ar' ? 'تأكيد التسجيل وتفعيل الاشتراك المجدول' : 'Confirm Registration & Active SaaS'}</span>
+                            <span>{t('registration.confirmButton')}</span>
                           </>
                         )}
                       </button>
@@ -2340,7 +2346,7 @@ export default function App() {
                       }}
                       className="text-xs font-black text-slate-500 hover:text-brand-blue-500 dark:hover:text-brand-blue-400 transition-colors cursor-pointer"
                     >
-                      {language === 'ar' ? '← العودة إلى تسجيل الدخول العام بالنظام' : '← Back to General Sign-In'}
+                      {t('login.backToLogin')}
                     </button>
                   </div>
                 )}
@@ -2361,33 +2367,27 @@ export default function App() {
                         <ShieldAlert size={24} />
                       </div>
                       <h3 className="text-sm font-black text-slate-900 dark:text-white mt-2">
-                        {language === 'ar' ? 'التحقق بخطوتين (2FA)' : 'Two-Factor Authentication'}
+                        {t('login.twoFactorTitle')}
                       </h3>
                       <p className="text-[11px] text-slate-450 dark:text-slate-400 leading-normal max-w-xs mx-auto">
-                        {language === 'ar' 
-                          ? `تم إرسال رمز تحقق مؤقت إلى البريد المسجل: ${email}`
-                          : `A temporary verification code was sent to the registered email: ${email}`
-                        }
+                        {t('login.codeSentTo')}: {email}
                       </p>
                     </div>
 
                     <div className="p-3.5 bg-amber-500/5 dark:bg-amber-500/10 rounded-2xl border border-amber-500/20 text-right flex flex-col gap-1.5 animate-bounce">
                       <div className="flex items-center justify-between text-[11px] font-black text-amber-600 dark:text-amber-400">
-                        <span>{language === 'ar' ? 'محاكاة صندوق الوارد (صندوق الأمان)' : 'Simulated Inbox (Sandbox Shield)'}</span>
+                        <span>{t('login.simulatedInbox')}</span>
                         <Sparkles size={12} className="animate-spin-slow text-amber-500" />
                       </div>
                       <div className="text-xs text-slate-700 dark:text-slate-350 font-bold leading-normal">
-                        {language === 'ar' 
-                          ? `[منظومة FleetAurvexis - أمان]: رمز التحقق المؤقت الخاص بك لتسجيل دخول الإدارة هو: `
-                          : `[FleetAurvexis - Safety]: Your temporary admin login verification code is: `
-                        }
+                        {t('login.adminCodePrefix')}
                         <span className="font-mono text-base font-black tracking-wider text-amber-600 dark:text-amber-400 px-2 py-0.5 bg-amber-500/10 rounded-lg">{generated2faCode}</span>
                       </div>
                     </div>
 
                     <div className="space-y-1.5 text-right font-sans">
                       <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 block pb-0.5">
-                        {language === 'ar' ? 'أدخل رمز التحقق (6 أرقام)' : 'Enter Verification Code (6-Digits)'} <span className="text-rose-500 font-black">*</span>
+                        {t('login.codePrompt')} <span className="text-rose-500 font-black">*</span>
                       </label>
                       <input 
                         type="text"
@@ -2419,7 +2419,7 @@ export default function App() {
                         }}
                         className="py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-350 hover:bg-slate-200 dark:hover:bg-slate-700 font-black text-xs rounded-2xl transition-all cursor-pointer text-center"
                       >
-                        {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                        {t('common.cancel')}
                       </button>
 
                       <button
@@ -2430,12 +2430,12 @@ export default function App() {
                         {isLoading ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>{language === 'ar' ? 'جاري التحقق...' : 'Verifying...'}</span>
+                            <span>{t('login.loadingText')}</span>
                           </>
                         ) : (
                           <>
                             <UserCheck size={14} />
-                            <span>{language === 'ar' ? 'تأكيد الدخول' : 'Confirm & Enter'}</span>
+                            <span>{t('login.verify2fa')}</span>
                           </>
                         )}
                       </button>
@@ -2449,8 +2449,8 @@ export default function App() {
                         className="text-[10.5px] font-black text-brand-blue-500 hover:underline disabled:text-slate-400"
                       >
                         {isSending2fa 
-                          ? (language === 'ar' ? 'جاري إعادة الإرسال...' : 'Re-sending...') 
-                          : (language === 'ar' ? '🔄 إعادة إرسال رمز التحقق' : '🔄 Resend verification code')
+                          ? t('login.resending') 
+                          : t('login.resend2fa')
                         }
                       </button>
                     </div>
@@ -2638,7 +2638,7 @@ export default function App() {
                     className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/40 dark:hover:bg-slate-900 p-3 border border-slate-200/50 dark:border-slate-850 rounded-2xl text-[11px] font-black text-slate-700 dark:text-slate-300 flex items-center justify-center gap-2 cursor-pointer shadow-3xs"
                   >
                     <Building2 size={13} className="text-brand-blue-500" />
-                    <span>{language === 'ar' ? '🏢 تسجيل منشأة تجارية واشتراك مجدول' : '🏢 Register Corporate Company & SaaS Plan'}</span>
+                    <span>{t('login.registerCorporate')}</span>
                   </button>
                 </div>
 

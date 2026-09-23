@@ -71,13 +71,13 @@ import {
 } from '../services/universalFileParser';
 
 // Definitions for custom selectable icons for vehicles with matching eye-friendly colors
-export const VEHICLE_ICONS: Record<string, { component: React.ComponentType<{ size?: number; className?: string }>; label: string; bg: string; text: string }> = {
-  truck: { component: Truck, label: 'شاحنة نقل / نقل ثقيل', bg: 'bg-brand-blue-50 dark:bg-brand-blue-900/10', text: 'text-brand-blue-600 dark:text-brand-blue-400' },
-  car: { component: Car, label: 'سيارة خفيفة / ملاكي', bg: 'bg-amber-50 dark:bg-amber-950/20', text: 'text-amber-600 dark:text-amber-450' },
-  bus: { component: Bus, label: 'حافلة ركاب / نقل جماعي', bg: 'bg-sky-50 dark:bg-sky-950/20', text: 'text-sky-600 dark:text-sky-400' },
-  wrench: { component: Wrench, label: 'مركبة خدمات / صيانة ورشية', bg: 'bg-rose-50 dark:bg-rose-950/20', text: 'text-rose-600 dark:text-rose-450' },
-  shield: { component: Shield, label: 'أمن وطوارئ / رصد أمني', bg: 'bg-indigo-50 dark:bg-indigo-950/20', text: 'text-indigo-600 dark:text-indigo-400' },
-  cpu: { component: Cpu, label: 'آلية ذكية / معدة إلكترونية', bg: 'bg-violet-50 dark:bg-violet-950/20', text: 'text-violet-600 dark:text-violet-400' },
+export const VEHICLE_ICONS: Record<string, { component: React.ComponentType<{ size?: number; className?: string }>; label: string; labelEn: string; bg: string; text: string }> = {
+  truck: { component: Truck, label: 'شاحنة نقل / نقل ثقيل', labelEn: 'Truck / Heavy Transport', bg: 'bg-brand-blue-50 dark:bg-brand-blue-900/10', text: 'text-brand-blue-600 dark:text-brand-blue-400' },
+  car: { component: Car, label: 'سيارة خفيفة / ملاكي', labelEn: 'Light Vehicle / Car', bg: 'bg-amber-50 dark:bg-amber-950/20', text: 'text-amber-600 dark:text-amber-450' },
+  bus: { component: Bus, label: 'حافلة ركاب / نقل جماعي', labelEn: 'Passenger Bus / Mass Transit', bg: 'bg-sky-50 dark:bg-sky-950/20', text: 'text-sky-600 dark:text-sky-400' },
+  wrench: { component: Wrench, label: 'مركبة خدمات / صيانة ورشية', labelEn: 'Service & Workshop Vehicle', bg: 'bg-rose-50 dark:bg-rose-950/20', text: 'text-rose-600 dark:text-rose-450' },
+  shield: { component: Shield, label: 'أمن وطوارئ / رصد أمني', labelEn: 'Security & Emergency', bg: 'bg-indigo-50 dark:bg-indigo-950/20', text: 'text-indigo-600 dark:text-indigo-400' },
+  cpu: { component: Cpu, label: 'آلية ذكية / معدة إلكترونية', labelEn: 'Smart / IoT Equipment', bg: 'bg-violet-50 dark:bg-violet-950/20', text: 'text-violet-600 dark:text-violet-400' },
 };
 
 export const DOCUMENT_TYPES_METADATA: Record<string, {
@@ -194,10 +194,24 @@ export const getVehicleClassification = (vehicle: Vehicle): string => {
 };
 
 const StatusBadge = ({ status }: { status: VehicleStatus }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const configs = {
-    active: { label: 'فعالة', classes: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500 animate-pulse' },
-    maintenance: { label: 'تحت الصيانة', classes: 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/20', dot: 'bg-amber-500 animate-bounce' },
-    stopped: { label: 'متوقفة', classes: 'bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-455 border-rose-500/20', dot: 'bg-rose-500 animate-ping' },
+    active: { 
+      label: isEn ? 'Active' : 'فعالة', 
+      classes: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', 
+      dot: 'bg-emerald-500 animate-pulse' 
+    },
+    maintenance: { 
+      label: isEn ? 'In Maintenance' : 'تحت الصيانة', 
+      classes: 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/20', 
+      dot: 'bg-amber-500 animate-bounce' 
+    },
+    stopped: { 
+      label: isEn ? 'Stopped' : 'متوقفة', 
+      classes: 'bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-455 border-rose-500/20', 
+      dot: 'bg-rose-500 animate-ping' 
+    },
   };
   const config = configs[status] || configs.active;
   return (
@@ -1815,7 +1829,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                 <button 
                   onClick={() => setViewMode('grid')}
                   className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-400 shadow-xs' : 'text-slate-400 dark:text-slate-550 hover:text-slate-600 dark:hover:text-slate-400'}`}
-                  title="عرض الشبكة الكاملة"
+                  title={language === 'ar' ? "عرض الشبكة الكاملة" : "Full Grid View"}
                 >
                   <LayoutGrid size={12} />
                   <span>{language === 'ar' ? 'الشبكة' : 'Grid'}</span>
@@ -1823,7 +1837,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                 <button 
                   onClick={() => setViewMode('list')}
                   className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-black rounded-lg transition-all cursor-pointer ${viewMode === 'list' ? 'bg-white dark:bg-slate-800 text-brand-blue-650 dark:text-brand-blue-405 shadow-xs' : 'text-slate-400 dark:text-slate-550 hover:text-slate-600 dark:hover:text-slate-400'}`}
-                  title="عرض القائمة التفصيلية"
+                  title={language === 'ar' ? "عرض القائمة التفصيلية" : "Detailed List View"}
                 >
                   <List size={12} />
                   <span>{language === 'ar' ? 'القائمة' : 'List'}</span>
@@ -2027,7 +2041,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0">
                       <Calendar size={10} className="text-slate-450" />
-                      <span>صنع {vehicle.modelYear || '2022'}</span>
+                      <span>{language === 'ar' ? `صنع ${vehicle.modelYear || '2022'}` : `Year ${vehicle.modelYear || '2022'}`}</span>
                     </div>
                   </div>
 
@@ -2041,27 +2055,27 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                   {/* Status badges & Dynamic alert row */}
                   <div className="grid grid-cols-2 gap-1.5 pt-1">
                     <div className="bg-slate-50/70 dark:bg-slate-900/60 p-1 px-1.5 rounded-lg border border-slate-105/10 dark:border-slate-850">
-                      <span className="text-[7.5px] sm:text-[8px] text-slate-405 block leading-tight font-bold">الحالة:</span>
+                      <span className="text-[7.5px] sm:text-[8px] text-slate-405 block leading-tight font-bold">{language === 'ar' ? 'الحالة:' : 'Status:'}</span>
                       <div className="mt-0.5 flex items-center scale-[0.78] origin-right">
                         <StatusBadge status={vehicle.status} />
                       </div>
                     </div>
                     <div className="bg-slate-50/70 dark:bg-[#131b31]/40 p-1 px-1.5 rounded-lg border border-slate-105/10 dark:border-slate-850">
-                      <span className="text-[7.5px] sm:text-[8px] text-slate-405 block leading-tight font-bold">الكلفة:</span>
+                      <span className="text-[7.5px] sm:text-[8px] text-slate-405 block leading-tight font-bold">{language === 'ar' ? 'الكلفة:' : 'Cost:'}</span>
                       <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-brand-blue-600 dark:text-brand-blue-400 flex items-center gap-0.5">
                         <DollarSign size={9} className="w-1.5 h-1.5 shrink-0" />
                         <span>{totalCost.toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="bg-amber-500/5 dark:bg-amber-500/10 p-1 px-1.5 rounded-lg border border-amber-500/10 dark:border-amber-500/20">
-                      <span className="text-[7.5px] sm:text-[8px] text-amber-600 dark:text-amber-400 block leading-tight font-bold">وقود:</span>
+                      <span className="text-[7.5px] sm:text-[8px] text-amber-600 dark:text-amber-400 block leading-tight font-bold">{language === 'ar' ? 'وقود:' : 'Fuel:'}</span>
                       <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-amber-700 dark:text-amber-500 flex items-center gap-0.5" dir="rtl">
                         <Fuel size={9} className="text-amber-550 shrink-0" />
-                        <span className="truncate">{get30DayFuelData(vehicle.id)[29].value} لتر</span>
+                        <span className="truncate">{get30DayFuelData(vehicle.id)[29].value} {language === 'ar' ? 'لتر' : 'L'}</span>
                       </div>
                     </div>
                     <div className="bg-brand-blue-500/5 dark:bg-brand-blue-500/10 p-1 px-1.5 rounded-lg border border-brand-blue-500/10 dark:border-brand-blue-500/20">
-                      <span className="text-[7.5px] sm:text-[8px] text-brand-blue-600 dark:text-brand-blue-405 block leading-tight font-bold">الإطارات:</span>
+                      <span className="text-[7.5px] sm:text-[8px] text-brand-blue-600 dark:text-brand-blue-405 block leading-tight font-bold">{language === 'ar' ? 'الإطارات:' : 'Tires:'}</span>
                       <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-brand-blue-650 dark:text-brand-blue-400 flex items-center gap-0.5" dir="rtl">
                         <CircleDot size={9} className="text-brand-blue-500 shrink-0" />
                         <span className="truncate">{get30DayTireData(vehicle.id)[29].value} PSI</span>
@@ -2074,7 +2088,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     <div className="bg-rose-50 dark:bg-rose-955/10 text-rose-600 dark:text-rose-455 p-1 px-1.5 rounded border border-rose-100/30 dark:border-rose-950/20 flex items-center justify-between text-[7.5px] sm:text-[8px] font-black leading-none shrink-0 border-r-[3px] border-r-rose-400">
                       <span className="flex items-center gap-0.5">
                         <span className="w-1 h-1 bg-rose-500 rounded-full animate-pulse" />
-                        <span>الصيانة متبقي {nextMaint.daysRemaining} يوم</span>
+                        <span>{language === 'ar' ? `الصيانة متبقي ${nextMaint.daysRemaining} يوم` : `Maint in ${nextMaint.daysRemaining}d`}</span>
                       </span>
                     </div>
                   )}
@@ -2190,7 +2204,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                       type="button"
                       onClick={(e) => toggleExpand(vehicle.id, e)}
                       className="p-1 px-1.5 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/20 dark:hover:bg-violet-955/40 text-violet-700 dark:text-violet-400 text-[8.5px] font-extrabold rounded-md transition-all flex items-center gap-0.5 cursor-pointer border border-violet-100/30 shrink-0"
-                      title={expandedVehicleIds[vehicle.id] ? "تقليص التفاصيل" : "توسيع تفاصيل الصيانة"}
+                      title={expandedVehicleIds[vehicle.id] ? (language === 'ar' ? "تقليص التفاصيل" : "Collapse details") : (language === 'ar' ? "توسيع تفاصيل الصيانة" : "Expand maintenance details")}
                     >
                       <ChevronDown size={10} className={`transform transition-transform duration-200 ${expandedVehicleIds[vehicle.id] ? 'rotate-180' : ''}`} />
                       <span>{expandedVehicleIds[vehicle.id] ? (language === 'ar' ? 'تقليص' : 'Collapse') : (language === 'ar' ? 'توسيع' : 'Expand')}</span>
@@ -2203,10 +2217,10 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                         setSelectedVehicleForQr(vehicle);
                       }}
                       className="p-1 px-1.5 bg-brand-blue-50/80 hover:bg-brand-blue-100 dark:bg-brand-blue-900/20 text-brand-blue-650 dark:text-brand-blue-400 text-[8.5px] font-extrabold rounded-md transition-all flex items-center gap-0.5 cursor-pointer border border-brand-blue-100/30 shrink-0"
-                      title="تحميل وطباعة ملصق الرمز السريع QR للمركبة"
+                      title={language === 'ar' ? "تحميل وطباعة ملصق الرمز السريع QR للمركبة" : "Download & print vehicle QR sticker"}
                     >
                       <QrCode size={10} className="shrink-0" />
-                      <span>كود QR</span>
+                      <span>{language === 'ar' ? 'كود QR' : 'QR Code'}</span>
                     </button>
                   </div>
 
@@ -2250,22 +2264,40 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                       )}
                     </button>
                   </th>
-                  <th className="py-4 px-5 text-right font-black">المركبة والمواصفات الأساسية</th>
-                  <th className="py-4 px-5 text-right font-black">رقم اللوحة المعتمد</th>
-                  <th className="py-4 px-4 text-right font-black">تبعية القسم الفنية</th>
-                  <th className="py-4 px-4 text-center font-black">استهلاك الوقود</th>
-                  <th className="py-4 px-4 text-center font-black">ضغط الإطارات</th>
-                  <th className="py-4 px-3 text-center font-black">حالة الأسطول التشغيلية</th>
-                  <th className="py-4 px-3 text-center font-black">إجمالي نفقات الصيانة</th>
-                  <th className="py-4 px-4 text-center font-black">الموعد المستقبلي القادم</th>
-                  <th className="py-4 px-5 text-center font-black">تفصيل السجلات الفنية</th>
+                  <th className={`py-4 px-5 font-black ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+                    {language === 'ar' ? 'المركبة والمواصفات الأساسية' : 'Vehicle & Basic Specs'}
+                  </th>
+                  <th className={`py-4 px-5 font-black ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+                    {language === 'ar' ? 'رقم اللوحة المعتمد' : 'License Plate'}
+                  </th>
+                  <th className={`py-4 px-4 font-black ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+                    {language === 'ar' ? 'تبعية القسم الفنية' : 'Department'}
+                  </th>
+                  <th className="py-4 px-4 text-center font-black">
+                    {language === 'ar' ? 'استهلاك الوقود' : 'Fuel Consumption'}
+                  </th>
+                  <th className="py-4 px-4 text-center font-black">
+                    {language === 'ar' ? 'ضغط الإطارات' : 'Tire Pressure'}
+                  </th>
+                  <th className="py-4 px-3 text-center font-black">
+                    {language === 'ar' ? 'حالة الأسطول التشغيلية' : 'Fleet Status'}
+                  </th>
+                  <th className="py-4 px-3 text-center font-black">
+                    {language === 'ar' ? 'إجمالي نفقات الصيانة' : 'Total Maintenance'}
+                  </th>
+                  <th className="py-4 px-4 text-center font-black">
+                    {language === 'ar' ? 'الموعد المستقبلي القادم' : 'Upcoming Schedule'}
+                  </th>
+                  <th className="py-4 px-5 text-center font-black">
+                    {language === 'ar' ? 'تفصيل السجلات الفنية' : 'Technical Logs'}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                 {filteredVehicles.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs font-bold font-mono">
-                      لا يوجد مركبات تطابق معايير وثوابت البحث الحالية.
+                      {language === 'ar' ? 'لا يوجد مركبات تطابق معايير وثوابت البحث الحالية.' : 'No vehicles match the current search criteria.'}
                     </td>
                   </tr>
                 ) : (
@@ -2337,7 +2369,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                                 type="button"
                                 onClick={(e) => toggleExpand(vehicle.id, e)}
                                 className="p-1.5 text-slate-400 hover:text-slate-605 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl transition-all cursor-pointer shrink-0"
-                                title={expandedVehicleIds[vehicle.id] ? "تقليص التفاصيل" : "توسيع تفاصيل الصيانة"}
+                                title={expandedVehicleIds[vehicle.id] ? (language === 'ar' ? "تقليص التفاصيل" : "Collapse details") : (language === 'ar' ? "توسيع تفاصيل الصيانة" : "Expand maintenance details")}
                               >
                                 <ChevronDown size={14} className={`transform transition-transform duration-200 ${expandedVehicleIds[vehicle.id] ? 'rotate-180' : ''}`} />
                               </button>
@@ -2376,7 +2408,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                                     </span>
                                   );
                                 })()}
-                                <span>{vehicle.type} • صنع {vehicle.modelYear || '2022'} • {vehicle.tireCount || 4} عجلات ({vehicle.tireStatus || 'ممتاز'})</span>
+                                 <span>{vehicle.type} • {language === 'ar' ? `صنع ${vehicle.modelYear || '2022'}` : `Year ${vehicle.modelYear || '2022'}`} • {vehicle.tireCount || 4} {language === 'ar' ? 'عجلات' : 'tires'} ({vehicle.tireStatus || (language === 'ar' ? 'ممتاز' : 'Good')})</span>
                               </div>
                             </div>
                           </div>
@@ -2399,7 +2431,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                         <td className="py-4 px-4 text-center text-xs">
                           <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/15 text-amber-650 dark:text-amber-400 font-black">
                             <Fuel size={11} className="text-amber-550 shrink-0" />
-                            <span>{get30DayFuelData(vehicle.id)[29].value} لتر/يوم</span>
+                            <span>{get30DayFuelData(vehicle.id)[29].value} {language === 'ar' ? 'لتر/يوم' : 'L/day'}</span>
                           </div>
                         </td>
 
@@ -2431,14 +2463,18 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                           {nextMaint.isApproaching ? (
                             <div className="inline-flex flex-col items-center">
                               <span className="px-2.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-450 text-[9px] font-extrabold border border-rose-500/15 animate-pulse">
-                                مستحق الصيانة
+                                {language === 'ar' ? 'مستحق الصيانة' : 'Due for Maint'}
                               </span>
-                              <span className="text-[8.5px] font-black text-rose-500 mt-0.5 font-mono">متبقي {nextMaint.daysRemaining} يوم</span>
+                              <span className="text-[8.5px] font-black text-rose-500 mt-0.5 font-mono">
+                                {language === 'ar' ? `متبقي ${nextMaint.daysRemaining} يوم` : `${nextMaint.daysRemaining}d remaining`}
+                              </span>
                             </div>
                           ) : (
                             <div className="inline-flex flex-col items-center">
                               <span className="text-xs font-black text-slate-700 dark:text-slate-300 font-mono">{nextMaint.date}</span>
-                              <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 mt-0.5">مجدولة اعتيادي</span>
+                              <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 mt-0.5">
+                                {language === 'ar' ? 'مجدولة اعتيادي' : 'Routine'}
+                              </span>
                             </div>
                           )}
                         </td>
@@ -2454,7 +2490,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                               }}
                               className="px-3.5 py-1.5 bg-brand-blue-50 hover:bg-brand-blue-100 dark:bg-brand-blue-900/30 dark:hover:bg-brand-blue-900/50 text-brand-blue-700 dark:text-brand-blue-300 font-extrabold text-[10.5px] rounded-xl transition-all border border-brand-blue-100 dark:border-brand-blue-900/40 cursor-pointer"
                             >
-                              تفاصيل السجلات كاملة
+                              {language === 'ar' ? 'تفاصيل السجلات كاملة' : 'View Full Logs'}
                             </button>
 
                             <button 
@@ -2464,10 +2500,10 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                                 setSelectedVehicleForQr(vehicle);
                               }}
                               className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-955/40 text-amber-700 dark:text-amber-400 font-extrabold text-[10.5px] rounded-xl transition-all border border-amber-150 dark:border-amber-900/30 cursor-pointer flex items-center gap-1 shrink-0"
-                              title="توليد وتنزيل رمز الصيانة QR للمركبة"
+                              title={language === 'ar' ? "توليد وتنزيل رمز الصيانة QR للمركبة" : "Generate & download vehicle QR code"}
                             >
                               <QrCode size={12} />
-                              <span>رمز QR</span>
+                              <span>{language === 'ar' ? 'رمز QR' : 'QR Code'}</span>
                             </button>
 
                             {(user.role === 'admin' || (user.role as string) === 'fleet_manager' || hasGranularPermission('edit-vehicle-data', user.role) || (user.role as string) !== 'viewer') && (
@@ -2928,7 +2964,9 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     <div>
                       {formData.iconName ? (
                         <div className="space-y-3">
-                          <label className="block text-xs font-black text-slate-705 dark:text-slate-300">اختر الأيقونة الفنية المعبرة للمركبة:</label>
+                          <label className="block text-xs font-black text-slate-705 dark:text-slate-300">
+                            {language === 'ar' ? 'اختر الأيقونة الفنية المعبرة للمركبة:' : 'Select Expressive Vehicle Icon:'}
+                          </label>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {Object.entries(VEHICLE_ICONS).map(([key, iconConfig]) => {
                               const IconC = iconConfig.component;
@@ -2947,7 +2985,9 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                                   <div className={`p-3 rounded-xl ${iconConfig.bg}`}>
                                     <IconC size={22} className={iconConfig.text} />
                                   </div>
-                                  <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 text-center">{iconConfig.label}</span>
+                                  <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 text-center">
+                                    {language === 'ar' ? iconConfig.label : iconConfig.labelEn}
+                                  </span>
                                 </button>
                               );
                             })}

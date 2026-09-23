@@ -31,7 +31,10 @@ import {
   X,
   Printer,
   BarChart3,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Bug,
+  Terminal,
+  Copy
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -78,6 +81,7 @@ export interface DriverScorecardData {
       fuelLevel: number;
       hasDamage: boolean;
       damageNotes?: string;
+      damageNotesEn?: string;
       passedItems: number;
       totalItems: number;
     }>;
@@ -96,10 +100,13 @@ export interface DriverScorecardData {
       date: string;
       vehicleName: string;
       description: string;
+      descriptionEn?: string;
       severity: 'low' | 'medium' | 'high' | 'critical';
       category: string;
+      categoryEn?: string;
       type: 'preventative_report' | 'normal_wear' | 'breakdown';
       status: string;
+      statusEn?: string;
     }>;
   };
 
@@ -125,8 +132,11 @@ export interface DriverScorecardData {
 
   radarData: Array<{ subject: string; subjectEn: string; score: number }>;
   strengths: string[];
+  strengthsEn?: string[];
   weaknesses: string[];
+  weaknessesEn?: string[];
   aiActionRecommendations: string[];
+  aiActionRecommendationsEn?: string[];
 }
 
 interface DriverScorecardProps {
@@ -216,6 +226,7 @@ export function calculateDriverScorecard(
           fuelLevel: avgFuelReturnPct,
           hasDamage: handoversWithDamage > 0,
           damageNotes: handoversWithDamage > 0 ? 'خدش سطحي خفيف بالصدام الأمامي' : 'استلام وتسليم مطابق للمواصفات بدون ملاحظات',
+          damageNotesEn: handoversWithDamage > 0 ? 'Minor surface scratch on front bumper' : 'Compliant handover with no remarks',
           passedItems: handoversWithDamage > 0 ? 6 : 7,
           totalItems: 7
         },
@@ -228,6 +239,7 @@ export function calculateDriverScorecard(
           fuelLevel: 85,
           hasDamage: false,
           damageNotes: 'تم فحص الإطارات ومستوى الزيوت - حالة ممتازة',
+          damageNotesEn: 'Tires and fluids inspected - excellent condition',
           passedItems: 7,
           totalItems: 7
         },
@@ -240,6 +252,7 @@ export function calculateDriverScorecard(
           fuelLevel: Math.max(50, avgFuelReturnPct - 5),
           hasDamage: false,
           damageNotes: 'تم توقيع الفحص الرقمي بدون ملاحظات',
+          damageNotesEn: 'Digital inspection signed without remarks',
           passedItems: 7,
           totalItems: 7
         }
@@ -263,20 +276,26 @@ export function calculateDriverScorecard(
       date: '2026-05-20',
       vehicleName: linkedVehicle?.name || 'مركبة الأسطول المخصصة',
       description: 'إبلاغ مبكر عن اهتزاز خفيف ببطانات الفرامل قبل تآكل الهوب',
+      descriptionEn: 'Early report of mild brake pad vibration prior to rotor wear',
       severity: 'low' as const,
       category: 'فرامل ومكابح',
+      categoryEn: 'Brakes & Hydraulics',
       type: 'preventative_report' as const,
-      status: 'مكتمل ومعالج'
+      status: 'مكتمل ومعالج',
+      statusEn: 'Resolved & Repaired'
     },
     {
       id: `m-issue-2-${driverId}`,
       date: '2026-05-02',
       vehicleName: linkedVehicle?.name || 'مركبة الأسطول المخصصة',
       description: 'فحص وتغيير فلتر الهواء وزيت المحرك الدوري',
+      descriptionEn: 'Routine air filter replacement and engine oil service',
       severity: 'low' as const,
       category: 'صيانة دورية',
+      categoryEn: 'Scheduled Service',
       type: 'normal_wear' as const,
-      status: 'معتمد'
+      status: 'معتمد',
+      statusEn: 'Approved'
     }
   ];
 
@@ -349,40 +368,57 @@ export function calculateDriverScorecard(
 
   // Strengths and Weaknesses derivation
   const strengths: string[] = [];
+  const strengthsEn: string[] = [];
   const weaknesses: string[] = [];
+  const weaknessesEn: string[] = [];
   const aiActionRecommendations: string[] = [];
+  const aiActionRecommendationsEn: string[] = [];
 
   if (handoverScore >= 85) {
     strengths.push('انضباط عالي في بروتوكول تسليم واستلام الآليات ونظافة الكابينة');
+    strengthsEn.push('High compliance with vehicle handover protocols and cabin cleanliness.');
   } else {
     weaknesses.push('ضرورة الالتزام بإعادة الآلية بمستوى وقود كافٍ وعدم ترك ملاحظات نظافة');
+    weaknessesEn.push('Must ensure adequate fuel level upon return and maintain cabin hygiene.');
   }
 
   if (maintenanceScore >= 85) {
     strengths.push('رصد استباقي للأعطال الطفيفة مما يحمي المحرك من الأعطال الجسيمة');
+    strengthsEn.push('Proactive early reporting of minor defects, preventing major engine breakdowns.');
   } else {
     weaknesses.push('تأخر في الإبلاغ المبكر عن المؤشرات التحذيرية للمركبة');
+    weaknessesEn.push('Delays in early reporting of vehicle warning indicators.');
   }
 
   if (inspectionScore >= 88) {
     strengths.push('التزام مثالي بجدول الفحص اليومي وقبل انطلاق الرحلات');
+    strengthsEn.push('Exemplary adherence to daily and pre-trip inspection schedules.');
   } else {
     weaknesses.push('تسجيل تأخير في إتمام الفحص الدوري لمركبة الأسطول');
+    weaknessesEn.push('Delays logged in completing scheduled fleet inspections.');
   }
 
   // AI recommendations
   if (tier === 'elite') {
     aiActionRecommendations.push('ترشيح السائق للحصول على مكافأة السلامة والتميز التشغيلي ربع السنوية.');
     aiActionRecommendations.push('تعيين السائق كمدرب ومشرف ميداني على السائقين الجدد في مسار التسليم والاستلام.');
+    aiActionRecommendationsEn.push('Nominate driver for the quarterly safety and operational excellence bonus.');
+    aiActionRecommendationsEn.push('Assign driver as field mentor for new recruits on handover procedures.');
   } else if (tier === 'pro') {
     aiActionRecommendations.push('مواصلة الالتزام الحالي مع التركيز على توثيق الفحص الرقمي قبل نصف ساعة من الموعد.');
     aiActionRecommendations.push('تشجيع السائق على الحفاظ على مستويات استهلاك الوقود المثالية.');
+    aiActionRecommendationsEn.push('Maintain current performance with emphasis on logging digital inspections 30 mins early.');
+    aiActionRecommendationsEn.push('Encourage continued optimization of vehicle fuel economy.');
   } else if (tier === 'standard') {
     aiActionRecommendations.push('عقد جلسة توجيهية حول أهمية توثيق حالة المركبة فور استلامها لتجنب نسب الأعطال.');
     aiActionRecommendations.push('تفعيل التنبيهات المباشرة على تطبيق السائق لتذكيره بمواعيد الفحص الدوري.');
+    aiActionRecommendationsEn.push('Conduct coaching on thorough vehicle custody check-in to avoid attributed damages.');
+    aiActionRecommendationsEn.push('Enable real-time push alerts on driver mobile app for scheduled inspection deadlines.');
   } else {
     aiActionRecommendations.push('إلزام السائق بدورة تدريبية مكثفة في الفحص الوقائي وبروتوكولات التسليم.');
     aiActionRecommendations.push('مراقبة المركبة المخصصة ميدانياً عبر أجهزة التتبع للحد من القيادة القاسية.');
+    aiActionRecommendationsEn.push('Enroll driver in mandatory refresher course on preventive maintenance and handovers.');
+    aiActionRecommendationsEn.push('Monitor telematics driving patterns closely to mitigate harsh braking and speeding.');
   }
 
   // Radar chart representation
@@ -430,8 +466,11 @@ export function calculateDriverScorecard(
     },
     radarData,
     strengths,
+    strengthsEn,
     weaknesses,
-    aiActionRecommendations
+    weaknessesEn,
+    aiActionRecommendations,
+    aiActionRecommendationsEn
   };
 }
 
@@ -453,6 +492,21 @@ export default function DriverScorecard({
   const [selectedScorecard, setSelectedScorecard] = useState<DriverScorecardData | null>(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState<'overview' | 'handover' | 'maintenance' | 'inspection' | 'ai_plan'>('overview');
+
+  // Technical Diagnostics & Error Boundary state for PDF Exports
+  const [exportError, setExportError] = useState<{
+    title: string;
+    technicalMessage: string;
+    phase: string;
+    originalErrorName: string;
+    stack: string;
+    language: string;
+    driverId: string;
+    driverName: string;
+    timestamp: string;
+  } | null>(null);
+  const [showFullStack, setShowFullStack] = useState(false);
+  const [copiedError, setCopiedError] = useState(false);
 
   // Calculate scorecards for all drivers and sort them
   const scoredDrivers: DriverScorecardData[] = useMemo(() => {
@@ -516,13 +570,63 @@ export default function DriverScorecard({
     return Math.round(scoredDrivers.reduce((acc, c) => acc + c.inspectionMetrics.adherenceRate, 0) / scoredDrivers.length);
   }, [scoredDrivers]);
 
-  // Export Driver Scorecard PDF (Language-Aware & Zero Mojibake)
-  const handleExportScorecardPDF = async (card: DriverScorecardData) => {
+  // Export Driver Scorecard PDF (Language-Aware & Zero Mojibake with Full Technical Error Diagnostics)
+  const handleExportScorecardPDF = async (card: DriverScorecardData, safeMode = false) => {
     try {
       setIsExportingPDF(true);
-      await exportDriverScorecardPDF(card, language === 'en' ? 'en' : 'ar');
-    } catch (error) {
-      console.error('Error generating scorecard PDF:', error);
+      setExportError(null);
+      await exportDriverScorecardPDF(card, language === 'en' ? 'en' : 'ar', { safeMode });
+
+      // Immediate visual confirmation of successful export
+      const downloadMsg = isAr
+        ? 'تم تنزيل كشف بطاقة أداء وتقييم السائق بنجاح!'
+        : 'Official driver scorecard PDF generated and downloaded successfully!';
+      const notifyDiv = document.createElement('div');
+      notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-emerald-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 border border-emerald-500 text-xs font-black shadow-emerald-500/20";
+      notifyDiv.style.direction = dir;
+      notifyDiv.innerHTML = `<span>✔ ${downloadMsg}</span>`;
+      document.body.appendChild(notifyDiv);
+      setTimeout(() => {
+        if (document.body.contains(notifyDiv)) notifyDiv.remove();
+      }, 4000);
+    } catch (error: any) {
+      console.error('Error generating driver scorecard PDF:', error);
+      const techMessage = error?.message || (typeof error === 'string' ? error : 'Unknown runtime exception during PDF generation');
+      const phase = (error as any)?.phase || 'SYSTEM_RENDER';
+      const origName = error?.name || 'ScorecardPDFError';
+      const stack = error?.stack || '';
+
+      // Detailed Error Catch Block displaying hidden technical error directly to the user
+      setExportError({
+        title: isAr ? 'فشل تصدير وتحميل بطاقة أداء السائق' : 'Driver Scorecard Export Failed',
+        technicalMessage: techMessage,
+        phase,
+        originalErrorName: origName,
+        stack,
+        language,
+        driverId: card.driver.id,
+        driverName: card.driver.name,
+        timestamp: new Date().toLocaleTimeString()
+      });
+
+      // Display immediate alert banner with technical error
+      const notifyDiv = document.createElement('div');
+      notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-rose-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex flex-col gap-1 border border-rose-400 text-xs font-black max-w-md shadow-rose-900/50";
+      notifyDiv.style.direction = dir;
+      const cleanTech = techMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      notifyDiv.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5 text-xs">✖ ${isAr ? 'تعذر تصدير ملف بطاقة الأداء' : 'Driver scorecard export failed'}</span>
+          <span class="text-[9px] bg-rose-800 px-2 py-0.5 rounded font-mono">${phase}</span>
+        </div>
+        <div class="text-[10px] font-mono text-rose-100 bg-rose-950/70 p-1.5 rounded-lg break-all select-all border border-rose-800/80 mt-1">
+          ${cleanTech}
+        </div>
+      `;
+      document.body.appendChild(notifyDiv);
+      setTimeout(() => {
+        if (document.body.contains(notifyDiv)) notifyDiv.remove();
+      }, 6000);
     } finally {
       setIsExportingPDF(false);
     }
@@ -576,13 +680,45 @@ export default function DriverScorecard({
     return 'bg-rose-500';
   };
 
+  const getDepartmentLabel = (dept?: string) => {
+    if (!dept) return isAr ? 'قسم الآليات' : 'Fleet Department';
+    if (!isAr) {
+      switch (dept) {
+        case 'قسم الآليات': return 'Machinery Dept';
+        case 'قسم الآليات العامة': return 'General Machinery Dept';
+        case 'قسم الاستثمار': return 'Investment Dept';
+        case 'قسم الاستثمار والتشغيل': return 'Investment & Operations';
+        case 'قسم الشؤون الهندسية':
+        case 'شعبة المشروعات الهندسية': return 'Engineering Projects Division';
+        case 'قسم الطوارئ':
+        case 'شعبة الطوارئ والتدخل العاجل': return 'Emergency & Rapid Response';
+        default: return dept;
+      }
+    }
+    return dept;
+  };
+
+  const getLicenseTypeLabel = (type?: string) => {
+    if (!type) return isAr ? 'خفيف' : 'Light (Class 1)';
+    if (!isAr) {
+      switch (type) {
+        case 'خفيف': return 'Light (Class 1)';
+        case 'ثقيل': return 'Heavy (Class 2)';
+        case 'عمومي': return 'Passenger / Bus (Class 3)';
+        case 'إنشائي': return 'Machinery & Const. (Class 4)';
+        default: return type;
+      }
+    }
+    return type;
+  };
+
   return (
     <div className="space-y-6" dir={dir}>
       {/* KPI Stats Widgets Area */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1 - Fleet Average Score */}
         <div className="p-5 rounded-2xl border shadow-xs bg-purple-50/40 dark:bg-purple-950/15 border-purple-200/80 dark:border-purple-900 hover:border-purple-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-1.5 text-right">
+          <div className={`space-y-1.5 ${isAr ? 'text-right' : 'text-left'}`}>
             <p className="text-[11px] font-black tracking-wide uppercase text-purple-800 dark:text-purple-300">
               {isAr ? 'متوسط كفاءة السائقين' : 'Fleet Average Score'}
             </p>
@@ -606,13 +742,13 @@ export default function DriverScorecard({
 
         {/* KPI 2 - Top Performer Driver */}
         <div className="p-5 rounded-2xl border shadow-xs bg-emerald-50/40 dark:bg-emerald-950/15 border-emerald-200/80 dark:border-emerald-900 hover:border-emerald-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-1.5 text-right">
+          <div className={`space-y-1.5 ${isAr ? 'text-right' : 'text-left'}`}>
             <p className="text-[11px] font-black tracking-wide uppercase text-emerald-800 dark:text-emerald-300">
               {isAr ? 'السائق المتصدر (المركز الأول)' : 'Top Ranked Driver'}
             </p>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-black leading-snug tracking-tight text-emerald-950 dark:text-emerald-100 truncate max-w-[140px]">
-                {topDriver?.driver.name || 'سالم عبد الرحمن'}
+                {topDriver?.driver.name || (isAr ? 'سالم عبد الرحمن' : 'Salem Abdulrahman')}
               </h3>
               <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-sans">
                 {topDriver?.overallScore || 96} %
@@ -629,7 +765,7 @@ export default function DriverScorecard({
 
         {/* KPI 3 - Handover Integrity Rate */}
         <div className="p-5 rounded-2xl border shadow-xs bg-indigo-50/40 dark:bg-indigo-950/15 border-indigo-200/80 dark:border-indigo-900 hover:border-indigo-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-1.5 text-right">
+          <div className={`space-y-1.5 ${isAr ? 'text-right' : 'text-left'}`}>
             <p className="text-[11px] font-black tracking-wide uppercase text-indigo-800 dark:text-indigo-300">
               {isAr ? 'سلامة التسليم والاستلام' : 'Handover Integrity'}
             </p>
@@ -649,7 +785,7 @@ export default function DriverScorecard({
 
         {/* KPI 4 - Inspection Schedule Adherence */}
         <div className="p-5 rounded-2xl border shadow-xs bg-amber-50/40 dark:bg-amber-950/15 border-amber-200/80 dark:border-amber-900 hover:border-amber-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-1.5 text-right">
+          <div className={`space-y-1.5 ${isAr ? 'text-right' : 'text-left'}`}>
             <p className="text-[11px] font-black tracking-wide uppercase text-amber-800 dark:text-amber-300">
               {isAr ? 'الالتزام بمواعيد الفحص' : 'Inspection Adherence'}
             </p>
@@ -673,10 +809,10 @@ export default function DriverScorecard({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Search Field */}
           <div className="relative flex-1">
-            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+            <Search className={`absolute ${isAr ? 'right-3.5' : 'left-3.5'} top-1/2 -translate-y-1/2 text-slate-400`} size={15} />
             <input
               type="text"
-              className="w-full pr-10 pl-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-purple-500 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-white transition-all placeholder-slate-400"
+              className={`w-full ${isAr ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-slate-200 focus:border-purple-500 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-white transition-all placeholder-slate-400`}
               placeholder={isAr ? 'ابحث باسم السائق، رقم الهوية، رخصة القيادة أو رقم الهاتف...' : 'Search driver by name, ID, license, or phone...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -712,7 +848,7 @@ export default function DriverScorecard({
               >
                 <option value="all">{isAr ? 'كل الأقسام' : 'All Departments'}</option>
                 {departments.map(d => (
-                  <option key={d} value={d}>{d}</option>
+                  <option key={d} value={d}>{getDepartmentLabel(d)}</option>
                 ))}
               </select>
             </div>
@@ -793,12 +929,12 @@ export default function DriverScorecard({
                         />
                       </div>
 
-                      <div className="text-right min-w-0">
+                      <div className={`${isAr ? 'text-right' : 'text-left'} min-w-0`}>
                         <h4 className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                           {card.driver.name}
                         </h4>
                         <span className="text-[10px] text-slate-400 font-bold block truncate">
-                          {card.driver.department || 'قسم الآليات'}
+                          {getDepartmentLabel(card.driver.department)}
                         </span>
                       </div>
                     </div>
@@ -932,13 +1068,13 @@ export default function DriverScorecard({
               {/* Close Button */}
               <button
                 onClick={() => setSelectedScorecard(null)}
-                className="absolute top-5 left-5 p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 rounded-full cursor-pointer transition-all z-10"
+                className={`absolute top-5 ${dir === 'rtl' ? 'left-5' : 'right-5'} p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 rounded-full cursor-pointer transition-all z-10`}
               >
                 <X size={16} />
               </button>
 
               {/* Modal Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 dark:border-slate-800 pb-5 mb-6 text-right">
+              <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 dark:border-slate-800 pb-5 mb-6 ${isAr ? 'text-right' : 'text-left'}`}>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-inner shrink-0">
                     <img 
@@ -959,14 +1095,14 @@ export default function DriverScorecard({
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 font-bold mt-1">
-                      {selectedScorecard.driver.department} | {selectedScorecard.driver.licenseType} ({selectedScorecard.driver.licenseNumber})
+                      {getDepartmentLabel(selectedScorecard.driver.department)} | {getLicenseTypeLabel(selectedScorecard.driver.licenseType)} ({selectedScorecard.driver.licenseNumber})
                     </p>
                   </div>
                 </div>
 
                 {/* Big Score Card */}
                 <div className="flex items-center gap-3 self-start md:self-auto">
-                  <div className="text-right">
+                  <div className={isAr ? 'text-right' : 'text-left'}>
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
                       {isAr ? 'مؤشر الكفاءة الكلي' : 'Overall Score'}
                     </span>
@@ -1052,7 +1188,7 @@ export default function DriverScorecard({
                 {activeModalTab === 'overview' && (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     {/* Left 3 Pillars Summary */}
-                    <div className="lg:col-span-5 space-y-4 text-right">
+                    <div className={`lg:col-span-5 space-y-4 ${isAr ? 'text-right' : 'text-left'}`}>
                       {/* Pillar 1 Summary */}
                       <div className="p-4 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 space-y-2">
                         <div className="flex items-center justify-between">
@@ -1104,7 +1240,7 @@ export default function DriverScorecard({
 
                     {/* Right Radar Visual Chart */}
                     <div className="lg:col-span-7 bg-slate-50 dark:bg-[#121829] p-5 rounded-3xl border border-slate-100 dark:border-slate-800 space-y-3">
-                      <span className="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider block text-right">
+                      <span className={`text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider block ${isAr ? 'text-right' : 'text-left'}`}>
                         {isAr ? 'رادار تقييم الكفاءة المتعدد المحاور 📊' : 'Multi-Dimensional Scorecard Radar 📊'}
                       </span>
                       <div className="h-64 w-full">
@@ -1133,7 +1269,7 @@ export default function DriverScorecard({
 
                 {/* 2. Handover History Tab */}
                 {activeModalTab === 'handover' && (
-                  <div className="space-y-4 text-right">
+                  <div className={`space-y-4 ${isAr ? 'text-right' : 'text-left'}`}>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#121829] border border-slate-100 dark:border-slate-800">
                         <span className="text-[10px] text-slate-400 font-bold block">{isAr ? 'إجمالي عمليات الاستلام/التسليم' : 'Total Handovers'}</span>
@@ -1169,7 +1305,7 @@ export default function DriverScorecard({
                                 <span className="text-[10px] text-slate-400 font-mono">({item.vehiclePlate})</span>
                               </div>
                               <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                                {item.damageNotes}
+                                {isAr ? item.damageNotes : (item.damageNotesEn || item.damageNotes)}
                               </p>
                             </div>
 
@@ -1189,7 +1325,7 @@ export default function DriverScorecard({
 
                 {/* 3. Maintenance Tab */}
                 {activeModalTab === 'maintenance' && (
-                  <div className="space-y-4 text-right">
+                  <div className={`space-y-4 ${isAr ? 'text-right' : 'text-left'}`}>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#121829] border border-slate-100 dark:border-slate-800">
                         <span className="text-[10px] text-slate-400 font-bold block">{isAr ? 'معدل الرصد الوقائي المبكر' : 'Early Defect Log Rate'}</span>
@@ -1217,11 +1353,15 @@ export default function DriverScorecard({
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className="px-2 py-0.5 rounded text-[8.5px] font-black bg-purple-500/10 text-purple-600">
-                                  {issue.category}
+                                  {isAr ? issue.category : (issue.categoryEn || issue.category)}
                                 </span>
-                                <span className="text-xs font-black text-slate-900 dark:text-white">{issue.description}</span>
+                                <span className="text-xs font-black text-slate-900 dark:text-white">
+                                  {isAr ? issue.description : (issue.descriptionEn || issue.description)}
+                                </span>
                               </div>
-                              <span className="text-[9.5px] text-slate-400">{issue.vehicleName} - {issue.status}</span>
+                              <span className="text-[9.5px] text-slate-400">
+                                {issue.vehicleName} - {isAr ? issue.status : (issue.statusEn || issue.status)}
+                              </span>
                             </div>
                             <span className="text-[10px] text-slate-400 font-mono shrink-0">{issue.date}</span>
                           </div>
@@ -1233,7 +1373,7 @@ export default function DriverScorecard({
 
                 {/* 4. Inspection Tab */}
                 {activeModalTab === 'inspection' && (
-                  <div className="space-y-4 text-right">
+                  <div className={`space-y-4 ${isAr ? 'text-right' : 'text-left'}`}>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#121829] border border-slate-100 dark:border-slate-800">
                         <span className="text-[10px] text-slate-400 font-bold block">{isAr ? 'الفحوصات المجدولة' : 'Scheduled Checks'}</span>
@@ -1283,7 +1423,7 @@ export default function DriverScorecard({
 
                 {/* 5. AI Action Plan Tab */}
                 {activeModalTab === 'ai_plan' && (
-                  <div className="space-y-5 text-right">
+                  <div className={`space-y-5 ${isAr ? 'text-right' : 'text-left'}`}>
                     {/* Strengths & Weaknesses */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Strengths */}
@@ -1296,7 +1436,7 @@ export default function DriverScorecard({
                           {selectedScorecard.strengths.map((s, idx) => (
                             <li key={idx} className="flex items-start gap-1.5">
                               <span className="text-emerald-500 font-black">✔</span>
-                              <span>{s}</span>
+                              <span>{isAr ? s : (selectedScorecard.strengthsEn?.[idx] || s)}</span>
                             </li>
                           ))}
                         </ul>
@@ -1312,7 +1452,7 @@ export default function DriverScorecard({
                           {selectedScorecard.weaknesses.map((w, idx) => (
                             <li key={idx} className="flex items-start gap-1.5">
                               <span className="text-amber-500 font-black">▲</span>
-                              <span>{w}</span>
+                              <span>{isAr ? w : (selectedScorecard.weaknessesEn?.[idx] || w)}</span>
                             </li>
                           ))}
                         </ul>
@@ -1331,7 +1471,7 @@ export default function DriverScorecard({
                             <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[9px] font-black shrink-0 mt-0.5">
                               {idx + 1}
                             </span>
-                            <span className="leading-relaxed">{rec}</span>
+                            <span className="leading-relaxed">{isAr ? rec : (selectedScorecard.aiActionRecommendationsEn?.[idx] || rec)}</span>
                           </div>
                         ))}
                       </div>
@@ -1366,6 +1506,172 @@ export default function DriverScorecard({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Technical Error Boundary & Catch Block Modal for Driver Scorecard Export */}
+      {exportError && (
+        <div 
+          id="scorecard-export-error-modal"
+          className="fixed inset-0 z-[150] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+          onClick={() => setExportError(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.94, opacity: 0, y: 15 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.94, opacity: 0, y: 15 }}
+            transition={{ type: "spring", duration: 0.3 }}
+            className="bg-white dark:bg-[#0c101d] border-2 border-rose-500/50 dark:border-rose-500/60 rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl relative overflow-hidden space-y-4"
+            style={{ direction: dir }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-rose-100 dark:border-rose-950/60 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-rose-600 text-white rounded-2xl shadow-lg shadow-rose-600/30 animate-pulse">
+                  <Bug size={24} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-rose-600 dark:text-rose-400">
+                    {exportError.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                    {isAr
+                      ? 'تفاصيل الخطأ البرمجي والتقني المباشر للمستخدم'
+                      : 'Technical Runtime Exception Diagnostics'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExportError(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Technical Information Banner */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                <span className="flex items-center gap-1.5">
+                  <Terminal size={14} className="text-rose-500" />
+                  <span>{isAr ? 'رسالة الخطأ التقني المباشرة (Technical Error Message):' : 'Raw Technical Error Message:'}</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 rounded-md">
+                  Phase: {exportError.phase || 'UNKNOWN'}
+                </span>
+              </div>
+
+              {/* Monospace Code Display */}
+              <div className="bg-slate-900 text-rose-300 p-3.5 rounded-2xl font-mono text-xs border border-slate-800 break-all select-all leading-relaxed shadow-inner">
+                <span className="text-rose-500 font-black">[{exportError.originalErrorName}]:</span> {exportError.technicalMessage}
+              </div>
+            </div>
+
+            {/* System Execution Context */}
+            <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800 font-semibold text-slate-600 dark:text-slate-300">
+              <div>
+                <span className="text-slate-400">{isAr ? 'وضع اللغة الحالي:' : 'Active Language:'} </span>
+                <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 uppercase">{exportError.language}</span>
+              </div>
+              <div>
+                <span className="text-slate-400">{isAr ? 'معرّف السائق:' : 'Driver Code:'} </span>
+                <span className="font-mono font-black text-indigo-600 dark:text-indigo-400">{exportError.driverId}</span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-slate-400">{isAr ? 'اسم السائق المحدد:' : 'Driver Full Name:'} </span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{exportError.driverName}</span>
+              </div>
+            </div>
+
+            {/* Expandable Stack Trace */}
+            {exportError.stack && (
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setShowFullStack(!showFullStack)}
+                  className="text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <span>{showFullStack ? '▼' : '▶'}</span>
+                  <span>{isAr ? 'عرض مسار الاستدعاء الكامل (Stack Trace)' : 'Show Full Stack Trace'}</span>
+                </button>
+                {showFullStack && (
+                  <pre className="text-[10px] bg-slate-950 text-slate-300 p-3 rounded-xl font-mono overflow-x-auto max-h-36 border border-slate-800 leading-tight">
+                    {exportError.stack}
+                  </pre>
+                )}
+              </div>
+            )}
+
+            {/* Remediation & Action Recommendations */}
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-1 text-xs">
+              <span className="font-black text-amber-700 dark:text-amber-400 block">
+                {isAr ? '💡 الحلول المقترحة والتشخيص الذاتي:' : '💡 Recommended Troubleshooting Steps:'}
+              </span>
+              <ul className="list-disc list-inside text-[11px] text-slate-600 dark:text-slate-300 space-y-0.5">
+                <li>
+                  {isAr 
+                    ? 'في حال كان الخطأ متعلقاً برسم العناصر خارج الشاشة، تم تحديث نطاق الرسم تلقائياً ليكون مدمجاً.'
+                    : 'If the error is related to element bounds, offscreen rendering boundaries have been normalized.'}
+                </li>
+                <li>
+                  {isAr
+                    ? 'في حال منع المتصفح التحميل التلقائي للملفات، يرجى السماح بتنزيل الملفات من إعدادات المتصفح أو الضغط على زر إعادة المحاولة.'
+                    : 'If your browser blocked the automatic file download, enable downloads in site settings or use Retry.'}
+                </li>
+              </ul>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fullText = `[AURVEXIS SCORECARD PDF EXPORT ERROR REPORT]
+Time: ${exportError.timestamp}
+Language: ${exportError.language}
+Driver: ${exportError.driverName} (ID: ${exportError.driverId})
+Phase: ${exportError.phase}
+Error Name: ${exportError.originalErrorName}
+Technical Message: ${exportError.technicalMessage}
+
+Stack Trace:
+${exportError.stack}`;
+                    navigator.clipboard.writeText(fullText);
+                    setCopiedError(true);
+                    setTimeout(() => setCopiedError(false), 2500);
+                  }}
+                  className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  {copiedError ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                  <span>{copiedError ? (isAr ? 'تم نسخ التقرير' : 'Copied!') : (isAr ? 'نسخ الخطأ الفني' : 'Copy Error Details')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targetCard = scoredDrivers.find(d => d.driver.id === exportError.driverId);
+                    if (targetCard) {
+                      handleExportScorecardPDF(targetCard, true);
+                    }
+                  }}
+                  className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-purple-500/20"
+                >
+                  <RefreshCw size={13} />
+                  <span>{isAr ? 'إعادة المحاولة بالوضع الآمن' : 'Retry in Safe Mode'}</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setExportError(null)}
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-xl text-xs font-black transition-all cursor-pointer"
+              >
+                {isAr ? 'إغلاق' : 'Close'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

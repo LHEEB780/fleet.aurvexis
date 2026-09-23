@@ -3,6 +3,10 @@ import html2canvas from 'html2canvas-pro';
 import QRCode from 'qrcode';
 import { DriverScorecardData } from '../components/DriverScorecard';
 
+export interface ScorecardPdfOptions {
+  safeMode?: boolean;
+}
+
 /**
  * Ensures Cairo and Tajawal fonts are available for high-fidelity Arabic rendering
  */
@@ -19,7 +23,10 @@ function ensureArabicFonts(): Promise<void> {
   }
 
   if (document.fonts && document.fonts.ready) {
-    return document.fonts.ready.then(() => {}).catch(() => {});
+    return Promise.race([
+      document.fonts.ready.then(() => {}).catch(() => {}),
+      new Promise<void>(resolve => setTimeout(resolve, 800))
+    ]);
   }
   return Promise.resolve();
 }
@@ -30,24 +37,63 @@ function ensureArabicFonts(): Promise<void> {
  */
 export async function exportDriverScorecardPDF(
   card: DriverScorecardData,
-  language: 'ar' | 'en' = 'ar'
+  language: 'ar' | 'en' = 'ar',
+  options: ScorecardPdfOptions = {}
 ): Promise<void> {
   const isAr = language === 'ar';
+  let currentPhase = 'INIT_ENVIRONMENT';
 
-  await ensureArabicFonts();
-
-  // Generate QR code for verification
-  const qrText = `AURVEXIS-DRIVER-SCORECARD:${card.driver.id}:${card.overallScore}:${card.grade}:${new Date().toISOString()}`;
-  let qrDataUrl = '';
   try {
-    qrDataUrl = await QRCode.toDataURL(qrText, { width: 120, margin: 1 });
-  } catch (err) {
-    console.warn('QR Code generation failed, proceeding without QR:', err);
-  }
+    currentPhase = 'FONT_PREPARATION';
+    if (isAr) {
+      await ensureArabicFonts();
+    }
+
+    // Generate QR code for verification
+    currentPhase = 'QR_CODE_GENERATION';
+    const qrText = `AURVEXIS-DRIVER-SCORECARD:${card.driver.id}:${card.overallScore}:${card.grade}:${new Date().toISOString()}`;
+    let qrDataUrl = '';
+    try {
+      qrDataUrl = await QRCode.toDataURL(qrText, { width: 120, margin: 1 });
+    } catch (err) {
+      console.warn('QR Code generation failed, proceeding without QR:', err);
+    }
 
   const brandName = typeof localStorage !== 'undefined'
     ? localStorage.getItem('saas_brand_name') || 'FleetAurvexis'
     : 'FleetAurvexis';
+
+  const getDepartmentLabel = (dept?: string) => {
+    if (!dept) return isAr ? 'إدارة العمليات والنقل' : 'Fleet Operations';
+    if (!isAr) {
+      switch (dept) {
+        case 'قسم الآليات': return 'Machinery Dept';
+        case 'قسم الآليات العامة': return 'General Machinery Dept';
+        case 'قسم الاستثمار': return 'Investment Dept';
+        case 'قسم الاستثمار والتشغيل': return 'Investment & Operations';
+        case 'قسم الشؤون الهندسية':
+        case 'شعبة المشروعات الهندسية': return 'Engineering Projects Division';
+        case 'قسم الطوارئ':
+        case 'شعبة الطوارئ والتدخل العاجل': return 'Emergency & Rapid Response';
+        default: return dept;
+      }
+    }
+    return dept;
+  };
+
+  const getLicenseTypeLabel = (type?: string) => {
+    if (!type) return isAr ? 'عمومي' : 'Commercial';
+    if (!isAr) {
+      switch (type) {
+        case 'خفيف': return 'Light (Class 1)';
+        case 'ثقيل': return 'Heavy (Class 2)';
+        case 'عمومي': return 'Passenger / Bus (Class 3)';
+        case 'إنشائي': return 'Machinery & Const. (Class 4)';
+        default: return type;
+      }
+    }
+    return type;
+  };
 
   const cleanHandoverPct = Math.round(
     (card.handoverMetrics.cleanHandovers / (card.handoverMetrics.totalHandovers || 1)) * 100
@@ -148,7 +194,7 @@ export async function exportDriverScorecardPDF(
             <div>
               <div style="font-size: 9.5px; color: #64748b;">${isAr ? 'القسم / الإدارة:' : 'Department / Division:'}</div>
               <div style="font-size: 13px; font-weight: 700; color: #1e293b; margin-top: 2px;">
-                ${card.driver.department || (isAr ? 'إدارة العمليات والنقل' : 'Fleet Operations')}
+                ${getDepartmentLabel(card.driver.department)}
               </div>
             </div>
 
@@ -162,7 +208,7 @@ export async function exportDriverScorecardPDF(
             <div>
               <div style="font-size: 9.5px; color: #64748b;">${isAr ? 'رقم رخصة القيادة والنوع:' : 'License Number & Class:'}</div>
               <div style="font-size: 12px; font-weight: 700; font-family: monospace; color: #334155; margin-top: 2px;">
-                ${card.driver.licenseNumber || 'N/A'} (${card.driver.licenseType || (isAr ? 'عمومي' : 'Commercial')})
+                ${card.driver.licenseNumber || 'N/A'} (${getLicenseTypeLabel(card.driver.licenseType)})
               </div>
             </div>
 
@@ -412,55 +458,107 @@ export async function exportDriverScorecardPDF(
     </div>
   `;
 
-  // Create isolated rendering node in DOM
-  const container = document.createElement('div');
-  container.id = 'temp-scorecard-render-container';
-  container.style.position = 'fixed';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.width = '794px';
-  container.style.zIndex = '-9999';
-  container.innerHTML = htmlContent;
-  document.body.appendChild(container);
+    // Create isolated rendering node in DOM
+    currentPhase = 'DOM_ATTACHMENT';
+    const container = document.createElement('div');
+    container.id = 'temp-scorecard-render-container';
+    container.style.position = 'fixed';
+    container.style.top = '0px';
+    container.style.left = '0px';
+    container.style.width = '794px';
+    container.style.zIndex = '-99999';
+    container.style.opacity = '0';
+    container.style.pointerEvents = 'none';
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
 
-  try {
-    // Wait slightly for DOM font and layout engine to settle
-    await new Promise(resolve => setTimeout(resolve, 250));
+    try {
+      // Wait slightly for DOM font and layout engine to settle
+      await new Promise(resolve => setTimeout(resolve, 250));
 
-    // Render container to canvas with scale 2 for crisp 300dpi-like output
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      windowWidth: 794
-    });
+      currentPhase = 'CANVAS_RASTERIZATION';
+      // Render container to canvas with scale 2 for crisp 300dpi-like output
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        width: 794,
+        windowWidth: 794,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0
+      });
 
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-      compress: true
-    });
+      currentPhase = 'CANVAS_IMAGE_EXTRACTION';
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
 
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      currentPhase = 'PDF_DOCUMENT_CREATION';
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
 
-    pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+      const pageWidth = 210;
+      const pageHeight = 297;
+      pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
 
-    const cleanDriverName = (card.driver.name || (isAr ? 'السائق' : 'Driver'))
-      .replace(/[/\\?%*:|"<>#]/g, '_')
-      .replace(/\s+/g, '_');
+      currentPhase = 'FILE_SAVE_AND_DISPATCH';
+      const cleanDriverName = (card.driver.name || (isAr ? 'السائق' : 'Driver'))
+        .replace(/[/\\?%*:|"<>#]/g, '_')
+        .trim()
+        .replace(/\s+/g, '_');
 
-    const fileName = isAr
-      ? `بطاقة_أداء_السائق_${cleanDriverName}.pdf`
-      : `Driver_Scorecard_${cleanDriverName}.pdf`;
+      // Generate safe file name ensuring ASCII safety in English mode to avoid browser download blocks
+      const safeEnDriverName = cleanDriverName.replace(/[^\x00-\x7F]/g, '').trim() || `Driver_${card.driver.id}`;
+      const fileName = isAr
+        ? `بطاقة_أداء_السائق_${cleanDriverName}.pdf`
+        : `Driver_Scorecard_${safeEnDriverName}.pdf`;
 
-    pdf.save(fileName);
-  } finally {
-    if (document.body.contains(container)) {
-      document.body.removeChild(container);
+      // Multi-tier download mechanism
+      let downloaded = false;
+      try {
+        const blob = pdf.output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        downloaded = true;
+        setTimeout(() => {
+          if (document.body.contains(link)) document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+        }, 4000);
+      } catch (blobErr) {
+        console.warn('Direct blob URL download failed, trying standard save:', blobErr);
+      }
+
+      if (!downloaded) {
+        try {
+          pdf.save(fileName);
+        } catch (saveErr: any) {
+          throw new Error(`[PdfSaveDispatchError] Failed to trigger file save: ${saveErr?.message || saveErr}`);
+        }
+      }
+    } finally {
+      if (document.body.contains(container)) {
+        document.body.removeChild(container);
+      }
     }
+  } catch (rawError: any) {
+    const errorDetails = new Error(
+      `[ScorecardPDF:${currentPhase}] ${rawError?.name || 'Error'}: ${rawError?.message || String(rawError)}`
+    );
+    (errorDetails as any).phase = currentPhase;
+    (errorDetails as any).originalError = rawError;
+    (errorDetails as any).language = language;
+    (errorDetails as any).driverId = card.driver.id;
+    (errorDetails as any).driverName = card.driver.name;
+    throw errorDetails;
   }
 }

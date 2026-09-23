@@ -303,6 +303,14 @@ export function MaintenanceCalendar({
     bodywork: 'سمكرة ودهان'
   };
 
+  const categoriesEnMap: Record<string, string> = {
+    mechanical: 'Heavy Mechanical',
+    electrical: 'Electrical & Systems',
+    cooling: 'Cooling Systems',
+    hydraulic: 'Hydraulics & Boom',
+    bodywork: 'Bodywork & Paint'
+  };
+
   const activeMonthName = language === 'ar' ? ARABIC_MONTH_NAMES[month] : ENGLISH_MONTH_NAMES[month];
   const weekdaysList = language === 'ar' ? ARABIC_WEEKDAYS : ENGLISH_WEEKDAYS;
 
@@ -550,7 +558,7 @@ export function MaintenanceCalendar({
                           {ord.description}
                         </p>
 
-                        <div className="space-y-1 text-[8px] border-t border-slate-100 dark:border-slate-800/80 pt-2 text-right">
+                        <div className={`space-y-1 text-[8px] border-t border-slate-100 dark:border-slate-800/80 pt-2 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
                           {vehicle && (
                             <div className="flex items-center justify-start gap-1">
                               <span className="text-slate-400 font-bold">{tCalendar.vehicle}</span>
@@ -569,7 +577,7 @@ export function MaintenanceCalendar({
 
                           <div className="flex items-center justify-start gap-1.5 pt-1">
                             <span className="px-1 py-0.5 rounded text-[7px] font-black uppercase bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-500">
-                              {categoriesArMap[ord.category] || ord.category}
+                              {language === 'ar' ? (categoriesArMap[ord.category] || ord.category) : (categoriesEnMap[ord.category] || ord.category)}
                             </span>
                             <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase ${statusStyle}`}>
                               {language === 'ar' ? statusArMap[ord.status] : statusEnMap[ord.status]}

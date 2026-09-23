@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { 
   Search, 
   Filter, 
@@ -25,7 +25,15 @@ import {
   ShieldAlert,
   Wrench,
   LayoutGrid,
-  List
+  List,
+  Copy,
+  CheckCircle,
+  AlertCircle,
+  Bug,
+  Terminal,
+  ChevronDown,
+  ChevronUp,
+  Code
 } from 'lucide-react';
 import { 
   Radar, 
@@ -45,6 +53,75 @@ import { exportDriverProfilePDF } from '../utils/driverReportPdfGenerator';
 
 // Anchor System Date is 2026-05-30T19:20:00Z
 const SYSTEM_ANCHOR_DATE = '2026-05-30';
+
+interface DriverErrorBoundaryProps {
+  children: ReactNode;
+  language?: string;
+}
+
+interface DriverErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+}
+
+export class DriverErrorBoundary extends Component<DriverErrorBoundaryProps, DriverErrorBoundaryState> {
+  public override state: DriverErrorBoundaryState = {
+    hasError: false,
+    error: null,
+    errorInfo: null,
+  };
+
+  constructor(props: DriverErrorBoundaryProps) {
+    super(props);
+  }
+
+  static getDerivedStateFromError(error: Error): Partial<DriverErrorBoundaryState> {
+    return { hasError: true, error };
+  }
+
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('DriverErrorBoundary caught a technical rendering/language exception:', error, errorInfo);
+    this.setState({ errorInfo });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      const isAr = this.props.language !== 'en';
+      return (
+        <div className="p-6 my-6 bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-500/50 rounded-3xl text-rose-900 dark:text-rose-100 shadow-xl" dir={isAr ? 'rtl' : 'ltr'}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 bg-rose-600 text-white rounded-2xl">
+              <Bug size={24} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black">{isAr ? 'عطل تقني في معالجة واجهة السائقين (Error Boundary)' : 'Technical Driver Interface Error (Error Boundary)'}</h3>
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold">{isAr ? 'تم رصد استثناء برمجي وتفاديه بأمان. إليك التفاصيل التقنية المباشرة:' : 'A technical runtime error was safely intercepted. Direct diagnostics below:'}</p>
+            </div>
+          </div>
+          <div className="bg-slate-900 text-emerald-400 p-4 rounded-2xl font-mono text-xs overflow-x-auto border border-slate-800 space-y-1 mb-4">
+            <div><span className="text-rose-400 font-bold">[Error Name]:</span> {this.state.error?.name || 'RuntimeError'}</div>
+            <div><span className="text-rose-400 font-bold">[Message]:</span> {this.state.error?.message || 'Unknown Exception'}</div>
+            {this.state.error?.stack && (
+              <details className="mt-2 text-[10px] text-slate-400 cursor-pointer">
+                <summary className="text-indigo-400 font-bold hover:underline mb-1">{isAr ? 'عرض تسلسل الاستدعاء البرمجي (Stack Trace)' : 'Show Technical Stack Trace'}</summary>
+                <pre className="p-2 bg-slate-950 rounded-lg whitespace-pre-wrap">{this.state.error.stack}</pre>
+              </details>
+            )}
+          </div>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
+            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-2"
+          >
+            <RefreshCw size={14} />
+            <span>{isAr ? 'إعادة تشغيل وتصفير الواجهة' : 'Reset & Reload Interface'}</span>
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface DriversProps {
   user: AppUser;
@@ -204,6 +281,82 @@ export default function Drivers({ user }: DriversProps) {
   const [selectedDetailDriver, setSelectedDetailDriver] = useState<Driver | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Technical error state for driver export/file generation
+  interface DriverExportErrorDetails {
+    title: string;
+    technicalMessage: string;
+    phase?: string;
+    originalErrorName?: string;
+    stack?: string;
+    language: string;
+    driverId: string;
+    driverName: string;
+    timestamp: string;
+  }
+  const [exportError, setExportError] = useState<DriverExportErrorDetails | null>(null);
+  const [copiedError, setCopiedError] = useState(false);
+  const [showFullStack, setShowFullStack] = useState(false);
+
+  const handleExportDriverProfile = async (driver: Driver, metrics: any, safeMode = false) => {
+    try {
+      setIsExporting(true);
+      setExportError(null);
+      await exportDriverProfilePDF(driver, metrics, language === 'en' ? 'en' : 'ar', { safeMode });
+
+      const downloadMsg = language === 'ar' 
+        ? 'تم تنزيل ملف التقرير الفني والميداني للسائق بنجاح!' 
+        : 'Driver technical and field profile report downloaded successfully!';
+      const notifyDiv = document.createElement('div');
+      notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-emerald-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 border border-emerald-500 text-xs font-black shadow-emerald-500/20";
+      notifyDiv.style.direction = dir;
+      notifyDiv.innerHTML = `<span>✔ ${downloadMsg}</span>`;
+      document.body.appendChild(notifyDiv);
+      setTimeout(() => {
+        if (document.body.contains(notifyDiv)) notifyDiv.remove();
+      }, 4000);
+    } catch (err: any) {
+      console.error('Detailed Technical Error during driver export:', err);
+      const techMessage = err?.message || (typeof err === 'string' ? err : 'Unknown runtime exception during PDF generation');
+      const phase = (err as any)?.phase || 'SYSTEM_RENDER';
+      const origName = err?.name || 'PDFExportError';
+      const stack = err?.stack || '';
+
+      // Reveal technical error directly to the user in a diagnostic modal
+      setExportError({
+        title: language === 'ar' ? 'فشل تصدير وتحميل ملف السائق' : 'Driver File Export Failed',
+        technicalMessage: techMessage,
+        phase,
+        originalErrorName: origName,
+        stack,
+        language,
+        driverId: driver.id,
+        driverName: driver.name,
+        timestamp: new Date().toLocaleTimeString()
+      });
+
+      // Also display immediate notification showing technical error
+      const notifyDiv = document.createElement('div');
+      notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-rose-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex flex-col gap-1 border border-rose-400 text-xs font-black max-w-md shadow-rose-900/50";
+      notifyDiv.style.direction = dir;
+      const cleanTech = techMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      notifyDiv.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5 text-xs">✖ ${language === 'ar' ? 'تعذر تصدير ملف السائق' : 'Driver file export failed'}</span>
+          <span class="text-[9px] bg-rose-800 px-2 py-0.5 rounded font-mono">${phase}</span>
+        </div>
+        <div class="text-[10px] font-mono text-rose-100 bg-rose-950/70 p-1.5 rounded-lg break-all select-all border border-rose-800/80 mt-1">
+          ${cleanTech}
+        </div>
+      `;
+      document.body.appendChild(notifyDiv);
+      setTimeout(() => {
+        if (document.body.contains(notifyDiv)) notifyDiv.remove();
+      }, 6000);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Load drivers state from localStorage
   const [drivers, setDrivers] = useState<Driver[]>(() => {
     const saved = localStorage.getItem('fleet_drivers_v2');
@@ -323,37 +476,39 @@ export default function Drivers({ user }: DriversProps) {
     if (!expiryDateStr) return '';
     const expiry = new Date(expiryDateStr);
     const anchor = new Date(SYSTEM_ANCHOR_DATE);
+    const isAr = language !== 'en';
     
     if (expiry < anchor) {
       const diffTime = anchor.getTime() - expiry.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return `منتهية منذ ${diffDays} يوم`;
+      return isAr ? `منتهية منذ ${diffDays} يوم` : `Expired ${diffDays}d ago`;
     } else {
       const diffTime = expiry.getTime() - anchor.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       if (diffDays <= 30) {
-        return `تنتهي خلال ${diffDays} يوم ⚠️`;
+        return isAr ? `تنتهي خلال ${diffDays} يوم ⚠️` : `Expires in ${diffDays}d ⚠️`;
       }
-      return `صالحة لـ ${diffDays} يوم`;
+      return isAr ? `صالحة لـ ${diffDays} يوم` : `Valid for ${diffDays}d`;
     }
   };
 
   // Helper: format authority remaining label
   const getAuthRemainingLabel = (expiryDateStr?: string) => {
-    if (!expiryDateStr) return 'غير محدد';
+    const isAr = language !== 'en';
+    if (!expiryDateStr) return isAr ? 'غير محدد' : 'Unspecified';
     const expiry = new Date(expiryDateStr);
     const anchor = new Date(SYSTEM_ANCHOR_DATE);
     if (expiry < anchor) {
       const diffTime = anchor.getTime() - expiry.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return `منتهٍ منذ ${diffDays} يوم`;
+      return isAr ? `منتهٍ منذ ${diffDays} يوم` : `Expired ${diffDays}d ago`;
     } else {
       const diffTime = expiry.getTime() - anchor.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       if (diffDays <= 30) {
-        return `ينتهي خلال ${diffDays} يوم ⚠️`;
+        return isAr ? `ينتهي خلال ${diffDays} يوم ⚠️` : `Expires in ${diffDays}d ⚠️`;
       }
-      return `صالح لـ ${diffDays} يوم`;
+      return isAr ? `صالح لـ ${diffDays} يوم` : `Valid for ${diffDays}d`;
     }
   };
 
@@ -497,19 +652,20 @@ export default function Drivers({ user }: DriversProps) {
     if (user.role === 'viewer') return;
 
     // Simple validations
+    const isAr = language !== 'en';
     const errors: Record<string, string> = {};
-    if (!formInputs.name.trim()) errors.name = 'الاسم الكامل مطلوب';
-    if (!formInputs.identityNumber.trim()) errors.identityNumber = 'رقم الهوية / الإقامة مطلوب';
-    if (!formInputs.phone.trim()) errors.phone = 'رقم الجوال مطلوب';
-    if (!formInputs.licenseNumber.trim()) errors.licenseNumber = 'رقم رخصة القيادة مطلوب';
-    if (!formInputs.licenseExpiry) errors.licenseExpiry = 'تاريخ انتهاء الرخصة مطلوب';
+    if (!formInputs.name.trim()) errors.name = isAr ? 'الاسم الكامل مطلوب' : 'Full name is required';
+    if (!formInputs.identityNumber.trim()) errors.identityNumber = isAr ? 'رقم الهوية / الإقامة مطلوب' : 'National / Resident ID is required';
+    if (!formInputs.phone.trim()) errors.phone = isAr ? 'رقم الجوال مطلوب' : 'Mobile phone number is required';
+    if (!formInputs.licenseNumber.trim()) errors.licenseNumber = isAr ? 'رقم رخصة القيادة مطلوب' : 'Driving license number is required';
+    if (!formInputs.licenseExpiry) errors.licenseExpiry = isAr ? 'تاريخ انتهاء الرخصة مطلوب' : 'License expiry date is required';
 
     if (formInputs.driverRole !== 'driver') {
       if (!formInputs.movementAuthNumber.trim()) {
-        errors.movementAuthNumber = 'رقم قرار التفويض بالحركة مطلوب';
+        errors.movementAuthNumber = isAr ? 'رقم قرار التفويض بالحركة مطلوب' : 'Movement authorization order is required';
       }
       if (!formInputs.movementAuthExpiry) {
-        errors.movementAuthExpiry = 'تاريخ انتهاء قرار التفويض مطلوب';
+        errors.movementAuthExpiry = isAr ? 'تاريخ انتهاء قرار التفويض مطلوب' : 'Authorization expiry date is required';
       }
     }
 
@@ -629,12 +785,42 @@ export default function Drivers({ user }: DriversProps) {
     }
   };
 
+  const getLicenseTypeLabel = (type: string) => {
+    if (language === 'en') {
+      switch (type) {
+        case 'خفيف': return 'Light (Class 1)';
+        case 'ثقيل': return 'Heavy Freight (Class 2)';
+        case 'عمومي': return 'Passenger / Bus (Class 3)';
+        case 'إنشائي': return 'Machinery & Const. (Class 4)';
+        default: return type;
+      }
+    }
+    return type;
+  };
+
+  const getDepartmentLabel = (dept: string) => {
+    if (language === 'en') {
+      switch (dept) {
+        case 'قسم الآليات': return 'Machinery Dept';
+        case 'قسم الآليات العامة': return 'General Machinery Dept';
+        case 'قسم الاستثمار': return 'Investment Dept';
+        case 'قسم الاستثمار والتشغيل': return 'Investment & Operations';
+        case 'قسم الشؤون الهندسية':
+        case 'شعبة المشروعات الهندسية': return 'Engineering Projects Division';
+        case 'قسم الطوارئ':
+        case 'شعبة الطوارئ والتدخل العاجل': return 'Emergency & Rapid Response';
+        default: return dept;
+      }
+    }
+    return dept;
+  };
+
   return (
     <div className="space-y-6" id="drivers-management-canvas">
       {/* Dynamic Modal for Adding / Editing driver */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" dir="rtl">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto" dir={dir}>
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -643,7 +829,7 @@ export default function Drivers({ user }: DriversProps) {
             >
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="absolute top-5 left-5 p-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 rounded-full cursor-pointer transition-all z-10"
+                className={`absolute top-5 ${dir === 'rtl' ? 'left-5' : 'right-5'} p-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 rounded-full cursor-pointer transition-all z-10`}
               >
                 <X size={16} />
               </button>
@@ -654,21 +840,25 @@ export default function Drivers({ user }: DriversProps) {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white">
-                     {editingDriver ? 'تعديل وتحديث بيانات الموظف' : 'تسجيل وتوثيق سائق أو مفوض حركة جديد'}
+                    {editingDriver 
+                      ? (language === 'ar' ? 'تعديل وتحديث بيانات الموظف' : 'Edit Personnel Details')
+                      : (language === 'ar' ? 'تسجيل وتوثيق سائق أو مفوض حركة جديد' : 'Register New Driver or Movement Dispatcher')}
                   </h3>
                   <p className="text-[10px] text-slate-505 dark:text-slate-400">
-                    توثيق رخص القيادة وتفويضات الحركة الميدانية المعتمدة من الجهات المختصة بالمنظومة
+                    {language === 'ar'
+                      ? 'توثيق رخص القيادة وتفويضات الحركة الميدانية المعتمدة من الجهات المختصة بالمنظومة'
+                      : 'Documenting verified driver licenses and authorized field movement permits'}
                   </p>
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="flex flex-col min-h-0 text-right">
+              <form onSubmit={handleSubmit} className={`flex flex-col min-h-0 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                 <div className="flex-1 overflow-y-auto pr-1 pl-1 py-1 space-y-4 max-h-[55vh] md:max-h-[50vh] min-h-0">
                   
                   {/* Operational Role Selection */}
                   <div className="bg-purple-500/5 dark:bg-purple-950/20 p-3 rounded-2xl border border-purple-500/10 space-y-2">
                     <label className="text-[10.5px] font-black text-purple-800 dark:text-purple-400 block">
-                      الصفة التشغيلية والدور بالمنظومة:
+                      {language === 'ar' ? 'الصفة التشغيلية والدور بالمنظومة:' : 'Operational Role in System:'}
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
@@ -680,7 +870,7 @@ export default function Drivers({ user }: DriversProps) {
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50'
                         }`}
                       >
-                        سائق فقط
+                        {language === 'ar' ? 'سائق فقط' : 'Driver Only'}
                       </button>
                       <button
                         type="button"
@@ -691,7 +881,7 @@ export default function Drivers({ user }: DriversProps) {
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50'
                         }`}
                       >
-                        مفوض حركة فقط
+                        {language === 'ar' ? 'مفوض حركة فقط' : 'Dispatcher Only'}
                       </button>
                       <button
                         type="button"
@@ -702,7 +892,7 @@ export default function Drivers({ user }: DriversProps) {
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50'
                         }`}
                       >
-                        سائق ومفوض معاً
+                        {language === 'ar' ? 'سائق ومفوض معاً' : 'Driver & Dispatcher'}
                       </button>
                     </div>
                   </div>
@@ -711,12 +901,12 @@ export default function Drivers({ user }: DriversProps) {
                     {/* Name */}
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                        الاسم الكامل للسائق:<span className="text-rose-500">*</span>
+                        {language === 'ar' ? 'الاسم الكامل للسائق:' : 'Full Name:'}<span className="text-rose-500">*</span>
                       </label>
                       <input 
                         type="text"
                         className="w-full px-3 py-2 text-xs font-bold leading-normal outline-none bg-slate-50 dark:bg-slate-900 border border-slate-150 rounded-xl focus:border-brand-blue-500 text-slate-900 dark:text-white"
-                        placeholder="نايف الحربي"
+                        placeholder={language === 'ar' ? "نايف الحربي" : "e.g. Nayef Al-Harbi / John Doe"}
                         value={formInputs.name}
                         onChange={(e) => setFormInputs({ ...formInputs, name: e.target.value })}
                       />
@@ -728,7 +918,7 @@ export default function Drivers({ user }: DriversProps) {
                   {/* Identity number */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                      رقم الهوية الوطنية / الإقامة:<span className="text-rose-500">*</span>
+                      {language === 'ar' ? 'رقم الهوية الوطنية / الإقامة:' : 'National / Resident ID:'}<span className="text-rose-500">*</span>
                     </label>
                     <input 
                       type="text"
@@ -746,7 +936,7 @@ export default function Drivers({ user }: DriversProps) {
                   {/* Phone */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                      رقم الجوال:<span className="text-rose-500">*</span>
+                      {language === 'ar' ? 'رقم الجوال:' : 'Mobile Number:'}<span className="text-rose-500">*</span>
                     </label>
                     <input 
                       type="text"
@@ -763,7 +953,7 @@ export default function Drivers({ user }: DriversProps) {
                   {/* License Number */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                      رقم رخصة القيادة المعتمدة:<span className="text-rose-500">*</span>
+                      {language === 'ar' ? 'رقم رخصة القيادة المعتمدة:' : 'Approved Driving License No:'}<span className="text-rose-500">*</span>
                     </label>
                     <input 
                       type="text"
@@ -780,28 +970,28 @@ export default function Drivers({ user }: DriversProps) {
                   {/* License Type */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                      فئة رخصة القيادة:
+                      {language === 'ar' ? 'فئة رخصة القيادة:' : 'Driving License Class:'}
                     </label>
                     <select
                       className="w-full px-3 py-2 text-xs font-bold outline-none bg-slate-50 dark:bg-slate-900 border border-slate-150 rounded-xl focus:border-brand-blue-500 text-slate-950 dark:text-white"
                       value={formInputs.licenseType}
                       onChange={(e) => setFormInputs({ ...formInputs, licenseType: e.target.value })}
                     >
-                      <option value="خفيف">درجة أولى - عمومي خفيف (ملاكي/بيك أب)</option>
-                      <option value="ثقيل">درجة ثانية - نقل ثقيل (رأسي/قاطرة ومقطورة)</option>
-                      <option value="عمومي">درجة ثالثة - عمومي ركاب وباصات</option>
-                      <option value="إنشائي">درجة رابعة - معدات هندسية وإنشائية</option>
+                      <option value="خفيف">{language === 'ar' ? 'درجة أولى - عمومي خفيف (ملاكي/بيك أب)' : 'Class 1 - Light Commercial (Sedan / Pickup)'}</option>
+                      <option value="ثقيل">{language === 'ar' ? 'درجة ثانية - نقل ثقيل (رأسي/قاطرة ومقطورة)' : 'Class 2 - Heavy Freight (Tractor / Trailer)'}</option>
+                      <option value="عمومي">{language === 'ar' ? 'درجة ثالثة - عمومي ركاب وباصات' : 'Class 3 - Passenger & Buses'}</option>
+                      <option value="إنشائي">{language === 'ar' ? 'درجة رابعة - معدات هندسية وإنشائية' : 'Class 4 - Heavy Machinery & Construction'}</option>
                     </select>
                   </div>
 
                   {/* License Expiry */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                      تاريخ انتهاء الرخصة:<span className="text-rose-500">*</span>
+                      {language === 'ar' ? 'تاريخ انتهاء الرخصة:' : 'License Expiry Date:'}<span className="text-rose-500">*</span>
                     </label>
                     <input 
                       type="date"
-                      className="w-full px-3 py-2 text-xs font-bold outline-none bg-slate-50 dark:bg-slate-900 border border-slate-150 rounded-xl focus:border-brand-blue-500 text-slate-950 dark:text-white"
+                      className="w-full px-3 py-2 text-xs font-bold outline-none bg-slate-50 dark:bg-slate-900 border border-slate-150 rounded-xl focus:border-brand-blue-500 text-slate-950 dark:text-white font-mono"
                       value={formInputs.licenseExpiry}
                       onChange={(e) => setFormInputs({ ...formInputs, licenseExpiry: e.target.value })}
                     />
@@ -813,47 +1003,47 @@ export default function Drivers({ user }: DriversProps) {
                   {/* Department */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                      القسم الفني والتشغيلي:
+                      {language === 'ar' ? 'القسم الفني والتشغيلي:' : 'Technical & Operational Dept:'}
                     </label>
                     <select
                       className="w-full px-3 py-2 text-xs font-bold outline-none bg-slate-50 dark:bg-slate-900 border border-slate-150 rounded-xl focus:border-brand-blue-500 text-slate-950 dark:text-white"
                       value={formInputs.department}
                       onChange={(e) => setFormInputs({ ...formInputs, department: e.target.value })}
                     >
-                      <option value="قسم الآليات">قسم الآليات العامة</option>
-                      <option value="قسم الاستثمار">قسم الاستثمار والتشغيل</option>
-                      <option value="قسم الشؤون الهندسية">شعبة المشروعات الهندسية</option>
-                      <option value="قسم الطوارئ">شعبة الطوارئ والتدخل العاجل</option>
+                      <option value="قسم الآليات">{language === 'ar' ? 'قسم الآليات العامة' : 'General Machinery Dept'}</option>
+                      <option value="قسم الاستثمار">{language === 'ar' ? 'قسم الاستثمار والتشغيل' : 'Investment & Operations'}</option>
+                      <option value="قسم الشؤون الهندسية">{language === 'ar' ? 'شعبة المشروعات الهندسية' : 'Engineering Projects Division'}</option>
+                      <option value="قسم الطوارئ">{language === 'ar' ? 'شعبة الطوارئ والتدخل العاجل' : 'Emergency & Rapid Response'}</option>
                     </select>
                   </div>
 
                   {/* Status */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                      الحالة الميدانية التشغيلية:
+                      {language === 'ar' ? 'الحالة الميدانية التشغيلية:' : 'Field Operational Status:'}
                     </label>
                     <select
                       className="w-full px-3 py-2 text-xs font-bold outline-none bg-slate-50 dark:bg-slate-900 border border-slate-150 rounded-xl focus:border-brand-blue-500 text-slate-950 dark:text-white"
                       value={formInputs.status}
                       onChange={(e) => setFormInputs({ ...formInputs, status: e.target.value as any })}
                     >
-                      <option value="active">جاهز ومستعد للعمل (نشط ميدانياً)</option>
-                      <option value="suspended">موقوف مؤقتاً بالمنظومة</option>
-                      <option value="vacation">في إجازة رسمية / مجدولة</option>
+                      <option value="active">{language === 'ar' ? 'جاهز ومستعد للعمل (نشط ميدانياً)' : 'Active & Certified on Duty'}</option>
+                      <option value="suspended">{language === 'ar' ? 'موقوف مؤقتاً بالمنظومة' : 'Temporarily Suspended'}</option>
+                      <option value="vacation">{language === 'ar' ? 'في إجازة رسمية / مجدولة' : 'On Official Leave / Off Duty'}</option>
                     </select>
                   </div>
 
                   {/* Assigned Vehicle */}
                   <div className="sm:col-span-2 space-y-1">
                     <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                      ارتباط المركبة المخصصة حالياً:
+                      {language === 'ar' ? 'ارتباط المركبة المخصصة حالياً:' : 'Assigned Vehicle Link:'}
                     </label>
                     <select
                       className="w-full px-3 py-2 text-xs font-bold outline-none bg-slate-50 dark:bg-slate-900 border border-slate-150 rounded-xl focus:border-brand-blue-500 text-slate-950 dark:text-white"
                       value={formInputs.assignedVehicleId}
                       onChange={(e) => setFormInputs({ ...formInputs, assignedVehicleId: e.target.value })}
                     >
-                      <option value="">-- بدون مركبة (سائق شاغر) --</option>
+                      <option value="">{language === 'ar' ? '-- بدون مركبة (سائق شاغر) --' : '-- No vehicle assigned (Available) --'}</option>
                       {vehicles.map(v => (
                         <option key={v.id} value={v.id}>
                           {v.name} ({v.plateNumber})
@@ -864,13 +1054,13 @@ export default function Drivers({ user }: DriversProps) {
 
                   {/* Dispatcher fields - shown only if role includes dispatcher */}
                   {formInputs.driverRole !== 'driver' && (
-                    <div className="sm:col-span-2 p-4 bg-purple-500/5 dark:bg-purple-950/25 rounded-2xl border border-dashed border-purple-500/20 grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 animate-fadeIn text-right">
+                    <div className={`sm:col-span-2 p-4 bg-purple-500/5 dark:bg-purple-950/25 rounded-2xl border border-dashed border-purple-500/20 grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 animate-fadeIn ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                       <div className="sm:col-span-2 text-[10.5px] font-black text-purple-800 dark:text-purple-400">
-                        وثائق قرار التفويض بالحركة الصادرة:
+                        {language === 'ar' ? 'وثائق قرار التفويض بالحركة الصادرة:' : 'Issued Movement Authorization Documents:'}
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                          رقم قرار التفويض بالحركة:<span className="text-rose-500">*</span>
+                          {language === 'ar' ? 'رقم قرار التفويض بالحركة:' : 'Movement Authorization Order No:'}<span className="text-rose-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -885,7 +1075,7 @@ export default function Drivers({ user }: DriversProps) {
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-black text-slate-650 dark:text-slate-350">
-                          تاريخ انتهاء قرار التفويض:<span className="text-rose-500">*</span>
+                          {language === 'ar' ? 'تاريخ انتهاء قرار التفويض:' : 'Authorization Expiry Date:'}<span className="text-rose-500">*</span>
                         </label>
                         <input
                           type="date"
@@ -907,16 +1097,16 @@ export default function Drivers({ user }: DriversProps) {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-all"
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-all cursor-pointer"
                   >
-                    إلغاء
+                    {language === 'ar' ? 'إلغاء' : 'Cancel'}
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-purple-500/15 flex items-center gap-1"
+                    className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-purple-500/15 flex items-center gap-1 cursor-pointer"
                   >
                     <Check size={14} />
-                    <span>تأكيد الإجراء وحفظ السجل</span>
+                    <span>{language === 'ar' ? 'تأكيد الإجراء وحفظ السجل' : 'Confirm Action & Save Log'}</span>
                   </button>
                 </div>
               </form>
@@ -926,19 +1116,21 @@ export default function Drivers({ user }: DriversProps) {
       </AnimatePresence>
 
       {/* Title Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 text-white p-6 rounded-[2rem] border border-purple-900/40 shadow-xl relative overflow-hidden" dir="rtl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 text-white p-6 rounded-[2rem] border border-purple-900/40 shadow-xl relative overflow-hidden" dir={dir}>
         {/* Subtle background glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="text-right relative z-10">
+        <div className={`${dir === 'rtl' ? 'text-right' : 'text-left'} relative z-10`}>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/20 rounded-full text-purple-300 text-[10px] font-black mb-1.5">
             <Sparkles size={11} className="animate-pulse text-purple-400" />
-            <span>وحدة تفويض السائقين والحركة الميدانية 360</span>
+            <span>{language === 'ar' ? 'وحدة تفويض السائقين والحركة الميدانية 360' : 'Field Drivers & Movement Authorization 360'}</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-xl font-black text-white">
-              قاعدة تسجيل وإدارة السائقين والمفوضين بالحركة
+              {language === 'ar' 
+                ? 'قاعدة تسجيل وإدارة السائقين والمفوضين بالحركة'
+                : 'Drivers & Authorized Movement Personnel Registry'}
             </h2>
             <ContextualHelp 
               id="drivers"
@@ -966,7 +1158,9 @@ export default function Drivers({ user }: DriversProps) {
             />
           </div>
           <p className="text-xs text-purple-200/70 block pt-0.5 max-w-xl">
-            {t('منظومة السيطرة الشاملة لتسجيل رخص القيادة وتفويضات الحركة الميدانية، ومراقبة فترات الصلاحية للأذونات ومؤشرات كفاءة السلوك المهني.')}
+            {language === 'ar'
+              ? 'منظومة السيطرة الشاملة لتسجيل رخص القيادة وتفويضات الحركة الميدانية، ومراقبة فترات الصلاحية للأذونات ومؤشرات كفاءة السلوك المهني.'
+              : 'Comprehensive control system for driver licenses, field movement permits, authorization validity tracking, and behavioral performance metrics.'}
           </p>
         </div>
 
@@ -976,7 +1170,7 @@ export default function Drivers({ user }: DriversProps) {
             className="px-5 py-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-xl transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-1.5 cursor-pointer self-start sm:self-auto relative z-10 border border-purple-500/30"
           >
             <Plus size={15} />
-            <span>{t('إضافة موظف (سائق/مفوض)')}</span>
+            <span>{language === 'ar' ? 'إضافة موظف (سائق/مفوض)' : 'Add Personnel (Driver/Dispatcher)'}</span>
           </button>
         )}
       </div>
@@ -1025,10 +1219,10 @@ export default function Drivers({ user }: DriversProps) {
       ) : (
         <>
       {/* KPI Stats Widgets Area */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" dir="rtl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" dir={dir}>
         {/* KPI 1 - Total Registered (Sajeel/Employees) */}
         <div className="p-5 rounded-2xl border shadow-xs bg-purple-50/40 dark:bg-purple-950/15 border-purple-200/80 dark:border-purple-900 hover:border-purple-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-1.5 text-right">
+          <div className={`space-y-1.5 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
             <p className="text-[11px] font-black tracking-wide uppercase text-purple-800 dark:text-purple-300">
               {language === 'ar' ? 'إجمالي السائقين والمفوضين' : 'Total Personnel Database'}
             </p>
@@ -1051,7 +1245,7 @@ export default function Drivers({ user }: DriversProps) {
 
         {/* KPI 2 - Approved Dispatchers */}
         <div className="p-5 rounded-2xl border shadow-xs bg-violet-50/40 dark:bg-violet-950/15 border-violet-200/80 dark:border-violet-900 hover:border-violet-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-1.5 text-right">
+          <div className={`space-y-1.5 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
             <p className="text-[11px] font-black tracking-wide uppercase text-violet-800 dark:text-violet-300">
               {language === 'ar' ? 'المفوضون بالحركة المعتمدون' : 'Active Approved Dispatchers'}
             </p>
@@ -1074,7 +1268,7 @@ export default function Drivers({ user }: DriversProps) {
 
         {/* KPI 3 - Active Field Drivers */}
         <div className="p-5 rounded-2xl border shadow-xs bg-indigo-50/40 dark:bg-indigo-950/15 border-indigo-200/80 dark:border-indigo-900 hover:border-indigo-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-1.5 text-right">
+          <div className={`space-y-1.5 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
             <p className="text-[11px] font-black tracking-wide uppercase text-indigo-800 dark:text-indigo-300">
               {language === 'ar' ? 'السائقون النشطون بالميدان' : 'Active Duty Field Drivers'}
             </p>
@@ -1097,7 +1291,7 @@ export default function Drivers({ user }: DriversProps) {
 
         {/* KPI 4 - Expiries Warnings (Rox & Authorizations) */}
         <div className="p-5 rounded-2xl border shadow-xs bg-rose-50/40 dark:bg-rose-950/15 border-rose-200/80 dark:border-rose-900 hover:border-rose-300/80 flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-          <div className="space-y-1.5 text-right">
+          <div className={`space-y-1.5 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
             <p className="text-[11px] font-black tracking-wide uppercase text-rose-800 dark:text-rose-300">
               {language === 'ar' ? 'رخص وتفويضات حرجة / منتهية' : 'Critical / Expired Licenses'}
             </p>
@@ -1120,10 +1314,12 @@ export default function Drivers({ user }: DriversProps) {
       </div>
 
       {/* Advanced Filters Block */}
-      <div className="bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-100 dark:border-slate-800/80 p-4 space-y-4" dir="rtl">
+      <div className="bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-100 dark:border-slate-800/80 p-4 space-y-4" dir={dir}>
         {/* Role Quick Filtering Tabs */}
         <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-          <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 ml-2">الدور والصفة:</span>
+          <span className={`text-[11px] font-black text-slate-500 dark:text-slate-400 ${dir === 'rtl' ? 'ml-2' : 'mr-2'}`}>
+            {language === 'ar' ? 'الدور والصفة:' : 'Role & Assignment:'}
+          </span>
           <div className="flex flex-wrap gap-1.5 bg-slate-100/60 dark:bg-slate-900 p-1 rounded-2xl">
             <button
               onClick={() => setRoleFilter('all')}
@@ -1133,7 +1329,7 @@ export default function Drivers({ user }: DriversProps) {
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              الكل ({drivers.length})
+              {language === 'ar' ? 'الكل' : 'All'} ({drivers.length})
             </button>
             <button
               onClick={() => setRoleFilter('driver')}
@@ -1143,7 +1339,7 @@ export default function Drivers({ user }: DriversProps) {
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              السائقين ({drivers.filter(d => !d.driverRole || d.driverRole === 'driver' || d.driverRole === 'both').length})
+              {language === 'ar' ? 'السائقين' : 'Drivers'} ({drivers.filter(d => !d.driverRole || d.driverRole === 'driver' || d.driverRole === 'both').length})
             </button>
             <button
               onClick={() => setRoleFilter('dispatcher')}
@@ -1153,7 +1349,7 @@ export default function Drivers({ user }: DriversProps) {
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              المفوضين بالحركة ({drivers.filter(d => d.driverRole === 'dispatcher' || d.driverRole === 'both').length})
+              {language === 'ar' ? 'المفوضين بالحركة' : 'Dispatchers'} ({drivers.filter(d => d.driverRole === 'dispatcher' || d.driverRole === 'both').length})
             </button>
             <button
               onClick={() => setRoleFilter('both')}
@@ -1163,7 +1359,7 @@ export default function Drivers({ user }: DriversProps) {
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              الجمع بين الدورين ({drivers.filter(d => d.driverRole === 'both').length})
+              {language === 'ar' ? 'الجمع بين الدورين' : 'Both Roles'} ({drivers.filter(d => d.driverRole === 'both').length})
             </button>
           </div>
         </div>
@@ -1171,11 +1367,11 @@ export default function Drivers({ user }: DriversProps) {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
           {/* Search box (Col: 6) */}
           <div className="md:col-span-6 relative">
-            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+            <Search className={`absolute ${dir === 'rtl' ? 'right-3.5' : 'left-3.5'} top-1/2 -translate-y-1/2 text-slate-400`} size={15} />
             <input
               type="text"
-              className="w-full pr-10 pl-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-850 hover:border-slate-200 focus:border-purple-500 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-white transition-all placeholder-slate-400"
-              placeholder="ابحث باسم الموظف، رقم الهوية، رقم الرخصة القيادية أو رقم الهاتف..."
+              className={`w-full ${dir === 'rtl' ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-850 hover:border-slate-200 focus:border-purple-500 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-white transition-all placeholder-slate-400`}
+              placeholder={language === 'ar' ? "ابحث باسم الموظف، رقم الهوية، رقم الرخصة القيادية أو رقم الهاتف..." : "Search by name, ID number, license number or phone..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -1184,33 +1380,33 @@ export default function Drivers({ user }: DriversProps) {
           {/* Status Filter Dropdown (Col: 3) */}
           <div className="md:col-span-3 flex items-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-850 px-3 py-1 bg-transparent">
             <Filter size={13} className="text-slate-400 shrink-0" />
-            <span className="text-[10px] font-black text-slate-400 shrink-0">الحالة الميدانية:</span>
+            <span className="text-[10px] font-black text-slate-400 shrink-0">{language === 'ar' ? 'الحالة الميدانية:' : 'Field Status:'}</span>
             <select
               className="w-full bg-transparent border-none outline-none font-bold text-xs text-slate-700 dark:text-slate-300 py-1.5 cursor-pointer"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="all">كل الحالات الميدانية</option>
-              <option value="active">نشط ميدانياً (جاهز)</option>
-              <option value="suspended">موقوف/مستبعد بالمنظومة</option>
-              <option value="vacation">في إجازة رسمية</option>
+              <option value="all">{language === 'ar' ? 'كل الحالات الميدانية' : 'All Field Statuses'}</option>
+              <option value="active">{language === 'ar' ? 'نشط ميدانياً (جاهز)' : 'Active (On Duty)'}</option>
+              <option value="suspended">{language === 'ar' ? 'موقوف/مستبعد بالمنظومة' : 'Suspended'}</option>
+              <option value="vacation">{language === 'ar' ? 'في إجازة رسمية' : 'On Leave'}</option>
             </select>
           </div>
 
           {/* License Filter (Col: 3) */}
           <div className="md:col-span-3 flex items-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-850 px-3 py-1 bg-transparent">
             <IdCard size={13} className="text-slate-400 shrink-0" />
-            <span className="text-[10px] font-black text-slate-400 shrink-0">فئة الرخصة القيادية:</span>
+            <span className="text-[10px] font-black text-slate-400 shrink-0">{language === 'ar' ? 'فئة الرخصة القيادية:' : 'License Class:'}</span>
             <select
               className="w-full bg-transparent border-none outline-none font-bold text-xs text-slate-700 dark:text-slate-300 py-1.5 cursor-pointer"
               value={licenseFilter}
               onChange={(e) => setLicenseFilter(e.target.value)}
             >
-              <option value="all">كل فئات رخص القيادة</option>
-              <option value="خفيف">درجة أولى (خفيف)</option>
-              <option value="ثقيل">درجة ثانية (نقل ثقيل/أكتروس)</option>
-              <option value="عمومي">درجة ثالثة (باصات وركاب)</option>
-              <option value="إنشائي">درجة رابعة (معدات هندسية)</option>
+              <option value="all">{language === 'ar' ? 'كل فئات رخص القيادة' : 'All License Classes'}</option>
+              <option value="خفيف">{language === 'ar' ? 'درجة أولى (خفيف)' : 'Class 1 (Light)'}</option>
+              <option value="ثقيل">{language === 'ar' ? 'درجة ثانية (نقل ثقيل/أكتروس)' : 'Class 2 (Heavy / Actros)'}</option>
+              <option value="عمومي">{language === 'ar' ? 'درجة ثالثة (باصات وركاب)' : 'Class 3 (Buses / Passenger)'}</option>
+              <option value="إنشائي">{language === 'ar' ? 'درجة رابعة (معدات هندسية)' : 'Class 4 (Machinery & Construction)'}</option>
             </select>
           </div>
         </div>
@@ -1218,7 +1414,11 @@ export default function Drivers({ user }: DriversProps) {
         {searchTerm || statusFilter !== 'all' || licenseFilter !== 'all' || roleFilter !== 'all' ? (
           <div className="mt-3 text-[10.5px] font-bold text-slate-400 flex items-center justify-between px-1">
             <span>
-              عثرنا على <span className="text-purple-600 dark:text-purple-400 font-sans">{filteredDrivers.length}</span> نتيجة تطابق فلاتر البحث الحالية من إجمالي {totalDriversCount} موظف.
+              {language === 'ar' ? (
+                <>عثرنا على <span className="text-purple-600 dark:text-purple-400 font-sans">{filteredDrivers.length}</span> نتيجة تطابق فلاتر البحث الحالية من إجمالي {totalDriversCount} موظف.</>
+              ) : (
+                <>Found <span className="text-purple-600 dark:text-purple-400 font-sans">{filteredDrivers.length}</span> results matching active filters out of {totalDriversCount} personnel.</>
+              )}
             </span>
             <button
               onClick={() => {
@@ -1230,7 +1430,7 @@ export default function Drivers({ user }: DriversProps) {
               className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer flex items-center gap-0.5"
             >
               <RefreshCw size={10} />
-              <span>إعادة تهيئة الفلاتر</span>
+              <span>{language === 'ar' ? 'إعادة تهيئة الفلاتر' : 'Reset Filters'}</span>
             </button>
           </div>
         ) : null}
@@ -1238,19 +1438,19 @@ export default function Drivers({ user }: DriversProps) {
 
       {/* Main Drivers List / Grid View */}
       {filteredDrivers.length === 0 ? (
-        <div className="bg-white dark:bg-[#0f1422] rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-12 text-center space-y-3" dir="rtl">
+        <div className="bg-white dark:bg-[#0f1422] rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-12 text-center space-y-3" dir={dir}>
           <div className="w-14 h-14 bg-slate-50 dark:bg-slate-900 rounded-2xl flex items-center justify-center text-slate-450 mx-auto shadow-inner border border-slate-100 dark:border-slate-800">
             <UserX size={26} className="text-slate-350" />
           </div>
           <h4 className="text-xs font-black text-slate-700 dark:text-slate-200">
-            عذراً، لم نعثر على أي سائقين يطابقون محددات الاستعلام الخاصة بك.
+            {language === 'ar' ? 'عذراً، لم نعثر على أي سائقين يطابقون محددات الاستعلام الخاصة بك.' : 'Sorry, no drivers found matching your query criteria.'}
           </h4>
           <p className="text-[10px] text-slate-400 max-w-md mx-auto">
-            يرجى تعديل مصطلح البحث أو اختيار فئة ترخيص بديلة، أو قم بإضافة وتوثيق سجل سائق جديد بالضغط على الزر العلوي.
+            {language === 'ar' ? 'يرجى تعديل مصطلح البحث أو اختيار فئة ترخيص بديلة، أو قم بإضافة وتوثيق سجل سائق جديد بالضغط على الزر العلوي.' : 'Please adjust search keywords or select an alternative license filter, or register a new driver using the top button.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" dir="rtl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" dir={dir}>
           {filteredDrivers.map(driver => {
             const linkedVehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
             const licStatus = getLicenseStatus(driver.licenseExpiry);
@@ -1294,29 +1494,30 @@ export default function Drivers({ user }: DriversProps) {
               );
             }
 
-            let driverColorStripe = 'border-r-[6px] border-r-purple-500 hover:border-r-purple-600';
+            const borderStripeSide = dir === 'rtl' ? 'border-r-[6px]' : 'border-l-[6px]';
+            let driverColorStripe = `${borderStripeSide} border-purple-500 hover:border-purple-600`;
             if (driver.status === 'suspended') {
-              driverColorStripe = 'border-r-[6px] border-r-rose-500 hover:border-r-rose-600';
+              driverColorStripe = `${borderStripeSide} border-rose-500 hover:border-rose-600`;
             } else if (driver.status === 'vacation') {
-              driverColorStripe = 'border-r-[6px] border-r-amber-500 hover:border-r-amber-600';
+              driverColorStripe = `${borderStripeSide} border-amber-500 hover:border-amber-600`;
             }
 
             // Role Badge styling
             let roleBadge = (
               <span className="px-2 py-0.5 rounded-lg text-[8px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-350 border border-slate-200 dark:border-slate-700">
-                سائق
+                {language === 'ar' ? 'سائق' : 'Driver'}
               </span>
             );
             if (roleVal === 'dispatcher') {
               roleBadge = (
                 <span className="px-2 py-0.5 rounded-lg text-[8px] font-black bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                  مفوض حركة
+                  {language === 'ar' ? 'مفوض حركة' : 'Dispatcher'}
                 </span>
               );
             } else if (roleVal === 'both') {
               roleBadge = (
                 <span className="px-2 py-0.5 rounded-lg text-[8px] font-black bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                  سائق ومفوض
+                  {language === 'ar' ? 'سائق ومفوض' : 'Driver & Dispatcher'}
                 </span>
               );
             }
@@ -1344,13 +1545,13 @@ export default function Drivers({ user }: DriversProps) {
                         />
                       </div>
                       
-                      <div className="text-right min-w-0">
+                      <div className={`${dir === 'rtl' ? 'text-right' : 'text-left'} min-w-0`}>
                         <h4 className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                           {driver.name}
                         </h4>
                         <div className="text-[10px] text-slate-450 dark:text-slate-400 font-bold flex items-center gap-1 mt-0.5">
                           <Building2 size={10} className="text-slate-405 shrink-0" />
-                          <span className="truncate">{driver.department}</span>
+                          <span className="truncate">{getDepartmentLabel(driver.department)}</span>
                         </div>
                       </div>
                     </div>
@@ -1360,33 +1561,33 @@ export default function Drivers({ user }: DriversProps) {
                   </div>
 
                   {/* Simplified Info Badges Grid */}
-                  <div className="grid grid-cols-2 gap-1.5 text-right pt-2 border-t border-slate-50 dark:border-slate-850/60">
+                  <div className={`grid grid-cols-2 gap-1.5 ${dir === 'rtl' ? 'text-right' : 'text-left'} pt-2 border-t border-slate-50 dark:border-slate-850/60`}>
                     <div className="bg-slate-50/70 dark:bg-slate-900/60 p-1.5 px-2 rounded-xl border border-slate-100/50 dark:border-slate-850">
-                      <span className="text-[8px] text-slate-400 block leading-tight font-bold font-sans">الحالة الميدانية:</span>
-                      <div className="mt-0.5 truncate scale-[0.9] origin-right">
+                      <span className="text-[8px] text-slate-400 block leading-tight font-bold font-sans">{language === 'ar' ? 'الحالة الميدانية:' : 'Field Status:'}</span>
+                      <div className={`mt-0.5 truncate scale-[0.9] origin-${dir === 'rtl' ? 'right' : 'left'}`}>
                         {statusBadge}
                       </div>
                     </div>
                     <div className="bg-slate-50/70 dark:bg-slate-900/60 p-1.5 px-2 rounded-xl border border-slate-100/50 dark:border-slate-850">
-                      <span className="text-[8px] text-slate-400 block leading-tight font-bold font-sans">فئة رخصة القيادة:</span>
+                      <span className="text-[8px] text-slate-400 block leading-tight font-bold font-sans">{language === 'ar' ? 'فئة رخصة القيادة:' : 'License Class:'}</span>
                       <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded border text-[8px] font-black truncate max-w-full ${getLicenseTypeColor(driver.licenseType)}`}>
-                        {driver.licenseType}
+                        {getLicenseTypeLabel(driver.licenseType)}
                       </span>
                     </div>
                   </div>
 
                   {/* Dispatcher authorization document segment if applicable */}
                   {roleVal !== 'driver' && (
-                    <div className="bg-purple-500/5 dark:bg-purple-950/20 p-2 rounded-xl border border-purple-500/10 space-y-1 text-right">
+                    <div className={`bg-purple-500/5 dark:bg-purple-950/20 p-2 rounded-xl border border-purple-500/10 space-y-1 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                       <div className="flex items-center justify-between text-[8px] font-black text-purple-800 dark:text-purple-400">
                         <span className="flex items-center gap-0.5">
                           <Award size={10} />
-                          <span>قرار تفويض الحركة:</span>
+                          <span>{language === 'ar' ? 'قرار تفويض الحركة:' : 'Movement Order:'}</span>
                         </span>
-                        <span className="font-mono">{driver.movementAuthNumber || 'غير محدد'}</span>
+                        <span className="font-mono">{driver.movementAuthNumber || (language === 'ar' ? 'غير محدد' : 'Unspecified')}</span>
                       </div>
                       <div className="flex items-center justify-between text-[8px] text-slate-400">
-                        <span>تاريخ الصلاحية:</span>
+                        <span>{language === 'ar' ? 'تاريخ الصلاحية:' : 'Validity:'}</span>
                         <span className={`font-black ${
                           authStatus === 'expired' ? 'text-rose-500' : authStatus === 'critical' ? 'text-amber-500' : 'text-purple-600'
                         }`}>{authLabel}</span>
@@ -1395,8 +1596,8 @@ export default function Drivers({ user }: DriversProps) {
                   )}
 
                   {/* Connected Vehicle Row */}
-                  <div className="flex items-center justify-between text-right bg-slate-50/40 dark:bg-slate-900/30 p-2 rounded-xl border border-dotted border-slate-200/60 dark:border-slate-800">
-                    <span className="text-[9px] text-slate-400 font-bold">الآلية المخصصة:</span>
+                  <div className={`flex items-center justify-between ${dir === 'rtl' ? 'text-right' : 'text-left'} bg-slate-50/40 dark:bg-slate-900/30 p-2 rounded-xl border border-dotted border-slate-200/60 dark:border-slate-800`}>
+                    <span className="text-[9px] text-slate-400 font-bold">{language === 'ar' ? 'الآلية المخصصة:' : 'Assigned Vehicle:'}</span>
                     {linkedVehicle ? (
                       <span className="text-[9.5px] font-black text-slate-700 dark:text-slate-200 flex items-center gap-1 truncate max-w-[130px]">
                         <Truck size={10} className="text-purple-600 shrink-0" />
@@ -1405,7 +1606,7 @@ export default function Drivers({ user }: DriversProps) {
                     ) : (
                       <span className="text-[9px] text-amber-600 font-black flex items-center gap-1.5">
                         <AlertTriangle size={10} className="text-amber-500" />
-                        <span>بدون مركبة حالياً</span>
+                        <span>{language === 'ar' ? 'بدون مركبة حالياً' : 'No Vehicle Assigned'}</span>
                       </span>
                     )}
                   </div>
@@ -1414,7 +1615,7 @@ export default function Drivers({ user }: DriversProps) {
                 {/* Footer interact hint & Admin tools */}
                 <div className="flex items-center justify-between border-t border-slate-50 dark:border-slate-850/40 pt-2.5 mt-3 self-end w-full">
                   <span className="text-[9px] text-purple-600 dark:text-purple-400 font-black group-hover:underline flex items-center gap-1 select-none">
-                    <span>عرض التفاصيل والتقارير 🔍</span>
+                    <span>{language === 'ar' ? 'عرض التفاصيل والتقارير 🔍' : 'View Details & Analytics 🔍'}</span>
                   </span>
 
                   <div className="flex items-center gap-1.5">
@@ -1424,7 +1625,7 @@ export default function Drivers({ user }: DriversProps) {
                         setDriversViewMode('scorecard');
                       }}
                       className="p-1 px-2 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 text-[9px] font-black rounded-lg transition-all flex items-center gap-1 cursor-pointer border border-purple-200/50 dark:border-purple-800/40"
-                      title="عرض بطاقة الأداء والكفاءة الرقمية"
+                      title={language === 'ar' ? "عرض بطاقة الأداء والكفاءة الرقمية" : "View Performance Scorecard"}
                     >
                       <Award size={10} />
                       <span>{language === 'ar' ? 'بطاقة الأداء' : 'Scorecard'}</span>
@@ -1438,10 +1639,10 @@ export default function Drivers({ user }: DriversProps) {
                             handleOpenEdit(driver);
                           }}
                           className="p-1 px-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-600 dark:text-slate-350 hover:text-purple-600 dark:hover:text-purple-400 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-slate-150/50 dark:border-slate-800"
-                          title="تعديل سجل الموظف"
+                          title={language === 'ar' ? "تعديل سجل الموظف" : "Edit Personnel Record"}
                         >
                           <Edit size={10} />
-                          <span>تعديل</span>
+                          <span>{language === 'ar' ? 'تعديل' : 'Edit'}</span>
                         </button>
                         <button
                           onClick={(e) => {
@@ -1449,10 +1650,10 @@ export default function Drivers({ user }: DriversProps) {
                             handleDeleteDriver(driver.id, driver.name);
                           }}
                           className="p-1 px-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/15 text-rose-500 hover:text-rose-600 text-[9px] font-black rounded-lg transition-all flex items-center gap-0.5 cursor-pointer border border-rose-100/50 dark:border-rose-950/30"
-                          title="حذف السجل نهائياً"
+                          title={language === 'ar' ? "حذف السجل نهائياً" : "Delete Record Permanently"}
                         >
                           <Trash2 size={10} />
-                          <span>حذف</span>
+                          <span>{language === 'ar' ? 'حذف' : 'Delete'}</span>
                         </button>
                       </>
                     )}
@@ -1475,15 +1676,20 @@ export default function Drivers({ user }: DriversProps) {
           const licDaysLabel = getLicenseRemainingLabel(selectedDetailDriver.licenseExpiry);
           
           // Safety grade description based on metrics
-          let safetyGrade = 'امتياز (A+)';
+          let safetyGrade = language === 'ar' ? 'امتياز (A+)' : 'Excellent (A+)';
+          let safetyLetter = 'A+';
           if (metrics.accidents > 1) {
-            safetyGrade = 'ضعيف (C-)';
+            safetyGrade = language === 'ar' ? 'ضعيف (C-)' : 'Poor (C-)';
+            safetyLetter = 'C-';
           } else if (metrics.accidents === 1) {
-            safetyGrade = 'مقبول (B)';
+            safetyGrade = language === 'ar' ? 'مقبول (B)' : 'Fair (B)';
+            safetyLetter = 'B';
           } else if (metrics.maintenanceIncidents > 2) {
-            safetyGrade = 'جيد (B+)';
+            safetyGrade = language === 'ar' ? 'جيد (B+)' : 'Good (B+)';
+            safetyLetter = 'B+';
           } else if (metrics.maintenanceIncidents > 0) {
-            safetyGrade = 'جيد جداً (A)';
+            safetyGrade = language === 'ar' ? 'جيد جداً (A)' : 'Very Good (A)';
+            safetyLetter = 'A';
           }
 
           let licBadgeColor = 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 border-purple-200/50';
@@ -1504,13 +1710,13 @@ export default function Drivers({ user }: DriversProps) {
                 {/* Close Button */}
                 <button
                   onClick={() => setSelectedDetailDriver(null)}
-                  className="absolute top-5 left-5 p-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-805 text-slate-500 rounded-full cursor-pointer transition-all z-10"
+                  className={`absolute top-5 ${dir === 'rtl' ? 'left-5' : 'right-5'} p-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-805 text-slate-500 rounded-full cursor-pointer transition-all z-10`}
                 >
                   <X size={16} />
                 </button>
 
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5 mb-6 text-right">
+                <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5 mb-6 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-inner flex-shrink-0">
                       <img src={selectedDetailDriver.avatar} alt={selectedDetailDriver.name} className="w-full h-full object-cover" />
@@ -1535,13 +1741,13 @@ export default function Drivers({ user }: DriversProps) {
                         </span>
                       </div>
                       
-                      <p className="text-xs text-slate-450 dark:text-slate-400 font-bold mt-1">
-                        {language === 'ar' ? 'القسم التشغيلي: ' : 'Department: '} {selectedDetailDriver.department}
+                      <p className="text-xs text-slate-455 dark:text-slate-400 font-bold mt-1">
+                        {language === 'ar' ? 'القسم التشغيلي: ' : 'Department: '} {getDepartmentLabel(selectedDetailDriver.department)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-right md:text-left flex flex-col md:items-end gap-1.5 self-start md:self-auto">
+                  <div className={`${dir === 'rtl' ? 'text-right md:text-left md:items-end' : 'text-left md:text-right md:items-start'} flex flex-col gap-1.5 self-start md:self-auto`}>
                     <span className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold font-sans">
                       {language === 'ar' ? 'الهوية والترخيص الرقمي' : 'Digital License & Identity'}
                     </span>
@@ -1566,7 +1772,7 @@ export default function Drivers({ user }: DriversProps) {
                   <div className="lg:col-span-5 space-y-4">
                     
                     {/* Grade & General Assessment */}
-                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-[#111827] dark:to-[#171029] p-4 rounded-[1.8rem] border border-purple-100/40 dark:border-purple-950/60 flex items-center justify-between text-right">
+                    <div className={`bg-gradient-to-br from-purple-50 to-violet-50 dark:from-[#111827] dark:to-[#171029] p-4 rounded-[1.8rem] border border-purple-100/40 dark:border-purple-950/60 flex items-center justify-between ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                       <div className="space-y-1">
                         <span className="text-[9.5px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider block">
                           {language === 'ar' ? 'تصنيف السلامة والمهارة الميداني' : 'Overall Safety Score'}
@@ -1578,13 +1784,13 @@ export default function Drivers({ user }: DriversProps) {
                           {language === 'ar' ? 'يتم احتساب التصنيف تلقائياً بناءً على الحوادث والأعطال ومعدلات السرعة.' : 'Calculated automatically based on telematics telemetry, speeding logs, and repairs.'}
                         </p>
                       </div>
-                      <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-purple-500/20">
-                        {safetyGrade.includes('امتياز') || safetyGrade.includes('A') ? 'A' : safetyGrade.includes('B') ? 'B' : 'C'}
+                      <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-purple-500/20 shrink-0">
+                        {safetyLetter}
                       </div>
                     </div>
 
                     {/* Stats Cards Row */}
-                    <div className="grid grid-cols-2 gap-3 text-right">
+                    <div className={`grid grid-cols-2 gap-3 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                       {/* Trips Completed */}
                       <div className="bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800">
                         <span className="text-[9px] text-slate-400 block font-bold">
@@ -1622,37 +1828,37 @@ export default function Drivers({ user }: DriversProps) {
                     </div>
 
                     {/* Documents & Personal Details */}
-                    <div className="bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-right space-y-3">
+                    <div className={`bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800 ${dir === 'rtl' ? 'text-right' : 'text-left'} space-y-3`}>
                       <span className="text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block">
                         {language === 'ar' ? 'الوثائق الثبوتية وبيانات الاتصال 📋' : 'Identity Documents & Contact Info 📋'}
                       </span>
                       
-                      <div className="grid grid-cols-2 gap-3 text-right">
+                      <div className={`grid grid-cols-2 gap-3 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                         <div>
-                          <span className="text-[8px] text-slate-400 block font-bold">رقم الجوال:</span>
+                          <span className="text-[8px] text-slate-400 block font-bold">{language === 'ar' ? 'رقم الجوال:' : 'Mobile Phone:'}</span>
                           <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 font-mono select-all">
                             {selectedDetailDriver.phone}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[8px] text-slate-400 block font-bold font-sans">رقم الهوية الوطنية:</span>
+                          <span className="text-[8px] text-slate-400 block font-bold font-sans">{language === 'ar' ? 'رقم الهوية الوطنية:' : 'National ID:'}</span>
                           <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 font-mono select-all">
                             {selectedDetailDriver.identityNumber}
                           </span>
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-slate-200/40 dark:border-slate-800/60 grid grid-cols-2 gap-3 text-right">
+                      <div className={`pt-2 border-t border-slate-200/40 dark:border-slate-800/60 grid grid-cols-2 gap-3 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                         <div>
-                          <span className="text-[8px] text-slate-400 block font-bold">رقم رخصة القيادة:</span>
+                          <span className="text-[8px] text-slate-400 block font-bold">{language === 'ar' ? 'رقم رخصة القيادة:' : 'Driver License No:'}</span>
                           <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 font-mono select-all">
                             {selectedDetailDriver.licenseNumber}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[8px] text-slate-400 block font-bold font-sans">رخصة القيادة:</span>
+                          <span className="text-[8px] text-slate-400 block font-bold font-sans">{language === 'ar' ? 'فئة الرخصة:' : 'License Class:'}</span>
                           <span className={`inline-block mt-0.5 px-2 py-0.5 rounded border text-[9px] font-black ${getLicenseTypeColor(selectedDetailDriver.licenseType)}`}>
-                            {language === 'ar' ? `رخصة ${selectedDetailDriver.licenseType}` : `Lic: ${selectedDetailDriver.licenseType}`}
+                            {getLicenseTypeLabel(selectedDetailDriver.licenseType)}
                           </span>
                         </div>
                       </div>
@@ -1660,7 +1866,7 @@ export default function Drivers({ user }: DriversProps) {
 
                     {/* Dispatcher Authorization Details if registered as dispatcher */}
                     {selectedDetailDriver.driverRole && selectedDetailDriver.driverRole !== 'driver' && (
-                      <div className="bg-purple-500/5 dark:bg-purple-950/10 p-4 rounded-3xl border border-purple-500/10 text-right space-y-2.5">
+                      <div className={`bg-purple-500/5 dark:bg-purple-950/10 p-4 rounded-3xl border border-purple-500/10 ${dir === 'rtl' ? 'text-right' : 'text-left'} space-y-2.5`}>
                         <span className="text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block">
                           {language === 'ar' ? 'وثيقة قرار التفويض بالحركة المعتمدة 📄' : 'Movement Authorization Key 📄'}
                         </span>
@@ -1669,9 +1875,9 @@ export default function Drivers({ user }: DriversProps) {
                             <div className="p-1.5 bg-purple-600 text-white rounded-lg">
                               <Award size={12} />
                             </div>
-                            <div className="text-right">
+                            <div className={dir === 'rtl' ? 'text-right' : 'text-left'}>
                               <span className="text-xs font-black text-slate-800 dark:text-white block leading-none">
-                                {selectedDetailDriver.movementAuthNumber || 'غير محدد'}
+                                {selectedDetailDriver.movementAuthNumber || (language === 'ar' ? 'غير محدد' : 'Unspecified')}
                               </span>
                               <span className="text-[9px] text-purple-600 dark:text-purple-400 block mt-1 leading-none font-bold">
                                 {getAuthRemainingLabel(selectedDetailDriver.movementAuthExpiry)}
@@ -1683,7 +1889,7 @@ export default function Drivers({ user }: DriversProps) {
                     )}
 
                     {/* Operational Vehicle Assignment */}
-                    <div className="bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-right space-y-2.5">
+                    <div className={`bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800 ${dir === 'rtl' ? 'text-right' : 'text-left'} space-y-2.5`}>
                       <span className="text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block">
                         {language === 'ar' ? 'المركبة التشغيلية المعينة 🚛' : 'Assigned Fleet Vehicle 🚛'}
                       </span>
@@ -1694,12 +1900,12 @@ export default function Drivers({ user }: DriversProps) {
                             <div className="p-1.5 bg-purple-600 text-white rounded-lg">
                               <Truck size={12} />
                             </div>
-                            <div className="text-right">
+                            <div className={dir === 'rtl' ? 'text-right' : 'text-left'}>
                               <span className="text-xs font-black text-slate-800 dark:text-white block leading-none">
                                 {linkedVehicle.name}
                               </span>
                               <span className="text-[9px] text-slate-455 font-mono block mt-1 leading-none">
-                                لوحة: {linkedVehicle.plateNumber} | {linkedVehicle.type}
+                                {language === 'ar' ? `لوحة: ${linkedVehicle.plateNumber} | ${linkedVehicle.type}` : `Plate: ${linkedVehicle.plateNumber} | ${linkedVehicle.type}`}
                               </span>
                             </div>
                           </div>
@@ -1711,7 +1917,7 @@ export default function Drivers({ user }: DriversProps) {
                                 handleUnlinkVehicle(selectedDetailDriver.id, linkedVehicle.id);
                               }}
                               className="p-1 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-500 dark:bg-rose-950/30 dark:hover:bg-rose-900/50 rounded-lg text-[9px] font-black cursor-pointer transition-all"
-                              title="فك ارتباط السائق بالمركبة"
+                              title={language === 'ar' ? "فك ارتباط السائق بالمركبة" : "Unlink Driver from Vehicle"}
                             >
                               {language === 'ar' ? 'فك الارتباط' : 'Unlink'}
                             </button>
@@ -1740,16 +1946,16 @@ export default function Drivers({ user }: DriversProps) {
                   </div>
 
                   {/* Right Col - Analytics & Behavior (Span 7) */}
-                  <div className="lg:col-span-7 space-y-4 text-right">
+                  <div className={`lg:col-span-7 space-y-4 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
 
                     {/* Accidents Highlight Card (Accident History Rate) */}
                     <div className={`p-4 rounded-3xl border ${
                       metrics.accidents === 0 
-                        ? 'bg-emerald-500/5 border-emerald-100/50 dark:border-emerald-950 text-right' 
+                        ? 'bg-emerald-500/5 border-emerald-100/50 dark:border-emerald-950' 
                         : metrics.accidents === 1
-                        ? 'bg-amber-500/5 border-amber-100/50 dark:border-amber-950 text-right'
-                        : 'bg-rose-500/5 border-rose-100/50 dark:border-rose-950 text-right animate-pulse'
-                    }`}>
+                        ? 'bg-amber-500/5 border-amber-100/50 dark:border-amber-950'
+                        : 'bg-rose-500/5 border-rose-100/50 dark:border-rose-950 animate-pulse'
+                    } ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">
                           {language === 'ar' ? 'تاريخ الحوادث المرورية' : 'Accident History Record'}
@@ -1772,7 +1978,7 @@ export default function Drivers({ user }: DriversProps) {
                         </span>
                       </div>
 
-                      <div className="mt-2 text-[9px] text-slate-450 dark:text-slate-400">
+                      <div className="mt-2 text-[9px] text-slate-455 dark:text-slate-400">
                         {metrics.accidents === 0 ? (
                           <p className="text-emerald-600 dark:text-emerald-400 font-bold">
                             ✔ {language === 'ar' ? 'السائق يمتلك سجل قيادة مثالي خالي تماماً من أي بلاغات حوادث مرورية تشغيلية.' : 'Excellent safe-driving habits. No road safety accidents standardly recorded.'}
@@ -1782,7 +1988,7 @@ export default function Drivers({ user }: DriversProps) {
                             ⚠ {language === 'ar' ? 'تنبيه: يوجد حادث مروري مسجل بالسابق. يرجى توجيه السائق لتجنب الأخطاء الميدانية.' : 'Notice: 1 historic accident recorded. Safety training recommended.'}
                           </p>
                         ) : (
-                          <p className="text-rose-600 dark:text-rose-450 font-black font-bold">
+                          <p className="text-rose-600 dark:text-rose-455 font-black font-bold">
                             🚨 {language === 'ar' ? 'تحذير: السائق يمتلك معدل حوادث حرج يتجاوز الحد المسموح به للشركة. يخضع لتقييم اللجنة الأمنية.' : 'Alert: Critical accident history. Exceeds standard safety boundaries.'}
                           </p>
                         )}
@@ -1792,7 +1998,7 @@ export default function Drivers({ user }: DriversProps) {
                     {/* Visual 360 Behavioral Radar Chart */}
                     <div className="bg-slate-50 dark:bg-[#121829] p-4 rounded-3xl border border-slate-100 dark:border-slate-800 text-center space-y-3">
 
-                      <span className="text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block text-right">
+                      <span className={`text-[10px] text-purple-600 dark:text-purple-400 font-extrabold uppercase tracking-wider block ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                         {language === 'ar' ? 'مخطط رادار المهارة والسلوك الميداني 📊' : 'Behavioral & Telematics Skill Radar 📊'}
                       </span>
                     <div className="h-64 w-full">
@@ -1818,12 +2024,12 @@ export default function Drivers({ user }: DriversProps) {
                     </div>
 
                     {/* Radar details description / Summary Footer */}
-                    <div className="bg-white dark:bg-[#0f1422] p-3 rounded-2xl border border-slate-100 dark:border-slate-805 text-right space-y-2">
+                    <div className={`bg-white dark:bg-[#0f1422] p-3 rounded-2xl border border-slate-100 dark:border-slate-805 ${dir === 'rtl' ? 'text-right' : 'text-left'} space-y-2`}>
                       <h5 className="text-[10px] font-black text-purple-600 dark:text-purple-400 flex items-center gap-1.5 justify-start">
                         <ShieldAlert size={12} className="text-purple-500" />
                         <span>{language === 'ar' ? 'توصيات وملاحظات المراقب الفني للرحلات' : 'Operational Officer Recommendations'}</span>
                       </h5>
-                      <p className="text-[9.5px] text-slate-655 dark:text-slate-400 leading-relaxed text-right">
+                      <p className={`text-[9.5px] text-slate-655 dark:text-slate-400 leading-relaxed ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                         {metrics.accidents === 0 && metrics.maintenanceIncidents === 0 ? (
                           language === 'ar' 
                             ? 'سائق متميز وملتزم للغاية بمعايير الحماية البيئية وصحة المحركات. يوصى بإدراجه في قائمه المكافآت ربع السنوية وتعيينه مرشداً تدريبياً للسائقين الجدد.' 
@@ -1845,7 +2051,7 @@ export default function Drivers({ user }: DriversProps) {
                 </div>
 
                 {/* Modal actions footer */}
-                <div className="border-t border-slate-100 dark:border-slate-800/80 pt-5 mt-6 flex flex-wrap justify-between items-center gap-3 text-right">
+                <div className={`border-t border-slate-100 dark:border-slate-800/80 pt-5 mt-6 flex flex-wrap justify-between items-center gap-3 ${dir === 'rtl' ? 'text-right' : 'text-left'}`}>
                   {/* Left items: direct admin controls inside modal */}
                   {user.role !== 'viewer' ? (
                     <div className="flex items-center gap-2">
@@ -1857,7 +2063,7 @@ export default function Drivers({ user }: DriversProps) {
                           handleOpenEdit(driverToEdit);
                         }}
                         className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5"
-                        title="تعديل سجل هذا السائق"
+                        title={language === 'ar' ? "تعديل سجل هذا السائق" : "Edit Driver Record"}
                       >
                         <Edit size={12} />
                         <span>{language === 'ar' ? 'تعديل السجل ✏️' : 'Edit File ✏️'}</span>
@@ -1870,7 +2076,7 @@ export default function Drivers({ user }: DriversProps) {
                           handleDeleteDriver(driverToDelete.id, driverToDelete.name);
                         }}
                         className="px-3 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5"
-                        title="حذف السائق نهائياً"
+                        title={language === 'ar' ? "حذف السائق نهائياً" : "Delete Driver Record"}
                       >
                         <Trash2 size={12} />
                         <span>{language === 'ar' ? 'حذف السجل 🗑️' : 'Delete File 🗑️'}</span>
@@ -1885,32 +2091,7 @@ export default function Drivers({ user }: DriversProps) {
                     <button
                       type="button"
                       disabled={isExporting}
-                      onClick={async () => {
-                        try {
-                          setIsExporting(true);
-                          await exportDriverProfilePDF(selectedDetailDriver, metrics, language === 'en' ? 'en' : 'ar');
-                          const downloadMsg = language === 'ar' 
-                            ? 'تم تنزيل ملف التقرير الفني والميداني للسائق بنجاح!' 
-                            : 'Driver technical and field profile report downloaded successfully!';
-                          const notifyDiv = document.createElement('div');
-                          notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-purple-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 animate-bounce border border-purple-500 text-xs font-black dir-rtl";
-                          notifyDiv.innerHTML = `<span>✔ ${downloadMsg}</span>`;
-                          document.body.appendChild(notifyDiv);
-                          setTimeout(() => notifyDiv.remove(), 4000);
-                        } catch (err) {
-                          console.error('Error generating driver profile PDF:', err);
-                          const errMsg = language === 'ar'
-                            ? 'حدث خطأ أثناء إنشاء ملف PDF. يرجى المحاولة مرة أخرى.'
-                            : 'An error occurred while generating the PDF. Please try again.';
-                          const notifyDiv = document.createElement('div');
-                          notifyDiv.className = "fixed bottom-5 right-5 z-[100] bg-rose-600 text-white rounded-2xl px-5 py-3.5 shadow-2xl flex items-center gap-2 border border-rose-500 text-xs font-black dir-rtl";
-                          notifyDiv.innerHTML = `<span>✖ ${errMsg}</span>`;
-                          document.body.appendChild(notifyDiv);
-                          setTimeout(() => notifyDiv.remove(), 4000);
-                        } finally {
-                          setIsExporting(false);
-                        }
-                      }}
+                      onClick={() => handleExportDriverProfile(selectedDetailDriver, metrics, false)}
                       className="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-slate-900 dark:text-indigo-400 dark:hover:bg-slate-800 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                     >
                       <Award size={13} className={isExporting ? "animate-spin" : ""} />
@@ -1980,6 +2161,150 @@ export default function Drivers({ user }: DriversProps) {
                   <Trash2 size={14} />
                   <span>{language === 'ar' ? 'تأكيد الحذف' : 'Delete'}</span>
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Technical Error Boundary & Catch Block Modal for Driver File Export */}
+        {exportError && (
+          <div 
+            id="driver-export-error-modal"
+            className="fixed inset-0 z-[150] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+            onClick={() => setExportError(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 15 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="bg-white dark:bg-[#0c101d] border-2 border-rose-500/50 dark:border-rose-500/60 rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl relative overflow-hidden space-y-4"
+              style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-rose-100 dark:border-rose-950/60 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-rose-600 text-white rounded-2xl shadow-lg shadow-rose-600/30 animate-pulse">
+                    <Bug size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-rose-600 dark:text-rose-400">
+                      {exportError.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                      {language === 'ar'
+                        ? 'تفاصيل الخطأ البرمجي والتقني المباشر للمستخدم'
+                        : 'Technical Runtime Exception Diagnostics'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExportError(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Technical Information Banner */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                  <span className="flex items-center gap-1.5">
+                    <Terminal size={14} className="text-rose-500" />
+                    <span>{language === 'ar' ? 'رسالة الخطأ التقني المباشرة (Technical Error Message):' : 'Raw Technical Error Message:'}</span>
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 rounded-md">
+                    Phase: {exportError.phase || 'UNKNOWN'}
+                  </span>
+                </div>
+
+                {/* Monospace Code Display */}
+                <div className="bg-slate-900 text-rose-300 p-3.5 rounded-2xl font-mono text-xs border border-slate-800 break-all select-all leading-relaxed shadow-inner">
+                  <span className="text-rose-500 font-black">[{exportError.originalErrorName}]:</span> {exportError.technicalMessage}
+                </div>
+              </div>
+
+              {/* System Execution Context */}
+              <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800 font-semibold text-slate-600 dark:text-slate-300">
+                <div>
+                  <span className="text-slate-400">{language === 'ar' ? 'وضع اللغة الحالي:' : 'Active Language:'} </span>
+                  <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 uppercase">{exportError.language}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">{language === 'ar' ? 'معرّف السائق:' : 'Driver Code:'} </span>
+                  <span className="font-mono font-black text-indigo-600 dark:text-indigo-400">{exportError.driverId}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">{language === 'ar' ? 'اسم السائق:' : 'Driver Name:'} </span>
+                  <span className="font-bold text-slate-800 dark:text-white">{exportError.driverName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">{language === 'ar' ? 'وقت الرصد:' : 'Captured At:'} </span>
+                  <span className="font-mono text-slate-500">{exportError.timestamp}</span>
+                </div>
+              </div>
+
+              {/* Collapsible Stack Trace */}
+              {exportError.stack && (
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowFullStack(!showFullStack)}
+                    className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Code size={13} className="text-indigo-500" />
+                      <span>{language === 'ar' ? 'عرض تسلسل الاستدعاء الكامل (Stack Trace)' : 'View Complete Stack Trace'}</span>
+                    </span>
+                    {showFullStack ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                  {showFullStack && (
+                    <div className="p-3 bg-slate-950 text-slate-300 font-mono text-[10px] overflow-x-auto max-h-44 whitespace-pre-wrap select-all border-t border-slate-800">
+                      {exportError.stack}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Actions Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fullText = JSON.stringify(exportError, null, 2);
+                    navigator.clipboard.writeText(fullText);
+                    setCopiedError(true);
+                    setTimeout(() => setCopiedError(false), 2500);
+                  }}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  {copiedError ? <CheckCircle size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                  <span>{copiedError ? (language === 'ar' ? 'تم نسخ التقرير التقني!' : 'Diagnostics Copied!') : (language === 'ar' ? 'نسخ الخطأ التقني' : 'Copy Error Details')}</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedDetailDriver) {
+                        const drvMetrics = getDriverMetrics(selectedDetailDriver.id, selectedDetailDriver.name);
+                        handleExportDriverProfile(selectedDetailDriver, drvMetrics, true);
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RefreshCw size={13} className={isExporting ? "animate-spin" : ""} />
+                    <span>{language === 'ar' ? 'إعادة المحاولة (الوضع الآمن 🛡️)' : 'Retry Safe Mode 🛡️'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExportError(null)}
+                    className="px-4 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                  >
+                    {language === 'ar' ? 'إغلاق' : 'Close'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

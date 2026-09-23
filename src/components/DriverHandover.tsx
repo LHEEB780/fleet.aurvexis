@@ -441,7 +441,7 @@ export default function DriverHandover({ user, language = 'ar' }: DriverHandover
   // Delete a record safely
   const handleDeleteRecord = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('هل أنت متأكد من حذف هذا المحضر المؤرشف؟')) {
+    if (confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا المحضر المؤرشف؟' : 'Are you sure you want to delete this archived handover report?')) {
       const updated = records.filter(r => r.id !== id);
       setRecords(updated);
       localStorage.setItem('fleet_driver_handovers_v1', JSON.stringify(updated));
