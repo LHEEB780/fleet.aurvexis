@@ -19,7 +19,8 @@ import {
   Globe2,
   FileDown,
   Printer,
-  Loader2
+  Loader2,
+  ChevronDown
 } from 'lucide-react';
 import { useLanguage } from '../services/LanguageContext';
 import { ArticleShareModal } from './ArticleShareModal';
@@ -434,6 +435,7 @@ export default function MarketingArticlesSection({
   });
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [showAllArticles, setShowAllArticles] = useState<boolean>(false);
   const [selectedArticle, setSelectedArticle] = useState<MarketingArticle | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [actionToast, setActionToast] = useState<string>('');
@@ -534,6 +536,19 @@ export default function MarketingArticlesSection({
     return art.category === activeCategory || (art.categoryEn && art.categoryEn.toLowerCase().includes(activeCategory.toLowerCase()));
   });
 
+  // Default to 4 articles unless expanded or a specific category filter is active
+  const isAllCategory = activeCategory === 'all';
+  const displayedArticles = isAllCategory && !showAllArticles 
+    ? filteredArticles.slice(0, 4) 
+    : filteredArticles;
+
+  const getCategoryCount = (catId: string) => {
+    if (catId === 'all') return publishedArticles.length;
+    return publishedArticles.filter(art => 
+      art.category === catId || (art.categoryEn && art.categoryEn.toLowerCase().includes(catId.toLowerCase()))
+    ).length;
+  };
+
   // Native apps share trigger (WhatsApp, WA Business, Telegram, Messenger, Facebook, X, Gmail, Device)
   const handleShareArticle = async (art: MarketingArticle) => {
     setSelectedArticle(art);
@@ -556,28 +571,28 @@ export default function MarketingArticlesSection({
   };
 
   return (
-    <section id="articles-section" className="py-20 bg-slate-50/60 border-b border-purple-100/50 relative overflow-hidden">
+    <section id="articles-section" className="py-14 sm:py-20 bg-slate-50/60 border-b border-purple-100/50 relative overflow-hidden">
       {/* Ambient background glows */}
       <div className="absolute top-1/4 -right-20 w-96 h-96 bg-purple-400/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 -left-20 w-96 h-96 bg-indigo-400/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-6 space-y-12 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 sm:space-y-10 relative z-10">
         
         {/* Section Header */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-200/80 text-purple-700 text-xs font-bold shadow-xs">
+        <div className="text-center space-y-3 max-w-3xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-50 border border-purple-200/80 text-purple-700 text-xs font-bold shadow-xs">
             <BookOpen size={13} className="text-purple-600" />
             <span>{language === 'ar' ? 'المدونة الهندسية والأدلة التشغيلية' : 'Engineering Blog & Technical Guides'}</span>
             <Sparkles size={12} className="text-amber-500 animate-pulse" />
           </div>
 
-          <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
             {language === 'ar' 
               ? 'رؤى هندسية متخصصة لصيانة وإدارة أساطيل النقل' 
               : 'Actionable Technical Insights for Fleet Operations & Maintenance'}
           </h2>
 
-          <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+          <p className="text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed">
             {language === 'ar'
               ? 'مقالات فنية وأدلة تطبيقية دورية مدعومة بالذكاء الاصطناعي مع صور احترافية لرفع جاهزية الأسطول، وترشيد استهلاك الوقود، وحوكمة الورش.'
               : 'Curated technical articles and field-tested playbooks drafted with AI assistance to optimize vehicle uptime, spare parts logistics, and maintenance audits.'}
@@ -585,74 +600,92 @@ export default function MarketingArticlesSection({
         </div>
 
         {/* Categories Bar */}
-        <div className="flex items-center justify-center gap-2 flex-wrap pb-2">
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap pb-1">
           {categories.map(cat => {
             const isActive = activeCategory === cat.id;
+            const count = getCategoryCount(cat.id);
             return (
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setActiveCategory(cat.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                onClick={() => {
+                  setActiveCategory(cat.id);
+                  setShowAllArticles(false);
+                }}
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20 scale-[1.02]'
                     : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80'
                 }`}
               >
                 <span>{language === 'ar' ? cat.labelAr : cat.labelEn}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  {count}
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* Articles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
-          {filteredArticles.map((art, idx) => (
+        {/* Articles Grid (4 Columns Layout, Displaying 4 Articles) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+          {displayedArticles.map((art, idx) => (
             <motion.article
               key={art.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: idx * 0.08 }}
-              className="bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-purple-300 transition-all duration-300 flex flex-col group text-right"
+              transition={{ duration: 0.3, delay: idx * 0.05 }}
+              onClick={() => setSelectedArticle(art)}
+              className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-xl hover:border-purple-300 transition-all duration-300 flex flex-col group text-right cursor-pointer hover:-translate-y-1"
               dir={isRtl ? 'rtl' : 'ltr'}
             >
               {/* Image Container with Hover Zoom */}
-              <div className="relative h-52 overflow-hidden bg-slate-100">
+              <div className="relative h-44 sm:h-48 overflow-hidden bg-slate-100 shrink-0">
                 <img
                   src={art.image || highwayLogisticsTruck}
                   alt={art.title}
                   className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
                 
                 {/* Category & Read Time Pills */}
-                <div className="absolute top-3.5 right-3.5 flex items-center gap-2">
-                  <span className="px-2.5 py-1 bg-purple-900/80 backdrop-blur-md text-purple-200 text-[10.5px] font-bold rounded-lg border border-purple-300/30">
+                <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveCategory(art.category);
+                      setShowAllArticles(false);
+                    }}
+                    className="px-2 py-0.5 bg-purple-900/85 hover:bg-purple-800 backdrop-blur-md text-purple-200 text-[10px] font-bold rounded-md border border-purple-300/30 transition-colors"
+                  >
                     {language === 'ar' ? art.category : (art.categoryEn || art.category)}
-                  </span>
+                  </button>
                 </div>
 
-                <div className="absolute bottom-3.5 right-3.5 left-3.5 flex items-center justify-between text-white text-[11px] font-medium">
-                  <div className="flex items-center gap-1.5 bg-slate-900/70 backdrop-blur-md px-2.5 py-1 rounded-md">
-                    <Clock size={12} className="text-purple-300" />
+                <div className="absolute bottom-2.5 right-3 left-3 flex items-center justify-between text-white text-[10px] font-medium">
+                  <div className="flex items-center gap-1 bg-slate-900/70 backdrop-blur-md px-2 py-0.5 rounded-md">
+                    <Clock size={11} className="text-purple-300" />
                     <span>{art.readTime}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-slate-900/70 backdrop-blur-md px-2.5 py-1 rounded-md">
-                    <Calendar size={12} className="text-purple-300" />
+                  <div className="flex items-center gap-1 bg-slate-900/70 backdrop-blur-md px-2 py-0.5 rounded-md">
+                    <Calendar size={11} className="text-purple-300" />
                     <span>{art.date}</span>
                   </div>
                 </div>
               </div>
 
               {/* Card Body */}
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-3">
+              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
                   {/* SEO Tags */}
                   {art.tags && art.tags.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {art.tags.slice(0, 3).map((tag, tIdx) => (
-                        <span key={tIdx} className="text-[10px] text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md font-mono font-medium">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {art.tags.slice(0, 2).map((tag, tIdx) => (
+                        <span key={tIdx} className="text-[9.5px] text-purple-600 bg-purple-50 px-1.5 py-0.2 rounded font-mono font-medium">
                           #{tag}
                         </span>
                       ))}
@@ -660,36 +693,50 @@ export default function MarketingArticlesSection({
                   )}
 
                   {/* Title */}
-                  <h3 className="font-bold text-slate-900 text-base md:text-lg leading-snug group-hover:text-purple-700 transition-colors line-clamp-2">
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-[15px] leading-snug group-hover:text-purple-700 transition-colors line-clamp-2">
                     {art.title}
                   </h3>
 
                   {/* Summary */}
-                  <p className="text-slate-600 text-xs md:text-sm leading-relaxed line-clamp-3">
+                  <p className="text-slate-600 text-xs leading-relaxed line-clamp-2">
                     {art.summary}
                   </p>
                 </div>
 
                 {/* Card Footer: Author & Read CTA */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                    <Sparkles size={12} className="text-purple-500" />
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1 text-[10.5px] text-slate-500">
+                    <Sparkles size={11} className="text-purple-500" />
                     <span className="line-clamp-1">{art.author}</span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedArticle(art)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:text-purple-800 transition-colors group/btn cursor-pointer"
-                  >
-                    <span>{language === 'ar' ? 'قراءة المقال' : 'Read Article'}</span>
-                    <ArrowRight size={14} className={`${isRtl ? 'rotate-180' : ''} transform group-hover/btn:translate-x-0.5 rtl:group-hover/btn:-translate-x-0.5 transition-transform`} />
-                  </button>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 group-hover:text-purple-800 transition-colors">
+                    <span>{language === 'ar' ? 'قراءة المقال' : 'Read'}</span>
+                    <ArrowRight size={13} className={`${isRtl ? 'rotate-180' : ''} transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform`} />
+                  </span>
                 </div>
               </div>
             </motion.article>
           ))}
         </div>
+
+        {/* View More / View Less Button if 'all' category has more than 4 articles */}
+        {isAllCategory && filteredArticles.length > 4 && (
+          <div className="flex items-center justify-center pt-2">
+            <button
+              type="button"
+              onClick={() => setShowAllArticles(prev => !prev)}
+              className="px-6 py-2.5 bg-white hover:bg-purple-50 text-purple-700 hover:text-purple-800 border border-purple-200/80 rounded-2xl text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            >
+              <span>
+                {showAllArticles 
+                  ? (language === 'ar' ? 'عرض أقل (إظهار 4 مقالات فقط)' : 'Show Less (4 Articles Only)')
+                  : (language === 'ar' ? `تصفح باقي المقالات (${filteredArticles.length - 4} مقالات إضافية)` : `View Remaining Articles (+${filteredArticles.length - 4} more)`)}
+              </span>
+              <ChevronDown size={14} className={`transform transition-transform duration-300 ${showAllArticles ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        )}
 
         {/* Empty State */}
         {filteredArticles.length === 0 && (
@@ -717,15 +764,16 @@ export default function MarketingArticlesSection({
             onClick={() => setSelectedArticle(null)}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
+              initial={{ scale: 0.94, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 12 }}
+              transition={{ type: "spring", stiffness: 320, damping: 28 }}
               onClick={e => e.stopPropagation()}
-              className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 shadow-2xl relative my-auto"
+              className="bg-white rounded-3xl max-w-xl w-full max-h-[82vh] overflow-hidden flex flex-col border border-purple-100 shadow-2xl relative my-auto"
               dir={isRtl ? 'rtl' : 'ltr'}
             >
-              {/* Modal Header Cover Image */}
-              <div className="relative h-64 sm:h-72 w-full bg-slate-900 overflow-hidden shrink-0">
+              {/* Modal Header Cover Image (Compact & Elegant) */}
+              <div className="relative h-36 sm:h-44 w-full bg-slate-900 overflow-hidden shrink-0">
                 <img
                   src={selectedArticle.image || highwayLogisticsTruck}
                   alt={selectedArticle.title}
@@ -738,36 +786,36 @@ export default function MarketingArticlesSection({
                 <button
                   type="button"
                   onClick={() => setSelectedArticle(null)}
-                  className="absolute top-4 left-4 sm:top-5 sm:left-5 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition cursor-pointer z-20 border border-white/20"
+                  className={`absolute top-3 ${isRtl ? 'left-3' : 'right-3'} w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition cursor-pointer z-20 border border-white/20`}
                   aria-label="Close"
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
 
                 {/* Article Header Metadata */}
-                <div className="absolute bottom-5 right-5 left-5 space-y-2 text-white text-right">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-3 py-1 bg-purple-600/90 text-white text-xs font-bold rounded-lg backdrop-blur-xs">
+                <div className="absolute bottom-3 inset-x-4 space-y-1 text-white text-right">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="px-2.5 py-0.5 bg-purple-600/95 text-white text-[10.5px] font-bold rounded-lg backdrop-blur-xs">
                       {selectedArticle.category}
                     </span>
-                    <span className="px-2.5 py-1 bg-white/20 text-white text-[11px] font-mono rounded-lg backdrop-blur-xs flex items-center gap-1">
-                      <Clock size={12} />
+                    <span className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-mono rounded-lg backdrop-blur-xs flex items-center gap-1">
+                      <Clock size={11} />
                       <span>{selectedArticle.readTime}</span>
                     </span>
-                    <span className="px-2.5 py-1 bg-white/20 text-white text-[11px] font-mono rounded-lg backdrop-blur-xs flex items-center gap-1">
-                      <Calendar size={12} />
+                    <span className="px-2 py-0.5 bg-white/20 text-white text-[10px] font-mono rounded-lg backdrop-blur-xs flex items-center gap-1">
+                      <Calendar size={11} />
                       <span>{selectedArticle.date}</span>
                     </span>
                   </div>
 
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black leading-tight text-white drop-shadow-sm">
+                  <h2 className="text-base sm:text-lg font-black leading-snug text-white drop-shadow-sm line-clamp-2">
                     {selectedArticle.title}
                   </h2>
                 </div>
               </div>
 
               {/* Scrollable Content Body */}
-              <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-right">
+              <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-right">
                 
                 {/* Toolbar (Share Article Only) */}
                 <div className="flex flex-col gap-3 border-b border-slate-100 pb-4">

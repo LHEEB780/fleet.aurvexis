@@ -45,7 +45,7 @@ import { useLanguage } from '../services/LanguageContext';
 import { saveDocument } from '../services/firebase';
 import FleetManagersShowcaseModal from './FleetManagersShowcaseModal';
 import VideoTutorialsModal from './VideoTutorialsModal';
-import CustomerSuccessStories from './CustomerSuccessStories';
+import SuccessStoriesCarousel from './CustomerSuccessStories';
 import MarketingArticlesSection from './MarketingArticlesSection';
 import MarketingFooter, { FooterColumnItem } from './MarketingFooter';
 import FleetAurvexisLogo, { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
@@ -1748,8 +1748,8 @@ export default function MarketingLandingPage({
         brandPrimaryColor={brandPrimaryColor} 
       />
 
-      {/* Customer Success Stories & Case Studies */}
-      <CustomerSuccessStories />
+      {/* Customer Success Stories Horizontal Carousel */}
+      <SuccessStoriesCarousel />
 
       {/* Enterprise Strategic Partner Case Study & Article Modal */}
       {selectedPartnerForStory && (

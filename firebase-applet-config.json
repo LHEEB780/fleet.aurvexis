@@ -6,5 +6,7 @@
   "firestoreDatabaseId": "ai-studio-39cc4385-020c-4e44-84cd-664702f85570",
   "storageBucket": "khaki-academy-zcf5x.firebasestorage.app",
   "messagingSenderId": "782641233075",
-  "measurementId": ""
+  "measurementId": "",
+  "oAuthClientId": "782641233075-d5ki0okb76527iaghlv38stjd2jkjfdd.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }
