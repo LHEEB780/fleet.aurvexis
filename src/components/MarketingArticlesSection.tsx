@@ -20,7 +20,15 @@ import {
   FileDown,
   Printer,
   Loader2,
-  ChevronDown
+  ChevronDown,
+  Fuel,
+  Wrench,
+  ShieldCheck,
+  Cpu,
+  Bus,
+  Newspaper,
+  RotateCcw,
+  SlidersHorizontal
 } from 'lucide-react';
 import { useLanguage } from '../services/LanguageContext';
 import { ArticleShareModal } from './ArticleShareModal';
@@ -518,23 +526,80 @@ export default function MarketingArticlesSection({
   // Filter only articles marked for public marketing display
   const publishedArticles = articles.filter(a => a.isPublishedToMarketingSite !== false && a.status !== 'draft');
 
-  // Categories list
+  // Categories list with targeted filters requested by user (Fuel, Periodic Maintenance, Governance, etc.)
   const categories = [
-    { id: 'all', labelAr: 'كافة المقالات', labelEn: 'All Articles' },
-    { id: 'المركز الإعلامي والأخبار', labelAr: 'المركز الإعلامي والأخبار', labelEn: 'Press Room & News' },
-    { id: 'الشراكات والتحالفات اللوجستية', labelAr: 'الشراكات اللوجستية والتحالفات', labelEn: 'Logistics Partnerships' },
-    { id: 'أدلة وركائز الاستخدام التشغيلي', labelAr: 'أدلة الاستخدام التشغيلي', labelEn: 'Operations Guides' },
-    { id: 'النقل المدرسي والتعليم', labelAr: 'المدارس والتعليم', labelEn: 'Schools & Education' },
-    { id: 'صيانة وقائية وأساطيل', labelAr: 'صيانة وقائية', labelEn: 'Preventive PM' },
-    { id: 'التحول الرقمي للورش', labelAr: 'التحول الرقمي والـ QR', labelEn: 'Digital Inspections' },
-    { id: 'كفاءة الطاقة والتشغيل', labelAr: 'كفاءة الوقود', labelEn: 'Fuel Efficiency' },
-    { id: 'فحص وتشخيص الذكاء الاصطناعي', labelAr: 'الذكاء الاصطناعي', labelEn: 'AI Diagnostics' }
+    { 
+      id: 'all', 
+      labelAr: 'كافة المقالات المميزة (4 مقالات)', 
+      labelEn: 'Featured Articles (4 Default)',
+      icon: Sparkles
+    },
+    { 
+      id: 'fuel', 
+      labelAr: 'وقود وترشيد الاستهلاك', 
+      labelEn: 'Fuel Optimization',
+      icon: Fuel
+    },
+    { 
+      id: 'maintenance', 
+      labelAr: 'صيانة دورية ووقائية', 
+      labelEn: 'Periodic Maintenance',
+      icon: Wrench
+    },
+    { 
+      id: 'governance', 
+      labelAr: 'حوكمة الورش والتشغيل', 
+      labelEn: 'Workshop Governance',
+      icon: ShieldCheck
+    },
+    { 
+      id: 'ai', 
+      labelAr: 'الذكاء الاصطناعي والفحص', 
+      labelEn: 'AI Diagnostics',
+      icon: Cpu
+    },
+    { 
+      id: 'education', 
+      labelAr: 'أساطيل المدارس والنقل', 
+      labelEn: 'Schools & Fleets',
+      icon: Bus
+    },
+    { 
+      id: 'press', 
+      labelAr: 'المركز الإعلامي والشراكات', 
+      labelEn: 'Press & Alliances',
+      icon: Newspaper
+    }
   ];
 
-  const filteredArticles = publishedArticles.filter(art => {
-    if (activeCategory === 'all') return true;
-    return art.category === activeCategory || (art.categoryEn && art.categoryEn.toLowerCase().includes(activeCategory.toLowerCase()));
-  });
+  // Robust keyword & category matcher
+  const matchesCategory = (art: MarketingArticle, catId: string) => {
+    if (catId === 'all') return true;
+    const cat = art.category || '';
+    const catEn = art.categoryEn || '';
+    const tags = (art.tags || []).join(' ');
+    const title = (art.title || '') + ' ' + (art.titleEn || '') + ' ' + (art.summary || '');
+    const fullText = (cat + ' ' + catEn + ' ' + tags + ' ' + title).toLowerCase();
+
+    switch (catId) {
+      case 'fuel':
+        return /وقود|طاقة|ديزل|fuel|diesel|energy/i.test(fullText);
+      case 'maintenance':
+        return /صيانة|وقائية|دورية|محركات|هيدروليك|preventive|maintenance|diesel|engine/i.test(fullText);
+      case 'governance':
+        return /حوكمة|تشغيلي|أدلة|ورش|التحول الرقمي|governance|operations|workshop|sop|inspection|ركائز/i.test(fullText);
+      case 'ai':
+        return /ذكاء|تشخيص|تنبؤ|حساسات|ai|diagnostics|telemetry|sensor/i.test(fullText);
+      case 'education':
+        return /مدرسي|مدارس|تعليم|حافلات|school|bus|education/i.test(fullText);
+      case 'press':
+        return /إعلامي|أخبار|شراكات|تحالفات|بيان|press|news|partnership|alliance/i.test(fullText);
+      default:
+        return cat === catId || catEn.toLowerCase().includes(catId.toLowerCase());
+    }
+  };
+
+  const filteredArticles = publishedArticles.filter(art => matchesCategory(art, activeCategory));
 
   // Default to 4 articles unless expanded or a specific category filter is active
   const isAllCategory = activeCategory === 'all';
@@ -544,10 +609,11 @@ export default function MarketingArticlesSection({
 
   const getCategoryCount = (catId: string) => {
     if (catId === 'all') return publishedArticles.length;
-    return publishedArticles.filter(art => 
-      art.category === catId || (art.categoryEn && art.categoryEn.toLowerCase().includes(catId.toLowerCase()))
-    ).length;
+    return publishedArticles.filter(art => matchesCategory(art, catId)).length;
   };
+
+  // Find active category label
+  const activeCategoryObj = categories.find(c => c.id === activeCategory);
 
   // Native apps share trigger (WhatsApp, WA Business, Telegram, Messenger, Facebook, X, Gmail, Device)
   const handleShareArticle = async (art: MarketingArticle) => {
@@ -600,10 +666,11 @@ export default function MarketingArticlesSection({
         </div>
 
         {/* Categories Bar */}
-        <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap pb-1">
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2.5 flex-wrap pb-1">
           {categories.map(cat => {
             const isActive = activeCategory === cat.id;
             const count = getCategoryCount(cat.id);
+            const IconComponent = cat.icon || BookOpen;
             return (
               <button
                 key={cat.id}
@@ -612,15 +679,16 @@ export default function MarketingArticlesSection({
                   setActiveCategory(cat.id);
                   setShowAllArticles(false);
                 }}
-                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
                   isActive
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20 scale-[1.02]'
-                    : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80'
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 scale-[1.02] ring-2 ring-purple-400/40'
+                    : 'bg-white text-slate-700 hover:bg-purple-50/80 hover:text-purple-700 border border-slate-200/90 hover:border-purple-200 shadow-xs'
                 }`}
               >
+                <IconComponent size={14} className={isActive ? 'text-white' : 'text-purple-600'} />
                 <span>{language === 'ar' ? cat.labelAr : cat.labelEn}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                 }`}>
                   {count}
                 </span>
@@ -629,8 +697,46 @@ export default function MarketingArticlesSection({
           })}
         </div>
 
+        {/* Filter State Feedback Banner */}
+        <div className="flex items-center justify-between flex-wrap gap-2 px-4 py-2.5 bg-white/80 backdrop-blur-sm rounded-2xl border border-purple-100/80 shadow-xs text-xs">
+          <div className="flex items-center gap-2 text-slate-700">
+            <SlidersHorizontal size={14} className="text-purple-600 shrink-0" />
+            {isAllCategory ? (
+              <span>
+                {language === 'ar'
+                  ? 'يُعرض حالياً 4 مقالات هندسية مميزة افتراضياً • اختر من أزرار الفلترة أعلاه (وقود، صيانة دورية، حوكمة) لإعادة تحميل القائمة، أو انقر على أي مقال لقراءته كاملاً.'
+                  : 'Displaying 4 featured engineering articles by default • Select filters above (Fuel, Maintenance, Governance) or click any article to read.'}
+              </span>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-slate-500">{language === 'ar' ? 'التصنيف المختار:' : 'Active Filter:'}</span>
+                <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200/60">
+                  {language === 'ar' ? activeCategoryObj?.labelAr : activeCategoryObj?.labelEn}
+                </span>
+                <span className="text-slate-500">
+                  ({displayedArticles.length} {language === 'ar' ? 'مقالات مطابقة' : 'articles'})
+                </span>
+              </div>
+            )}
+          </div>
+
+          {!isAllCategory && (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveCategory('all');
+                setShowAllArticles(false);
+              }}
+              className="px-3 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <RotateCcw size={12} />
+              <span>{language === 'ar' ? 'إعادة ضبط (عرض الـ 4 مقالات المميزة)' : 'Reset to 4 Featured Articles'}</span>
+            </button>
+          )}
+        </div>
+
         {/* Articles Grid (4 Columns Layout, Displaying 4 Articles) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+        <div key={activeCategory} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
           {displayedArticles.map((art, idx) => (
             <motion.article
               key={art.id}
@@ -657,10 +763,26 @@ export default function MarketingArticlesSection({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setActiveCategory(art.category);
+                      const catText = (art.category || '').toLowerCase();
+                      if (/وقود|طاقة|ديزل|fuel|energy/i.test(catText)) {
+                        setActiveCategory('fuel');
+                      } else if (/صيانة|وقائية|دورية|maintenance/i.test(catText)) {
+                        setActiveCategory('maintenance');
+                      } else if (/حوكمة|ورش|أدلة|تحول|governance|workshop/i.test(catText)) {
+                        setActiveCategory('governance');
+                      } else if (/ذكاء|تشخيص|ai|diagnostics/i.test(catText)) {
+                        setActiveCategory('ai');
+                      } else if (/مدرسي|مدارس|تعليم|حافلات|school|bus/i.test(catText)) {
+                        setActiveCategory('education');
+                      } else if (/إعلام|أخبار|شراكات|تحالفات|press|news/i.test(catText)) {
+                        setActiveCategory('press');
+                      } else {
+                        setActiveCategory(art.category);
+                      }
                       setShowAllArticles(false);
                     }}
-                    className="px-2 py-0.5 bg-purple-900/85 hover:bg-purple-800 backdrop-blur-md text-purple-200 text-[10px] font-bold rounded-md border border-purple-300/30 transition-colors"
+                    className="px-2 py-0.5 bg-purple-900/85 hover:bg-purple-800 backdrop-blur-md text-purple-200 text-[10px] font-bold rounded-md border border-purple-300/30 transition-colors cursor-pointer"
+                    title={language === 'ar' ? 'فلترة المقالات حسب هذا التصنيف' : 'Filter articles by this category'}
                   >
                     {language === 'ar' ? art.category : (art.categoryEn || art.category)}
                   </button>

@@ -16,13 +16,20 @@ import {
   Maximize2,
   RefreshCw,
   Globe,
-  Radio
+  Radio,
+  Layers,
+  Car,
+  ExternalLink,
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Vehicle } from '../types';
 import { useLanguage } from '../services/LanguageContext';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin, InfoWindow } from '@vis.gl/react-google-maps';
 import ContextualHelp from './ContextualHelp';
+import { WazeEmbeddedNavigator } from './WazeEmbeddedNavigator';
+import { InteractiveLeafletMap } from './InteractiveLeafletMap';
 
 // Fetch key from environment or secrets
 const API_KEY =
@@ -125,19 +132,36 @@ const METADATA_MAP: Record<string, LiveTelemetry> = {
   '4': { speed: 12, fuel: 95, temp: 40, driver: 'عمر الفاروق', battery: '13.8V', lastPing: 'منذ ثانيتين' },
 };
 
+// Accurate coordinates matching Dubai (as shown in user screenshot) and Riyadh
+const DUBAI_COORDS: Record<string, { lat: number; lng: number }> = {
+  '1': { lat: 25.1972, lng: 55.2744 }, // Downtown Dubai / Sheikh Zayed Rd (Toyota Hilux)
+  '2': { lat: 25.1432, lng: 55.2341 }, // Al Quoz Industrial / Central Workshop (Mercedes Actros)
+  '3': { lat: 25.2632, lng: 55.3312 }, // Deira / Port Rashid (Hyundai Bus)
+  '4': { lat: 25.0125, lng: 55.0682 }, // Jebel Ali Freezone (Caterpillar)
+};
+
+const RIYADH_COORDS: Record<string, { lat: number; lng: number }> = {
+  '1': { lat: 24.7236, lng: 46.6853 },
+  '2': { lat: 24.6836, lng: 46.6553 },
+  '3': { lat: 24.7536, lng: 46.7253 },
+  '4': { lat: 24.7036, lng: 46.6653 },
+};
+
 export function FleetMap({ vehicles: propVehicles }: FleetMapProps) {
   const { language, dir } = useLanguage();
   const isRtl = dir === 'rtl';
 
-  // Dynamic state for vehicles to allow movement simulation
+  const [selectedCity, setSelectedCity] = useState<'dubai' | 'riyadh'>('dubai');
+
+  // Dynamic state for vehicles to allow movement simulation, defaulting to Dubai coordinates matching user screenshot
   const [liveVehicles, setLiveVehicles] = useState<Vehicle[]>(() => {
-    // Ensure all vehicles have coordinates
     return propVehicles.map(v => {
-      if (v.id === '1' && !v.lat) { v.lat = 24.7236; v.lng = 46.6853; }
-      if (v.id === '2' && !v.lat) { v.lat = 24.6836; v.lng = 46.6553; }
-      if (v.id === '3' && !v.lat) { v.lat = 24.7536; v.lng = 46.7253; }
-      if (v.id === '4' && !v.lat) { v.lat = 24.7036; v.lng = 46.6653; }
-      return v;
+      const dCoords = DUBAI_COORDS[v.id] || { lat: 25.1850 + (Math.random() - 0.5) * 0.05, lng: 55.2600 + (Math.random() - 0.5) * 0.05 };
+      return {
+        ...v,
+        lat: dCoords.lat,
+        lng: dCoords.lng
+      };
     });
   });
 
@@ -146,23 +170,39 @@ export function FleetMap({ vehicles: propVehicles }: FleetMapProps) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [mapType, setMapType] = useState<'roadmap' | 'satellite' | 'hybrid' | 'terrain'>('roadmap');
   const [showKeyInstructions, setShowKeyInstructions] = useState(false);
+  const [selectedMapProvider, setSelectedMapProvider] = useState<'osm' | 'google' | 'waze' | 'radar'>('osm');
+  const [wazeModalTarget, setWazeModalTarget] = useState<{ name: string; plate: string; lat: number; lng: number } | null>(null);
+
+  const handleCityChange = (city: 'dubai' | 'riyadh') => {
+    setSelectedCity(city);
+    const coordsMap = city === 'dubai' ? DUBAI_COORDS : RIYADH_COORDS;
+    setLiveVehicles(prev =>
+      prev.map(v => {
+        const c = coordsMap[v.id] || (city === 'dubai' ? { lat: 25.1850, lng: 55.2600 } : { lat: 24.7136, lng: 46.6753 });
+        return {
+          ...v,
+          lat: c.lat,
+          lng: c.lng
+        };
+      })
+    );
+  };
 
   // Update live vehicles if prop vehicles change
   useEffect(() => {
+    const coordsMap = selectedCity === 'dubai' ? DUBAI_COORDS : RIYADH_COORDS;
     setLiveVehicles(prev => {
       return propVehicles.map(v => {
         const existing = prev.find(p => p.id === v.id);
-        if (existing) {
-          return {
-            ...v,
-            lat: existing.lat || v.lat,
-            lng: existing.lng || v.lng
-          };
-        }
-        return v;
+        const defaultCoord = coordsMap[v.id] || (selectedCity === 'dubai' ? { lat: 25.1850, lng: 55.2600 } : { lat: 24.7136, lng: 46.6753 });
+        return {
+          ...v,
+          lat: existing?.lat ?? defaultCoord.lat,
+          lng: existing?.lng ?? defaultCoord.lng
+        };
       });
     });
-  }, [propVehicles]);
+  }, [propVehicles, selectedCity]);
 
   // Simulation effect
   useEffect(() => {
@@ -919,9 +959,288 @@ export function FleetMap({ vehicles: propVehicles }: FleetMapProps) {
     );
   };
 
+  // Render OpenStreetMap Leaflet Engine (Zero Cost, Multi-Layer, Interactive)
+  const renderOsmMap = () => {
+    return (
+      <div className="bg-[#030612] text-white rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-[#1e293b]/70 relative select-none">
+        
+        {/* Header */}
+        <div className="p-4 sm:p-5 bg-[#070b19] border-b border-[#1e293b]/60 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSimulating(!isSimulating)}
+              className="bg-[#090d1a] hover:bg-[#111827] border border-[#1e293b] text-white text-[11px] font-black px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <RefreshCw size={12} className={isSimulating ? 'animate-spin text-indigo-400' : 'text-slate-400'} />
+              <span>{language === 'ar' ? 'محاكاة الحركة المباشرة' : 'Live Motion Simulation'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                const first = filteredVehicles[0] || liveVehicles[0];
+                if (first) {
+                  setWazeModalTarget({
+                    name: first.name,
+                    plate: first.plateNumber || first.id,
+                    lat: first.lat || 24.7136,
+                    lng: first.lng || 46.6753
+                  });
+                }
+              }}
+              className="bg-[#33ccff]/15 hover:bg-[#33ccff]/25 border border-[#33ccff]/40 text-[#33ccff] text-[11px] font-black px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Car size={13} />
+              <span>{language === 'ar' ? 'تشغيل ملاحة Waze المدمجة' : 'Launch Embedded Waze'}</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 text-right">
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-end gap-2">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  {language === 'ar' ? 'مجاني بالكامل (0 ريال)' : 'Free & Open Source (0$)'}
+                </span>
+                <h3 className="text-sm md:text-base font-black text-white leading-tight font-sans">
+                  {language === 'ar' ? 'خريطة الأسطول التفاعلية (OpenStreetMap)' : 'Interactive Fleet Map (OpenStreetMap Engine)'}
+                </h3>
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium">
+                {language === 'ar' ? 'تتبع لحظي دقيق لكافة المركبات، صور أقمار صناعية، وملاحة ويز مدمجة دون رسوم اشتراك' : 'Zero-cost open telemetry mapping with live vehicle pins and satellite overlays'}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 relative shrink-0">
+              <span className="absolute inset-0 rounded-full bg-emerald-500/10 animate-ping" />
+              <Radio size={16} />
+            </div>
+          </div>
+        </div>
+
+        {/* Viewport & Sidebar Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 h-auto lg:h-[480px]">
+          {/* Sidebar */}
+          <div className="lg:col-span-1 bg-[#060917] flex flex-col h-[200px] lg:h-full overflow-hidden border-b lg:border-b-0 lg:border-r border-[#1e293b]/50 shrink-0">
+            {/* Filter controls */}
+            <div className="p-3 sm:p-4 border-b border-[#1e293b]/60 space-y-2.5 text-right">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-400 font-bold">{filteredVehicles.length} {language === 'ar' ? 'مركبة' : 'vehicles'}</span>
+                <span className="text-[11px] uppercase font-black tracking-wider text-slate-300 font-sans">
+                  {language === 'ar' ? 'قائمة مركبات الأسطول' : 'Fleet Vehicles'}
+                </span>
+              </div>
+              <div className="flex gap-1 justify-start">
+                {(['all', 'active', 'maintenance', 'stopped'] as const).map(st => {
+                  const isSelected = filterStatus === st;
+                  let stLabel = 'الكل';
+                  if (st === 'active') stLabel = 'نشطة';
+                  if (st === 'maintenance') stLabel = 'صيانة';
+                  if (st === 'stopped') stLabel = 'توقف';
+
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => setFilterStatus(st)}
+                      className={`flex-1 py-1 text-[10px] font-black rounded-lg transition-all cursor-pointer ${
+                        isSelected 
+                          ? 'bg-[#4f46e5] text-white shadow-md' 
+                          : 'bg-[#101524] hover:bg-[#1c243a] text-slate-400 hover:text-white border border-[#1e293b]'
+                      }`}
+                    >
+                      {stLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* List of vehicles */}
+            <div className="flex-1 overflow-y-auto divide-y divide-[#1e293b]/50">
+              {filteredVehicles.map(v => {
+                const isActive = activeVehicleId === v.id;
+                const display = getVehicleDisplay(v);
+
+                return (
+                  <div
+                    key={v.id}
+                    onClick={() => setActiveVehicleId(isActive ? null : v.id)}
+                    className={`p-3 text-right cursor-pointer transition-all flex items-center justify-between gap-2.5 ${
+                      isActive 
+                        ? 'bg-[#312e81]/30 border-r-4 border-[#4f46e5]' 
+                        : 'hover:bg-[#0e1224]'
+                    }`}
+                  >
+                    {/* Waze Quick Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setWazeModalTarget({
+                          name: display.name,
+                          plate: display.plate,
+                          lat: v.lat || 24.7136,
+                          lng: v.lng || 46.6753
+                        });
+                      }}
+                      className="p-1.5 rounded-lg bg-[#33ccff]/15 hover:bg-[#33ccff]/30 text-[#33ccff] border border-[#33ccff]/40 text-[9px] font-black shrink-0 transition-colors"
+                      title={language === 'ar' ? 'تشغيل ملاحة ويز المباشرة' : 'Launch Waze'}
+                    >
+                      🚗 ويز
+                    </button>
+
+                    {/* Left Center Content: Name & Plate Number */}
+                    <div className="flex-1 min-w-0 pr-1">
+                      <h4 className="text-[12px] font-black text-white truncate leading-tight font-sans">{display.name}</h4>
+                      <p className="text-[10px] font-black font-mono text-slate-400 mt-0.5">{display.plate}</p>
+                    </div>
+
+                    {/* Status Dot */}
+                    <div className="flex items-center shrink-0">
+                      <span className={`w-2.5 h-2.5 rounded-full inline-block shadow-sm ${
+                        v.status === 'active' ? 'bg-[#10b981] animate-pulse' : v.status === 'maintenance' ? 'bg-[#f59e0b]' : 'bg-[#ef4444]'
+                      }`} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Leaflet Map Main Viewport */}
+          <div className="lg:col-span-3 relative min-h-[420px] sm:min-h-[480px] lg:h-full">
+            <InteractiveLeafletMap
+              vehicles={filteredVehicles}
+              activeVehicleId={activeVehicleId}
+              onSelectVehicle={(id) => setActiveVehicleId(id)}
+              onOpenWaze={(target) => setWazeModalTarget(target)}
+              isSimulating={isSimulating}
+              selectedCity={selectedCity}
+              onCityChange={handleCityChange}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render Standalone Waze Live Map View embedded directly in dashboard
+  const renderWazeDirectTab = () => {
+    const activeVeh = liveVehicles.find(v => v.id === activeVehicleId) || liveVehicles[0];
+    return (
+      <div className="w-full">
+        <WazeEmbeddedNavigator
+          lat={activeVeh?.lat || 24.7136}
+          lng={activeVeh?.lng || 46.6753}
+          destinationTitle={activeVeh ? activeVeh.name : undefined}
+          destinationSubtitle={activeVeh ? activeVeh.plateNumber : undefined}
+          height="540px"
+        />
+      </div>
+    );
+  };
+
   return (
-    <div className="w-full">
-      {hasValidKey ? renderGoogleMap() : renderFallbackMap()}
+    <div className="w-full space-y-4">
+      {/* Top Multi-Map Provider Switcher (The Unified Control Bar) */}
+      <div className="bg-slate-900/90 backdrop-blur-md p-2.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-3 flex-wrap shadow-xl">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-600/25">
+            <Layers size={18} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs sm:text-sm font-black text-white font-sans">
+                {language === 'ar' ? 'نظام الخرائط المتعدد الذكي (Multi-Map Hub)' : 'Multi-Map Provider Hub'}
+              </h4>
+              <span className="text-[10px] bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 rounded-full border border-purple-500/30">
+                4 أنظمة متكاملة
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400">
+              {language === 'ar' 
+                ? 'التبديل الفوري بين مزودي الخرائط (OpenStreetMap المجاني، خرائط Google، وملاحة Waze المباشرة داخل التطبيق)' 
+                : 'Instant toggle between OpenStreetMap (Free), Google Maps, Waze Live Map, & Radar HUD'}
+            </p>
+          </div>
+        </div>
+
+        {/* Tab Buttons for Providers */}
+        <div className="flex items-center gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800 flex-wrap">
+          {/* 1. OpenStreetMap (Free, zero cost) */}
+          <button
+            type="button"
+            onClick={() => setSelectedMapProvider('osm')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedMapProvider === 'osm'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25 scale-[1.02]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Compass size={13} className={selectedMapProvider === 'osm' ? 'text-white' : 'text-purple-400'} />
+            <span>{language === 'ar' ? 'OpenStreetMap (مجاني - 0 ريال)' : 'OpenStreetMap (Free)'}</span>
+          </button>
+
+          {/* 2. Google Maps */}
+          <button
+            type="button"
+            onClick={() => setSelectedMapProvider('google')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedMapProvider === 'google'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 scale-[1.02]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Globe size={13} className={selectedMapProvider === 'google' ? 'text-white' : 'text-indigo-400'} />
+            <span>{language === 'ar' ? 'خرائط Google Maps' : 'Google Maps'}</span>
+            {hasValidKey && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+          </button>
+
+          {/* 3. Waze Live Map (Embedded) */}
+          <button
+            type="button"
+            onClick={() => setSelectedMapProvider('waze')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedMapProvider === 'waze'
+                ? 'bg-[#33ccff] text-slate-950 shadow-lg shadow-[#33ccff]/25 scale-[1.02]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Car size={13} className={selectedMapProvider === 'waze' ? 'text-slate-950' : 'text-[#33ccff]'} />
+            <span>{language === 'ar' ? 'ملاحة ويز (Waze Live)' : 'Waze Live Map'}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          </button>
+
+          {/* 4. Radar HUD Simulator */}
+          <button
+            type="button"
+            onClick={() => setSelectedMapProvider('radar')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedMapProvider === 'radar'
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 scale-[1.02]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Radio size={13} className={selectedMapProvider === 'radar' ? 'text-white' : 'text-emerald-400'} />
+            <span>{language === 'ar' ? 'رادار المحاكاة (HUD)' : 'Radar HUD'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Active Provider Content */}
+      {selectedMapProvider === 'osm' && renderOsmMap()}
+      {selectedMapProvider === 'google' && (hasValidKey ? renderGoogleMap() : renderFallbackMap())}
+      {selectedMapProvider === 'waze' && renderWazeDirectTab()}
+      {selectedMapProvider === 'radar' && renderFallbackMap()}
+
+      {/* Embedded Waze Modal (When User or Driver clicks Waze on any vehicle) */}
+      {wazeModalTarget && (
+        <WazeEmbeddedNavigator
+          isModal={true}
+          onClose={() => setWazeModalTarget(null)}
+          lat={wazeModalTarget.lat}
+          lng={wazeModalTarget.lng}
+          destinationTitle={wazeModalTarget.name}
+          destinationSubtitle={wazeModalTarget.plate}
+        />
+      )}
     </div>
   );
 }

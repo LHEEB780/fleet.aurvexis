@@ -417,4 +417,13 @@ body[data-read-only="true"] button[title*="Remove"] {
   display: none !important;
 }
 
+/* Custom Clean Leaflet Vehicle Markers Matching Screenshot Identity */
+.leaflet-div-icon,
+.custom-fleet-pin-clean {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+
 

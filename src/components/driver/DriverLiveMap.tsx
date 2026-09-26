@@ -42,6 +42,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../../services/LanguageContext';
 import { DriverTrip, DriverWaypoint } from '../../types';
+import WazeEmbeddedNavigator from '../WazeEmbeddedNavigator';
 
 interface DriverLiveMapProps {
   activeTrip: DriverTrip | null;
@@ -82,6 +83,7 @@ export default function DriverLiveMap({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isHoveringMap, setIsHoveringMap] = useState(false);
+  const [showWazeEmbedModal, setShowWazeEmbedModal] = useState(false);
 
   // Keyboard shortcut listener to exit fullscreen on ESC
   useEffect(() => {
@@ -321,6 +323,16 @@ export default function DriverLiveMap({
               title={language === 'ar' ? 'التوجيه الصوتي' : 'Voice Navigation'}
             >
               {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+
+            {/* Embedded Waze Navigator Toggle (Direct in-app embed like YouTube) */}
+            <button
+              onClick={() => setShowWazeEmbedModal(true)}
+              className="px-3.5 py-2 bg-[#33ccff]/15 hover:bg-[#33ccff]/25 active:scale-95 text-[#0088cc] dark:text-[#33ccff] border border-[#33ccff]/40 rounded-2xl text-xs font-black transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              title={language === 'ar' ? 'تشغيل ملاحة ويز المباشرة المدمجة داخل التطبيق' : 'Launch Embedded Waze Map'}
+            >
+              <span className="w-2 h-2 rounded-full bg-[#33ccff] animate-ping" />
+              <span>{language === 'ar' ? 'ملاحة ويز المباشرة 🚗' : 'Embedded Waze 🚗'}</span>
             </button>
 
             {/* SOS Emergency Button */}
@@ -1008,6 +1020,18 @@ export default function DriverLiveMap({
               </form>
             </motion.div>
           </div>
+        )}
+
+        {/* Embedded Waze Navigator Modal (Like embedded YouTube player) */}
+        {showWazeEmbedModal && (
+          <WazeEmbeddedNavigator
+            isModal={true}
+            onClose={() => setShowWazeEmbedModal(false)}
+            lat={activeTrip?.waypoints[0]?.lat || 24.7136}
+            lng={activeTrip?.waypoints[0]?.lng || 46.6753}
+            destinationTitle={activeTrip ? (language === 'ar' ? activeTrip.destination : activeTrip.destinationEn) : undefined}
+            destinationSubtitle={activeTrip ? activeTrip.tripCode : undefined}
+          />
         )}
       </AnimatePresence>
     </div>
