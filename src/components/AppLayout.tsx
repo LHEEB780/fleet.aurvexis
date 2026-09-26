@@ -5000,11 +5000,33 @@ export default function AppLayout({
                             {language === 'ar' ? 'العملة الفعالة حالياً بالمنصة' : 'Current Active Platform Currency'}
                           </span>
                           <span className="text-base font-black text-slate-900 dark:text-white block">
-                            {selectedCurrencyState} ({selectedCurrencyState === 'SAR' ? 'ريال سعودي' : selectedCurrencyState === 'USD' ? 'دولار أمريكي' : selectedCurrencyState === 'AED' ? 'درهم إماراتي' : selectedCurrencyState === 'EGP' ? 'جنيه مصري' : selectedCurrencyState === 'QAR' ? 'ريال قطري' : selectedCurrencyState === 'KWD' ? 'دينار كويتي' : selectedCurrencyState === 'OMR' ? 'ريال عماني' : selectedCurrencyState === 'BHD' ? 'دينار بحريني' : 'يورو أوروبي'})
+                            {selectedCurrencyState} ({
+                              selectedCurrencyState === 'SAR' ? (language === 'ar' ? 'ريال سعودي 🇸🇦' : 'Saudi Riyal 🇸🇦') :
+                              selectedCurrencyState === 'USD' ? (language === 'ar' ? 'دولار أمريكي 🇺🇸' : 'US Dollar 🇺🇸') :
+                              selectedCurrencyState === 'AED' ? (language === 'ar' ? 'درهم إماراتي 🇦🇪' : 'UAE Dirham 🇦🇪') :
+                              selectedCurrencyState === 'IQD' ? (language === 'ar' ? 'دينار عراقي 🇮🇶' : 'Iraqi Dinar 🇮🇶') :
+                              selectedCurrencyState === 'JOD' ? (language === 'ar' ? 'دينار أردني 🇯🇴' : 'Jordanian Dinar 🇯🇴') :
+                              selectedCurrencyState === 'EGP' ? (language === 'ar' ? 'جنيه مصري 🇪🇬' : 'Egyptian Pound 🇪🇬') :
+                              selectedCurrencyState === 'QAR' ? (language === 'ar' ? 'ريال قطري 🇶🇦' : 'Qatari Riyal 🇶🇦') :
+                              selectedCurrencyState === 'KWD' ? (language === 'ar' ? 'دينار كويتي 🇰🇼' : 'Kuwaiti Dinar 🇰🇼') :
+                              selectedCurrencyState === 'OMR' ? (language === 'ar' ? 'ريال عماني 🇴🇲' : 'Omani Riyal 🇴🇲') :
+                              selectedCurrencyState === 'BHD' ? (language === 'ar' ? 'دينار بحريني 🇧🇭' : 'Bahraini Dinar 🇧🇭') :
+                              (language === 'ar' ? 'يورو أوروبي 🇪🇺' : 'Euro 🇪🇺')
+                            })
                           </span>
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center font-black text-lg">
-                          {selectedCurrencyState === 'USD' ? '$' : selectedCurrencyState === 'EUR' ? '€' : 'ر.س'}
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center font-black text-base">
+                          {selectedCurrencyState === 'USD' ? '$' :
+                           selectedCurrencyState === 'EUR' ? '€' :
+                           selectedCurrencyState === 'IQD' ? 'د.ع' :
+                           selectedCurrencyState === 'JOD' ? 'د.أ' :
+                           selectedCurrencyState === 'AED' ? 'د.إ' :
+                           selectedCurrencyState === 'EGP' ? 'ج.م' :
+                           selectedCurrencyState === 'QAR' ? 'ر.ق' :
+                           selectedCurrencyState === 'KWD' ? 'د.ك' :
+                           selectedCurrencyState === 'OMR' ? 'ر.ع' :
+                           selectedCurrencyState === 'BHD' ? 'د.ب' :
+                           'ر.س'}
                         </div>
                       </div>
 
@@ -5016,15 +5038,17 @@ export default function AppLayout({
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                           {[
-                            { id: 'SAR', labelAr: 'ريال سعودي', labelEn: 'Saudi Riyal', symbolAr: 'ر.س', symbolEn: 'SAR', rate: '1.0 (عملة المرجع الأساسي)' },
-                            { id: 'USD', labelAr: 'دولار أمريكي', labelEn: 'US Dollar', symbolAr: '$', symbolEn: 'USD', rate: '0.27 (نسبة صرف ر.س)' },
-                            { id: 'AED', labelAr: 'درهم إماراتي', labelEn: 'UAE Dirham', symbolAr: 'د.إ', symbolEn: 'AED', rate: '0.98 (نسبة صرف ر.س)' },
-                            { id: 'EGP', labelAr: 'جنيه مصري', labelEn: 'Egyptian Pound', symbolAr: 'ج.م', symbolEn: 'EGP', rate: '12.80 (نسبة صرف ر.س)' },
-                            { id: 'QAR', labelAr: 'ريال قطري', labelEn: 'Qatari Riyal', symbolAr: 'ر.ق', symbolEn: 'QAR', rate: '0.97 (نسبة صرف ر.س)' },
-                            { id: 'KWD', labelAr: 'دينار كويتي', labelEn: 'Kuwaiti Dinar', symbolAr: 'د.ك', symbolEn: 'KWD', rate: '0.082 (نسبة صرف ر.س)' },
-                            { id: 'OMR', labelAr: 'ريال عماني', labelEn: 'Omani Riyal', symbolAr: 'ر.ع', symbolEn: 'OMR', rate: '0.10 (نسبة صرف ر.س)' },
-                            { id: 'BHD', labelAr: 'دينار بحريني', labelEn: 'Bahraini Dinar', symbolAr: 'د.ب', symbolEn: 'BHD', rate: '0.10 (نسبة صرف ر.س)' },
-                            { id: 'EUR', labelAr: 'يورو أوروبي', labelEn: 'Euro', symbolAr: '€', symbolEn: 'EUR', rate: '0.25 (نسبة صرف ر.س)' }
+                            { id: 'SAR', labelAr: 'ريال سعودي', labelEn: 'Saudi Riyal', symbolAr: 'ر.س', symbolEn: 'SAR', flag: '🇸🇦', rate: '1.0 (عملة المرجع الأساسي)' },
+                            { id: 'USD', labelAr: 'دولار أمريكي', labelEn: 'US Dollar', symbolAr: '$', symbolEn: 'USD', flag: '🇺🇸', rate: '0.27 (نسبة صرف ر.س)' },
+                            { id: 'AED', labelAr: 'درهم إماراتي', labelEn: 'UAE Dirham', symbolAr: 'د.إ', symbolEn: 'AED', flag: '🇦🇪', rate: '0.98 (نسبة صرف ر.س)' },
+                            { id: 'IQD', labelAr: 'دينار عراقي', labelEn: 'Iraqi Dinar', symbolAr: 'د.ع', symbolEn: 'IQD', flag: '🇮🇶', rate: '349.33 (نسبة صرف ر.س)' },
+                            { id: 'JOD', labelAr: 'دينار أردني', labelEn: 'Jordanian Dinar', symbolAr: 'د.أ', symbolEn: 'JOD', flag: '🇯🇴', rate: '0.189 (نسبة صرف ر.س)' },
+                            { id: 'EGP', labelAr: 'جنيه مصري', labelEn: 'Egyptian Pound', symbolAr: 'ج.م', symbolEn: 'EGP', flag: '🇪🇬', rate: '12.80 (نسبة صرف ر.س)' },
+                            { id: 'QAR', labelAr: 'ريال قطري', labelEn: 'Qatari Riyal', symbolAr: 'ر.ق', symbolEn: 'QAR', flag: '🇶🇦', rate: '0.97 (نسبة صرف ر.س)' },
+                            { id: 'KWD', labelAr: 'دينار كويتي', labelEn: 'Kuwaiti Dinar', symbolAr: 'د.ك', symbolEn: 'KWD', flag: '🇰🇼', rate: '0.082 (نسبة صرف ر.س)' },
+                            { id: 'OMR', labelAr: 'ريال عماني', labelEn: 'Omani Riyal', symbolAr: 'ر.ع', symbolEn: 'OMR', flag: '🇴🇲', rate: '0.10 (نسبة صرف ر.س)' },
+                            { id: 'BHD', labelAr: 'دينار بحريني', labelEn: 'Bahraini Dinar', symbolAr: 'د.ب', symbolEn: 'BHD', flag: '🇧🇭', rate: '0.10 (نسبة صرف ر.س)' },
+                            { id: 'EUR', labelAr: 'يورو أوروبي', labelEn: 'Euro', symbolAr: '€', symbolEn: 'EUR', flag: '🇪🇺', rate: '0.25 (نسبة صرف ر.س)' }
                           ].map((curr) => {
                             const isSelected = selectedCurrencyState === curr.id;
                             return (
@@ -5040,9 +5064,12 @@ export default function AppLayout({
                                 dir="rtl"
                               >
                                 <div className="space-y-1">
-                                  <span className={`text-xs font-black block ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>
-                                    {language === 'ar' ? curr.labelAr : curr.labelEn}
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-sm">{curr.flag}</span>
+                                    <span className={`text-xs font-black block ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                                      {language === 'ar' ? curr.labelAr : curr.labelEn}
+                                    </span>
+                                  </div>
                                   <span className="text-[10px] text-slate-450 block font-mono">
                                     {curr.rate}
                                   </span>
