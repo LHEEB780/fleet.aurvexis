@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../types';
 import { useLanguage } from '../services/LanguageContext';
 import ContextualHelp from './ContextualHelp';
@@ -31,7 +31,8 @@ import {
   ExternalLink,
   Wallet,
   Coins,
-  Globe
+  Globe,
+  ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { loadStripe } from '@stripe/stripe-js';
@@ -39,12 +40,17 @@ import {
   formatCurrency, 
   getBaseCurrency, 
   setBaseCurrency, 
-  getCurrencyLabel 
+  getCurrencyLabel,
+  getConversionRateFromUSD,
+  getCustomExchangeRates,
+  SUPPORTED_CURRENCIES,
+  getCurrencyDetails
 } from '../services/formatters';
+import CurrencyToggle from './CurrencyToggle';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
 
 export interface CurrencyOption {
-  id: 'SAR' | 'AED' | 'USD' | 'IQD' | 'JOD';
+  id: string;
   code: string;
   nameAr: string;
   nameEn: string;
@@ -182,22 +188,32 @@ export default function SaasBilling({ user }: { user?: User }) {
     localStorage.setItem('saas_quotas', JSON.stringify(quotas));
   }, [quotas]);
 
-  // Active currency selection (SAR, AED, USD, IQD, JOD)
-  type CurrencyId = 'SAR' | 'AED' | 'USD' | 'IQD' | 'JOD';
-
-  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyId>(() => {
-    const cur = getBaseCurrency();
-    if (['SAR', 'AED', 'USD', 'IQD', 'JOD'].includes(cur)) return cur as CurrencyId;
-    return 'SAR';
+  // Active currency selection
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
+    return getBaseCurrency() || 'SAR';
   });
+  const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
+  const currencyBarRef = useRef<HTMLDivElement>(null);
+
+  // Close currency menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (currencyBarRef.current && !currencyBarRef.current.contains(event.target as Node)) {
+        setIsCurrencyMenuOpen(false);
+      }
+    };
+    if (isCurrencyMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCurrencyMenuOpen]);
 
   const [currencyTrigger, setCurrencyTrigger] = useState(0);
   useEffect(() => {
     const handleCurrencyChange = () => {
-      const cur = getBaseCurrency();
-      if (['SAR', 'AED', 'USD', 'IQD', 'JOD'].includes(cur)) {
-        setSelectedCurrency(cur as CurrencyId);
-      }
+      setSelectedCurrency(getBaseCurrency() || 'SAR');
       setCurrencyTrigger(prev => prev + 1);
     };
     window.addEventListener('storage', handleCurrencyChange);
@@ -208,18 +224,17 @@ export default function SaasBilling({ user }: { user?: User }) {
     };
   }, []);
 
-  const handleSelectCurrency = (newCurrency: CurrencyId) => {
+  const handleSelectCurrency = (newCurrency: string) => {
     setSelectedCurrency(newCurrency);
     setBaseCurrency(newCurrency);
     setCurrencyTrigger(prev => prev + 1);
   };
 
-  const getCurrencyRate = (curr: CurrencyId): number => {
+  const getCurrencyRate = (curr: string): number => {
     if (curr === 'SAR') return 3.75;
     if (curr === 'AED') return 3.67;
-    if (curr === 'IQD') return 1310;
-    if (curr === 'JOD') return 0.709;
-    return 1.0;
+    if (curr === 'USD') return 1.0;
+    return getConversionRateFromUSD();
   };
 
   const getConvertedInvoiceAmount = (usdAmount: number): number => {
@@ -229,11 +244,7 @@ export default function SaasBilling({ user }: { user?: User }) {
   };
 
   const getInvoiceCurrencyLabel = (): string => {
-    if (selectedCurrency === 'SAR') return 'SAR (ر.س)';
-    if (selectedCurrency === 'AED') return 'AED (د.إ)';
-    if (selectedCurrency === 'IQD') return 'IQD (د.ع)';
-    if (selectedCurrency === 'JOD') return 'JOD (د.أ)';
-    return 'USD ($)';
+    return `${selectedCurrency} (${getCurrencyLabel(language)})`;
   };
 
   // Hook to handle success callback from Stripe redirections
@@ -672,40 +683,46 @@ export default function SaasBilling({ user }: { user?: User }) {
         </div>
 
         {/* Action Controls: Currency Selector + Billing Plan toggler */}
-        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-center shrink-0">
-          {/* Currency Selector (SAR, AED, USD) */}
-          <div className="flex items-center gap-1 p-1 bg-white dark:bg-[#0f1422] border border-slate-150 dark:border-slate-800 rounded-xl select-none shadow-xs">
-            <span className="text-[10px] font-bold text-slate-400 px-2 flex items-center gap-1">
-              <Coins size={12} className="text-amber-500" />
-              <span>{language === 'ar' ? 'العملة:' : 'Currency:'}</span>
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 self-stretch sm:self-auto shrink-0 w-full sm:w-auto">
+          {/* Currency Selector (SAR, AED, USD, IQD, JOD) */}
+          <div className="flex items-center gap-1 p-1 bg-white dark:bg-[#0f1422] border border-slate-150 dark:border-slate-800 rounded-2xl select-none shadow-xs max-w-full overflow-hidden">
+            <span className="text-[10px] font-bold text-slate-400 px-2 flex items-center gap-1 shrink-0">
+              <Coins size={12} className="text-amber-500 shrink-0" />
+              <span className="hidden xs:inline">{language === 'ar' ? 'العملة:' : 'Currency:'}</span>
             </span>
-            {SAAS_CURRENCY_OPTIONS.map((c) => {
-              const isActive = selectedCurrency === c.id;
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => handleSelectCurrency(c.id)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                    isActive
-                      ? 'bg-amber-500 text-white shadow-xs font-black'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                  }`}
-                  title={`${c.nameAr} (${c.code}) - ${c.rateVsUsd === 1 ? 'العملة المرجعية' : `1 USD = ${c.rateVsUsd} ${c.code}`}`}
-                >
-                  <span className="text-xs leading-none">{c.flag}</span>
-                  <span className="font-mono">{c.code}</span>
-                  <span className="text-[9px] opacity-80 font-sans">({language === 'ar' ? c.symbolAr : c.symbolEn})</span>
-                </button>
-              );
-            })}
+
+            {/* Scrollable Container with horizontal touch support */}
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
+              {SAAS_CURRENCY_OPTIONS.map((c) => {
+                const isActive = selectedCurrency === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleSelectCurrency(c.id)}
+                    className={`px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer shrink-0 active:scale-95 ${
+                      isActive
+                        ? 'bg-amber-500 text-white shadow-xs font-black'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                    }`}
+                    title={`${c.nameAr} (${c.code}) - ${c.rateVsUsd === 1 ? 'العملة المرجعية' : `1 USD = ${c.rateVsUsd} ${c.code}`}`}
+                  >
+                    <span className="text-xs leading-none shrink-0">{c.flag}</span>
+                    <span className="font-mono text-[11px] font-black">{c.code}</span>
+                    <span className="text-[9px] opacity-80 font-sans hidden sm:inline">
+                      ({language === 'ar' ? c.symbolAr : c.symbolEn})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Billing Plan toggler */}
-          <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-[#0f1422] border border-slate-150 dark:border-slate-800 rounded-xl select-none shadow-xs">
+          <div className="flex items-center justify-center gap-1.5 p-1 bg-white dark:bg-[#0f1422] border border-slate-150 dark:border-slate-800 rounded-2xl select-none shadow-xs w-full sm:w-auto">
             <button
               onClick={() => setBillingCycle('yearly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 billingCycle === 'yearly'
                   ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white shadow-md shadow-violet-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -716,7 +733,7 @@ export default function SaasBilling({ user }: { user?: User }) {
             </button>
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center justify-center cursor-pointer ${
                 billingCycle === 'monthly'
                   ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-650 text-white shadow-md shadow-violet-500/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1144,9 +1161,12 @@ export default function SaasBilling({ user }: { user?: User }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-center">
+          <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
+            {/* Quick Currency Toggle for IQD and JOD */}
+            <CurrencyToggle language={language} variant="compact" />
+
             {/* Quick currency switch pills */}
-            <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/50 text-[11px] font-mono font-bold">
+            <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/50 text-[11px] font-mono font-bold max-w-full overflow-x-auto no-scrollbar">
               {SAAS_CURRENCY_OPTIONS.map((c) => {
                 const isActive = selectedCurrency === c.id;
                 return (
@@ -1154,7 +1174,7 @@ export default function SaasBilling({ user }: { user?: User }) {
                     key={c.id}
                     type="button"
                     onClick={() => handleSelectCurrency(c.id)}
-                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
                       isActive
                         ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-black'
                         : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -1187,8 +1207,8 @@ export default function SaasBilling({ user }: { user?: User }) {
             <span className="font-mono font-bold text-violet-600 dark:text-violet-400 text-[11.5px]">
               {selectedCurrency === 'SAR' ? '1 USD = 3.75 SAR' 
                 : selectedCurrency === 'AED' ? '1 USD = 3.67 AED' 
-                : selectedCurrency === 'IQD' ? '1 USD = 1,310 IQD'
-                : selectedCurrency === 'JOD' ? '1 USD = 0.709 JOD'
+                : selectedCurrency === 'IQD' ? `1 USD = ${getConversionRateFromUSD().toLocaleString()} IQD`
+                : selectedCurrency === 'JOD' ? `1 USD = ${getConversionRateFromUSD()} JOD`
                 : '1 USD = 1.00 USD'}
             </span>
           </div>

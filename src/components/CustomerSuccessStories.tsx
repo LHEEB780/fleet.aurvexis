@@ -317,91 +317,30 @@ export default function CustomerSuccessStories() {
   return (
     <section 
       id="success-stories-section" 
-      className="bg-gradient-to-b from-slate-950 via-[#130722] to-slate-950 py-8 sm:py-12 border-t border-purple-900/30 relative overflow-hidden"
+      className="bg-gradient-to-b from-[#220f3e] via-[#2d1454] to-[#1c0c35] py-8 sm:py-12 border-t border-purple-500/30 relative overflow-hidden"
     >
       {/* Decorative ambient glowing orbs */}
-      <div className="absolute top-1/4 -left-20 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 -right-20 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 -right-20 w-80 h-80 bg-indigo-500/25 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-fuchsia-600/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-3.5 sm:px-6 relative z-10 space-y-4 sm:space-y-6">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
-          <div className="space-y-1.5 max-w-2xl text-start" dir={isRtl ? 'rtl' : 'ltr'}>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-purple-950/70 border border-purple-500/30 text-purple-300 text-[10px] font-black rounded-full uppercase tracking-wider shadow-xs">
-              <Sparkles size={11} className="text-purple-400 animate-pulse" />
-              <span>{language === 'ar' ? 'سلايد قصص النجاح والأثر الميداني' : 'Enterprise Success Stories Carousel'}</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight">
-              {language === 'ar' 
-                ? 'قصص نجاح موثقة: كفاءة استثنائية وأثر مالي ملموس' 
-                : 'Verified ROI: Real Operations, Quantifiable Impact'}
-            </h2>
-            <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
-              {language === 'ar'
-                ? 'مرّر السلايد أفقياً لاستكشاف كيف نجحت كبرى الأساطيل في تقليص نفقات الصيانة وهدر الورش وحماية محركاتها.'
-                : 'Swipe horizontally through interactive case studies showcasing how industry leaders cut repair budgets.'}
-            </p>
+        <div className="space-y-2 text-start" dir={isRtl ? 'rtl' : 'ltr'}>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/20 border border-purple-400/40 text-purple-200 text-[10.5px] font-black rounded-full uppercase tracking-wider shadow-sm">
+            <Sparkles size={11} className="text-purple-300 animate-pulse" />
+            <span>{language === 'ar' ? 'سلايد قصص النجاح والأثر الميداني' : 'Enterprise Success Stories Carousel'}</span>
           </div>
-
-          {/* Carousel Action & Autoplay Controls */}
-          <div className="flex items-center gap-2 self-start md:self-end flex-wrap" dir="ltr">
-            {/* Quick Consultation Trigger Button */}
-            <button
-              onClick={() => setIsInquiryModalOpen(true)}
-              className="px-3 py-1.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:brightness-110 text-white rounded-xl text-[11px] font-black shadow-md shadow-purple-950/40 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-            >
-              <Headphones size={12} className="text-purple-200" />
-              <span>{language === 'ar' ? 'طلب استشارة' : 'Request Demo'}</span>
-            </button>
-
-            {/* Carousel Navigation Controller */}
-            <div className="flex items-center gap-1 bg-slate-900/90 border border-purple-500/20 p-1 rounded-xl shadow-lg backdrop-blur-md">
-              {/* Slide Counter */}
-              <div className="px-2 py-0.5 text-slate-300 text-[11px] font-mono font-bold flex items-center gap-1">
-                <span className="text-purple-400 font-black">{String(currentSlide + 1).padStart(2, '0')}</span>
-                <span className="text-slate-600">/</span>
-                <span className="text-slate-400">{String(stories.length).padStart(2, '0')}</span>
-              </div>
-
-              <div className="w-px h-3.5 bg-slate-800" />
-
-              {/* Autoplay Play/Pause */}
-              <button
-                type="button"
-                onClick={() => setIsAutoPlaying(prev => !prev)}
-                title={isAutoPlaying ? (language === 'ar' ? 'إيقاف مؤقت' : 'Pause Autoplay') : (language === 'ar' ? 'تشغيل تلقائي' : 'Resume Autoplay')}
-                className="w-6 h-6 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer"
-                aria-label="Toggle autoplay"
-              >
-                {isAutoPlaying ? <Pause size={10} /> : <Play size={10} className="translate-x-0.5" />}
-              </button>
-
-              {/* Prev Button */}
-              <button
-                type="button"
-                onClick={handlePrevSlide}
-                className="w-6 h-6 rounded-lg bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/30 text-purple-200 hover:text-white flex items-center justify-center transition active:scale-90 cursor-pointer shadow-xs"
-                aria-label="Previous story slide"
-              >
-                {isRtl ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
-              </button>
-
-              {/* Next Button */}
-              <button
-                type="button"
-                onClick={handleNextSlide}
-                className="w-6 h-6 rounded-lg bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/30 text-purple-200 hover:text-white flex items-center justify-center transition active:scale-90 cursor-pointer shadow-xs"
-                aria-label="Next story slide"
-              >
-                {isRtl ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
-              </button>
-            </div>
-          </div>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight">
+            {language === 'ar' 
+              ? 'قصص نجاح موثقة: كفاءة استثنائية وأثر مالي ملموس' 
+              : 'Verified ROI: Real Operations, Quantifiable Impact'}
+          </h2>
         </div>
 
         {/* Quick Jump Category / Company Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none" dir={isRtl ? 'rtl' : 'ltr'}>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" dir={isRtl ? 'rtl' : 'ltr'}>
           {stories.map((story, idx) => {
             const isSelected = idx === currentSlide;
             const companyName = language === 'ar' ? story.companyAr : story.companyEn;
@@ -409,14 +348,14 @@ export default function CustomerSuccessStories() {
               <button
                 key={story.id}
                 onClick={() => handleSelectSlide(idx)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 border ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 border ${
                   isSelected 
-                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 border-purple-400/50 text-white shadow-md shadow-purple-950/60 scale-[1.02]' 
-                    : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+                    ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 border-purple-300/60 text-white shadow-lg shadow-purple-950/60 scale-[1.02]' 
+                    : 'bg-white/10 hover:bg-white/15 border-purple-300/25 text-purple-100 hover:text-white backdrop-blur-md shadow-xs'
                 }`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white animate-pulse' : 'bg-slate-600'}`} />
-                <span className="truncate max-w-[140px] sm:max-w-[200px]">{companyName}</span>
+                <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white animate-pulse' : 'bg-purple-300'}`} />
+                <span className="truncate max-w-[150px] sm:max-w-[220px]">{companyName}</span>
               </button>
             );
           })}
@@ -424,20 +363,38 @@ export default function CustomerSuccessStories() {
 
         {/* The Horizontal Interactive Carousel Viewport (Compact Size) */}
         <div 
-          className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-purple-500/25 bg-slate-950/90 backdrop-blur-xl group"
+          className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-purple-400/35 bg-gradient-to-br from-[#2a134d]/95 via-[#371966]/95 to-[#240e44]/95 backdrop-blur-2xl group shadow-purple-950/60"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
           {/* Autoplay Progress Line (Header Bar) */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-slate-900 z-30 overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-purple-950/80 z-30 overflow-hidden">
             <motion.div 
               key={`progress-${currentSlide}-${isAutoPlaying}-${isHovered}`}
               initial={{ width: "0%" }}
               animate={{ width: (isAutoPlaying && !isHovered) ? "100%" : "0%" }}
               transition={{ duration: 6, ease: "linear" }}
-              className="h-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-indigo-500"
+              className="h-full bg-gradient-to-r from-purple-400 via-fuchsia-400 to-indigo-400"
             />
           </div>
+
+          {/* Floating Navigation Controls (Card Sides - Desktop/Tablet) */}
+          <button
+            type="button"
+            onClick={handlePrevSlide}
+            aria-label="Previous story slide"
+            className="hidden sm:flex absolute top-1/2 -translate-y-1/2 start-3 z-30 w-8 h-8 rounded-full bg-purple-900/80 hover:bg-purple-800 border border-purple-400/40 text-white items-center justify-center transition shadow-lg shadow-purple-950/60 backdrop-blur-md cursor-pointer active:scale-90"
+          >
+            {isRtl ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+          <button
+            type="button"
+            onClick={handleNextSlide}
+            aria-label="Next story slide"
+            className="hidden sm:flex absolute top-1/2 -translate-y-1/2 end-3 z-30 w-8 h-8 rounded-full bg-purple-900/80 hover:bg-purple-800 border border-purple-400/40 text-white items-center justify-center transition shadow-lg shadow-purple-950/60 backdrop-blur-md cursor-pointer active:scale-90"
+          >
+            {isRtl ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+          </button>
 
           {/* Swipe / Drag Container with Framer Motion */}
           <div className="relative overflow-hidden flex items-center">
@@ -489,8 +446,8 @@ export default function CustomerSuccessStories() {
                 className="w-full flex flex-col lg:flex-row items-stretch cursor-grab active:cursor-grabbing select-none"
                 dir={isRtl ? 'rtl' : 'ltr'}
               >
-                {/* Media & Image Banner (Compact Height) */}
-                <div className="relative h-36 sm:h-44 lg:h-auto lg:w-5/12 overflow-hidden bg-slate-900 shrink-0">
+                {/* Media & Image Banner */}
+                <div className="relative h-40 sm:h-48 lg:h-auto lg:w-5/12 overflow-hidden bg-purple-950 shrink-0">
                   <img 
                     src={activeSlide.imageUrl} 
                     alt={language === 'ar' ? activeSlide.companyAr : activeSlide.companyEn}
@@ -500,29 +457,29 @@ export default function CustomerSuccessStories() {
                       (e.target as HTMLImageElement).src = enterpriseFleetDepot;
                     }}
                   />
-                  {/* Cinematic gradient overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 lg:bg-gradient-to-r lg:from-transparent lg:to-slate-950/95 to-transparent" />
+                  {/* Cinematic gradient overlays in royal purple */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#2a134d] via-[#2a134d]/40 lg:bg-gradient-to-r lg:from-transparent lg:to-[#2a134d]/95 to-transparent" />
 
                   {/* Top Badges */}
                   <div className="absolute top-2.5 inset-x-3 flex items-center justify-between gap-2 pointer-events-none">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-950/85 backdrop-blur-md border border-white/20 rounded-full text-white text-[9.5px] font-black shadow-xs">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-950/90 backdrop-blur-md border border-purple-400/40 rounded-full text-white text-[9.5px] font-black shadow-md">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                       {language === 'ar' ? 'قصة نجاح معتمدة' : 'Verified Case'}
                     </span>
 
                     {activeSlide.fleetSizeAr && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-950/90 backdrop-blur-md border border-purple-500/40 rounded-full text-purple-200 text-[9.5px] font-black shadow-xs">
-                        <Gauge size={10} className="text-purple-400" />
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-950/90 backdrop-blur-md border border-indigo-400/40 rounded-full text-indigo-200 text-[9.5px] font-black shadow-md">
+                        <Gauge size={10} className="text-indigo-400" />
                         {language === 'ar' ? activeSlide.fleetSizeAr : activeSlide.fleetSizeEn}
                       </span>
                     )}
                   </div>
 
-                  {/* Main Metric Badge (Compact Pill on Photo) */}
+                  {/* Main Metric Badge */}
                   <div className="absolute bottom-2.5 inset-x-3">
-                    <div className="px-3 py-1.5 bg-slate-950/90 backdrop-blur-md border border-purple-500/40 rounded-xl shadow-lg flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1 text-purple-400 text-[9.5px] font-black uppercase tracking-wider shrink-0">
-                        <Award size={12} className="text-purple-400 shrink-0" />
+                    <div className="px-3.5 py-2 bg-[#210c3f]/95 backdrop-blur-md border border-purple-400/50 rounded-xl shadow-xl flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 text-purple-300 text-[10px] font-black uppercase tracking-wider shrink-0">
+                        <Award size={12} className="text-purple-300 shrink-0" />
                         <span>{language === 'ar' ? 'الأثر المالي' : 'ROI'}</span>
                       </div>
                       <p className="text-xs sm:text-[13px] font-black text-white font-sans truncate">
@@ -539,21 +496,21 @@ export default function CustomerSuccessStories() {
                     {/* Company Info & Industry Pill */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-purple-950/80 border border-purple-500/40 flex items-center justify-center text-purple-300 shadow-xs shrink-0">
+                        <div className="w-7 h-7 rounded-lg bg-purple-900/60 border border-purple-400/40 flex items-center justify-center text-purple-200 shadow-xs shrink-0">
                           <Building size={14} />
                         </div>
                         <div>
-                          <h4 className="text-xs sm:text-[13px] font-black text-purple-300 line-clamp-1">
+                          <h4 className="text-xs sm:text-[13px] font-black text-purple-200 line-clamp-1">
                             {language === 'ar' ? activeSlide.companyAr : activeSlide.companyEn}
                           </h4>
-                          <span className="text-[10px] text-slate-400 block font-sans">
+                          <span className="text-[10px] text-purple-300/80 block font-sans">
                             {language === 'ar' ? activeSlide.industryAr : activeSlide.industryEn}
                           </span>
                         </div>
                       </div>
 
                       {activeSlide.secondaryStatAr && (
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950/70 border border-emerald-500/30 rounded-full text-emerald-300 text-[10px] font-black">
+                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-950/70 border border-emerald-400/30 rounded-full text-emerald-300 text-[10px] font-black">
                           <TrendingUp size={11} className="text-emerald-400" />
                           <span>{language === 'ar' ? activeSlide.secondaryStatAr : activeSlide.secondaryStatEn}</span>
                         </div>
@@ -563,28 +520,28 @@ export default function CustomerSuccessStories() {
                     {/* Story Title */}
                     <h3 
                       onClick={() => setActiveStory(activeSlide)}
-                      className="text-sm sm:text-base lg:text-lg font-black text-white leading-snug hover:text-purple-300 transition-colors cursor-pointer line-clamp-2"
+                      className="text-sm sm:text-base lg:text-lg font-black text-white leading-snug hover:text-purple-200 transition-colors cursor-pointer line-clamp-2"
                     >
                       {language === 'ar' ? activeSlide.titleAr : activeSlide.titleEn}
                     </h3>
 
                     {/* Operational Narrative Excerpt */}
-                    <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed font-sans line-clamp-2 sm:line-clamp-3">
+                    <p className="text-[11px] sm:text-xs text-purple-100/90 leading-relaxed font-sans line-clamp-2 sm:line-clamp-3">
                       {language === 'ar' ? activeSlide.contentAr : activeSlide.contentEn}
                     </p>
 
-                    {/* Testimonial Quote Box (Compact) */}
+                    {/* Testimonial Quote Box */}
                     {activeSlide.quoteAr && (
-                      <div className="p-2.5 bg-purple-950/30 border border-purple-800/30 rounded-xl relative space-y-1">
-                        <Quote size={14} className="text-purple-500/40 absolute top-2 end-2" />
-                        <p className="text-[10.5px] italic text-slate-200 leading-relaxed pe-4 line-clamp-1 sm:line-clamp-2">
+                      <div className="p-2.5 bg-purple-900/30 border border-purple-400/25 rounded-xl relative space-y-1">
+                        <Quote size={14} className="text-purple-400/50 absolute top-2 end-2" />
+                        <p className="text-[10.5px] italic text-purple-100 leading-relaxed pe-4 line-clamp-1 sm:line-clamp-2">
                           "{language === 'ar' ? activeSlide.quoteAr : activeSlide.quoteEn}"
                         </p>
                         {activeSlide.authorAr && (
-                          <div className="flex items-center gap-1.5 pt-0.5 border-t border-purple-900/30 text-[10px]">
-                            <span className="font-bold text-purple-300">{language === 'ar' ? activeSlide.authorAr : activeSlide.authorEn}</span>
-                            <span className="text-slate-600">•</span>
-                            <span className="text-slate-400">{language === 'ar' ? activeSlide.authorRoleAr : activeSlide.authorRoleEn}</span>
+                          <div className="flex items-center gap-1.5 pt-0.5 border-t border-purple-400/20 text-[10px]">
+                            <span className="font-bold text-purple-200">{language === 'ar' ? activeSlide.authorAr : activeSlide.authorEn}</span>
+                            <span className="text-purple-400/60">•</span>
+                            <span className="text-purple-300/80">{language === 'ar' ? activeSlide.authorRoleAr : activeSlide.authorRoleEn}</span>
                           </div>
                         )}
                       </div>
@@ -592,12 +549,12 @@ export default function CustomerSuccessStories() {
                   </div>
 
                   {/* Actions & Interactive CTA Bar */}
-                  <div className="pt-2.5 border-t border-slate-900 flex items-center justify-between gap-2">
+                  <div className="pt-2.5 border-t border-purple-500/20 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => setActiveStory(activeSlide)}
-                        className="px-3 py-1.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:brightness-110 text-white rounded-lg text-[11px] font-black shadow-md shadow-purple-950/40 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+                        className="px-3 py-1.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:brightness-110 text-white rounded-lg text-[11px] font-black shadow-md shadow-purple-950/50 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
                       >
                         <FileText size={12} className="text-purple-200" />
                         <span>{language === 'ar' ? 'عرض القصة كاملة' : 'Read Full Case'}</span>
@@ -607,17 +564,17 @@ export default function CustomerSuccessStories() {
                       <button
                         type="button"
                         onClick={() => setIsInquiryModalOpen(true)}
-                        className="px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-purple-500/30 text-purple-200 hover:text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                        className="px-3 py-1.5 bg-purple-900/60 hover:bg-purple-800/80 border border-purple-400/40 text-purple-100 hover:text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
                       >
-                        <Headphones size={11} className="text-purple-400" />
+                        <Headphones size={11} className="text-purple-300" />
                         <span>{language === 'ar' ? 'طلب حل مماثل' : 'Inquire'}</span>
                       </button>
                     </div>
 
                     {/* Swipe hint */}
-                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono">
+                    <div className="flex items-center gap-1.5 text-[10px] text-purple-300/80 font-mono">
                       <span>{language === 'ar' ? 'اسحب للتنقل' : 'Swipe'}</span>
-                      <ArrowRight size={11} className={isRtl ? 'rotate-180 text-purple-400' : 'text-purple-400'} />
+                      <ArrowRight size={11} className={isRtl ? 'rotate-180 text-purple-300' : 'text-purple-300'} />
                     </div>
                   </div>
                 </div>
@@ -626,17 +583,17 @@ export default function CustomerSuccessStories() {
           </div>
 
           {/* Bottom Pagination Dots */}
-          <div className="py-2 bg-slate-950/80 border-t border-slate-900/80 flex items-center justify-center gap-2">
+          <div className="py-2.5 bg-[#210c3f]/95 border-t border-purple-500/25 flex items-center justify-center gap-2">
             {stories.map((story, idx) => {
               const isActive = idx === currentSlide;
               return (
                 <button
                   key={`dot-${story.id}`}
                   onClick={() => handleSelectSlide(idx)}
-                  className={`h-1.5 transition-all duration-300 rounded-full cursor-pointer ${
+                  className={`h-2 transition-all duration-300 rounded-full cursor-pointer ${
                     isActive 
-                      ? 'w-7 bg-gradient-to-r from-purple-500 via-fuchsia-500 to-indigo-500 shadow-xs shadow-purple-500/40' 
-                      : 'w-2 bg-slate-800 hover:bg-slate-700'
+                      ? 'w-8 bg-gradient-to-r from-purple-400 via-fuchsia-400 to-indigo-300 shadow-sm shadow-purple-400/60' 
+                      : 'w-2 bg-purple-900/70 hover:bg-purple-700/80'
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 />
@@ -645,20 +602,20 @@ export default function CustomerSuccessStories() {
           </div>
         </div>
 
-        {/* Quick Consulting Banner Bar at bottom of Carousel (Compact) */}
+        {/* Quick Consulting Banner Bar at bottom of Carousel */}
         <div 
-          className="p-3.5 sm:p-4 bg-gradient-to-r from-purple-950/60 via-slate-950 to-indigo-950/60 border border-purple-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg text-start"
+          className="p-4 sm:p-5 bg-gradient-to-r from-[#2c1452] via-[#3a1a6b] to-[#250f44] border border-purple-400/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl text-start"
           dir={isRtl ? 'rtl' : 'ltr'}
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-900/60 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 shadow-md">
-              <Headphones size={18} className="text-purple-300" />
+            <div className="w-9 h-9 rounded-xl bg-purple-800/60 border border-purple-400/40 flex items-center justify-center text-purple-200 shrink-0 shadow-md">
+              <Headphones size={18} className="text-purple-200" />
             </div>
             <div className="space-y-0.5">
               <h4 className="text-xs sm:text-sm font-black text-white">
                 {language === 'ar' ? 'هل ترغب في تحقيق وفورات ونسب كفاءة مماثلة لأسطولك؟' : 'Ready to Achieve Similar ROI & Uptime for Your Fleet?'}
               </h4>
-              <p className="text-[10.5px] text-slate-300">
+              <p className="text-[10.5px] text-purple-200/90">
                 {language === 'ar'
                   ? 'تواصل مباشرة مع أحد مهندسي صيانة الأساطيل لدينا للحصول على استشارة تشخيصية مجانية.'
                   : 'Speak with our fleet diagnostics team for an evaluation and live system walkthrough.'}
@@ -668,7 +625,7 @@ export default function CustomerSuccessStories() {
 
           <button
             onClick={() => setIsInquiryModalOpen(true)}
-            className="w-full sm:w-auto px-4 py-2 bg-white text-slate-950 hover:bg-purple-50 font-black rounded-xl text-[11px] transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:brightness-110 text-white font-black rounded-xl text-xs transition shadow-md shadow-purple-950/50 flex items-center justify-center gap-1.5 cursor-pointer shrink-0 border border-purple-300/40"
           >
             <span>{language === 'ar' ? 'إرسال استفسار مباشر' : 'Submit Consultation Inquiry'}</span>
             <ArrowRight size={12} className={isRtl ? 'rotate-180' : ''} />
@@ -681,7 +638,7 @@ export default function CustomerSuccessStories() {
       <AnimatePresence>
         {activeStory && (
           <div 
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-50 bg-[#120623]/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
             onClick={() => setActiveStory(null)}
           >
             <motion.div
@@ -690,11 +647,11 @@ export default function CustomerSuccessStories() {
               exit={{ scale: 0.94, opacity: 0, y: 12 }}
               transition={{ type: "spring", stiffness: 320, damping: 28 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-slate-950 border border-purple-500/30 rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl my-auto max-h-[82vh] relative flex flex-col text-slate-100 text-start"
+              className="bg-gradient-to-b from-[#241042] to-[#1c0c37] border border-purple-400/40 rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl my-auto max-h-[82vh] relative flex flex-col text-slate-100 text-start"
               dir={isRtl ? 'rtl' : 'ltr'}
             >
-              {/* Modal Header Image Banner (Compact & Elegant) */}
-              <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-slate-900 shrink-0">
+              {/* Modal Header Image Banner */}
+              <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-purple-950 shrink-0">
                 <img 
                   src={activeStory.imageUrl} 
                   alt={language === 'ar' ? activeStory.titleAr : activeStory.titleEn}
@@ -704,23 +661,23 @@ export default function CustomerSuccessStories() {
                   }}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#241042] via-[#241042]/45 to-transparent" />
                 
                 {/* Close Button */}
                 <button 
                   onClick={() => setActiveStory(null)}
-                  className={`absolute top-3 ${isRtl ? 'left-3' : 'right-3'} w-8 h-8 rounded-full bg-slate-950/80 hover:bg-slate-900 border border-purple-500/30 text-slate-300 hover:text-white flex items-center justify-center cursor-pointer transition shadow-lg z-20`}
+                  className={`absolute top-3 ${isRtl ? 'left-3' : 'right-3'} w-8 h-8 rounded-full bg-purple-900/80 hover:bg-purple-800 border border-purple-400/40 text-purple-200 hover:text-white flex items-center justify-center cursor-pointer transition shadow-lg z-20`}
                 >
                   <X size={15} />
                 </button>
 
                 {/* Company & Impact Pill */}
                 <div className="absolute bottom-3 inset-x-4 flex flex-wrap items-center justify-between gap-2">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-purple-950/90 border border-purple-500/40 rounded-full text-purple-300 text-[11px] font-black shadow-md">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-purple-950/90 border border-purple-400/40 rounded-full text-purple-200 text-[11px] font-black shadow-md">
                     <Building size={12} />
                     <span>{language === 'ar' ? activeStory.companyAr : activeStory.companyEn}</span>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-950/90 border border-emerald-500/40 rounded-full text-emerald-300 text-[11px] font-black shadow-md">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-950/90 border border-emerald-400/40 rounded-full text-emerald-300 text-[11px] font-black shadow-md">
                     <Award size={12} />
                     <span>{language === 'ar' ? activeStory.metricAr : activeStory.metricEn}</span>
                   </div>
@@ -730,7 +687,7 @@ export default function CustomerSuccessStories() {
               {/* Modal Body Content (Scrollable) */}
               <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-purple-400 text-[10px] font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-1.5 text-purple-300 text-[10px] font-bold uppercase tracking-wider">
                     <FileText size={12} />
                     <span>{language === 'ar' ? 'دراسة حالة موثقة' : 'Verified Case Study'}</span>
                   </div>
@@ -740,19 +697,19 @@ export default function CustomerSuccessStories() {
                 </div>
 
                 {/* Main Story Narrative */}
-                <div className="p-3.5 bg-slate-900/70 border border-slate-800 rounded-2xl space-y-2">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                <div className="p-3.5 bg-purple-950/60 border border-purple-800/40 rounded-2xl space-y-2">
+                  <span className="text-[10px] font-bold text-purple-300 block uppercase tracking-wider">
                     {language === 'ar' ? 'التحدي والحل الهندسي:' : 'Challenge & Solution:'}
                   </span>
-                  <p className="text-xs sm:text-[13px] text-slate-200 leading-relaxed font-sans">
+                  <p className="text-xs sm:text-[13px] text-purple-100 leading-relaxed font-sans">
                     {language === 'ar' ? activeStory.contentAr : activeStory.contentEn}
                   </p>
                 </div>
 
                 {/* Key Metrics / Highlights Bento */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="p-2.5 bg-purple-950/30 border border-purple-800/30 rounded-xl space-y-0.5">
-                    <div className="flex items-center gap-1 text-purple-400 text-[10px] font-bold">
+                  <div className="p-2.5 bg-purple-900/30 border border-purple-500/30 rounded-xl space-y-0.5">
+                    <div className="flex items-center gap-1 text-purple-300 text-[10px] font-bold">
                       <TrendingUp size={12} />
                       <span>{language === 'ar' ? 'مؤشر الكفاءة' : 'Efficiency'}</span>
                     </div>
@@ -761,8 +718,8 @@ export default function CustomerSuccessStories() {
                     </p>
                   </div>
 
-                  <div className="p-2.5 bg-purple-950/30 border border-purple-800/30 rounded-xl space-y-0.5">
-                    <div className="flex items-center gap-1 text-indigo-400 text-[10px] font-bold">
+                  <div className="p-2.5 bg-purple-900/30 border border-purple-500/30 rounded-xl space-y-0.5">
+                    <div className="flex items-center gap-1 text-indigo-300 text-[10px] font-bold">
                       <Clock size={12} />
                       <span>{language === 'ar' ? 'سرعة الاستجابة' : 'Response'}</span>
                     </div>
@@ -771,7 +728,7 @@ export default function CustomerSuccessStories() {
                     </p>
                   </div>
 
-                  <div className="p-2.5 bg-purple-950/30 border border-purple-800/30 rounded-xl space-y-0.5">
+                  <div className="p-2.5 bg-purple-900/30 border border-purple-500/30 rounded-xl space-y-0.5">
                     <div className="flex items-center gap-1 text-emerald-400 text-[10px] font-bold">
                       <ShieldCheck size={12} />
                       <span>{language === 'ar' ? 'حالة الاعتماد' : 'Status'}</span>
@@ -793,14 +750,14 @@ export default function CustomerSuccessStories() {
                       setActiveStory(null);
                       setIsInquiryModalOpen(true);
                     }}
-                    className="flex-1 py-2.5 px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:brightness-110 text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+                    className="flex-1 py-2.5 px-4 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:brightness-110 text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
                   >
                     <span>{language === 'ar' ? 'طلب استشارة مخصصة لنفس الحالة' : 'Request Similar Solution Demo'}</span>
                     <ArrowRight size={13} className={isRtl ? 'rotate-180' : ''} />
                   </button>
                   <button
                     onClick={() => setActiveStory(null)}
-                    className="py-2.5 px-4 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    className="py-2.5 px-4 bg-purple-900/60 hover:bg-purple-850 border border-purple-700/40 text-purple-200 hover:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
                   >
                     {language === 'ar' ? 'إغلاق' : 'Close'}
                   </button>
@@ -816,7 +773,7 @@ export default function CustomerSuccessStories() {
       <AnimatePresence>
         {isInquiryModalOpen && (
           <div 
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-50 bg-[#120623]/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
             onClick={() => setIsInquiryModalOpen(false)}
           >
             <motion.div
@@ -825,26 +782,26 @@ export default function CustomerSuccessStories() {
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-slate-950 border border-purple-800/40 rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl text-slate-100 text-start"
+              className="bg-gradient-to-b from-[#241042] to-[#1c0c37] border border-purple-400/40 rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl text-slate-100 text-start"
               dir={isRtl ? 'rtl' : 'ltr'}
             >
               {/* Close Button */}
               <button 
                 onClick={() => setIsInquiryModalOpen(false)}
-                className={`absolute top-5 ${isRtl ? 'left-5' : 'right-5'} w-8 h-8 rounded-full bg-slate-900 border border-purple-500/30 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition`}
+                className={`absolute top-5 ${isRtl ? 'left-5' : 'right-5'} w-8 h-8 rounded-full bg-purple-900/80 border border-purple-400/40 text-purple-300 hover:text-white flex items-center justify-center cursor-pointer transition`}
               >
                 <X size={16} />
               </button>
 
               <div className="space-y-1 mb-6">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-purple-950/80 border border-purple-500/30 text-purple-300 text-[10px] font-bold rounded-full">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-purple-900/80 border border-purple-400/40 text-purple-200 text-[10px] font-bold rounded-full">
                   <Headphones size={11} />
                   <span>{language === 'ar' ? 'استشارة هندسية سريعة' : 'Fleet Expert Consultation'}</span>
                 </div>
                 <h3 className="text-xl font-black text-white">
                   {language === 'ar' ? 'طلب استشارة أو دراسة أسطول مجانية' : 'Book a Fleet Evaluation & Demo'}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-purple-200/80">
                   {language === 'ar' 
                     ? 'أدخل بياناتك وسيتواصل معك خبير هندسة الأساطيل خلال دقائق معدودة.'
                     : 'Submit your contact info and our diagnostics engineer will reach out promptly.'}
@@ -856,7 +813,7 @@ export default function CustomerSuccessStories() {
                   <form onSubmit={handleSubmitInquiry} className="space-y-4">
                     {/* Full Name */}
                     <div className="space-y-1">
-                      <label className="text-[10.5px] font-bold text-slate-300 flex items-center gap-1.5">
+                      <label className="text-[10.5px] font-bold text-purple-200 flex items-center gap-1.5">
                         <User size={12} className="text-purple-400" />
                         <span>{language === 'ar' ? 'الاسم الكامل للاتصال' : 'Full Name'}</span>
                       </label>
@@ -865,14 +822,14 @@ export default function CustomerSuccessStories() {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder={language === 'ar' ? 'مثال: م. فهد العتيبي' : 'e.g., Fahad Al-Otaibi'}
-                        className={`w-full bg-slate-900/80 border ${errors.name ? 'border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none`}
+                        className={`w-full bg-[#180a2e]/90 border ${errors.name ? 'border-rose-500' : 'border-purple-700/50 focus:border-purple-400'} text-white placeholder-purple-300/40 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none`}
                       />
                       {errors.name && <p className="text-[10px] text-rose-400">{errors.name}</p>}
                     </div>
 
                     {/* Company */}
                     <div className="space-y-1">
-                      <label className="text-[10.5px] font-bold text-slate-300 flex items-center gap-1.5">
+                      <label className="text-[10.5px] font-bold text-purple-200 flex items-center gap-1.5">
                         <Building size={12} className="text-purple-400" />
                         <span>{language === 'ar' ? 'اسم المنشأة / الشركة' : 'Company / Fleet Name'}</span>
                       </label>
@@ -881,7 +838,7 @@ export default function CustomerSuccessStories() {
                         value={formData.company}
                         onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                         placeholder={language === 'ar' ? 'مثال: شركة المسار للنقل' : 'e.g., Al-Masar Logistics'}
-                        className={`w-full bg-slate-900/80 border ${errors.company ? 'border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none`}
+                        className={`w-full bg-[#180a2e]/90 border ${errors.company ? 'border-rose-500' : 'border-purple-700/50 focus:border-purple-400'} text-white placeholder-purple-300/40 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none`}
                       />
                       {errors.company && <p className="text-[10px] text-rose-400">{errors.company}</p>}
                     </div>
@@ -889,7 +846,7 @@ export default function CustomerSuccessStories() {
                     {/* Email & Phone */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-[10.5px] font-bold text-slate-300 flex items-center gap-1.5">
+                        <label className="text-[10.5px] font-bold text-purple-200 flex items-center gap-1.5">
                           <Mail size={12} className="text-purple-400" />
                           <span>{language === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}</span>
                         </label>
@@ -898,13 +855,13 @@ export default function CustomerSuccessStories() {
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           placeholder="name@company.com"
-                          className={`w-full bg-slate-900/80 border ${errors.email ? 'border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none`}
+                          className={`w-full bg-[#180a2e]/90 border ${errors.email ? 'border-rose-500' : 'border-purple-700/50 focus:border-purple-400'} text-white placeholder-purple-300/40 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none`}
                         />
                         {errors.email && <p className="text-[10px] text-rose-400">{errors.email}</p>}
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10.5px] font-bold text-slate-300 flex items-center gap-1.5">
+                        <label className="text-[10.5px] font-bold text-purple-200 flex items-center gap-1.5">
                           <PhoneIcon size={12} className="text-purple-400" />
                           <span>{language === 'ar' ? 'رقم الجوال' : 'Phone'}</span>
                         </label>
@@ -913,7 +870,7 @@ export default function CustomerSuccessStories() {
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           placeholder="0500000000"
-                          className={`w-full bg-slate-900/80 border ${errors.phone ? 'border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none`}
+                          className={`w-full bg-[#180a2e]/90 border ${errors.phone ? 'border-rose-500' : 'border-purple-700/50 focus:border-purple-400'} text-white placeholder-purple-300/40 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none`}
                         />
                         {errors.phone && <p className="text-[10px] text-rose-400">{errors.phone}</p>}
                       </div>
@@ -921,14 +878,14 @@ export default function CustomerSuccessStories() {
 
                     {/* Fleet Size */}
                     <div className="space-y-1">
-                      <label className="text-[10.5px] font-bold text-slate-300 flex items-center gap-1.5">
+                      <label className="text-[10.5px] font-bold text-purple-200 flex items-center gap-1.5">
                         <Award size={12} className="text-purple-400" />
                         <span>{language === 'ar' ? 'حجم الأسطول التقريبي' : 'Fleet Size'}</span>
                       </label>
                       <select 
                         value={formData.fleetSize}
                         onChange={(e) => setFormData({ ...formData, fleetSize: e.target.value })}
-                        className="w-full bg-slate-900/80 border border-slate-800 focus:border-purple-500 text-slate-200 rounded-xl py-2.5 px-3 text-xs focus:outline-none cursor-pointer"
+                        className="w-full bg-[#180a2e]/90 border border-purple-700/50 focus:border-purple-400 text-purple-100 rounded-xl py-2.5 px-3 text-xs focus:outline-none cursor-pointer"
                       >
                         <option value="5">1 - 10 {language === 'ar' ? 'مركبات' : 'vehicles'}</option>
                         <option value="25">11 - 50 {language === 'ar' ? 'مركبة' : 'vehicles'}</option>
@@ -939,7 +896,7 @@ export default function CustomerSuccessStories() {
 
                     {/* Message */}
                     <div className="space-y-1">
-                      <label className="text-[10.5px] font-bold text-slate-300 flex items-center gap-1.5">
+                      <label className="text-[10.5px] font-bold text-purple-200 flex items-center gap-1.5">
                         <MessageSquare size={12} className="text-purple-400" />
                         <span>{language === 'ar' ? 'تفاصيل الاستفسار أو التحدي التشغيلي' : 'Inquiry details'}</span>
                       </label>
@@ -948,7 +905,7 @@ export default function CustomerSuccessStories() {
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         placeholder={language === 'ar' ? 'يرجى توضيح التحدي التشغيلي أو ما تأملون تحقيقه عبر النظام...' : 'Current challenges or objectives...'}
-                        className={`w-full bg-slate-900/80 border ${errors.message ? 'border-rose-500' : 'border-slate-800 focus:border-purple-500'} text-slate-100 placeholder-slate-600 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none resize-none`}
+                        className={`w-full bg-[#180a2e]/90 border ${errors.message ? 'border-rose-500' : 'border-purple-700/50 focus:border-purple-400'} text-white placeholder-purple-300/40 rounded-xl py-2.5 px-3.5 text-xs transition-colors focus:outline-none resize-none`}
                       />
                       {errors.message && <p className="text-[10px] text-rose-400">{errors.message}</p>}
                     </div>
@@ -956,7 +913,7 @@ export default function CustomerSuccessStories() {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:brightness-110 disabled:opacity-50 text-white py-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg active:scale-98 mt-2"
+                      className="w-full bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:brightness-110 disabled:opacity-50 text-white py-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg active:scale-98 mt-2"
                     >
                       {isSubmitting ? (
                         <>
@@ -980,7 +937,7 @@ export default function CustomerSuccessStories() {
                       <h4 className="text-base font-black text-white">
                         {language === 'ar' ? 'تم استلام استفسارك بنجاح!' : 'Inquiry Received!'}
                       </h4>
-                      <p className="text-xs text-slate-300 max-w-xs mx-auto">
+                      <p className="text-xs text-purple-200/90 max-w-xs mx-auto">
                         {language === 'ar' 
                           ? 'تم تسجيل طلبك فورياً في لوحة الإدارة وسيتصل بك أحد خبرائنا الفنيين خلال وقت قصير.'
                           : 'Your request is recorded. An advisor will contact you shortly.'}
@@ -991,7 +948,7 @@ export default function CustomerSuccessStories() {
                         setSubmitSuccess(false);
                         setIsInquiryModalOpen(false);
                       }}
-                      className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 cursor-pointer"
+                      className="px-5 py-2 bg-purple-900 hover:bg-purple-800 text-purple-100 text-xs font-bold rounded-xl border border-purple-500/40 cursor-pointer"
                     >
                       {language === 'ar' ? 'إغلاق' : 'Close'}
                     </button>

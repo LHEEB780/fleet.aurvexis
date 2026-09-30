@@ -13,6 +13,7 @@ import {
 import { MENU_ITEMS, MenuItem } from '../constants';
 import { useLanguage } from '../services/LanguageContext';
 import { safeLocalStorage } from '../services/safeStorage';
+import CurrencyToggle from './CurrencyToggle';
 import {
   getNotificationSettings,
   saveNotificationSettings,
@@ -600,52 +601,8 @@ export const SystemSettings: React.FC<SystemSettingsProps> = ({ onModuleChange }
           </div>
         </div>
 
-        {/* Currencies Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 lg:grid-cols-11 gap-2">
-          {[
-            { id: 'SAR', labelAr: 'ريال سعودي', labelEn: 'Saudi Riyal', symbolAr: 'ر.س', symbolEn: 'SAR' },
-            { id: 'USD', labelAr: 'دولار أمريكي', labelEn: 'US Dollar', symbolAr: '$', symbolEn: 'USD' },
-            { id: 'AED', labelAr: 'درهم إماراتي', labelEn: 'UAE Dirham', symbolAr: 'د.إ', symbolEn: 'AED' },
-            { id: 'IQD', labelAr: 'دينار عراقي', labelEn: 'Iraqi Dinar', symbolAr: 'د.ع', symbolEn: 'IQD' },
-            { id: 'JOD', labelAr: 'دينار أردني', labelEn: 'Jordanian Dinar', symbolAr: 'د.أ', symbolEn: 'JOD' },
-            { id: 'EGP', labelAr: 'جنيه مصري', labelEn: 'Egyptian Pound', symbolAr: 'ج.م', symbolEn: 'EGP' },
-            { id: 'QAR', labelAr: 'ريال قطري', labelEn: 'Qatari Riyal', symbolAr: 'ر.ق', symbolEn: 'QAR' },
-            { id: 'KWD', labelAr: 'دينار كويتي', labelEn: 'Kuwaiti Dinar', symbolAr: 'د.ك', symbolEn: 'KWD' },
-            { id: 'OMR', labelAr: 'ريال عماني', labelEn: 'Omani Riyal', symbolAr: 'ر.ع', symbolEn: 'OMR' },
-            { id: 'BHD', labelAr: 'دينار بحريني', labelEn: 'Bahraini Dinar', symbolAr: 'د.ب', symbolEn: 'BHD' },
-            { id: 'EUR', labelAr: 'يورو أوروبي', labelEn: 'Euro', symbolAr: '€', symbolEn: 'EUR' }
-          ].map((curr) => {
-            const isActive = baseCurrency === curr.id;
-            return (
-              <button
-                key={curr.id}
-                type="button"
-                onClick={() => handleCurrencyChange(curr.id)}
-                className={`p-2.5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-1.5 relative ${
-                  isActive
-                    ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50/10 dark:bg-emerald-950/20 ring-2 ring-emerald-500/10'
-                    : 'border-slate-100 dark:border-slate-850 bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-slate-900/40'
-                }`}
-              >
-                {/* Symbol / Icon display */}
-                <span className={`text-xs font-black font-sans leading-none block shrink-0 ${isActive ? 'text-emerald-500' : 'text-slate-400'}`}>
-                  {isRtl ? curr.symbolAr : curr.symbolEn}
-                </span>
-
-                {/* Label */}
-                <span className={`text-[9.5px] font-black text-center truncate w-full ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-550 dark:text-slate-400'}`}>
-                  {isRtl ? curr.labelAr : curr.labelEn}
-                </span>
-
-                {isActive && (
-                  <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 flex items-center justify-center text-white p-0.5">
-                    <Check size={6} className="stroke-[4]" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {/* Pinned Base Currency & Exchange Rates Manager */}
+        <CurrencyToggle language={isRtl ? 'ar' : 'en'} variant="settings" />
       </div>
       
       {/* Browser Push Notifications & Real-Time Alerts Configuration Card */}

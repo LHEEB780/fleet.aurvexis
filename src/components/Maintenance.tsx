@@ -61,6 +61,7 @@ import SmartDiagnostic from './SmartDiagnostic';
 import { notifyNewMaintenanceOrder } from '../services/browserNotifications';
 import { safeSetItem } from '../utils/storage';
 import { formatCurrency, getCurrencyLabel } from '../services/formatters';
+import CurrencyToggle from './CurrencyToggle';
 
 const SYSTEM_ANCHOR_DATE = '2026-05-19';
 
@@ -104,6 +105,21 @@ interface MaintenanceProps {
 
 export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: MaintenanceProps) {
   const { language } = useLanguage();
+
+  // Listen to currency changes so costs and maintenance service invoices update in real-time
+  const [, setCurrencyTrigger] = useState(0);
+  useEffect(() => {
+    const handleCurrencyChange = () => {
+      setCurrencyTrigger(prev => prev + 1);
+    };
+    window.addEventListener('storage', handleCurrencyChange);
+    window.addEventListener('base-currency-changed', handleCurrencyChange);
+    return () => {
+      window.removeEventListener('storage', handleCurrencyChange);
+      window.removeEventListener('base-currency-changed', handleCurrencyChange);
+    };
+  }, []);
+
   // --- STATE FOR SYSTEM SYSTEM-WIDE LINKAGES ---
   
   // 1. Maintenance Orders
@@ -1631,6 +1647,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
             {/* Action Controls & Display Tabs Toggle */}
             <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch lg:items-center gap-3 shrink-0">
               <div className="bg-white/5 p-1 rounded-2xl border border-white/10 flex items-center w-full sm:w-auto gap-1">
+                <CurrencyToggle language={language} variant="compact" className="hidden sm:inline-flex" />
                 <button
                   onClick={() => setManagerMode('kanban')}
                   className={`flex-1 sm:flex-none px-3 py-2.5 sm:px-4 sm:py-1.5 rounded-xl text-[10.5px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
@@ -1674,7 +1691,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
         {[
           { 
             label: 'إجمالي الموازنة المعتمدة', 
-            val: `${totalFinancialCost.toLocaleString()} ر.س`, 
+            val: formatCurrency(totalFinancialCost, language, 'SAR'), 
             desc: 'لكافة أوامر الصيانة المنفذة والقديمة', 
             icon: <DollarSign size={18} className="text-emerald-600 dark:text-emerald-400" />, 
             bg: 'bg-emerald-100/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/40 hover:border-emerald-300',
@@ -3797,7 +3814,9 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
 
                             {/* Invoice Cost */}
                             <div className="space-y-1 text-right">
-                              <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">التكلفة الفعلية (ر.س):</label>
+                              <label className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">
+                                {language === 'ar' ? `التكلفة الفعلية (${getCurrencyLabel(language)}):` : `Actual Cost (${getCurrencyLabel(language)}):`}
+                              </label>
                               <input
                                 type="number"
                                 value={selectedOrder.cost || ''}
@@ -3848,7 +3867,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                         <div className="p-4 bg-slate-50 dark:bg-slate-905 border border-slate-150 dark:border-slate-850 rounded-2xl text-right">
                           <span className="text-[10px] text-slate-400 font-bold block pb-1">مجموع التكاليف المقدرة:</span>
                           <span className="text-sm md:text-base font-black text-slate-900 dark:text-white block font-mono">
-                            {selectedOrder.cost ? `${selectedOrder.cost.toLocaleString()} ر.س` : 'معلقة للتقدير المالي'}
+                            {selectedOrder.cost ? formatCurrency(selectedOrder.cost, language, 'SAR') : (language === 'ar' ? 'معلقة للتقدير المالي' : 'Pending valuation')}
                           </span>
                         </div>
 

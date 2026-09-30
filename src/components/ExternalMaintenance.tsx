@@ -106,7 +106,11 @@ export default function ExternalMaintenance({ user }: ExternalMaintenanceProps) 
     // Listen for storage changes to sync instantly
     const handleStorageChange = () => loadSystemData();
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('base-currency-changed', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('base-currency-changed', handleStorageChange);
+    };
   }, []);
 
   const triggerFeedback = (message: string, type: 'success' | 'error' = 'success') => {

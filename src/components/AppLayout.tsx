@@ -76,6 +76,7 @@ import { MaintenanceAlertTriangleButton } from './MaintenancePushNotificationCor
 import officialLogoImg from '../assets/images/fleet_aurvexis_brand_logo_1787051487788.jpg';
 import { FleetAurvexisVectorEmblem } from './FleetAurvexisLogo';
 import { renderBrandInlineStyle, adjustColorBrightness } from '../services/themeEngine';
+import CurrencyToggle from './CurrencyToggle';
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -802,6 +803,45 @@ export default function AppLayout({
       setBrandPrimaryColor('#6d28d9');
     }
   }, []);
+
+  // Listen to currency changes to keep selectedCurrencyState immediately synced across all tabs
+  React.useEffect(() => {
+    const handleCurrencySync = () => {
+      const active = safeLocalStorage.getItem('saas_base_currency') || 'SAR';
+      setSelectedCurrencyState(active);
+    };
+    window.addEventListener('storage', handleCurrencySync);
+    window.addEventListener('base-currency-changed', handleCurrencySync);
+    return () => {
+      window.removeEventListener('storage', handleCurrencySync);
+      window.removeEventListener('base-currency-changed', handleCurrencySync);
+    };
+  }, []);
+
+  // Lock background body scroll & support Escape key dismissal when mobile drawer is open
+  React.useEffect(() => {
+    if (mobileMenuOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setMobileMenuOpen(false);
+      };
+
+      const handleResize = () => {
+        if (window.innerWidth >= 768) setMobileMenuOpen(false);
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [mobileMenuOpen]);
 
   React.useEffect(() => {
     localStorage.setItem('saas_global_sub_admin_privileges', JSON.stringify(globalSubAdminPrivileges));
@@ -2214,32 +2254,35 @@ export default function AppLayout({
           </div>
 
           {/* Row 2 (Bottom Row): Dedicated Action & Preference Toolbar with Perfect Alignment */}
-          <div className="py-2 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 bg-slate-50/70 dark:bg-slate-950/40 relative z-20">
+          <div className="py-2 px-2 sm:px-4 lg:px-6 flex items-center justify-between gap-1 sm:gap-2 bg-slate-50/70 dark:bg-slate-950/40 relative z-20 overflow-x-auto no-scrollbar">
             {/* Group A: Quick Action Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {/* Barcode / QR Scanner Button */}
               <button 
                 id="topbar-barcode-scanner-btn"
                 type="button"
                 onClick={() => setIsBarcodeModalOpen(true)}
-                className="h-8.5 px-2.5 sm:px-3 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/90 dark:bg-brand-blue-950/30 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/40 border border-brand-blue-200/60 dark:border-brand-blue-900/50 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95"
+                className="h-8.5 px-2 sm:px-3 text-brand-blue-600 dark:text-brand-blue-400 bg-brand-blue-50/90 dark:bg-brand-blue-950/30 hover:bg-brand-blue-100 dark:hover:bg-brand-blue-900/40 border border-brand-blue-200/60 dark:border-brand-blue-900/50 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-2xs active:scale-95"
                 title={t('common.barcodeScanner')}
               >
                 <Scan size={14} className="shrink-0" />
-                <span className="text-[11px] font-black leading-none whitespace-nowrap">
+                <span className="text-[11px] font-black leading-none whitespace-nowrap hidden xs:inline sm:inline">
                   {language === 'ar' ? 'الباركود' : 'Barcode'}
                 </span>
               </button>
             </div>
 
             {/* Group B: Preferences & System Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+              {/* Pinned Base Currency Selector with Dropdown */}
+              <CurrencyToggle language={language} variant="topbar" />
+
               {/* Global Dark / Light Theme Toggle Button */}
               <button 
                 id="header-theme-toggle-btn"
                 type="button"
                 onClick={toggleDarkMode}
-                className="h-8.5 px-2.5 text-slate-700 dark:text-amber-300 bg-white dark:bg-slate-800 hover:bg-amber-50/60 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0 active:scale-95 group"
+                className="h-8.5 px-2 sm:px-2.5 text-slate-700 dark:text-amber-300 bg-white dark:bg-slate-800 hover:bg-amber-50/60 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0 active:scale-95 group"
                 title={isDarkMode ? (language === 'ar' ? 'التبديل إلى الوضع النهاري (الفاتح)' : 'Switch to Light Mode') : (language === 'ar' ? 'التبديل إلى الوضع الليلي (الداكن)' : 'Switch to Dark Mode')}
                 aria-label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
@@ -2264,7 +2307,7 @@ export default function AppLayout({
               <button 
                 type="button"
                 onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-                className="h-8.5 px-2.5 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95"
+                className="h-8.5 px-2 sm:px-2.5 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95"
                 title={language === 'ar' ? 'تغيير اللغة إلى English' : 'تغيير اللغة إلى العربية'}
               >
                 <Globe size={13} className="text-violet-500 shrink-0" />
@@ -2281,7 +2324,7 @@ export default function AppLayout({
                     setFontSizeDropdownOpen(!fontSizeDropdownOpen);
                     setRoleDropdownOpen(false);
                   }}
-                  className={`h-8.5 px-2.5 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95 border ${
+                  className={`h-8.5 px-2 sm:px-2.5 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95 border ${
                     fontSizeDropdownOpen
                       ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700'
                       : 'text-purple-600 dark:text-purple-300 bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 border-slate-200/60 dark:border-slate-700/60'
@@ -2496,60 +2539,78 @@ export default function AppLayout({
         </div>
       </main>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Drawer & Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <>
+          <div className="fixed inset-0 z-50 md:hidden" dir={dir}>
+            {/* Backdrop Overlay with blur & smooth fade */}
             <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
+               transition={{ duration: 0.2 }}
                onClick={() => setMobileMenuOpen(false)}
-               className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden"
+               className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+               aria-hidden="true"
             />
+
+            {/* Slide-out Drawer Panel */}
             <motion.aside
                initial={{ x: dir === 'rtl' ? '100%' : '-100%' }}
                animate={{ x: 0 }}
                exit={{ x: dir === 'rtl' ? '100%' : '-100%' }}
-               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-               className={`fixed inset-y-0 w-64 bg-[#f0f6f3] dark:bg-[#0c1411] z-50 md:hidden p-6 shadow-2xl border-slate-200 dark:border-slate-850/40 ${
+               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+               className={`fixed inset-y-0 w-[295px] sm:w-[320px] max-w-[85vw] bg-white dark:bg-[#0c1411] shadow-2xl border-slate-200/80 dark:border-slate-800/80 flex flex-col z-50 overflow-hidden ${
                  dir === 'rtl' ? 'right-0 border-l' : 'left-0 border-r'
                }`}
+               role="dialog"
+               aria-modal="true"
+               aria-label={language === 'ar' ? 'قائمة التنقل الرئيسية' : 'Main Navigation Drawer'}
             >
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-500/25 overflow-hidden border border-indigo-400/40 bg-[#090D16] p-0.5">
+              {/* Drawer Header (Fixed at top) */}
+              <div className="p-4 sm:p-5 border-b border-slate-150 dark:border-slate-800/80 flex items-center justify-between shrink-0 bg-slate-50/60 dark:bg-slate-900/40 backdrop-blur-xs">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-500/20 overflow-hidden border border-indigo-400/40 bg-[#090D16] p-0.5">
                     {saasBrandLogo ? (
                       <img src={saasBrandLogo} alt="Logo" className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" />
                     ) : (
                       <FleetAurvexisVectorEmblem className="w-full h-full" />
                     )}
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-black text-slate-900 dark:text-white leading-tight truncate">
                       {saasBrandName ? saasBrandName : 'FleetAurvexis'}
                     </span>
-                    <span className="text-[9px] font-black tracking-widest uppercase text-indigo-600 dark:text-indigo-400">
+                    <span className="text-[9px] font-black tracking-widest uppercase text-indigo-600 dark:text-indigo-400 -mt-0.5">
                       AI Fleet Suite
                     </span>
                   </div>
                 </div>
-                <button onClick={() => setMobileMenuOpen(false)}>
-                  <X size={18} className="text-slate-500 hover:text-slate-900 dark:text-emerald-300 dark:hover:text-white cursor-pointer" />
+
+                {/* Close Button */}
+                <button 
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center justify-center cursor-pointer transition shadow-2xs active:scale-95 shrink-0"
+                  title={language === 'ar' ? 'إغلاق القائمة' : 'Close Drawer'}
+                >
+                  <X size={16} />
                 </button>
               </div>
-              <nav className="space-y-4 overflow-y-auto max-h-[60vh] mb-4 pr-1">
+
+              {/* Drawer Navigation Body (Scrollable with clean categories) */}
+              <nav className="flex-1 min-h-0 overflow-y-auto px-3.5 py-4 space-y-4 custom-scrollbar">
                 {GROUP_ORDER.map((group) => {
                   const itemsInGroup = filteredMenuItems.filter(item => item.group === group);
                   if (itemsInGroup.length === 0) return null;
 
                   return (
-                    <div key={group} className="space-y-1.5">
-                      <div className="pb-1 px-2.5 text-[12px] font-black tracking-wider text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
+                    <div key={group} className="space-y-1">
+                      <div className="pb-1 px-2.5 text-[11px] font-black tracking-wider text-slate-400 dark:text-slate-400 uppercase flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-violet-500 dark:bg-violet-400" />
                         <span>{language === 'ar' ? GROUP_INFOS[group].ar : GROUP_INFOS[group].en}</span>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {itemsInGroup.map((item) => (
                           <SidebarItem
                             key={item.id}
@@ -2568,25 +2629,26 @@ export default function AppLayout({
                 })}
               </nav>
 
-              <div className="border-t border-slate-200/50 dark:border-slate-800 pt-3 space-y-1.5">
+              {/* Drawer Footer Actions (Always pinned at bottom) */}
+              <div className="p-3.5 border-t border-slate-150 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-xs space-y-1.5 shrink-0">
                 {/* Mobile Global Theme Toggle */}
                 <button 
                   type="button"
-                  onClick={() => {
-                    toggleDarkMode();
-                  }}
-                  className="flex items-center justify-between w-full p-2.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 bg-white/70 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 transition-all cursor-pointer"
+                  onClick={() => toggleDarkMode()}
+                  className="flex items-center justify-between w-full p-2.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60 transition-all cursor-pointer shadow-2xs"
                 >
                   <div className="flex items-center gap-2">
-                    {isDarkMode ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-violet-600" />}
+                    {isDarkMode ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-violet-600" />}
                     <span>{language === 'ar' ? (isDarkMode ? 'التبديل للوضع النهاري (الفاتح)' : 'التبديل للوضع الليلي (الداكن)') : (isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode')}</span>
                   </div>
-                  <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50">
+                  <span className="text-[9.5px] font-mono font-black uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-700/50">
                     {isDarkMode ? 'DARK' : 'LIGHT'}
                   </span>
                 </button>
 
+                {/* Public Marketing Site Button */}
                 <button 
+                  type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     if (onNavigateToMarketing) {
@@ -2597,37 +2659,43 @@ export default function AppLayout({
                       window.location.reload();
                     }
                   }}
-                  className="flex items-center justify-between w-full p-2.5 text-xs font-black rounded-xl bg-gradient-to-r from-purple-600/15 via-indigo-600/15 to-purple-600/15 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-950/40 border border-purple-300/40 dark:border-purple-800/50 transition-all cursor-pointer"
+                  className="flex items-center justify-between w-full p-2.5 text-xs font-black rounded-xl bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-500/15 border border-purple-300/40 dark:border-purple-800/50 transition-all cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <Globe size={16} className="text-purple-600 dark:text-purple-400" />
+                    <Globe size={15} className="text-purple-600 dark:text-purple-400" />
                     <span>{language === 'ar' ? 'الموقع التسويقي العام' : 'Public Marketing Site'}</span>
                   </div>
-                  <ExternalLink size={13} className="opacity-70" />
+                  <ExternalLink size={12} className="opacity-70" />
                 </button>
+
+                {/* System Settings Modal Button */}
                 <button 
+                  type="button"
                   onClick={() => {
                     setIsSettingsModalOpen(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center gap-2 w-full p-2.5 text-xs font-bold rounded-xl text-slate-650 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/50 cursor-pointer"
+                  className="flex items-center gap-2 w-full p-2 text-xs font-bold rounded-xl text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/50 cursor-pointer transition"
                 >
-                  <Settings size={16} />
+                  <Settings size={15} />
                   <span>{t('menu.settings')}</span>
                 </button>
+
+                {/* Logout Button */}
                 <button 
+                  type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     if (onLogout) onLogout();
                   }}
-                  className="flex items-center gap-2 w-full p-2.5 text-xs font-bold rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                  className="flex items-center gap-2 w-full p-2 text-xs font-bold rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer transition"
                 >
-                  <LogOut size={16} />
+                  <LogOut size={15} />
                   <span>{t('menu.logout')}</span>
                 </button>
               </div>
             </motion.aside>
-          </>
+          </div>
         )}
       </AnimatePresence>
 
@@ -4993,102 +5061,8 @@ export default function AppLayout({
                         </p>
                       </div>
 
-                      {/* Active Indicator Banner */}
-                      <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between text-right" dir="rtl">
-                        <div className="space-y-1">
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wider block">
-                            {language === 'ar' ? 'العملة الفعالة حالياً بالمنصة' : 'Current Active Platform Currency'}
-                          </span>
-                          <span className="text-base font-black text-slate-900 dark:text-white block">
-                            {selectedCurrencyState} ({
-                              selectedCurrencyState === 'SAR' ? (language === 'ar' ? 'ريال سعودي 🇸🇦' : 'Saudi Riyal 🇸🇦') :
-                              selectedCurrencyState === 'USD' ? (language === 'ar' ? 'دولار أمريكي 🇺🇸' : 'US Dollar 🇺🇸') :
-                              selectedCurrencyState === 'AED' ? (language === 'ar' ? 'درهم إماراتي 🇦🇪' : 'UAE Dirham 🇦🇪') :
-                              selectedCurrencyState === 'IQD' ? (language === 'ar' ? 'دينار عراقي 🇮🇶' : 'Iraqi Dinar 🇮🇶') :
-                              selectedCurrencyState === 'JOD' ? (language === 'ar' ? 'دينار أردني 🇯🇴' : 'Jordanian Dinar 🇯🇴') :
-                              selectedCurrencyState === 'EGP' ? (language === 'ar' ? 'جنيه مصري 🇪🇬' : 'Egyptian Pound 🇪🇬') :
-                              selectedCurrencyState === 'QAR' ? (language === 'ar' ? 'ريال قطري 🇶🇦' : 'Qatari Riyal 🇶🇦') :
-                              selectedCurrencyState === 'KWD' ? (language === 'ar' ? 'دينار كويتي 🇰🇼' : 'Kuwaiti Dinar 🇰🇼') :
-                              selectedCurrencyState === 'OMR' ? (language === 'ar' ? 'ريال عماني 🇴🇲' : 'Omani Riyal 🇴🇲') :
-                              selectedCurrencyState === 'BHD' ? (language === 'ar' ? 'دينار بحريني 🇧🇭' : 'Bahraini Dinar 🇧🇭') :
-                              (language === 'ar' ? 'يورو أوروبي 🇪🇺' : 'Euro 🇪🇺')
-                            })
-                          </span>
-                        </div>
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 flex items-center justify-center font-black text-base">
-                          {selectedCurrencyState === 'USD' ? '$' :
-                           selectedCurrencyState === 'EUR' ? '€' :
-                           selectedCurrencyState === 'IQD' ? 'د.ع' :
-                           selectedCurrencyState === 'JOD' ? 'د.أ' :
-                           selectedCurrencyState === 'AED' ? 'د.إ' :
-                           selectedCurrencyState === 'EGP' ? 'ج.م' :
-                           selectedCurrencyState === 'QAR' ? 'ر.ق' :
-                           selectedCurrencyState === 'KWD' ? 'د.ك' :
-                           selectedCurrencyState === 'OMR' ? 'ر.ع' :
-                           selectedCurrencyState === 'BHD' ? 'د.ب' :
-                           'ر.س'}
-                        </div>
-                      </div>
-
-                      {/* Grid Selection */}
-                      <div className="space-y-3">
-                        <span className="text-[10.5px] font-black text-slate-400 dark:text-slate-500 block uppercase tracking-wider text-right">
-                          {language === 'ar' ? 'اختر العملة المطلوبة للتطبيق الكلي' : 'Select Master System Currency'}
-                        </span>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                          {[
-                            { id: 'SAR', labelAr: 'ريال سعودي', labelEn: 'Saudi Riyal', symbolAr: 'ر.س', symbolEn: 'SAR', flag: '🇸🇦', rate: '1.0 (عملة المرجع الأساسي)' },
-                            { id: 'USD', labelAr: 'دولار أمريكي', labelEn: 'US Dollar', symbolAr: '$', symbolEn: 'USD', flag: '🇺🇸', rate: '0.27 (نسبة صرف ر.س)' },
-                            { id: 'AED', labelAr: 'درهم إماراتي', labelEn: 'UAE Dirham', symbolAr: 'د.إ', symbolEn: 'AED', flag: '🇦🇪', rate: '0.98 (نسبة صرف ر.س)' },
-                            { id: 'IQD', labelAr: 'دينار عراقي', labelEn: 'Iraqi Dinar', symbolAr: 'د.ع', symbolEn: 'IQD', flag: '🇮🇶', rate: '349.33 (نسبة صرف ر.س)' },
-                            { id: 'JOD', labelAr: 'دينار أردني', labelEn: 'Jordanian Dinar', symbolAr: 'د.أ', symbolEn: 'JOD', flag: '🇯🇴', rate: '0.189 (نسبة صرف ر.س)' },
-                            { id: 'EGP', labelAr: 'جنيه مصري', labelEn: 'Egyptian Pound', symbolAr: 'ج.م', symbolEn: 'EGP', flag: '🇪🇬', rate: '12.80 (نسبة صرف ر.س)' },
-                            { id: 'QAR', labelAr: 'ريال قطري', labelEn: 'Qatari Riyal', symbolAr: 'ر.ق', symbolEn: 'QAR', flag: '🇶🇦', rate: '0.97 (نسبة صرف ر.س)' },
-                            { id: 'KWD', labelAr: 'دينار كويتي', labelEn: 'Kuwaiti Dinar', symbolAr: 'د.ك', symbolEn: 'KWD', flag: '🇰🇼', rate: '0.082 (نسبة صرف ر.س)' },
-                            { id: 'OMR', labelAr: 'ريال عماني', labelEn: 'Omani Riyal', symbolAr: 'ر.ع', symbolEn: 'OMR', flag: '🇴🇲', rate: '0.10 (نسبة صرف ر.س)' },
-                            { id: 'BHD', labelAr: 'دينار بحريني', labelEn: 'Bahraini Dinar', symbolAr: 'د.ب', symbolEn: 'BHD', flag: '🇧🇭', rate: '0.10 (نسبة صرف ر.س)' },
-                            { id: 'EUR', labelAr: 'يورو أوروبي', labelEn: 'Euro', symbolAr: '€', symbolEn: 'EUR', flag: '🇪🇺', rate: '0.25 (نسبة صرف ر.س)' }
-                          ].map((curr) => {
-                            const isSelected = selectedCurrencyState === curr.id;
-                            return (
-                              <button
-                                key={curr.id}
-                                type="button"
-                                onClick={() => setSelectedCurrencyState(curr.id)}
-                                className={`p-4 rounded-2xl border text-right transition-all duration-200 cursor-pointer flex items-center justify-between group relative ${
-                                  isSelected
-                                    ? 'border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/20 ring-2 ring-emerald-500/15'
-                                    : 'border-slate-150 dark:border-slate-800 bg-white dark:bg-[#0c101d] hover:border-slate-300 dark:hover:border-slate-700'
-                                }`}
-                                dir="rtl"
-                              >
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-sm">{curr.flag}</span>
-                                    <span className={`text-xs font-black block ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>
-                                      {language === 'ar' ? curr.labelAr : curr.labelEn}
-                                    </span>
-                                  </div>
-                                  <span className="text-[10px] text-slate-450 block font-mono">
-                                    {curr.rate}
-                                  </span>
-                                </div>
-                                
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-emerald-500/20 text-emerald-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-400'}`}>
-                                  {language === 'ar' ? curr.symbolAr : curr.symbolEn}
-                                </div>
-
-                                {isSelected && (
-                                  <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center text-white p-0.5">
-                                    <Check size={8} className="stroke-[4]" />
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                      {/* Master Pinned Currency & Exchange Rates Manager */}
+                      <CurrencyToggle language={language} variant="settings" />
 
                       {/* Important Information Warning Box */}
                       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-right" dir="rtl">
