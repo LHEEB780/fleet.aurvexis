@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { 
   Navigation, 
   MapPin, 
@@ -7,7 +11,6 @@ import {
   Maximize2, 
   Minimize2,
   Layers, 
-  Radio, 
   AlertTriangle, 
   Phone, 
   Wrench, 
@@ -28,21 +31,22 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  CloudSun,
   Shield,
-  Eye,
   CornerUpRight,
   CornerUpLeft,
   ArrowUp,
   ZoomIn,
   ZoomOut,
   Crosshair,
-  X
+  X,
+  Globe,
+  Car,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../../services/LanguageContext';
 import { DriverTrip, DriverWaypoint } from '../../types';
-import WazeEmbeddedNavigator from '../WazeEmbeddedNavigator';
+import { WazeEmbeddedNavigator } from '../WazeEmbeddedNavigator';
 
 interface DriverLiveMapProps {
   activeTrip: DriverTrip | null;
@@ -51,12 +55,47 @@ interface DriverLiveMapProps {
   isDarkMode: boolean;
 }
 
+// Tile layers definitions for OpenStreetMap engine
+const TILE_LAYERS = {
+  osm: {
+    nameAr: 'خريطة الشوارع (OpenStreetMap)',
+    nameEn: 'Street Map (OSM)',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; OpenStreetMap contributors'
+  },
+  satellite: {
+    nameAr: 'القمر الصناعي (Satellite)',
+    nameEn: 'Satellite (Esri)',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri'
+  },
+  dark: {
+    nameAr: 'الوضع الليلي (Dark Matter)',
+    nameEn: 'Dark Mode (Carto)',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; CartoDB &copy; OpenStreetMap'
+  },
+  transport: {
+    nameAr: 'طرق الشاحنات والنقل (Freight)',
+    nameEn: 'Freight & Transport',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; CartoDB &copy; OpenStreetMap'
+  }
+};
+
+// Default Route Waypoints if none provided in active trip
+const DEFAULT_ROUTE_WAYPOINTS: DriverWaypoint[] = [
+  { id: 'wp-1', name: 'مستودع الرياض المركزي (تحميل الحمولة)', nameEn: 'Riyadh Central Depot', type: 'origin', status: 'reached', lat: 24.7136, lng: 46.6753, time: '07:30' },
+  { id: 'wp-2', name: 'تقاطع طريق الخرج (مسار الشاحنات الثقيلة)', nameEn: 'Al-Kharj Freight Junction', type: 'checkpoint', status: 'reached', lat: 24.6850, lng: 46.7200, time: '08:45' },
+  { id: 'wp-3', name: 'محطة الميزان المحوري ونقطة التفتيش', nameEn: 'Axle Weigh Station & Inspection', type: 'checkpoint', status: 'pending', lat: 24.6300, lng: 46.7800, time: '10:15' },
+  { id: 'wp-4', name: 'بوابة مشروع التسليم والتفريغ B-4', nameEn: 'Destination Site Gate B-4', type: 'destination', status: 'pending', lat: 24.5500, lng: 46.8900, time: '14:15' }
+];
+
 // Sample points of interest along the route
 const NEARBY_SERVICES = [
-  { id: 'ws-1', nameAr: 'ورشة أسطول الرياض المركزية', nameEn: 'Riyadh Central Fleet Workshop', type: 'workshop', distKm: 3.4, lat: 24.718, lng: 46.702, phone: '+966 11 405 8899' },
-  { id: 'fs-1', nameAr: 'محطة أرامكو ديزل للشاحنات (طريق الخرج)', nameEn: 'Aramco Heavy Diesel Station', type: 'station', distKm: 1.8, lat: 24.695, lng: 46.721, phone: '+966 11 498 2211' },
-  { id: 'rs-1', nameAr: 'استراحة ونقطة راحة السائقين الدولية', nameEn: 'Highway Drivers Oasis & Rest', type: 'rest', distKm: 7.2, lat: 24.662, lng: 46.745, phone: '+966 50 123 4567' },
-  { id: 'ws-2', nameAr: 'مركز الفحص السريع وميزان المحاور', nameEn: 'Rapid Axle Scale & Inspection', type: 'checkpoint', distKm: 11.5, lat: 24.630, lng: 46.780, phone: '+966 11 223 9900' }
+  { id: 'ws-1', nameAr: 'ورشة أسطول الرياض المركزية', nameEn: 'Riyadh Central Fleet Workshop', type: 'workshop', distKm: 3.4, lat: 24.6980, lng: 46.7020, phone: '+966 11 405 8899' },
+  { id: 'fs-1', nameAr: 'محطة أرامكو ديزل للشاحنات (طريق الخرج)', nameEn: 'Aramco Heavy Diesel Station', type: 'station', distKm: 1.8, lat: 24.6650, lng: 46.7350, phone: '+966 11 498 2211' },
+  { id: 'rs-1', nameAr: 'استراحة ونقطة راحة السائقين الدولية', nameEn: 'Highway Drivers Oasis & Rest', type: 'rest', distKm: 7.2, lat: 24.6420, lng: 46.7650, phone: '+966 50 123 4567' }
 ];
 
 export default function DriverLiveMap({
@@ -67,13 +106,18 @@ export default function DriverLiveMap({
 }: DriverLiveMapProps) {
   const { language, dir } = useLanguage();
 
-  // Map Modes: 'standard' | 'satellite' | 'night'
-  const [mapMode, setMapMode] = useState<'standard' | 'satellite' | 'night'>(isDarkMode ? 'night' : 'standard');
+  // Map Engine Choice: 'osm' (OpenStreetMap) | 'waze' (Waze Live)
+  const [selectedMapEngine, setSelectedMapEngine] = useState<'osm' | 'waze'>('osm');
+
+  // Leaflet Layer Choice for OpenStreetMap
+  const [activeLayerKey, setActiveLayerKey] = useState<keyof typeof TILE_LAYERS>(isDarkMode ? 'dark' : 'osm');
+  
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [isSimulatingDrive, setIsSimulatingDrive] = useState(activeTrip?.status === 'in_progress');
   const [progressPercent, setProgressPercent] = useState(38); // Route progress %
   const [currentSpeed, setCurrentSpeed] = useState(74); // KM/H
-  const [selectedPOI, setSelectedPOI] = useState<any | null>(null);
+  
+  // Modals & States
   const [sosModalOpen, setSosModalOpen] = useState(false);
   const [sosReason, setSosReason] = useState('');
   const [sosDispatched, setSosDispatched] = useState(false);
@@ -81,9 +125,49 @@ export default function DriverLiveMap({
   const [deliveryRecipient, setDeliveryRecipient] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [isHoveringMap, setIsHoveringMap] = useState(false);
-  const [showWazeEmbedModal, setShowWazeEmbedModal] = useState(false);
+
+  // Leaflet DOM and Instance references
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const routePolylineRef = useRef<L.Polyline | null>(null);
+  const routeGlowLineRef = useRef<L.Polyline | null>(null);
+  const waypointMarkersRef = useRef<L.Marker[]>([]);
+  const poiMarkersRef = useRef<L.Marker[]>([]);
+  const truckMarkerRef = useRef<L.Marker | null>(null);
+
+  // Active Trip Waypoints
+  const waypoints = (activeTrip && activeTrip.waypoints && activeTrip.waypoints.length > 0)
+    ? activeTrip.waypoints
+    : DEFAULT_ROUTE_WAYPOINTS;
+
+  // Destination coordinates for Waze & Map centering
+  const destinationWaypoint = waypoints[waypoints.length - 1] || waypoints[0];
+  const originWaypoint = waypoints[0];
+
+  // Helper to calculate truck GPS position along waypoints polyline
+  const calculateTruckGps = (pct: number): [number, number] => {
+    if (waypoints.length === 0) return [24.7136, 46.6753];
+    if (waypoints.length === 1) return [waypoints[0].lat, waypoints[0].lng];
+
+    const clampedPct = Math.max(0, Math.min(100, pct)) / 100;
+    
+    // Segment-based linear interpolation
+    const totalSegments = waypoints.length - 1;
+    const scaledIndex = clampedPct * totalSegments;
+    const segmentIndex = Math.min(Math.floor(scaledIndex), totalSegments - 1);
+    const segmentFactor = scaledIndex - segmentIndex;
+
+    const p1 = waypoints[segmentIndex];
+    const p2 = waypoints[segmentIndex + 1];
+
+    const lat = p1.lat + (p2.lat - p1.lat) * segmentFactor;
+    const lng = p1.lng + (p2.lng - p1.lng) * segmentFactor;
+
+    return [lat, lng];
+  };
+
+  const truckGps = calculateTruckGps(progressPercent);
 
   // Keyboard shortcut listener to exit fullscreen on ESC
   useEffect(() => {
@@ -108,20 +192,20 @@ export default function DriverLiveMap({
     };
   }, [isFullscreen]);
 
-  // Simulation interval for vehicle movement along the route
+  // Simulation interval for truck movement
   useEffect(() => {
     let interval: any;
     if (isSimulatingDrive) {
       interval = setInterval(() => {
         setProgressPercent(prev => {
-          if (prev >= 98) {
+          if (prev >= 99) {
             setIsSimulatingDrive(false);
             return 100;
           }
           return Number((prev + 0.35).toFixed(2));
         });
-        // Realistic fluctuating speed
-        setCurrentSpeed(Math.floor(70 + Math.random() * 12));
+        // Realistic fluctuating speed (65 - 82 KM/H)
+        setCurrentSpeed(Math.floor(68 + Math.random() * 12));
       }, 1000);
     } else {
       setCurrentSpeed(0);
@@ -129,37 +213,37 @@ export default function DriverLiveMap({
     return () => clearInterval(interval);
   }, [isSimulatingDrive]);
 
-  // Turn by turn navigation current instruction
+  // Turn-by-turn guidance text based on progress
   const getNavInstruction = () => {
-    if (progressPercent < 20) {
+    if (progressPercent < 25) {
       return {
         icon: <ArrowUp size={22} className="text-emerald-400" />,
-        textAr: 'واصل السير مباشرة على طريق الملك فهد باتجاه المخرج 14',
-        textEn: 'Continue straight on King Fahd Rd toward Exit 14',
+        textAr: 'واصل السير مباشرة على طريق الشاحنات الرئيسي باتجاه المخرج 14',
+        textEn: 'Continue straight on freight corridor toward Exit 14',
         dist: '2.4 كم',
         distEn: '2.4 km'
       };
-    } else if (progressPercent < 55) {
+    } else if (progressPercent < 60) {
       return {
         icon: <CornerUpRight size={22} className="text-amber-400" />,
-        textAr: 'انعطف يميناً نحو الطريق الدائري الجنوبي (مسار الشاحنات الثقيلة)',
-        textEn: 'Turn right onto Southern Ring Rd (Heavy Freight Lane)',
+        textAr: 'انعطف يميناً نحو الطريق الدائري الجنوبي ومسار محطة الوزن المحوري',
+        textEn: 'Turn right onto Southern Ring Rd toward Axle Scale lane',
         dist: '850 م',
         distEn: '850 m'
       };
-    } else if (progressPercent < 85) {
+    } else if (progressPercent < 88) {
       return {
         icon: <ArrowUp size={22} className="text-indigo-400" />,
-        textAr: 'اتجه مباشرة نحو محطة الوزن المحوري ونقطة تفتيش الموقع',
-        textEn: 'Head straight to Axle Weigh Station & Site Checkpoint',
-        dist: '5.1 كم',
-        distEn: '5.1 km'
+        textAr: 'اتجه مباشرة نحو نقطة تفتيش الموقع وبوابة الدخول الإلزامية',
+        textEn: 'Head straight to Site Checkpoint & mandatory entry gate',
+        dist: '3.1 كم',
+        distEn: '3.1 km'
       };
     } else {
       return {
         icon: <CornerUpLeft size={22} className="text-emerald-400" />,
-        textAr: 'اقتربت من الوجهة: انعطف يساراً للدخول إلى بوابة مشروع التسليم',
-        textEn: 'Approaching Destination: Turn left into Project Gate',
+        textAr: 'اقتربت من الوجهة: انعطف يساراً للدخول إلى رصيف تفريغ الحمولة',
+        textEn: 'Approaching Destination: Turn left into unloading dock',
         dist: '300 م',
         distEn: '300 m'
       };
@@ -168,6 +252,7 @@ export default function DriverLiveMap({
 
   const currentNav = getNavInstruction();
 
+  // Trip action handlers
   const handleStartResume = () => {
     setIsSimulatingDrive(true);
     onUpdateTripStatus('in_progress', language === 'ar' ? 'بدأ السائق التحرك على المسار' : 'Driver started driving route');
@@ -194,7 +279,7 @@ export default function DriverLiveMap({
   const handleDispatchSOS = () => {
     if (!sosReason.trim()) return;
     setSosDispatched(true);
-    onTriggerSOS(sosReason, `Lat: 24.7136, Lng: 46.6753 (طريق الرياض السريع - كم 42)`);
+    onTriggerSOS(sosReason, `Lat: ${truckGps[0].toFixed(4)}, Lng: ${truckGps[1].toFixed(4)} (طريق الشاحنات - كم 42)`);
     setTimeout(() => {
       setSosDispatched(false);
       setSosModalOpen(false);
@@ -202,838 +287,765 @@ export default function DriverLiveMap({
     }, 2500);
   };
 
-  // SVG Coordinates for the Route Path
-  // Path from (50, 240) to (550, 70)
-  const routePoints = [
-    { x: 60, y: 250, labelAr: 'مستودع الانطلاق', labelEn: 'Origin Depot', reached: progressPercent >= 5 },
-    { x: 180, y: 220, labelAr: 'تقاطع الشاحنات', labelEn: 'Freight Junction', reached: progressPercent >= 30 },
-    { x: 300, y: 150, labelAr: 'ميزان المحاور', labelEn: 'Axle Weigh Station', reached: progressPercent >= 60 },
-    { x: 440, y: 110, labelAr: 'نقطة تفتيش الموقع', labelEn: 'Site Checkpoint', reached: progressPercent >= 85 },
-    { x: 540, y: 65, labelAr: 'موقع التسليم النهائي', labelEn: 'Destination Site', reached: progressPercent >= 100 }
-  ];
-
-  // Calculate truck position on SVG based on progressPercent
-  const getTruckCoordinates = (pct: number) => {
-    const t = Math.min(100, Math.max(0, pct)) / 100;
-    // Cubic bezier or multi-segment approximation
-    const startX = 60;
-    const startY = 250;
-    const endX = 540;
-    const endY = 65;
-    
-    // Smooth parametric curve
-    const x = startX + (endX - startX) * t + Math.sin(t * Math.PI) * 25;
-    const y = startY + (endY - startY) * t - Math.sin(t * Math.PI) * 35;
-    return { x, y };
+  // Re-center map view on truck
+  const handleRecenterTruck = () => {
+    if (!mapInstanceRef.current) return;
+    mapInstanceRef.current.setView(truckGps, 13, { animate: true });
   };
 
-  const truckPos = getTruckCoordinates(progressPercent);
+  // ==========================================
+  // LEAFLET OPENSTREETMAP INITIALIZATION & SYNC
+  // ==========================================
+  useEffect(() => {
+    // Only initialize Leaflet if OpenStreetMap engine is active
+    if (selectedMapEngine !== 'osm') return;
+    if (!mapContainerRef.current) return;
+
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.invalidateSize();
+      return;
+    }
+
+    const initialCenter = truckGps;
+
+    const map = L.map(mapContainerRef.current, {
+      center: initialCenter,
+      zoom: 12,
+      zoomControl: false,
+      attributionControl: false
+    });
+
+    const layerConf = TILE_LAYERS[activeLayerKey];
+    tileLayerRef.current = L.tileLayer(layerConf.url, {
+      maxZoom: 19,
+      attribution: layerConf.attribution
+    }).addTo(map);
+
+    mapInstanceRef.current = map;
+
+    // Draw Route Polyline
+    const routeCoords: [number, number][] = waypoints.map(wp => [wp.lat, wp.lng]);
+    
+    // Outer glow polyline
+    routeGlowLineRef.current = L.polyline(routeCoords, {
+      color: '#818cf8',
+      weight: 8,
+      opacity: 0.45,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+
+    // Inner core route polyline
+    routePolylineRef.current = L.polyline(routeCoords, {
+      color: '#4f46e5',
+      weight: 4.5,
+      opacity: 0.95,
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+
+    // Draw Waypoint Markers
+    waypointMarkersRef.current = [];
+    waypoints.forEach((wp, index) => {
+      const isOrigin = index === 0;
+      const isDestination = index === waypoints.length - 1;
+      
+      let badgeColor = isOrigin ? '#10b981' : isDestination ? '#6366f1' : '#f59e0b';
+      let iconEmoji = isOrigin ? '🏁' : isDestination ? '📍' : '⚖️';
+
+      const waypointIcon = L.divIcon({
+        className: 'custom-driver-waypoint-marker',
+        html: `
+          <div style="display:flex; flex-direction:column; align-items:center; transform: translate(-50%, -100%);">
+            <div style="background:${badgeColor}; color:#fff; width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 6px 14px rgba(0,0,0,0.35); border:2.5px solid #fff;">
+              ${iconEmoji}
+            </div>
+            <div style="margin-top:3px; background:#0f172a; color:#fff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:8px; white-space:nowrap; border:1px solid rgba(255,255,255,0.2); box-shadow:0 4px 8px rgba(0,0,0,0.3);">
+              ${language === 'ar' ? wp.name : wp.nameEn}
+            </div>
+          </div>
+        `,
+        iconSize: [34, 52],
+        iconAnchor: [17, 52]
+      });
+
+      const marker = L.marker([wp.lat, wp.lng], { icon: waypointIcon }).addTo(map);
+      marker.bindPopup(`
+        <div style="text-align:${dir === 'rtl' ? 'right' : 'left'}; font-family:Cairo, sans-serif; min-width:180px;">
+          <h4 style="font-weight:900; margin:0 0 4px; font-size:13px; color:#0f172a;">${language === 'ar' ? wp.name : wp.nameEn}</h4>
+          <p style="margin:0 0 4px; font-size:11px; color:#64748b;">${language === 'ar' ? `المحطة ${index + 1} من ${waypoints.length}` : `Milestone ${index + 1} of ${waypoints.length}`}</p>
+          <div style="display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; color:#10b981;">
+            <span>⏱️ ${wp.time || '10:00 AM'}</span>
+            <span>•</span>
+            <span>${wp.status === 'reached' ? (language === 'ar' ? 'تم المرور ✓' : 'Reached ✓') : (language === 'ar' ? 'محطة قادمة' : 'Upcoming')}</span>
+          </div>
+        </div>
+      `);
+      waypointMarkersRef.current.push(marker);
+    });
+
+    // Draw Nearby POIs (Gas, Workshop, Rest)
+    poiMarkersRef.current = [];
+    NEARBY_SERVICES.forEach((service) => {
+      const isFuel = service.type === 'station';
+      const isRest = service.type === 'rest';
+      const bg = isFuel ? '#0284c7' : isRest ? '#8b5cf6' : '#d97706';
+      const emoji = isFuel ? '⛽' : isRest ? '☕' : '🔧';
+
+      const poiIcon = L.divIcon({
+        className: 'custom-poi-marker',
+        html: `
+          <div style="background:${bg}; color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 4px 10px rgba(0,0,0,0.3); border:2px solid #fff; cursor:pointer;">
+            ${emoji}
+          </div>
+        `,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+
+      const poiMarker = L.marker([service.lat, service.lng], { icon: poiIcon }).addTo(map);
+      poiMarker.bindPopup(`
+        <div style="text-align:${dir === 'rtl' ? 'right' : 'left'}; font-family:Cairo, sans-serif;">
+          <strong style="color:#0f172a; font-size:12px; display:block;">${language === 'ar' ? service.nameAr : service.nameEn}</strong>
+          <span style="color:#64748b; font-size:10.5px;">${language === 'ar' ? `المسافة: ${service.distKm} كم` : `Distance: ${service.distKm} km`}</span>
+          <div style="margin-top:4px;">
+            <a href="tel:${service.phone}" style="display:inline-block; padding:3px 8px; background:#6366f1; color:#fff; text-decoration:none; border-radius:6px; font-size:10px; font-weight:800;">
+              📞 ${language === 'ar' ? 'اتصال مباشر' : 'Call'}
+            </a>
+          </div>
+        </div>
+      `);
+      poiMarkersRef.current.push(poiMarker);
+    });
+
+    // Create Initial Truck Marker
+    const truckIconHtml = `
+      <div style="position:relative; display:flex; flex-direction:column; align-items:center; transform: translate(-50%, -50%);">
+        <!-- Pulsing radar halo -->
+        <span style="position:absolute; width:52px; height:52px; border-radius:50%; background:#6366f1; opacity:0.35; animation: ping 2s cubic-bezier(0,0,0.2,1) infinite;"></span>
+        
+        <!-- Truck capsule -->
+        <div style="width:42px; height:42px; border-radius:14px; background:linear-gradient(135deg, #4f46e5, #7c3aed); border:3px solid #fff; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 22px rgba(79,70,229,0.45); color:#fff; font-size:20px;">
+          🚛
+        </div>
+
+        <!-- Speed tag -->
+        <div style="margin-top:4px; background:#0f172a; color:#10b981; font-size:10px; font-weight:900; font-family:monospace; padding:1px 8px; border-radius:8px; border:1px solid #10b981; white-space:nowrap; box-shadow:0 4px 10px rgba(0,0,0,0.4);">
+          ${currentSpeed} KM/H
+        </div>
+      </div>
+    `;
+
+    const truckIcon = L.divIcon({
+      className: 'custom-truck-live-marker',
+      html: truckIconHtml,
+      iconSize: [42, 60],
+      iconAnchor: [21, 30]
+    });
+
+    truckMarkerRef.current = L.marker(truckGps, { icon: truckIcon, zIndexOffset: 1000 }).addTo(map);
+
+    // Initial resize trigger
+    setTimeout(() => map.invalidateSize(), 150);
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, [selectedMapEngine]);
+
+  // Update Leaflet tile layer when layer changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || selectedMapEngine !== 'osm') return;
+    const map = mapInstanceRef.current;
+
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+    }
+
+    const layerConf = TILE_LAYERS[activeLayerKey];
+    tileLayerRef.current = L.tileLayer(layerConf.url, {
+      maxZoom: 19,
+      attribution: layerConf.attribution
+    }).addTo(map);
+  }, [activeLayerKey, selectedMapEngine]);
+
+  // Update Truck Marker Position along Route as progressPercent updates
+  useEffect(() => {
+    if (!mapInstanceRef.current || !truckMarkerRef.current || selectedMapEngine !== 'osm') return;
+
+    truckMarkerRef.current.setLatLng(truckGps);
+
+    // Update Speed in truck icon html
+    const truckIconHtml = `
+      <div style="position:relative; display:flex; flex-direction:column; align-items:center; transform: translate(-50%, -50%);">
+        ${isSimulatingDrive ? `
+          <span style="position:absolute; width:52px; height:52px; border-radius:50%; background:#6366f1; opacity:0.35; animation: ping 2s cubic-bezier(0,0,0.2,1) infinite;"></span>
+        ` : ''}
+        <div style="width:42px; height:42px; border-radius:14px; background:linear-gradient(135deg, #4f46e5, #7c3aed); border:3px solid #fff; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 22px rgba(79,70,229,0.45); color:#fff; font-size:20px;">
+          🚛
+        </div>
+        <div style="margin-top:4px; background:#0f172a; color:#10b981; font-size:10px; font-weight:900; font-family:monospace; padding:1px 8px; border-radius:8px; border:1px solid #10b981; white-space:nowrap; box-shadow:0 4px 10px rgba(0,0,0,0.4);">
+          ${currentSpeed} KM/H
+        </div>
+      </div>
+    `;
+
+    truckMarkerRef.current.setIcon(
+      L.divIcon({
+        className: 'custom-truck-live-marker',
+        html: truckIconHtml,
+        iconSize: [42, 60],
+        iconAnchor: [21, 30]
+      })
+    );
+  }, [truckGps[0], truckGps[1], currentSpeed, isSimulatingDrive, selectedMapEngine]);
+
+  // Invalidate map size on fullscreen toggle
+  useEffect(() => {
+    if (mapInstanceRef.current && selectedMapEngine === 'osm') {
+      setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize();
+      }, 200);
+    }
+  }, [isFullscreen, selectedMapEngine]);
 
   return (
-    <div id="map-container" className={isFullscreen ? "fixed inset-0 z-[99999] w-screen h-screen bg-slate-950 overflow-hidden m-0 p-0 rounded-none flex flex-col" : "space-y-4"} dir={dir}>
-      {/* Top Map Control Bar - ONLY shown in Normal (Non-Fullscreen) Mode */}
-      {!isFullscreen && (
-        <div className="bg-white dark:bg-[#0f1422] p-4 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-2xl">
+    <div 
+      id="map-container" 
+      className={isFullscreen ? "fixed inset-0 z-[99999] w-screen h-screen bg-slate-950 overflow-hidden m-0 p-0 rounded-none flex flex-col" : "space-y-4"} 
+      dir={dir}
+    >
+      {/* Top Map Engine Selector & Mission Status Bar */}
+      <div className={`bg-white dark:bg-[#0f1422] p-3 sm:p-4 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs space-y-3 ${isFullscreen ? 'hidden' : ''}`}>
+        
+        {/* Row 1: Trip Header, Live Fleet Status & Speed Badge */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center shrink-0 border border-purple-500/20">
               <Navigation size={20} className={isSimulatingDrive ? 'animate-spin-slow' : ''} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>{language === 'ar' ? 'خريطة التتبع والملاحة الحية' : 'Live Driver GPS & Route Navigator'}</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm font-black text-slate-900 dark:text-white">
+                  {language === 'ar' ? 'خريطة التتبع والملاحة الحية' : 'Live Driver GPS Navigation'}
                 </h2>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-full text-[9.5px] font-black">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping" />
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                  isSimulatingDrive 
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isSimulatingDrive ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
                   <span>{isSimulatingDrive ? (language === 'ar' ? 'متصل ومتحرك' : 'Live In Motion') : (language === 'ar' ? 'متوقف / جاهز' : 'Standby / Parked')}</span>
                 </span>
               </div>
-              <p className="text-[10.5px] text-slate-400 font-semibold mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
                 {activeTrip 
-                  ? (language === 'ar' ? `المسار: ${activeTrip.origin} ➔ ${activeTrip.destination}` : `Route: ${activeTrip.originEn} ➔ ${activeTrip.destinationEn}`)
-                  : (language === 'ar' ? 'مسار نقل ثقيل: مستودع الرياض ➔ مشروع نيوم اللوجستي' : 'Heavy Freight: Riyadh Depot ➔ Neom Logistics Site')}
+                  ? (language === 'ar' ? `المسار المحدد: ${activeTrip.origin} ➔ ${activeTrip.destination}` : `Designated Route: ${activeTrip.originEn} ➔ ${activeTrip.destinationEn}`)
+                  : (language === 'ar' ? 'المسار المحدد: مستودع الرياض المركزي ➔ موقع التسليم' : 'Designated Route: Riyadh Depot ➔ Project Destination')}
               </p>
             </div>
           </div>
 
-          {/* View Mode, Zoom & Fullscreen Toggles */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Zoom Controls */}
-            <div className="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/60 dark:border-slate-800">
-              <button
-                onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2.2))}
-                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-                title={language === 'ar' ? 'تكبير (+)' : 'Zoom In (+)'}
-              >
-                <ZoomIn size={15} />
-              </button>
-              <span className="text-[9px] font-mono font-black text-slate-400 px-1">{Math.round(zoomLevel * 100)}%</span>
-              <button
-                onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.8))}
-                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-                title={language === 'ar' ? 'تصغير (-)' : 'Zoom Out (-)'}
-              >
-                <ZoomOut size={15} />
-              </button>
-              <button
-                onClick={() => setZoomLevel(1)}
-                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-                title={language === 'ar' ? 'إعادة ضبط العرض' : 'Reset Zoom'}
-              >
-                <Crosshair size={15} />
-              </button>
-            </div>
+          {/* Quick HUD Speedometer */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-xs font-mono font-black text-slate-700 dark:text-slate-200">
+            <Gauge size={15} className="text-purple-500" />
+            <span>{currentSpeed} KM/H</span>
+          </div>
+        </div>
 
-            {/* Map Layer Switcher */}
-            <div className="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/60 dark:border-slate-800">
-              <button
-                onClick={() => setMapMode('standard')}
-                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
-                  mapMode === 'standard' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
-                }`}
-              >
-                {language === 'ar' ? 'طرق' : 'Road'}
-              </button>
-              <button
-                onClick={() => setMapMode('satellite')}
-                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
-                  mapMode === 'satellite' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
-                }`}
-              >
-                {language === 'ar' ? 'قمر صناعي' : 'Satellite'}
-              </button>
-              <button
-                onClick={() => setMapMode('night')}
-                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
-                  mapMode === 'night' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-3xs' : 'text-slate-500'
-                }`}
-              >
-                {language === 'ar' ? 'ليلي' : 'Night'}
-              </button>
-            </div>
-
-            {/* Voice Prompt Toggle */}
+        {/* Row 2: Ergonomic Buttons Toolbar with Optimal Mobile & Desktop Layout */}
+        <div className="pt-2.5 border-t border-slate-150/70 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+          
+          {/* 1. Dual Engine Tabs (OpenStreetMap vs Waze Live) */}
+          <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 gap-1 w-full sm:w-auto">
+            {/* OpenStreetMap Button */}
             <button
-              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-              className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                isVoiceEnabled 
-                  ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30 shadow-3xs' 
-                  : 'bg-slate-100 dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800'
+              type="button"
+              onClick={() => setSelectedMapEngine('osm')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 sm:px-3.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                selectedMapEngine === 'osm'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 ring-1 ring-purple-400/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60'
               }`}
-              title={language === 'ar' ? 'التوجيه الصوتي' : 'Voice Navigation'}
             >
-              {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              <Globe size={15} className={selectedMapEngine === 'osm' ? 'text-white' : 'text-purple-500'} />
+              <span>{language === 'ar' ? 'مسار الشاحنة (OSM)' : 'Truck Route (OSM)'}</span>
+              <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${
+                selectedMapEngine === 'osm' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              }`}>
+                0 ر.س
+              </span>
             </button>
 
-            {/* Embedded Waze Navigator Toggle (Direct in-app embed like YouTube) */}
+            {/* Waze Live Navigation Button */}
             <button
-              onClick={() => setShowWazeEmbedModal(true)}
-              className="px-3.5 py-2 bg-[#33ccff]/15 hover:bg-[#33ccff]/25 active:scale-95 text-[#0088cc] dark:text-[#33ccff] border border-[#33ccff]/40 rounded-2xl text-xs font-black transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-              title={language === 'ar' ? 'تشغيل ملاحة ويز المباشرة المدمجة داخل التطبيق' : 'Launch Embedded Waze Map'}
+              type="button"
+              onClick={() => setSelectedMapEngine('waze')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 sm:px-3.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                selectedMapEngine === 'waze'
+                  ? 'bg-gradient-to-r from-[#0099ff] to-[#0077cc] text-white shadow-md shadow-[#0088cc]/30 ring-1 ring-cyan-400/30'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60'
+              }`}
             >
-              <span className="w-2 h-2 rounded-full bg-[#33ccff] animate-ping" />
-              <span>{language === 'ar' ? 'ملاحة ويز المباشرة 🚗' : 'Embedded Waze 🚗'}</span>
+              <Car size={15} className={selectedMapEngine === 'waze' ? 'text-white' : 'text-[#0088cc]'} />
+              <span>{language === 'ar' ? 'ملاحة ويز (Waze)' : 'Waze Live'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             </button>
+          </div>
 
-            {/* SOS Emergency Button */}
+          {/* 2. Fast Actions Group: SOS Emergency & Fullscreen Buttons */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* SOS Emergency Button - High Visibility Beacon Style */}
             <button
+              type="button"
               onClick={() => setSosModalOpen(true)}
-              className="px-3.5 py-2 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-rose-500/20 flex items-center gap-1.5 cursor-pointer animate-pulse"
+              className="flex-1 sm:flex-initial px-4 py-2.5 bg-gradient-to-r from-rose-600 via-rose-500 to-red-600 hover:from-rose-500 hover:to-red-500 active:scale-95 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-rose-600/30 border border-rose-400/40 flex items-center justify-center gap-2 cursor-pointer"
+              title={language === 'ar' ? 'طلب نجدة واستغاثة طارئة' : 'Emergency SOS Dispatch'}
             >
-              <ShieldAlert size={15} />
-              <span>{language === 'ar' ? 'طوارئ SOS' : 'Emergency SOS'}</span>
+              <ShieldAlert size={16} className="text-white animate-bounce" />
+              <span>{language === 'ar' ? 'طوارئ واستغاثة SOS' : 'Emergency SOS'}</span>
             </button>
 
             {/* Fullscreen Expand Button */}
             <button
+              type="button"
               onClick={() => setIsFullscreen(true)}
-              className="map-fullscreen-trigger px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-purple-600/20 flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 text-slate-800 dark:text-slate-200 font-black text-xs rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
               title={language === 'ar' ? 'تكبير الخريطة لكامل الشاشة' : 'Expand Fullscreen'}
             >
-              <Maximize2 size={15} />
-              <span>{language === 'ar' ? 'ملء الشاشة ⛶' : 'Fullscreen ⛶'}</span>
+              <Maximize2 size={15} className="text-purple-600 dark:text-purple-400" />
+              <span className="hidden xs:inline">{language === 'ar' ? 'ملء الشاشة' : 'Fullscreen'}</span>
             </button>
           </div>
-        </div>
-      )}
 
-      {/* Main Interactive Map Screen & Canvas Frame */}
+        </div>
+      </div>
+
+      {/* Main Map Frame */}
       <div 
-        onClick={(e) => {
-          // If clicked directly on canvas outside buttons and not fullscreen, toggle fullscreen
-          if (!isFullscreen) {
-            const target = e.target as HTMLElement;
-            if (!target.closest('button') && !target.closest('a') && !target.closest('.no-fullscreen-trigger')) {
-              setIsFullscreen(true);
-            }
-          }
-        }}
-        onMouseEnter={() => setIsHoveringMap(true)}
-        onMouseLeave={() => setIsHoveringMap(false)}
         className={`relative overflow-hidden bg-slate-950 select-none transition-all ${
           isFullscreen 
             ? 'w-full h-full flex-1 rounded-none border-none' 
-            : 'h-[520px] md:h-[620px] w-full rounded-[2.5rem] border border-purple-500/20 shadow-xl cursor-pointer group'
+            : 'h-[540px] md:h-[620px] w-full rounded-[2.5rem] border border-purple-500/20 shadow-xl'
         }`}
       >
-        {/* Click to expand hint overlay when not in fullscreen */}
-        {!isFullscreen && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none opacity-85 group-hover:opacity-100 transition-opacity">
-            <span className="px-4 py-2 bg-slate-900/90 backdrop-blur-md text-white border border-purple-500/40 rounded-full text-[11px] font-black flex items-center gap-2 shadow-xl">
-              <Maximize2 size={13} className="text-purple-400 animate-pulse" />
-              <span>{language === 'ar' ? 'اضغط لتكبير الخريطة على كامل الشاشة 🔍' : 'Click to view Fullscreen 🔍'}</span>
-            </span>
+        {/* Fullscreen Floating Cockpit Header - Sleek, Compact & Perfectly Organized */}
+        {isFullscreen && (
+          <div className="absolute top-2.5 inset-x-2.5 sm:inset-x-4 z-[1000] pointer-events-none">
+            <div className="max-w-2xl mx-auto bg-slate-950/90 backdrop-blur-xl border border-purple-500/35 rounded-2xl shadow-2xl p-1.5 flex items-center justify-between gap-1.5 pointer-events-auto">
+              
+              {/* Left/Start: Minimize/Exit Button & Speed Indicator */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreen(false)}
+                  className="px-2.5 py-1.5 bg-rose-600/90 hover:bg-rose-600 active:scale-95 text-white font-black text-[11px] rounded-xl shadow-sm border border-rose-400/40 flex items-center gap-1 cursor-pointer transition-all"
+                  title={language === 'ar' ? 'تصغير الخريطة والرجوع' : 'Minimize (ESC)'}
+                >
+                  <Minimize2 size={13} />
+                  <span>{language === 'ar' ? 'تصغير' : 'Exit'}</span>
+                </button>
+
+                <div className="flex items-center gap-1 px-2 py-1 bg-slate-900 rounded-xl border border-slate-800 text-[10.5px] font-mono font-black text-emerald-400">
+                  <Gauge size={12} className="text-purple-400" />
+                  <span>{currentSpeed} <span className="text-[9px] text-slate-400 font-sans">KM/H</span></span>
+                </div>
+              </div>
+
+              {/* Center: Sleek Compact Engine Switcher */}
+              <div className="flex items-center gap-0.5 bg-slate-900/90 p-0.5 rounded-xl border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMapEngine('osm')}
+                  className={`px-2 py-1 rounded-lg text-[10.5px] font-black transition-all cursor-pointer ${
+                    selectedMapEngine === 'osm'
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {language === 'ar' ? 'مسار الشاحنة' : 'OSM'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMapEngine('waze')}
+                  className={`px-2 py-1 rounded-lg text-[10.5px] font-black transition-all cursor-pointer flex items-center gap-1 ${
+                    selectedMapEngine === 'waze'
+                      ? 'bg-[#0088cc] text-white shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span>{language === 'ar' ? 'ويز' : 'Waze'}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                </button>
+              </div>
+
+              {/* Right/End: Quick SOS Pill */}
+              <button
+                type="button"
+                onClick={() => setSosModalOpen(true)}
+                className="px-2.5 py-1.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 active:scale-95 text-white font-black text-[11px] rounded-xl shadow-sm border border-rose-400/40 flex items-center gap-1 cursor-pointer shrink-0"
+                title={language === 'ar' ? 'طلب نجدة واستغاثة' : 'Emergency SOS'}
+              >
+                <ShieldAlert size={13} className="animate-bounce" />
+                <span>{language === 'ar' ? 'طوارئ' : 'SOS'}</span>
+              </button>
+
+            </div>
           </div>
         )}
 
-        {/* FULLSCREEN EXCLUSIVE FLOATING HEADER BAR & MINIMIZE BUTTON */}
-        {isFullscreen && (
-          <div className="absolute top-4 inset-x-4 z-40 flex items-center justify-between gap-3 pointer-events-none">
-            {/* Left/Start: Dedicated High-Visibility Minimize Button */}
-            <div className="pointer-events-auto flex items-center gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsFullscreen(false);
-                }}
-                className="px-4 py-2.5 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-500 hover:to-pink-500 active:scale-95 text-white font-black text-xs md:text-sm rounded-2xl shadow-2xl shadow-rose-950/50 border border-rose-400/40 flex items-center gap-2 cursor-pointer transition-all"
-                title={language === 'ar' ? 'تصغير الخريطة والرجوع (ESC)' : 'Exit Fullscreen (ESC)'}
-              >
-                <Minimize2 size={18} />
-                <span>{language === 'ar' ? 'تصغير الشاشة ✕' : 'Minimize (ESC) ✕'}</span>
-              </button>
-
-              {/* Speed HUD on Fullscreen Top */}
-              <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 bg-slate-900/90 backdrop-blur-md border border-purple-500/30 rounded-2xl text-white shadow-xl">
-                <Gauge size={16} className="text-purple-400" />
-                <div>
-                  <span className="block text-[8.5px] text-slate-400 font-bold uppercase">{language === 'ar' ? 'السرعة الحالية' : 'Live Speed'}</span>
-                  <span className="block text-xs font-black text-emerald-400 font-mono">
-                    {currentSpeed} <span className="text-[9px] text-slate-300">KM/H</span>
+        {/* Turn-by-Turn Instruction Banner (Shows on OpenStreetMap only when no modal is active) */}
+        {selectedMapEngine === 'osm' && !sosModalOpen && !showDeliveryModal && (
+          <div className={`absolute left-2.5 right-2.5 z-30 pointer-events-none transition-all duration-300 ${isFullscreen ? 'top-13' : 'top-3'}`}>
+            <div className={`max-w-lg mx-auto bg-slate-900/90 backdrop-blur-md border border-purple-500/35 rounded-xl shadow-xl flex items-center justify-between gap-2 text-white pointer-events-auto ${isFullscreen ? 'p-2' : 'p-3'}`}>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`${isFullscreen ? 'w-7 h-7 rounded-lg' : 'w-9 h-9 rounded-xl'} bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0`}>
+                  {currentNav.icon}
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[9px] text-purple-300 font-black uppercase tracking-wider block">
+                    {language === 'ar' ? 'التوجيه القادم' : 'Upcoming Turn'}
                   </span>
+                  <p className={`${isFullscreen ? 'text-[11px]' : 'text-xs'} font-black text-white truncate`}>
+                    {language === 'ar' ? currentNav.textAr : currentNav.textEn}
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Right/End: Quick Floating Map Style & Zoom Toggles */}
-            <div className="pointer-events-auto flex items-center gap-2">
-              {/* Zoom In / Out */}
-              <div className="bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl flex items-center gap-1 border border-purple-500/30 shadow-xl">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomLevel(prev => Math.min(prev + 0.25, 2.2));
-                  }}
-                  className="p-2 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
-                  title={language === 'ar' ? 'تكبير (+)' : 'Zoom In (+)'}
-                >
-                  <ZoomIn size={16} />
-                </button>
-                <span className="text-[9.5px] font-mono font-black text-purple-300 px-1">{Math.round(zoomLevel * 100)}%</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomLevel(prev => Math.max(prev - 0.25, 0.8));
-                  }}
-                  className="p-2 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
-                  title={language === 'ar' ? 'تصغير (-)' : 'Zoom Out (-)'}
-                >
-                  <ZoomOut size={16} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomLevel(1);
-                  }}
-                  className="p-2 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-all cursor-pointer"
-                  title={language === 'ar' ? 'إعادة ضبط' : 'Reset'}
-                >
-                  <Crosshair size={16} />
-                </button>
+              <div className="text-end shrink-0 ps-2 border-s border-slate-700/80">
+                <span className={`${isFullscreen ? 'text-[11px]' : 'text-xs'} font-black text-emerald-400 font-mono block`}>
+                  {language === 'ar' ? currentNav.dist : currentNav.distEn}
+                </span>
+                <span className="text-[8.5px] text-slate-400 font-bold block">
+                  {language === 'ar' ? 'المسافة' : 'Distance'}
+                </span>
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Map Layer Switcher in Fullscreen */}
-              <div className="bg-slate-900/90 backdrop-blur-md p-1 rounded-2xl flex items-center gap-1 border border-purple-500/30 shadow-xl hidden md:flex">
+        {/* ENGINE 1: OPENSTREETMAP INTERACTIVE LEAFLET MAP */}
+        {selectedMapEngine === 'osm' && (
+          <div className="w-full h-full relative">
+            {/* The Actual Leaflet Map Canvas */}
+            <div ref={mapContainerRef} className="w-full h-full z-10" />
+
+            {/* Floating Layer Selector Controls (Bottom-Start) */}
+            <div className={`absolute start-3 z-[400] transition-all ${isFullscreen ? 'bottom-3' : 'bottom-5'}`}>
+              <div className="bg-slate-950/85 backdrop-blur-md p-1 rounded-xl flex items-center gap-1 border border-purple-500/30 shadow-lg">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMapMode('standard');
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-[10.5px] font-black transition-all cursor-pointer ${
-                    mapMode === 'standard' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+                  type="button"
+                  onClick={() => setActiveLayerKey('osm')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                    activeLayerKey === 'osm' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  {language === 'ar' ? 'طرق' : 'Road'}
+                  {language === 'ar' ? 'شوارع' : 'Street'}
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMapMode('satellite');
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-[10.5px] font-black transition-all cursor-pointer ${
-                    mapMode === 'satellite' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+                  type="button"
+                  onClick={() => setActiveLayerKey('satellite')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                    activeLayerKey === 'satellite' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
                   }`}
                 >
-                  {language === 'ar' ? 'قمر صناعي' : 'Satellite'}
+                  {language === 'ar' ? 'أقمار' : 'Sat'}
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMapMode('night');
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-[10.5px] font-black transition-all cursor-pointer ${
-                    mapMode === 'night' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+                  type="button"
+                  onClick={() => setActiveLayerKey('dark')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                    activeLayerKey === 'dark' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   {language === 'ar' ? 'ليلي' : 'Night'}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveLayerKey('transport')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                    activeLayerKey === 'transport' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {language === 'ar' ? 'شاحنات' : 'Freight'}
+                </button>
               </div>
+            </div>
 
-              {/* Emergency SOS in Fullscreen */}
+            {/* Floating Zoom & Recenter Controls (Bottom-End) */}
+            <div className={`absolute end-3 z-[400] flex items-center gap-1.5 transition-all ${isFullscreen ? 'bottom-3' : 'bottom-5'}`}>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSosModalOpen(true);
-                }}
-                className="px-3.5 py-2.5 bg-rose-500/90 hover:bg-rose-500 text-white rounded-2xl text-xs font-black transition-all shadow-xl flex items-center gap-1 cursor-pointer"
+                type="button"
+                onClick={handleRecenterTruck}
+                className="px-2.5 py-1.5 bg-slate-950/85 hover:bg-slate-900 text-purple-400 hover:text-white rounded-xl border border-purple-500/30 shadow-lg transition-all cursor-pointer flex items-center gap-1 text-[10px] font-black"
+                title={language === 'ar' ? 'التمركز على موقع الشاحنة الحالي' : 'Recenter on Truck'}
               >
-                <ShieldAlert size={15} />
-                <span className="hidden sm:inline">{language === 'ar' ? 'طوارئ' : 'SOS'}</span>
+                <Crosshair size={13} />
+                <span>{language === 'ar' ? 'تمركز' : 'Recenter'}</span>
               </button>
             </div>
           </div>
         )}
-        
-        {/* Map Background Layers based on Map Mode (Zoom transform applied) */}
-        <div 
-          className="absolute inset-0 transition-transform duration-300 origin-center"
-          style={{ transform: `scale(${zoomLevel})` }}
-        >
-          {mapMode === 'standard' && (
-            <div className="absolute inset-0 bg-[#e8ece9] dark:bg-[#111927]">
-              {/* Grid Lines simulating city grid */}
-              <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:24px_24px]" />
-              {/* Main Road Highway Lines */}
-              <div className="absolute top-1/2 left-0 right-0 h-10 bg-amber-100/60 dark:bg-slate-800/80 -rotate-12 transform origin-center border-y border-amber-300/40 dark:border-slate-700/60" />
-              <div className="absolute top-1/4 bottom-1/4 left-1/3 w-8 bg-slate-200 dark:bg-slate-850/60 rotate-45 transform origin-center border-x border-slate-300 dark:border-slate-750" />
-            </div>
-          )}
 
-          {mapMode === 'satellite' && (
-            <div className="absolute inset-0 bg-[#192b1a]">
-              {/* Terrain Texture */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-950 via-[#102414] to-[#0a140d]" />
-              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#34d399_1px,transparent_1px)] [background-size:32px_32px]" />
-            </div>
-          )}
-
-          {mapMode === 'night' && (
-            <div className="absolute inset-0 bg-[#080d19]">
-              {/* High Tech Cyber Highway Grid */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-indigo-950/60 via-[#070b14] to-[#04060a]" />
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:28px_28px]" />
-            </div>
-          )}
-
-          {/* Dynamic Vector Route Line and Checkpoints (SVG Canvas) */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 600 320" preserveAspectRatio="none">
-            <defs>
-              {/* Route Gradient in Purple / Indigo / Violet */}
-              <linearGradient id="routeGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#a855f7" stopOpacity="0.95" />
-                <stop offset="50%" stopColor="#6366f1" stopOpacity="0.95" />
-                <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.95" />
-              </linearGradient>
-              {/* Glow Filter */}
-              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="glow" />
-                <feComposite in="SourceGraphic" in2="glow" operator="over" />
-              </filter>
-            </defs>
-
-            {/* Planned Road Base Line */}
-            <path
-              d="M 60 250 Q 200 280 300 160 T 540 65"
-              fill="none"
-              stroke={mapMode === 'night' ? '#1e293b' : '#cbd5e1'}
-              strokeWidth="10"
-              strokeLinecap="round"
+        {/* ENGINE 2: WAZE LIVE MAP DIRECT INLINE EMBED */}
+        {selectedMapEngine === 'waze' && (
+          <div className="w-full h-full bg-slate-950 flex flex-col">
+            <WazeEmbeddedNavigator
+              isModal={false}
+              isInsideFullscreen={isFullscreen}
+              height="100%"
+              lat={destinationWaypoint.lat}
+              lng={destinationWaypoint.lng}
+              destinationTitle={activeTrip ? (language === 'ar' ? activeTrip.destination : activeTrip.destinationEn) : (language === 'ar' ? 'موقع تسليم الشحنة' : 'Freight Delivery Site')}
+              destinationSubtitle={activeTrip ? activeTrip.tripCode : undefined}
+              originTitle={activeTrip ? (language === 'ar' ? activeTrip.origin : activeTrip.originEn) : (language === 'ar' ? 'مستودع الرياض المركزي' : 'Riyadh Central Depot')}
+              originLat={originWaypoint.lat}
+              originLng={originWaypoint.lng}
             />
-
-            {/* Active Navigation Trace Line */}
-            <path
-              d="M 60 250 Q 200 280 300 160 T 540 65"
-              fill="none"
-              stroke="url(#routeGlow)"
-              strokeWidth="5"
-              strokeLinecap="round"
-              strokeDasharray="6 4"
-              filter="url(#glow)"
-              className="animate-pulse"
-            />
-
-            {/* Completed Segment of Route */}
-            <path
-              d={`M 60 250 Q 200 280 ${truckPos.x} ${truckPos.y}`}
-              fill="none"
-              stroke="#8b5cf6"
-              strokeWidth="5"
-              strokeLinecap="round"
-            />
-
-            {/* Route Checkpoint Nodes */}
-            {routePoints.map((pt, i) => (
-              <g key={i} className="cursor-pointer">
-                <circle
-                  cx={pt.x}
-                  cy={pt.y}
-                  r={pt.reached ? 7 : 5}
-                  fill={pt.reached ? '#8b5cf6' : mapMode === 'night' ? '#334155' : '#94a3b8'}
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                />
-                {pt.reached && (
-                  <circle cx={pt.x} cy={pt.y} r="12" fill="#8b5cf6" opacity="0.3" className="animate-ping" />
-                )}
-                {/* Text Tag */}
-                <text
-                  x={pt.x}
-                  y={pt.y - 12}
-                  textAnchor="middle"
-                  fill={mapMode === 'night' ? '#e2e8f0' : '#1e293b'}
-                  fontSize="9"
-                  fontWeight="bold"
-                  className="select-none drop-shadow-md"
-                >
-                  {language === 'ar' ? pt.labelAr : pt.labelEn}
-                </text>
-              </g>
-            ))}
-          </svg>
-
-          {/* Live Truck Moving Marker (Calculated Coordinates) */}
-          <motion.div
-            className="absolute z-20 -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-            style={{ 
-              left: `${(truckPos.x / 600) * 100}%`, 
-              top: `${(truckPos.y / 320) * 100}%` 
-            }}
-            animate={{ scale: isSimulatingDrive ? [1, 1.08, 1] : 1 }}
-            transition={{ repeat: Infinity, duration: 1.8 }}
-          >
-            {/* Radar Waves */}
-            <div className="absolute -inset-3 bg-purple-500/30 rounded-full animate-ping" />
-            <div className="absolute -inset-1.5 bg-purple-500/40 rounded-full animate-pulse" />
-            
-            {/* Truck Icon Capsule */}
-            <div className="relative w-11 h-11 bg-gradient-to-br from-purple-600 via-indigo-600 to-violet-700 text-white rounded-2xl shadow-2xl flex items-center justify-center border-2 border-purple-300 dark:border-purple-800 transform rotate-12">
-              <Truck size={20} className={isSimulatingDrive ? 'animate-bounce' : ''} />
-              
-              {/* Speed Badge */}
-              <span className="absolute -bottom-2 -right-1 px-1.5 py-0.2 bg-slate-900 text-purple-300 font-mono text-[8px] font-black rounded-md border border-purple-500/50 shadow-sm">
-                {currentSpeed} <span className="text-[6px]">KM/H</span>
-              </span>
-            </div>
-
-            {/* Hover / Tooltip on Driver's Truck */}
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white px-3 py-1.5 rounded-xl text-[10px] font-black whitespace-nowrap shadow-xl border border-purple-500/30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-              <span>{language === 'ar' ? 'موقعك الحالي - شاحنة تويوتا HD' : 'Current Location - Toyota HD'}</span>
-              <span className="block text-[8px] text-purple-300 font-mono">24.7136° N, 46.6753° E</span>
-            </div>
-          </motion.div>
-
-          {/* Nearby Support Points of Interest (POIs) Markers on Map */}
-          {NEARBY_SERVICES.map((poi, idx) => {
-            const positions = [
-              { top: '35%', left: '22%' },
-              { top: '65%', left: '42%' },
-              { top: '25%', left: '68%' },
-              { top: '75%', left: '78%' }
-            ];
-            const pos = positions[idx % positions.length];
-
-            return (
-              <div
-                key={poi.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedPOI(poi);
-                }}
-                style={{ top: pos.top, left: pos.left }}
-                className="absolute z-15 -translate-x-1/2 -translate-y-1/2 cursor-pointer group no-fullscreen-trigger"
-              >
-                <div className={`p-2 rounded-xl text-white shadow-lg border border-white/40 transition-transform group-hover:scale-115 ${
-                  poi.type === 'workshop' ? 'bg-amber-600' : poi.type === 'station' ? 'bg-indigo-600' : poi.type === 'rest' ? 'bg-purple-600' : 'bg-violet-600'
-                }`}>
-                  {poi.type === 'workshop' && <Wrench size={13} />}
-                  {poi.type === 'station' && <Fuel size={13} />}
-                  {poi.type === 'rest' && <Coffee size={13} />}
-                  {poi.type === 'checkpoint' && <CheckCircle2 size={13} />}
-                </div>
-                <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-slate-900/90 text-white rounded text-[8px] font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                  {language === 'ar' ? poi.nameAr : poi.nameEn} ({poi.distKm} km)
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Top-Right Weather & Road Condition Floating Pill (Only in normal view) */}
-        {!isFullscreen && (
-          <div className="absolute top-4 right-4 z-20 bg-slate-900/80 backdrop-blur-md text-white px-3.5 py-2 rounded-2xl border border-purple-500/20 flex items-center gap-3 text-xs shadow-lg no-fullscreen-trigger">
-            <div className="flex items-center gap-1.5 text-amber-400 font-black">
-              <Sun size={15} />
-              <span>34°C</span>
-            </div>
-            <span className="w-1 h-3 bg-white/20 rounded-full" />
-            <div className="text-[10px] font-semibold text-slate-300 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-              <span>{language === 'ar' ? 'الطريق سالك ومفتوح' : 'Highway Clear'}</span>
-            </div>
           </div>
         )}
+      </div>
 
-        {/* Turn-by-Turn Instruction Banner (Interactive GPS style) */}
-        <div className={`absolute z-20 bg-slate-900/90 backdrop-blur-md text-white p-3 md:p-3.5 rounded-2xl border border-purple-500/30 shadow-2xl space-y-1 no-fullscreen-trigger ${
-          isFullscreen ? 'top-20 left-4 right-4 md:right-auto md:max-w-sm' : 'top-4 left-4 max-w-xs md:max-w-sm'
-        }`}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-purple-500/20 text-purple-300 rounded-xl border border-purple-500/30 shrink-0">
-              {currentNav.icon}
+      {/* Driver Trip Progress & Action Controls Bar */}
+      <div className={`bg-white dark:bg-[#0f1422] p-4 rounded-3xl border border-slate-100 dark:border-slate-850/80 shadow-2xs space-y-3 ${isFullscreen ? 'hidden' : ''}`}>
+        
+        {/* Progress Bar & Realtime Stats */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Gauge size={20} />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="block text-[9px] text-purple-300 font-mono font-black uppercase tracking-wider">
-                {language === 'ar' ? `بعد ${currentNav.dist}` : `In ${currentNav.distEn}`}
-              </span>
-              <p className="text-xs font-black leading-tight mt-0.5 truncate">
-                {language === 'ar' ? currentNav.textAr : currentNav.textEn}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Floating Navigation Status Bar */}
-        <div className="absolute bottom-4 inset-x-4 z-20 bg-slate-900/90 backdrop-blur-md text-white p-4 rounded-3xl border border-purple-500/25 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-3 no-fullscreen-trigger">
-          
-          {/* Progress Metrics */}
-          <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-300 flex items-center justify-center font-mono font-black text-sm border border-purple-500/30">
-                {progressPercent}%
-              </div>
-              <div>
-                <span className="block text-[9px] text-slate-400 font-bold uppercase">{language === 'ar' ? 'إنجاز المسار' : 'Route Completion'}</span>
-                <span className="block text-xs font-black text-white">
-                  {Math.round((progressPercent / 100) * 142)} / 142 <span className="text-[10px] text-slate-400">KM</span>
-                </span>
-              </div>
-            </div>
-
-            <div className="h-8 w-px bg-white/10 hidden sm:block" />
-
             <div>
-              <span className="block text-[9px] text-slate-400 font-bold uppercase">{language === 'ar' ? 'الوقت المتبقي ETA' : 'Estimated Arrival'}</span>
-              <span className="block text-xs font-black text-purple-300 font-mono">
-                {Math.max(5, Math.round((1 - progressPercent / 100) * 85))} {language === 'ar' ? 'دقيقة' : 'mins'}
+              <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                {language === 'ar' ? 'عداد السرعة اللحظي' : 'Live Speedometer'}
+              </span>
+              <span className="text-base font-black text-slate-900 dark:text-white font-mono">
+                {currentSpeed} <span className="text-xs text-slate-400">KM/H</span>
               </span>
             </div>
-
-            {/* Quick Speed Meter HUD in Fullscreen */}
-            {isFullscreen && (
-              <>
-                <div className="h-8 w-px bg-white/10 hidden sm:block" />
-                <div className="hidden sm:flex items-center gap-2">
-                  <Gauge size={16} className="text-purple-400" />
-                  <div>
-                    <span className="block text-[9px] text-slate-400 font-bold uppercase">{language === 'ar' ? 'السرعة الحالية' : 'Live Speed'}</span>
-                    <span className="block text-xs font-black text-emerald-400 font-mono">
-                      {currentSpeed} <span className="text-[9px] text-slate-400">KM/H</span>
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
           </div>
 
-          {/* Real-time Trip Actions: Start / Pause / Arrived / Deliver */}
-          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+          <div className="flex-1 max-w-md min-w-[200px] space-y-1">
+            <div className="flex items-center justify-between text-xs font-black">
+              <span className="text-slate-700 dark:text-slate-300">
+                {language === 'ar' ? 'إنجاز مسار الرحلة' : 'Route Completion'}
+              </span>
+              <span className="text-purple-600 dark:text-purple-400 font-mono">
+                {Math.round(progressPercent)}%
+              </span>
+            </div>
+            <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-purple-600 via-indigo-600 to-emerald-500 rounded-full transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons: Start, Pause, Deliver */}
+          <div className="flex items-center gap-2 flex-wrap">
             {!isSimulatingDrive ? (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleStartResume();
-                }}
-                className="flex-1 md:flex-initial px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-purple-600/25 flex items-center justify-center gap-1.5 cursor-pointer"
+                type="button"
+                onClick={handleStartResume}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer"
               >
                 <Play size={14} />
-                <span>{language === 'ar' ? 'مواصلة التحرك' : 'Drive / Resume'}</span>
+                <span>{language === 'ar' ? 'بدء / استئناف القيادة' : 'Start / Resume'}</span>
               </button>
             ) : (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePauseBreak();
-                }}
-                className="flex-1 md:flex-initial px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                type="button"
+                onClick={handlePauseBreak}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-amber-500/20 flex items-center gap-2 cursor-pointer"
               >
                 <Pause size={14} />
                 <span>{language === 'ar' ? 'استراحة مؤقتة' : 'Take Break'}</span>
               </button>
             )}
 
-            {progressPercent >= 90 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleArrivedAtDestination();
-                }}
-                className="flex-1 md:flex-initial px-4 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 active:scale-95 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-purple-600/25 flex items-center justify-center gap-1.5 cursor-pointer animate-bounce"
-              >
-                <CheckCircle2 size={14} />
-                <span>{language === 'ar' ? 'وصلت للموقع (تسليم)' : 'Arrived (Handover)'}</span>
-              </button>
-            )}
-
-            {/* Quick exit fullscreen button on bottom bar if in fullscreen */}
-            {isFullscreen && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsFullscreen(false);
-                }}
-                className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all cursor-pointer"
-                title={language === 'ar' ? 'تصغير الخريطة' : 'Minimize Map'}
-              >
-                <Minimize2 size={15} />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleArrivedAtDestination}
+              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-purple-600/20 flex items-center gap-2 cursor-pointer"
+            >
+              <CheckCircle2 size={14} />
+              <span>{language === 'ar' ? 'تأكيد الوصول والتسليم' : 'Arrived & Deliver'}</span>
+            </button>
           </div>
         </div>
-
       </div>
 
-      {/* Selected POI Details Modal / Drawer */}
-      <AnimatePresence>
-        {selectedPOI && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 15 }}
-            className="p-4 bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-100 dark:border-slate-800 shadow-lg flex items-center justify-between gap-4"
-          >
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-2xl text-white ${
-                selectedPOI.type === 'workshop' ? 'bg-amber-500' : selectedPOI.type === 'station' ? 'bg-indigo-600' : 'bg-purple-600'
-              }`}>
-                {selectedPOI.type === 'workshop' ? <Wrench size={18} /> : selectedPOI.type === 'station' ? <Fuel size={18} /> : <Coffee size={18} />}
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-slate-900 dark:text-white">
-                  {language === 'ar' ? selectedPOI.nameAr : selectedPOI.nameEn}
-                </h4>
-                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                  {language === 'ar' ? `المسافة عن موقعك: ${selectedPOI.distKm} كم` : `Distance: ${selectedPOI.distKm} km`} • {selectedPOI.phone}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <a
-                href={`tel:${selectedPOI.phone}`}
-                className="p-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl transition-all text-xs font-black flex items-center gap-1 shadow-sm"
+      {/* Emergency SOS Modal via React Portal to Document Body */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {sosModalOpen && (
+            <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[999999] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white dark:bg-[#0f1422] max-w-md w-full rounded-3xl p-6 border border-rose-500/40 shadow-2xl space-y-4 text-right"
+                dir={dir}
               >
-                <Phone size={13} />
-                <span className="hidden sm:inline">{language === 'ar' ? 'اتصال مباشر' : 'Call'}</span>
-              </a>
-              <button
-                onClick={() => setSelectedPOI(null)}
-                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl text-xs font-bold hover:bg-slate-200 cursor-pointer"
-              >
-                {language === 'ar' ? 'إغلاق' : 'Close'}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Emergency SOS Distress Modal */}
-      <AnimatePresence>
-        {sosModalOpen && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-[#0f1422] max-w-md w-full rounded-3xl p-6 border-2 border-rose-500/40 shadow-2xl space-y-4 text-right"
-              dir={dir}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-rose-500/10 text-rose-600 rounded-2xl animate-pulse">
-                  <ShieldAlert size={26} />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-rose-600">
-                    {language === 'ar' ? '🚨 إرسال نداء استغاثة وطوارئ (SOS)' : '🚨 Broadcast Emergency Distress (SOS)'}
-                  </h3>
-                  <p className="text-[11px] text-slate-400 font-semibold">
-                    {language === 'ar' ? 'يتم إرسال إحداثيات موقعك الحي فوراً لغرفة العمليات المركزية' : 'Transmits your live GPS coordinates directly to Fleet Command'}
-                  </p>
-                </div>
-              </div>
-
-              {sosDispatched ? (
-                <div className="py-6 text-center space-y-2">
-                  <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto animate-bounce">
-                    <CheckCircle2 size={28} />
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-2xl">
+                    <ShieldAlert size={26} />
                   </div>
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                    {language === 'ar' ? 'تم استلام نداء الاستغاثة بنجاح!' : 'Distress Beacon Received!'}
-                  </h4>
-                  <p className="text-xs text-slate-400 font-semibold">
-                    {language === 'ar' ? 'فريق الدعم الميداني والونش في طريقه إليك الآن.' : 'Support team & roadside assistance dispatched to your coordinates.'}
-                  </p>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">
+                      {language === 'ar' ? '🚨 بلاغ طارئ واستغاثة فورية (SOS)' : '🚨 Emergency SOS Dispatch'}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-semibold">
+                      {language === 'ar' ? 'سيتم إرسال إحداثيات الشاحنة فوراً لغرفة العمليات المركزية' : 'Coordinates will be broadcast immediately to fleet operations'}
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-2xl border border-rose-200/50 dark:border-rose-900/30 text-[11px] text-rose-800 dark:text-rose-300 font-semibold">
-                    📍 {language === 'ar' ? 'الإحداثيات الحالية: طريق الرياض السريع (كيلو 42) - Lat: 24.7136, Lng: 46.6753' : 'Current GPS: Highway KM 42 (24.7136, 46.6753)'}
+
+                {sosDispatched ? (
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-center space-y-2">
+                    <CheckCircle2 size={32} className="mx-auto text-emerald-500 animate-bounce" />
+                    <p className="text-xs font-black text-emerald-700 dark:text-emerald-300">
+                      {language === 'ar' ? 'تم استلام بلاغك وإرسال فرقة الدعم والصيانة فوراً للموقع!' : 'SOS Received! Dispatch rescue team heading to your GPS position.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-[11px]">
+                      <span className="text-slate-400 font-bold block">{language === 'ar' ? 'موقع الشاحنة اللحظي:' : 'Live Truck GPS:'}</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                        Lat: {truckGps[0].toFixed(4)}, Lng: {truckGps[1].toFixed(4)} ({language === 'ar' ? 'طريق الشاحنات - كم 42' : 'Freight Way - Km 42'})
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-700 dark:text-slate-300">
+                        {language === 'ar' ? 'نوع الطارئ أو العطل الميداني:' : 'Emergency / Breakdown Reason:'}
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: 'accident', ar: 'حادث مروري', en: 'Accident' },
+                          { id: 'engine_stop', ar: 'توقف مفاجئ للمحرك', en: 'Engine Stalled' },
+                          { id: 'tire_burst', ar: 'انفجار إطار مفاجئ', en: 'Tire Blowout' },
+                          { id: 'medical', ar: 'حالة صحية طارئة', en: 'Medical Need' },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setSosReason(language === 'ar' ? item.ar : item.en)}
+                            className={`p-2 rounded-xl text-[10.5px] font-bold border transition-all cursor-pointer ${
+                              sosReason === (language === 'ar' ? item.ar : item.en)
+                                ? 'bg-rose-600 text-white border-rose-600'
+                                : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                            }`}
+                          >
+                            {language === 'ar' ? item.ar : item.en}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleDispatchSOS}
+                        className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-rose-600/20 cursor-pointer"
+                      >
+                        {language === 'ar' ? 'إرسال البلاغ فوراً' : 'Broadcast SOS Now'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSosModalOpen(false)}
+                        className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs rounded-2xl hover:bg-slate-200 cursor-pointer"
+                      >
+                        {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* Cargo Handover & Delivery Confirmation Modal via React Portal to Document Body */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showDeliveryModal && (
+            <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[999999] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white dark:bg-[#0f1422] max-w-md w-full rounded-3xl p-6 border border-purple-500/40 shadow-2xl space-y-4 text-right"
+                dir={dir}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-2xl">
+                    <CheckCircle2 size={26} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">
+                      {language === 'ar' ? '📦 إثبات تسليم الشحنة والمهمة' : '📦 Proof of Cargo Delivery'}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-semibold">
+                      {language === 'ar' ? 'سجل بيانات مستلم الشحنة في الموقع لإتمام الرحلة رسمياً' : 'Record recipient details to finalize this freight mission'}
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleConfirmDelivery} className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-300">
+                      {language === 'ar' ? 'اسم المستلم في الموقع / المهندس المسؤول:' : 'Recipient / Site Engineer Name:'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={deliveryRecipient}
+                      onChange={(e) => setDeliveryRecipient(e.target.value)}
+                      placeholder={language === 'ar' ? 'مثال: م. فهد الشمري (مشرف الاستلام)' : 'e.g. Eng. Fahad Al-Shammari'}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                    />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-xs font-black text-slate-700 dark:text-slate-300">
-                      {language === 'ar' ? 'نوع الطارئ أو العطل الميداني:' : 'Emergency / Breakdown Reason:'}
+                      {language === 'ar' ? 'ملاحظات التسليم والحمولة:' : 'Delivery & Cargo Notes:'}
                     </label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {[
-                        { id: 'accident', ar: 'حادث مروري', en: 'Accident' },
-                        { id: 'engine_stop', ar: 'توقف مفاجئ للمحرك', en: 'Engine Stalled' },
-                        { id: 'tire_burst', ar: 'انفجار إطار مفاجئ', en: 'Tire Blowout' },
-                        { id: 'medical', ar: 'حالة صحية طارئة', en: 'Medical Need' },
-                      ].map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setSosReason(language === 'ar' ? item.ar : item.en)}
-                          className={`p-2 rounded-xl text-[10.5px] font-bold border transition-all cursor-pointer ${
-                            sosReason === (language === 'ar' ? item.ar : item.en)
-                              ? 'bg-rose-600 text-white border-rose-600'
-                              : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                          }`}
-                        >
-                          {language === 'ar' ? item.ar : item.en}
-                        </button>
-                      ))}
-                    </div>
+                    <textarea
+                      rows={2}
+                      value={deliveryNotes}
+                      onChange={(e) => setDeliveryNotes(e.target.value)}
+                      placeholder={language === 'ar' ? 'تم تفريغ الحمولة سليمة دون أي أضرار...' : 'Cargo unloaded safely without damage...'}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
+                    />
                   </div>
 
                   <div className="flex gap-2 pt-2">
                     <button
-                      type="button"
-                      onClick={handleDispatchSOS}
-                      className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-rose-600/20 cursor-pointer"
+                      type="submit"
+                      className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-purple-600/25 cursor-pointer"
                     >
-                      {language === 'ar' ? 'إرسال البلاغ فوراً' : 'Broadcast SOS Now'}
+                      {language === 'ar' ? 'تأكيد التسليم وإنهاء الرحلة ✅' : 'Confirm Delivery & Complete ✅'}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSosModalOpen(false)}
+                      onClick={() => setShowDeliveryModal(false)}
                       className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs rounded-2xl hover:bg-slate-200 cursor-pointer"
                     >
-                      {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                      {language === 'ar' ? 'إغلاق' : 'Close'}
                     </button>
                   </div>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Cargo Handover & Delivery Confirmation Modal */}
-      <AnimatePresence>
-        {showDeliveryModal && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-[#0f1422] max-w-md w-full rounded-3xl p-6 border border-purple-500/40 shadow-2xl space-y-4 text-right"
-              dir={dir}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-2xl">
-                  <CheckCircle2 size={26} />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">
-                    {language === 'ar' ? '📦 إثبات تسليم الشحنة والمهمة' : '📦 Proof of Cargo Delivery'}
-                  </h3>
-                  <p className="text-[11px] text-slate-400 font-semibold">
-                    {language === 'ar' ? 'سجل بيانات مستلم الشحنة في الموقع لإتمام الرحلة رسمياً' : 'Record recipient details to finalize this freight mission'}
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleConfirmDelivery} className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-700 dark:text-slate-300">
-                    {language === 'ar' ? 'اسم المستلم في الموقع / المهندس المسؤول:' : 'Recipient / Site Engineer Name:'}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={deliveryRecipient}
-                    onChange={(e) => setDeliveryRecipient(e.target.value)}
-                    placeholder={language === 'ar' ? 'مثال: م. فهد الشمري (مشرف الاستلام)' : 'e.g. Eng. Fahad Al-Shammari'}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-700 dark:text-slate-300">
-                    {language === 'ar' ? 'ملاحظات التسليم والحمولة:' : 'Delivery & Cargo Notes:'}
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={deliveryNotes}
-                    onChange={(e) => setDeliveryNotes(e.target.value)}
-                    placeholder={language === 'ar' ? 'تم تفريغ الحمولة سليمة دون أي أضرار...' : 'Cargo unloaded safely without damage...'}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-white"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl transition-all shadow-md shadow-purple-600/25 cursor-pointer"
-                  >
-                    {language === 'ar' ? 'تأكيد التسليم وإنهاء الرحلة ✅' : 'Confirm Delivery & Complete ✅'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeliveryModal(false)}
-                    className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs rounded-2xl hover:bg-slate-200 cursor-pointer"
-                  >
-                    {language === 'ar' ? 'إغلاق' : 'Close'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Embedded Waze Navigator Modal (Like embedded YouTube player) */}
-        {showWazeEmbedModal && (
-          <WazeEmbeddedNavigator
-            isModal={true}
-            onClose={() => setShowWazeEmbedModal(false)}
-            lat={activeTrip?.waypoints[0]?.lat || 24.7136}
-            lng={activeTrip?.waypoints[0]?.lng || 46.6753}
-            destinationTitle={activeTrip ? (language === 'ar' ? activeTrip.destination : activeTrip.destinationEn) : undefined}
-            destinationSubtitle={activeTrip ? activeTrip.tripCode : undefined}
-          />
-        )}
-      </AnimatePresence>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

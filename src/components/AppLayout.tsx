@@ -2254,7 +2254,7 @@ export default function AppLayout({
           </div>
 
           {/* Row 2 (Bottom Row): Dedicated Action & Preference Toolbar with Perfect Alignment */}
-          <div className="py-2 px-2 sm:px-4 lg:px-6 flex items-center justify-between gap-1 sm:gap-2 bg-slate-50/70 dark:bg-slate-950/40 relative z-20 overflow-x-auto no-scrollbar">
+          <div className="py-2 px-2 sm:px-4 lg:px-6 flex items-center justify-between gap-1 sm:gap-2 bg-slate-50/70 dark:bg-slate-950/40 relative z-20">
             {/* Group A: Quick Action Controls */}
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {/* Barcode / QR Scanner Button */}
@@ -2319,6 +2319,7 @@ export default function AppLayout({
               {/* Font Size Button */}
               <div className="relative">
                 <button 
+                  id="topbar-font-size-btn"
                   type="button"
                   onClick={() => {
                     setFontSizeDropdownOpen(!fontSizeDropdownOpen);
@@ -2326,10 +2327,12 @@ export default function AppLayout({
                   }}
                   className={`h-8.5 px-2 sm:px-2.5 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-1 shrink-0 active:scale-95 border ${
                     fontSizeDropdownOpen
-                      ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700'
+                      ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700 ring-2 ring-purple-500/20'
                       : 'text-purple-600 dark:text-purple-300 bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 border-slate-200/60 dark:border-slate-700/60'
                   }`}
                   title={language === 'ar' ? 'مقياس حجم الخط والتكبير' : 'Font Size Scale'}
+                  aria-expanded={fontSizeDropdownOpen}
+                  aria-haspopup="true"
                 >
                   <Type size={13} className="text-purple-600 dark:text-purple-400" />
                   <span className="text-[10.5px] font-black leading-none">
@@ -2340,13 +2343,17 @@ export default function AppLayout({
                 <AnimatePresence>
                   {fontSizeDropdownOpen && (
                     <>
-                      <div className="fixed inset-0 z-40 bg-black/5 dark:bg-black/20" onClick={() => setFontSizeDropdownOpen(false)} />
+                      <div 
+                        className="fixed inset-0 z-[60] bg-black/10 dark:bg-black/30 backdrop-blur-2xs" 
+                        onClick={() => setFontSizeDropdownOpen(false)} 
+                      />
                       <motion.div 
                         initial={{ opacity: 0, y: 8, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.96 }}
                         transition={{ duration: 0.15 }}
-                        className={`absolute top-10.5 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-1.5 overflow-hidden ${
+                        onClick={(e) => e.stopPropagation()}
+                        className={`absolute top-10.5 w-48 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-[70] p-1.5 overflow-hidden ${
                           dir === 'rtl' ? 'left-0' : 'right-0'
                         }`}
                       >
@@ -2389,20 +2396,23 @@ export default function AppLayout({
               {/* Role Switcher Button */}
               <div className="relative">
                 <button 
+                  id="topbar-role-switcher-btn"
                   type="button"
                   onClick={() => {
                     setRoleDropdownOpen(!roleDropdownOpen);
                     setFontSizeDropdownOpen(false);
                   }}
-                  className={`h-8.5 flex items-center justify-center gap-1.5 px-2.5 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95 border ${
+                  className={`h-8.5 flex items-center justify-center gap-1.5 px-2 sm:px-2.5 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95 border ${
                     roleDropdownOpen
-                      ? 'bg-brand-blue-50 dark:bg-brand-blue-900/50 border-brand-blue-300 dark:border-brand-blue-700'
-                      : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200/60 dark:border-slate-700/60'
+                      ? 'bg-brand-blue-50 dark:bg-brand-blue-900/50 border-brand-blue-300 dark:border-brand-blue-700 text-brand-blue-700 dark:text-brand-blue-300 ring-2 ring-brand-blue-500/20'
+                      : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-200'
                   }`}
                   title={t('common.role')}
+                  aria-expanded={roleDropdownOpen}
+                  aria-haspopup="true"
                 >
-                  <Shield size={13} className="text-brand-blue-600" />
-                  <span className="text-[10.5px] font-black text-slate-700 dark:text-slate-200">
+                  <Shield size={13} className="text-brand-blue-600 dark:text-brand-blue-400" />
+                  <span className="text-[10.5px] font-black">
                     {
                       user.role === 'admin' 
                         ? (language === 'ar' ? 'المدير' : 'Admin')
@@ -2413,19 +2423,23 @@ export default function AppLayout({
                             : (language === 'ar' ? 'سائق' : 'Driver')
                     }
                   </span>
-                  <ChevronDown size={10} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={10} className={`text-slate-400 transition-transform duration-200 ${roleDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 <AnimatePresence>
                   {roleDropdownOpen && (
                     <>
-                      <div className="fixed inset-0 z-40 bg-black/5 dark:bg-black/20" onClick={() => setRoleDropdownOpen(false)} />
+                      <div 
+                        className="fixed inset-0 z-[60] bg-black/10 dark:bg-black/30 backdrop-blur-2xs" 
+                        onClick={() => setRoleDropdownOpen(false)} 
+                      />
                       <motion.div 
                         initial={{ opacity: 0, y: 8, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.96 }}
                         transition={{ duration: 0.15 }}
-                        className={`absolute top-10.5 w-52 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden ${
+                        onClick={(e) => e.stopPropagation()}
+                        className={`absolute top-10.5 w-52 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl z-[70] p-2 overflow-hidden ${
                           dir === 'rtl' ? 'left-0' : 'right-0'
                         }`}
                       >

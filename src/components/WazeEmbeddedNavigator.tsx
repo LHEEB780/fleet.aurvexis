@@ -23,10 +23,14 @@ interface WazeEmbeddedNavigatorProps {
   zoom?: number;
   destinationTitle?: string;
   destinationSubtitle?: string;
+  originTitle?: string;
+  originLat?: number;
+  originLng?: number;
   isModal?: boolean;
   onClose?: () => void;
   height?: string | number;
   allowExternalAppLaunch?: boolean;
+  isInsideFullscreen?: boolean;
 }
 
 export const WazeEmbeddedNavigator: React.FC<WazeEmbeddedNavigatorProps> = ({
@@ -35,12 +39,16 @@ export const WazeEmbeddedNavigator: React.FC<WazeEmbeddedNavigatorProps> = ({
   zoom = 13,
   destinationTitle,
   destinationSubtitle,
+  originTitle,
+  originLat,
+  originLng,
   isModal = false,
   onClose,
   height = '520px',
-  allowExternalAppLaunch = true
+  allowExternalAppLaunch = true,
+  isInsideFullscreen = false
 }) => {
-  const { language } = useLanguage();
+  const { language, dir } = useLanguage();
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const [isReloading, setIsReloading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -57,11 +65,15 @@ export const WazeEmbeddedNavigator: React.FC<WazeEmbeddedNavigatorProps> = ({
   const activeLat = activePreset === 'custom' ? lat : (cityPresets.find(p => p.id === activePreset)?.lat || lat);
   const activeLng = activePreset === 'custom' ? lng : (cityPresets.find(p => p.id === activePreset)?.lng || lng);
 
-  // Official Waze Live Map iframe URL
-  const wazeIframeUrl = `https://embed.waze.com/iframe?zoom=${currentZoom}&lat=${activeLat}&lon=${activeLng}&ct=livemap`;
+  // Official Waze Live Map iframe URL with pinned destination
+  const encodedDesc = encodeURIComponent(destinationTitle || (language === 'ar' ? 'وجهة تسليم الشحنة' : 'Freight Delivery Site'));
+  const wazeIframeUrl = `https://embed.waze.com/iframe?zoom=${currentZoom}&lat=${activeLat}&lon=${activeLng}&pin=1&desc=${encodedDesc}&ct=livemap`;
 
-  // Native Waze mobile deep link (fallback for turn-by-turn voice navigation on mobile devices)
+  // Native Waze mobile deep link (instant turn-by-turn route navigation from user's current GPS to destination)
   const wazeAppUrl = `https://waze.com/ul?ll=${activeLat},${activeLng}&navigate=yes`;
+
+  // Google Maps Directions link fallback
+  const googleMapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${activeLat},${activeLng}&travelmode=driving`;
 
   const handleRefresh = () => {
     setIsReloading(true);
@@ -71,136 +83,151 @@ export const WazeEmbeddedNavigator: React.FC<WazeEmbeddedNavigatorProps> = ({
   const content = (
     <div className={`flex flex-col bg-slate-900 text-white rounded-2xl overflow-hidden border border-slate-800 shadow-2xl relative ${isFullscreen ? 'fixed inset-0 z-50 rounded-none w-screen h-screen' : 'w-full'}`}>
       
-      {/* Top Bar / Header */}
-      <div className="px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950/80 border-b border-slate-800 flex items-center justify-between gap-3 flex-wrap">
-        
-        {/* Left: Branding & Info */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#33ccff] flex items-center justify-center text-slate-950 font-black shadow-md shadow-[#33ccff]/25 shrink-0">
-            <span className="text-xs font-mono font-black">W</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
-                {language === 'ar' ? 'خريطة ويز المباشرة (Waze Live Map)' : 'Waze Live Navigation Map'}
-              </h3>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                {language === 'ar' ? 'حركة المرور الحية' : 'Live Traffic'}
-              </span>
+      {/* Top Bar / Header (Hidden when inside DriverLiveMap fullscreen mode) */}
+      {!isInsideFullscreen && (
+        <div className="px-3 sm:px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950/80 border-b border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+          
+          {/* Left: Branding & Info */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#33ccff] flex items-center justify-center text-slate-950 font-black shadow-md shadow-[#33ccff]/25 shrink-0">
+              <span className="text-xs font-mono font-black">W</span>
             </div>
-            <p className="text-[11px] text-slate-400 truncate max-w-xs sm:max-w-md">
-              {destinationTitle ? (
-                <>
-                  <span className="text-cyan-400 font-bold">{destinationTitle}</span>
-                  {destinationSubtitle && <span className="text-slate-500 mr-1.5">({destinationSubtitle})</span>}
-                </>
-              ) : (
-                language === 'ar' 
-                  ? 'تتبع حوادث السير، الازدحام، الكاميرات والإغلاقات في الوقت الفعلي داخل التطبيق' 
-                  : 'Real-time road hazards, speed traps, jams, and live community alerts'
-              )}
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
+                  {language === 'ar' ? 'ملاحة ويز المباشرة (Waze Live)' : 'Waze Live Navigation'}
+                </h3>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  {language === 'ar' ? 'حركة المرور الحية' : 'Live Traffic'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 truncate max-w-xs sm:max-w-md">
+                {destinationTitle ? (
+                  <>
+                    <span className="text-cyan-400 font-bold">{destinationTitle}</span>
+                    {destinationSubtitle && <span className="text-slate-500 mr-1.5">({destinationSubtitle})</span>}
+                  </>
+                ) : (
+                  language === 'ar' 
+                    ? 'تتبع حوادث السير، الازدحام، الكاميرات والإغلاقات في الوقت الفعلي داخل التطبيق' 
+                    : 'Real-time road hazards, speed traps, jams, and live community alerts'
+                )}
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Right: Quick Presets & Control Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* City Presets */}
-          <div className="hidden sm:flex items-center gap-1 bg-slate-800/80 p-0.5 rounded-lg border border-slate-700/60 text-[10px]">
+          {/* Right: Quick Presets & Control Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Refresh Iframe */}
             <button
-              onClick={() => setActivePreset('custom')}
-              className={`px-2 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                activePreset === 'custom' ? 'bg-[#33ccff] text-slate-950' : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={handleRefresh}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
+              title={language === 'ar' ? 'تحديث الخريطة' : 'Refresh Map'}
             >
-              {language === 'ar' ? 'الموقع الحالي' : 'Current'}
+              <RefreshCw size={14} className={isReloading ? 'animate-spin text-[#33ccff]' : ''} />
             </button>
-            {cityPresets.map(preset => (
+
+            {/* Fullscreen Toggle */}
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
+              title={isFullscreen ? (language === 'ar' ? 'إنهاء ملء الشاشة' : 'Exit Fullscreen') : (language === 'ar' ? 'ملء الشاشة' : 'Fullscreen')}
+            >
+              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            </button>
+
+            {/* Close Modal Button if modal mode */}
+            {isModal && onClose && (
               <button
-                key={preset.id}
-                onClick={() => setActivePreset(preset.id as any)}
-                className={`px-2 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  activePreset === preset.id ? 'bg-[#33ccff] text-slate-950' : 'text-slate-400 hover:text-white'
-                }`}
+                onClick={onClose}
+                className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 border border-red-500/40 transition-colors cursor-pointer"
+                title={language === 'ar' ? 'إغلاق' : 'Close'}
               >
-                {language === 'ar' ? preset.nameAr.split(' ')[0] : preset.nameEn.split(' ')[0]}
+                <X size={15} />
               </button>
-            ))}
+            )}
           </div>
+        </div>
+      )}
 
-          {/* Refresh Iframe */}
-          <button
-            onClick={handleRefresh}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
-            title={language === 'ar' ? 'تحديث الخريطة' : 'Refresh Map'}
+      {/* Prominent Direct Route Navigation Action Card */}
+      <div 
+        className={`${isInsideFullscreen ? 'pt-14 pb-2 px-3 bg-slate-950/95 border-b border-slate-800' : 'p-3 sm:p-4 bg-gradient-to-r from-cyan-950/70 via-slate-900 to-indigo-950/70 border-b border-cyan-500/20'} flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 transition-all`} 
+        dir={dir}
+      >
+        <div className="space-y-0.5 min-w-0">
+          <div className="flex items-center gap-1.5 text-xs font-black text-cyan-300">
+            <Navigation size={13} className="animate-spin-slow shrink-0 text-cyan-400" />
+            <span>{language === 'ar' ? 'المسار المحدد للشاحنة:' : 'Designated Route:'}</span>
+          </div>
+          <div className="text-[11px] sm:text-xs text-slate-200 flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold text-slate-400">
+              {originTitle ? (language === 'ar' ? `من: ${originTitle}` : `From: ${originTitle}`) : (language === 'ar' ? 'من: موقعك الحالي' : 'From: Current Location')}
+            </span>
+            <span>➔</span>
+            <span className="font-black text-cyan-300 px-2 py-0.5 rounded-md bg-cyan-500/20 border border-cyan-500/30">
+              {destinationTitle || (language === 'ar' ? 'وجهة التسليم' : 'Destination Site')}
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons to Launch Immediate Navigation */}
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <a
+            href={wazeAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${isInsideFullscreen ? 'px-2.5 py-1.5 text-[11px]' : 'px-3.5 py-2 text-xs'} rounded-xl bg-gradient-to-r from-[#00b4d8] to-[#0077b6] hover:from-[#0096c7] hover:to-[#023e8a] active:scale-95 text-white font-black transition-all flex items-center gap-1.5 shadow-md shadow-cyan-950/50 cursor-pointer`}
+            title={language === 'ar' ? 'بدء الملاحة الحية فوراً في ويز مع التوجيه الصوتي' : 'Start live turn-by-turn navigation in Waze'}
           >
-            <RefreshCw size={14} className={isReloading ? 'animate-spin text-[#33ccff]' : ''} />
-          </button>
+            <Car size={14} />
+            <span>{language === 'ar' ? 'ابدأ الملاحة في Waze 🚗' : 'Navigate in Waze 🚗'}</span>
+            <ExternalLink size={11} className="opacity-70" />
+          </a>
 
-          {/* Fullscreen Toggle */}
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors cursor-pointer"
-            title={isFullscreen ? (language === 'ar' ? 'إنهاء ملء الشاشة' : 'Exit Fullscreen') : (language === 'ar' ? 'ملء الشاشة' : 'Fullscreen')}
+          <a
+            href={googleMapsDirectionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${isInsideFullscreen ? 'px-2.5 py-1.5 text-[11px]' : 'px-3 py-2 text-xs'} rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 font-bold transition-all flex items-center gap-1.5 cursor-pointer`}
+            title={language === 'ar' ? 'فتح المسار في خرائط Google' : 'Open Route in Google Maps'}
           >
-            {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-          </button>
-
-          {/* External App Launch for phone turn-by-turn */}
-          {allowExternalAppLaunch && (
-            <a
-              href={wazeAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-2.5 py-1.5 rounded-lg bg-[#33ccff]/15 hover:bg-[#33ccff]/25 text-[#33ccff] hover:text-[#55ddff] border border-[#33ccff]/40 text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-              title={language === 'ar' ? 'فتح في تطبيق ويز على الهاتف للتوجيه الصوتي' : 'Open in mobile Waze app for voice guidance'}
-            >
-              <ExternalLink size={12} />
-              <span className="hidden md:inline">{language === 'ar' ? 'توجيه صوتي بالهاتف' : 'Open Waze App'}</span>
-            </a>
-          )}
-
-          {/* Close Modal Button if modal mode */}
-          {isModal && onClose && (
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 border border-red-500/40 transition-colors cursor-pointer"
-              title={language === 'ar' ? 'إغلاق' : 'Close'}
-            >
-              <X size={15} />
-            </button>
-          )}
+            <MapPin size={12} className="text-rose-400" />
+            <span className="hidden sm:inline">{language === 'ar' ? 'خرائط Google' : 'Google Maps'}</span>
+          </a>
         </div>
       </div>
 
-      {/* Real-time Community Banner */}
-      <div className="bg-indigo-950/60 px-4 py-1.5 border-b border-indigo-900/40 flex items-center justify-between text-[11px] text-slate-300 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Car size={13} className="text-[#33ccff] shrink-0" />
-          <span>
-            {language === 'ar' 
-              ? 'معروض ومدمج داخل التطبيق مثل مشغل الفيديو تماماً • يمكنك استعراض حركة السير والتكبير والتحريك مباشرة'
-              : 'Embedded seamlessly inside the application • Pan, zoom, and inspect live traffic alerts right here'}
-          </span>
+      {/* Real-time Community Banner (Hidden in compact fullscreen mode) */}
+      {!isInsideFullscreen && (
+        <div className="bg-indigo-950/60 px-4 py-1.5 border-b border-indigo-900/40 flex items-center justify-between text-[11px] text-slate-300 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Car size={13} className="text-[#33ccff] shrink-0" />
+            <span>
+              {language === 'ar' 
+                ? 'معروض ومدمج داخل التطبيق مثل مشغل الفيديو تماماً • يمكنك استعراض حركة السير والتكبير والتحريك مباشرة'
+                : 'Embedded seamlessly inside the application • Pan, zoom, and inspect live traffic alerts right here'}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> {language === 'ar' ? 'ازدحام شديد' : 'Heavy Jam'}
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> {language === 'ar' ? 'تباطؤ مروري' : 'Moderate'}
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> {language === 'ar' ? 'طريق سالك' : 'Clear'}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-[10px] text-slate-400">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> {language === 'ar' ? 'ازدحام شديد' : 'Heavy Jam'}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> {language === 'ar' ? 'تباطؤ مروري' : 'Moderate'}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> {language === 'ar' ? 'طريق سالك' : 'Clear'}
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Embedded Waze Live Map iFrame (The Core Implementation Requested by User) */}
       <div 
-        className="relative w-full overflow-hidden bg-slate-950" 
-        style={{ height: isFullscreen ? 'calc(100vh - 85px)' : height }}
+        className="relative w-full overflow-hidden bg-slate-950 flex-1" 
+        style={{ height: isInsideFullscreen ? 'calc(100vh - 54px)' : (isFullscreen ? 'calc(100vh - 85px)' : height) }}
       >
         {!isReloading ? (
           <iframe

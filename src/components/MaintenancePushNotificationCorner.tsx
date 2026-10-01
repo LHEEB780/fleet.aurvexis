@@ -858,13 +858,15 @@ export const MaintenanceAlertTriangleButton: React.FC<MaintenanceAlertTriangleBu
         type="button"
         id={filterDriverVehicle ? 'driver-maintenance-alert-triangle-btn' : 'fleet-maintenance-alert-triangle-btn'}
         onClick={handleClick}
-        className={`h-7.5 sm:h-8 px-2 sm:px-2.5 flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg sm:rounded-xl transition-all cursor-pointer shrink-0 active:scale-95 relative ${
+        className={`flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer shrink-0 active:scale-95 relative ${
+          className || 'h-7.5 sm:h-8 px-2 sm:px-2.5 rounded-lg sm:rounded-xl'
+        } ${
           stateMode === 'unread'
             ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white border border-purple-400/50 shadow-md shadow-purple-600/30 ring-1 ring-purple-400/40'
             : stateMode === 'read'
               ? 'bg-white dark:bg-slate-900 hover:bg-purple-50/70 dark:hover:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-400 shadow-xs'
               : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-500 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700 shadow-2xs'
-        } ${className}`}
+        }`}
         title={
           stateMode === 'unread'
             ? (language === 'ar' 

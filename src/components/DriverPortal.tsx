@@ -620,70 +620,72 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
     <div className="min-h-screen bg-[#f4f6fa] dark:bg-[#080b11] text-slate-900 dark:text-slate-100 pb-16 font-sans" dir={dir}>
       
       {/* Driver Portal Top Bar Header */}
-      <div className="bg-white dark:bg-[#0f1422] border-b border-slate-100 dark:border-slate-850 px-4 py-4 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
+      <div className="bg-white dark:bg-[#0f1422] border-b border-slate-150 dark:border-slate-800/80 px-3 sm:px-5 py-2.5 sm:py-3 sticky top-0 z-50 shadow-xs">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+          {/* Driver Profile Info */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="relative shrink-0">
               <img 
                 src={user.avatar} 
                 alt={user.name} 
-                className="w-10 h-10 rounded-xl object-cover ring-2 ring-emerald-500/20"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover ring-2 ring-emerald-500/25 shadow-xs"
                 referrerPolicy="no-referrer"
               />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-[#0f1422]" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-[#0f1422]" />
             </div>
-            <div className="text-right">
-              <h1 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                <span>{user.name}</span>
-                <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[9px] font-black">
-                  {language === 'ar' ? 'سائق نقل ثقيل معتمد' : 'Certified Heavy Driver'}
-                </span>
+            <div className="text-right min-w-0">
+              <h1 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">
+                {user.name}
               </h1>
-              <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold">{user.title || 'سائق أسطول النقل والمشاريع'}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md text-[9px] sm:text-[9.5px] font-black border border-emerald-500/20 whitespace-nowrap">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>{language === 'ar' ? 'سائق نقل ثقيل معتمد' : 'Certified Driver'}</span>
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Driver Vehicle Maintenance Alert Triangle Button (Turns from RED to WHITE on click, strictly Driver's Vehicle) */}
+          {/* Top Actions Cluster (Alerts, Role Switcher, Logout - Perfectly Harmonized) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* 1. Driver Vehicle Maintenance Alert Triangle Button (Unified Height h-9) */}
             <MaintenanceAlertTriangleButton
               filterDriverVehicle={true}
               onNavigateToTab={() => {
                 setActiveSubTab('history');
               }}
+              className="h-9 sm:h-9.5 rounded-xl px-2.5 sm:px-3 text-xs font-bold"
             />
 
-            <div className="text-left hidden sm:block">
-              <span className="block text-[8px] text-slate-400 font-black uppercase tracking-wider">{language === 'ar' ? 'بوابة السائق الميدانية' : 'Driver Portal Live'}</span>
-              <span className="block text-[10px] text-slate-600 dark:text-slate-400 font-mono font-bold">2026-05-30 • GPS Live</span>
-            </div>
-
-            {/* Quick Access / Mode Changer */}
+            {/* 2. Quick Access / Mode Changer (Unified Height h-9, clear label on all screens) */}
             {onRoleChange && (
               <div className="relative">
                 <button 
                   onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                  className="h-10 flex items-center justify-center gap-1.5 px-3 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/95 border border-slate-200/40 dark:border-slate-700/60 rounded-xl transition-all shadow-sm cursor-pointer shrink-0"
+                  className="h-9 sm:h-9.5 flex items-center justify-center gap-1.5 px-2.5 sm:px-3 bg-slate-100/90 dark:bg-slate-800/90 hover:bg-slate-200/90 dark:hover:bg-slate-700 border border-slate-200/70 dark:border-slate-700/80 rounded-xl transition-all shadow-xs cursor-pointer shrink-0 active:scale-95"
+                  title={language === 'ar' ? 'تبديل الصلاحية الفورية' : 'Change Role'}
                 >
-                  <Shield size={14} className="text-indigo-600 dark:text-indigo-400" />
-                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 hidden md:block">
-                    {language === 'ar' ? 'تبديل الصلاحية' : 'Change Role'}
+                  <Shield size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+                    {language === 'ar' ? 'السائق' : 'Driver'}
                   </span>
-                  <ChevronDown size={12} className={`text-slate-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={12} className={`text-slate-400 transition-transform shrink-0 ${roleDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 <AnimatePresence>
                   {roleDropdownOpen && (
                     <>
-                      <div className="fixed inset-0 z-20" onClick={() => setRoleDropdownOpen(false)} />
+                      <div className="fixed inset-0 z-40" onClick={() => setRoleDropdownOpen(false)} />
                       <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className={`absolute top-12 w-52 bg-white dark:bg-slate-800 border border-slate-150 dark:border-slate-700 rounded-2xl shadow-xl z-30 p-2 overflow-hidden ${
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className={`absolute top-11 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 p-2 overflow-hidden ${
                           dir === 'rtl' ? 'left-0' : 'right-0'
                         }`}
                       >
-                        <p className={`px-3 py-2 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-550 ${
+                        <p className={`px-3 py-1.5 text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 ${
                           dir === 'rtl' ? 'text-right' : 'text-left'
                         }`}>
                           {language === 'ar' ? 'تبديل الصلاحيات الفورية' : 'Instant Role Simulation'}
@@ -700,11 +702,11 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
                               onRoleChange(r.id as UserRole);
                               setRoleDropdownOpen(false);
                             }}
-                            className={`w-full px-4 py-2 text-[11px] font-black rounded-xl transition-colors ${
+                            className={`w-full px-3.5 py-2 text-[11px] font-black rounded-xl transition-colors cursor-pointer ${
                               dir === 'rtl' ? 'text-right' : 'text-left'
                             } ${
                               user.role === r.id 
-                                ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' 
+                                ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 font-black' 
                                 : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
                             }`}
                           >
@@ -718,13 +720,14 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
               </div>
             )}
             
+            {/* 3. Logout Button (Unified Height h-9) */}
             <button
               onClick={onLogout}
-              className="p-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all cursor-pointer flex items-center gap-1"
+              className="h-9 sm:h-9.5 px-2.5 sm:px-3 bg-rose-500/10 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-500/20 dark:border-rose-500/30 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-xs shrink-0"
               title={language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
             >
-              <LogOut size={14} />
-              <span className="text-[10px] font-black hidden sm:inline">{language === 'ar' ? 'خروج' : 'Exit'}</span>
+              <LogOut size={14} className="shrink-0" />
+              <span className="text-[11px] font-black hidden sm:inline">{language === 'ar' ? 'خروج' : 'Exit'}</span>
             </button>
           </div>
         </div>
