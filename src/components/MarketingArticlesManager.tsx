@@ -239,7 +239,8 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
     isPublishedToMarketingSite: currentArticle?.isPublishedToMarketingSite !== false,
     imageSource: currentArticle?.imageSource || 'library',
     imageCaption: currentArticle?.imageCaption || '',
-    imageModel: currentArticle?.imageModel || ''
+    imageModel: currentArticle?.imageModel || '',
+    date: currentArticle?.date || new Date().toISOString().split('T')[0]
   });
 
   // When activeArticleId changes or publishedArticles updates, synchronize form data
@@ -260,7 +261,8 @@ export const MarketingArticlesManager: React.FC<MarketingArticlesManagerProps> =
         isPublishedToMarketingSite: currentArticle.isPublishedToMarketingSite !== false,
         imageSource: currentArticle.imageSource || 'library',
         imageCaption: currentArticle.imageCaption || '',
-        imageModel: currentArticle.imageModel || ''
+        imageModel: currentArticle.imageModel || '',
+        date: currentArticle.date || new Date().toISOString().split('T')[0]
       });
     }
   }, [activeArticleId, currentArticle]);

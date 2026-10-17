@@ -662,7 +662,7 @@ export function ManagerDashboardReport({ vehicles, orders, language, isDarkMode 
                   <Bar dataKey={t.monthlyCost} fill="#4f46e5" radius={[4, 4, 0, 0]}>
                     {monthlyCostData.chartData.map((entry, index) => {
                       // Highlight peak months
-                      const isPeak = entry[t.monthlyCost] === Math.max(...monthlyCostData.chartData.map(d => d[t.monthlyCost]));
+                      const isPeak = Number(entry[t.monthlyCost]) === Math.max(...monthlyCostData.chartData.map(d => Number(d[t.monthlyCost]) || 0));
                       return <Cell key={`cell-${index}`} fill={isPeak ? '#312e81' : '#6366f1'} />;
                     })}
                   </Bar>

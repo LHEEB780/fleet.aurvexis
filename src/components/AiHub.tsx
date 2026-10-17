@@ -89,8 +89,8 @@ import {
   technicians as defaultTechnicians 
 } from '../data';
 import { getAIProjectManagerInsight, AIMessage } from '../services/aiService';
-import { collection, getDocs } from 'firebase/firestore';
-import { db, testFirestoreConnection, pushLocalDataToCloud, pullCloudDataToLocal } from '../services/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db, testFirestoreConnection, pushLocalDataToCloud, pullCloudDataToLocal, getCurrentTenantCompanyId } from '../services/firebase';
 import firebaseConfig from '../services/firebaseConfig';
 import AgentActionCard from './AgentActionCard';
 import AgentActionModal from './AgentActionModal';
@@ -1462,7 +1462,10 @@ Regarding: "${text}", live data metrics match our general parameters:
 
       for (const col of collections) {
         try {
-          const snap = await getDocs(collection(db, col.col));
+          const userCompanyId = getCurrentTenantCompanyId();
+          const colRef = collection(db, col.col);
+          const q = userCompanyId ? query(colRef, where('companyId', '==', userCompanyId)) : colRef;
+          const snap = await getDocs(q);
           const count = snap.size;
           const localVal = newStates[col.key].local;
           newStates[col.key] = {
@@ -2042,7 +2045,7 @@ Regarding: "${text}", live data metrics match our general parameters:
   };
 
   // Render Message Attachment in Chat Bubble
-  const renderMessageAttachmentBadge = (attachment?: AttachedFileItem) => {
+  const renderMessageAttachmentBadge = (attachment?: AttachedFileItem | AIMessage['attachment']) => {
     if (!attachment) return null;
 
     if (attachment.isImage && (attachment.previewUrl || attachment.dataUrl)) {

@@ -32,19 +32,21 @@ export interface LegalDocumentSection {
 
 export interface LegalDocumentVersion {
   id: string;
-  docId: string;
+  docId?: string;
   version: string;
   effectiveDate: string;
   publishedAt: string;
-  publishedBy: string;
-  changeSummaryAr: string;
-  changeSummaryEn: string;
+  publishedBy?: string;
+  createdBy?: string;
+  changeSummary?: string;
+  changeSummaryAr?: string;
+  changeSummaryEn?: string;
   status: LegalDocumentStatus;
   sections: LegalDocumentSection[];
   titleAr: string;
   titleEn: string;
-  summaryAr: string;
-  summaryEn: string;
+  summaryAr?: string;
+  summaryEn?: string;
 }
 
 export interface LegalDocument {

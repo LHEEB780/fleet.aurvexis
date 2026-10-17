@@ -2684,12 +2684,12 @@ export default function Inventory({ user }: InventoryProps) {
                                   price: item.price,
                                   shelfLocation: item.shelfLocation,
                                   supplier: item.supplier,
-                                  compatibleVehicles: item.compatibleVehicles ? item.compatibleVehicles.join(', ') : '',
+                                  compatibleVehicles: item.compatibleVehicles || [],
                                   image: item.image || '',
                                   brand: item.brand || '',
                                   sku: item.sku || '',
                                   condition: item.condition || 'new',
-                                  boxQuantity: item.boxQuantity ? String(item.boxQuantity) : '',
+                                  boxQuantity: item.boxQuantity || 0,
                                   weight: item.weight || '',
                                   managerNotes: item.managerNotes || ''
                                 });
@@ -2813,12 +2813,12 @@ export default function Inventory({ user }: InventoryProps) {
                                     price: item.price,
                                     shelfLocation: item.shelfLocation,
                                     supplier: item.supplier,
-                                    compatibleVehicles: item.compatibleVehicles ? item.compatibleVehicles.join(', ') : '',
+                                    compatibleVehicles: item.compatibleVehicles || [],
                                     image: item.image || '',
                                     brand: item.brand || '',
                                     sku: item.sku || '',
                                     condition: item.condition || 'new',
-                                    boxQuantity: item.boxQuantity ? String(item.boxQuantity) : '',
+                                    boxQuantity: item.boxQuantity || 0,
                                     weight: item.weight || '',
                                     managerNotes: item.managerNotes || ''
                                   });
@@ -4440,8 +4440,8 @@ export default function Inventory({ user }: InventoryProps) {
                       <input 
                         type="number" 
                         placeholder="5"
-                        value={editItemState.minQuantity || ''}
-                        onChange={(e) => setEditItemState(prev => ({ ...prev, minQuantity: e.target.value }))}
+                        value={editItemState.minQuantity !== undefined ? editItemState.minQuantity : ''}
+                        onChange={(e) => setEditItemState(prev => ({ ...prev, minQuantity: e.target.value ? Number(e.target.value) : undefined }))}
                         className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none"
                       />
                     </div>
@@ -4452,7 +4452,7 @@ export default function Inventory({ user }: InventoryProps) {
                         type="number" 
                         placeholder="0"
                         value={editItemState.price !== undefined ? editItemState.price : ''}
-                        onChange={(e) => setEditItemState(prev => ({ ...prev, price: e.target.value }))}
+                        onChange={(e) => setEditItemState(prev => ({ ...prev, price: e.target.value ? Number(e.target.value) : 0 }))}
                         className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none"
                       />
                     </div>
@@ -4484,8 +4484,8 @@ export default function Inventory({ user }: InventoryProps) {
                     <label className="text-[10px] font-black text-slate-500 block">المركبات شاحنات المتوافقة (تفصل بفاصلة ,)</label>
                     <input 
                       type="text" 
-                      value={editItemState.compatibleVehicles || ''}
-                      onChange={(e) => setEditItemState(prev => ({ ...prev, compatibleVehicles: e.target.value }))}
+                      value={Array.isArray(editItemState.compatibleVehicles) ? editItemState.compatibleVehicles.join(', ') : (editItemState.compatibleVehicles || '')}
+                      onChange={(e) => setEditItemState(prev => ({ ...prev, compatibleVehicles: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
                       className="w-full p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none"
                     />
                   </div>
@@ -4525,7 +4525,7 @@ export default function Inventory({ user }: InventoryProps) {
                         <label className="text-[9px] font-bold text-slate-500 block">الحالة التشغيلية</label>
                         <select
                           value={editItemState.condition || 'new'}
-                          onChange={(e) => setEditItemState(prev => ({ ...prev, condition: e.target.value }))}
+                          onChange={(e) => setEditItemState(prev => ({ ...prev, condition: e.target.value as 'new' | 'used' | 'refurbished' }))}
                           className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs"
                         >
                           <option value="new">جديد أصلي</option>
@@ -4550,8 +4550,8 @@ export default function Inventory({ user }: InventoryProps) {
                         <input 
                           type="number" 
                           placeholder="10"
-                          value={editItemState.boxQuantity || ''}
-                          onChange={(e) => setEditItemState(prev => ({ ...prev, boxQuantity: e.target.value }))}
+                          value={editItemState.boxQuantity ?? ''}
+                          onChange={(e) => setEditItemState(prev => ({ ...prev, boxQuantity: e.target.value ? Number(e.target.value) : undefined }))}
                           className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs"
                         />
                       </div>

@@ -27,7 +27,7 @@ import {
   TrendingUp,
   Sliders
 } from 'lucide-react';
-import { Vendor, SupplyOrder, InventoryItem } from '../types';
+import { Vendor, SupplyOrder, InventoryItem, User } from '../types';
 import { safeSetItem } from '../utils/storage';
 import VendorReports from './VendorReports';
 import { useLanguage } from '../services/LanguageContext';
@@ -35,11 +35,7 @@ import ContextualHelp from './ContextualHelp';
 import { formatCurrency, getCurrencyLabel } from '../services/formatters';
 
 interface VendorsProps {
-  user: {
-    id: string;
-    name: string;
-    role: 'admin' | 'technician' | 'viewer';
-  };
+  user: User;
 }
 
 const generateHistoricalOrders = (vendorsList: Vendor[]): SupplyOrder[] => {

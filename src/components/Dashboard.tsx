@@ -3433,7 +3433,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
                                       type="button"
                                       onClick={() => {
                                         if (isCompleted) {
-                                          const updated = orders.map(o => o.id === order.id ? { ...o, status: 'in-progress', progress: 50 } : o);
+                                          const updated = orders.map(o => o.id === order.id ? { ...o, status: 'in-progress' as const, progress: 50 } : o);
                                           saveOrdersToLocalStorage(updated);
                                           triggerToast(language === 'ar' ? 'تمت إعادة فتح المهمة وتعيين التقدم إلى 50%!' : 'Task reopened and set to 50% progress!');
                                         } else {
@@ -5685,7 +5685,7 @@ export default function Dashboard({ user, onNavigateToMaintenance, onNavigateToV
             {/* List of vehicles */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
               {upcomingSchedules.map(sched => {
-                const vehicle = vehicles.find(v => v.id === sched.vehicleId) || { name: `مركبة #${sched.vehicleId}`, plateNumber: '---', type: 'شاحنة' };
+                const vehicle = vehicles.find(v => v.id === sched.vehicleId) || { id: sched.vehicleId, name: `مركبة #${sched.vehicleId}`, plateNumber: '---', type: 'شاحنة' };
                 const systemDate = new Date('2026-05-23');
                 const dueDateObj = new Date(sched.dueDate);
                 const diffHours = Math.round((dueDateObj.getTime() - systemDate.getTime()) / (1000 * 60 * 60));

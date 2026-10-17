@@ -1108,6 +1108,10 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
 
     // Create a critical audit log entry and store in localStorage
     try {
+      const matchedVehicle = localVehicles.find(v => v.id === findOrder.vehicleId);
+      const vehiclePlate = matchedVehicle?.plateNumber || findOrder.vehicleId || 'غير محدد';
+      const orderCategory = findOrder.category || 'صيانة عامة';
+
       const newLog = {
         id: 'crit-log-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
         timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
@@ -1117,7 +1121,7 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
         category: 'maintenance',
         ipAddress: '197.82.16.42',
         status: 'نجاح',
-        details: `قام بحذف وإلغاء أمر الصيانة رقم #${findOrder.id} لمركبة لوحة: ${findOrder.plateNumber || 'غير محدد'} (${findOrder.type || 'صيانة'})`
+        details: `قام بحذف وإلغاء أمر الصيانة رقم #${findOrder.id} لمركبة لوحة: ${vehiclePlate} (${orderCategory})`
       };
       const savedLogs = localStorage.getItem('saas_critical_audit_logs');
       const logsArray = savedLogs ? JSON.parse(savedLogs) : [];

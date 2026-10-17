@@ -65,6 +65,7 @@ interface Workshop {
   kpiFtr: string; // First Time Right repair rate
   avgTurnaround: string; // Average hours
   location: string;
+  isExternal?: boolean;
 }
 
 const INITIAL_WORKSHOPS: Workshop[] = [

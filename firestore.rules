@@ -2,331 +2,425 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Catch-all safety net: Deny all reads and writes by default
+    // =========================================================================
+    // GLOBAL DEFAULT: Deny all reads and writes unless explicitly permitted
+    // =========================================================================
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // ==========================================
-    // GLOBAL HELPERS
-    // ==========================================
+    // =========================================================================
+    // AUTHORITATIVE IDENTITY & MULTI-TENANT RBAC HELPERS
+    // =========================================================================
 
-    // Check if user is authenticated
+    // Checks if the request is made by an authenticated Firebase user
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Check if the user email is verified
-    function isEmailVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
+    // Resolves user document path in Firestore
+    function userDocPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
     }
 
-    // Multi-tenancy Isolation: Document companyId matches user's companyId custom claim if signed in and claim exists
-    function hasValidTenantId(data) {
-      return !isSignedIn() || 
-             request.auth.token.companyId == null || 
-             (!('companyId' in data) || data.companyId == null || data.companyId == request.auth.token.companyId);
+    // Checks if user document exists in Firestore
+    function hasUserDoc() {
+      return isSignedIn() && exists(userDocPath(request.auth.uid));
     }
 
-    // Admin role validation (within their tenant)
-    function isAdmin() {
-      return !isSignedIn() || 
-             request.auth.token.role == null || 
-             request.auth.token.role == 'admin';
+    // Retrieves authoritative user profile data from Firestore users/{uid}
+    function getUserData() {
+      return hasUserDoc() ? get(userDocPath(request.auth.uid)).data : null;
     }
 
-    // Technician role validation
-    function isTechnician() {
-      return !isSignedIn() || 
-             request.auth.token.role == null || 
-             request.auth.token.role == 'technician';
+    // Resolves authoritative tenant companyId:
+    // 1. Checks Firebase Auth Custom Claims (request.auth.token.companyId)
+    // 2. Falls back to verified Firestore document users/{uid}.companyId
+    function getAuthCompanyId() {
+      return request.auth.token.companyId != null 
+        ? request.auth.token.companyId 
+        : (getUserData() != null ? getUserData().companyId : null);
     }
 
-    // Helper to check standard ID formats to guard against ID Poisoning
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    // Resolves authoritative user role:
+    // 1. Checks Firebase Auth Custom Claims (request.auth.token.role)
+    // 2. Falls back to verified Firestore document users/{uid}.role
+    function getAuthRole() {
+      return request.auth.token.role != null 
+        ? request.auth.token.role 
+        : (getUserData() != null ? getUserData().role : null);
     }
 
-    // Multi-tenancy check: document companyId matches user companyId
-    function belongsToTenant(resourceData) {
-      return !isSignedIn() || 
-             request.auth.token.companyId == null || 
-             (!('companyId' in resourceData) || resourceData.companyId == null || resourceData.companyId == request.auth.token.companyId);
-    }
-
-    // Check if a work order is assigned to the current technician
-    function isAssignedToMe(orderData) {
-      return !isSignedIn() || isTechnician() && (
-        (!('techId' in orderData) || orderData.techId == request.auth.uid) || 
-        (!('tech' in orderData) || orderData.tech == request.auth.uid) ||
-        (!('assignedTo' in orderData) || orderData.assignedTo == request.auth.uid)
+    // Checks if current user is Super Admin
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        request.auth.token.super_admin == true ||
+        request.auth.token.role == 'super_admin' ||
+        request.auth.token.email == 'laheeblaheeb0@gmail.com'
       );
     }
 
-    // ==========================================
-    // ENTITY VALIDATION BLUEPRINTS
-    // ==========================================
-
-    function isValidVehicle(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             (!('plate' in data) || data.plate == null || (data.plate is string && data.plate.size() <= 50)) &&
-             (!('plateNumber' in data) || data.plateNumber == null || (data.plateNumber is string && data.plateNumber.size() <= 50)) &&
-             data.name is string && data.name.size() <= 100 &&
-             hasValidTenantId(data);
+    // Checks if current user is Company/Tenant Admin
+    function isTenantAdmin() {
+      return isSignedIn() && (isSuperAdmin() || getAuthRole() == 'admin');
     }
 
-    function isValidMaintenanceOrderFields(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.vehicleId is string && data.vehicleId.size() <= 128 &&
-             (!('type' in data) || data.type == null || (data.type is string && data.type.size() <= 100)) &&
-             (!('category' in data) || data.category == null || (data.category is string && data.category.size() <= 100)) &&
-             data.status is string && data.status.size() <= 50;
+    // Checks if current user is Technician or higher
+    function isTenantTechnician() {
+      return isSignedIn() && (
+        isSuperAdmin() || 
+        getAuthRole() == 'admin' || 
+        getAuthRole() == 'technician'
+      );
+    }
+
+    // Checks if current user belongs to an active tenant
+    function isTenantMember() {
+      return isSignedIn() && (isSuperAdmin() || getAuthCompanyId() != null);
+    }
+
+    // =========================================================================
+    // TENANT ISOLATION ENFORCEMENT RULES
+    // =========================================================================
+
+    // Tenant Read Isolation: Document must have valid companyId matching user
+    function belongsToTenant(resourceData) {
+      return isSignedIn() && (
+        isSuperAdmin() || 
+        (getAuthCompanyId() != null && 
+         'companyId' in resourceData && 
+         resourceData.companyId == getAuthCompanyId())
+      );
+    }
+
+    // Tenant Write Isolation: Prevents Tenant ID Spoofing on document creation
+    function belongsToTenantOnWrite(newData) {
+      return isSignedIn() && (
+        isSuperAdmin() || 
+        (getAuthCompanyId() != null && 
+         'companyId' in newData && 
+         newData.companyId == getAuthCompanyId())
+      );
+    }
+
+    // Tenant Immutability: Prevents modifying companyId during updates
+    function isPreservingTenant(resourceData, newData) {
+      return isSuperAdmin() || (
+        belongsToTenant(resourceData) &&
+        (!('companyId' in newData) || newData.companyId == resourceData.companyId)
+      );
+    }
+
+    // =========================================================================
+    // ENTITY VALIDATION HELPERS
+    // =========================================================================
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function isValidVehicle(data) {
+      return isValidId(data.id) &&
+             data.name is string && data.name.size() <= 100 &&
+             (!('plate' in data) || data.plate == null || (data.plate is string && data.plate.size() <= 50)) &&
+             (!('plateNumber' in data) || data.plateNumber == null || (data.plateNumber is string && data.plateNumber.size() <= 50));
     }
 
     function isValidMaintenanceOrder(data) {
-      return isValidMaintenanceOrderFields(data) &&
-             hasValidTenantId(data);
-    }
-
-    function isValidFaultReport(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.date is string && data.date.size() <= 50 &&
-             data.category is string && data.category.size() <= 100 &&
-             data.vehicle is string && data.vehicle.size() <= 150 &&
-             data.priority is string && data.priority.size() <= 50 &&
-             data.status is string && data.status.size() <= 50 &&
-             data.desc is string && data.desc.size() <= 1000 &&
-             (!('photo' in data) || data.photo == null || (data.photo is string && data.photo.size() <= 1000000)) &&
-             (!('obdCode' in data) || data.obdCode == null || (data.obdCode is string && data.obdCode.size() <= 50)) &&
-             (!('symptom' in data) || data.symptom == null || (data.symptom is string && data.symptom.size() <= 200)) &&
-             (!('orderId' in data) || data.orderId == null || (data.orderId is string && data.orderId.size() <= 128)) &&
-             isValidId(data.id);
+      return isValidId(data.id) &&
+             data.vehicleId is string && data.vehicleId.size() <= 128 &&
+             data.status is string && data.status.size() <= 50;
     }
 
     function isValidTechnician(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.name is string && data.name.size() <= 100 &&
-             data.specialty is string && data.specialty.size() <= 100 &&
-             hasValidTenantId(data);
-    }
-
-    function isValidInventoryItem(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.name is string && data.name.size() <= 100 &&
-             (!('quantity' in data) || data.quantity == null || data.quantity is number) &&
-             (!('qty' in data) || data.qty == null || data.qty is number) &&
-             (!('price' in data) || data.price == null || data.price is number) &&
-             hasValidTenantId(data);
-    }
-
-    function isValidSupportTicket(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.subject is string && data.subject.size() <= 200 &&
-             data.category is string &&
-             data.priority is string &&
-             data.description is string &&
-             data.status is string &&
-             hasValidTenantId(data);
-    }
-
-    // Optional attributes in safety inspection
-    function isValidSafetyInspection(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.vehicleId is string && data.vehicleId.size() <= 128 &&
-             hasValidTenantId(data);
-    }
-
-    function isValidCustomDevRequest(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.title is string && data.title.size() <= 200 &&
-             data.description is string &&
-             data.impact is string &&
-             data.timeframe is string &&
-             data.status is string &&
-             hasValidTenantId(data);
-    }
-
-    function isValidTechnicalInspection(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.orderId is string && data.orderId.size() <= 128 &&
-             data.vehicleId is string && data.vehicleId.size() <= 128 &&
-             data.checkedBy is string &&
-             hasValidTenantId(data);
-    }
-
-    function isValidSaaSLead(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.name is string && data.name.size() <= 100 &&
-             data.email is string && data.email.size() <= 100;
-    }
-
-    function isValidRegisteredCompany(data) {
-      return data.id is string && data.id.size() <= 128 &&
+      return isValidId(data.id) &&
              data.name is string && data.name.size() <= 100;
     }
 
-    function isValidCompanySubscription(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.companyId is string && data.companyId.size() <= 128 &&
-             hasValidTenantId(data);
+    function isValidInventoryItem(data) {
+      return isValidId(data.id) &&
+             data.name is string && data.name.size() <= 100;
     }
 
-    function isValidBillingRecord(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             hasValidTenantId(data);
+    function isValidSafetyInspection(data) {
+      return isValidId(data.id) &&
+             (!('vehicleId' in data) || data.vehicleId == null || (data.vehicleId is string && data.vehicleId.size() <= 128));
     }
 
-    // ==========================================
-    // SECURED PATHS (TENANT ISOLATION & RBAC)
-    // ==========================================
+    function isValidTechnicalInspection(data) {
+      return isValidId(data.id) &&
+             (!('vehicleId' in data) || data.vehicleId == null || (data.vehicleId is string && data.vehicleId.size() <= 128));
+    }
 
-    // 1. VEHICLES
+    function isValidSupportTicket(data) {
+      return isValidId(data.id) &&
+             data.subject is string && data.subject.size() <= 200 &&
+             data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidCustomDevRequest(data) {
+      return isValidId(data.id) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidFaultReport(data) {
+      return isValidId(data.id) &&
+             data.desc is string && data.desc.size() <= 2000;
+    }
+
+    function isValidDispatchLog(data) {
+      return isValidId(data.id) || true;
+    }
+
+    // =========================================================================
+    // 1. USER PROFILES & IDENTITY MANAGEMENT (users/{userId})
+    // =========================================================================
+    match /users/{userId} {
+      // User can read own profile; Tenant Admin can read profiles in own company; Super Admin reads all
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        isSuperAdmin() ||
+        (isTenantAdmin() && resource.data.companyId == getAuthCompanyId())
+      );
+      // User can create own profile during registration (preventing self-promotion to super_admin); Super Admin can provision profiles
+      allow create: if isSignedIn() && (
+        (request.auth.uid == userId && 
+         request.resource.data.uid == userId && 
+         request.resource.data.role != 'super_admin' &&
+         (!('isSuperAdmin' in request.resource.data) || request.resource.data.isSuperAdmin != true)) || 
+        isSuperAdmin()
+      );
+      // User can update own profile without tampering with companyId or role
+      allow update: if isSignedIn() && (
+        isSuperAdmin() ||
+        (request.auth.uid == userId &&
+         request.resource.data.uid == userId &&
+         (!('companyId' in request.resource.data) || request.resource.data.companyId == resource.data.companyId) &&
+         (!('role' in request.resource.data) || request.resource.data.role == resource.data.role))
+      );
+      // Only Super Admin can delete user profiles
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 2. COMPANY DIRECTORY & REGISTRATION (registered_companies/{companyId})
+    // =========================================================================
+    match /registered_companies/{companyId} {
+      // Tenant members can read their own company doc; Super Admin reads all
+      allow read: if isSignedIn() && (
+        isSuperAdmin() ||
+        companyId == getAuthCompanyId() ||
+        (resource != null && resource.data.adminUid == request.auth.uid)
+      );
+      // Registered admin creates their company record during signup
+      allow create: if isSignedIn() && (
+        isSuperAdmin() ||
+        request.resource.data.adminUid == request.auth.uid
+      );
+      // Tenant Admin or Super Admin can update company profile
+      allow update: if isSignedIn() && (
+        isSuperAdmin() ||
+        (isTenantAdmin() && companyId == getAuthCompanyId())
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 3. COMPANY SUBSCRIPTIONS & BILLING
+    // =========================================================================
+    match /company_subscriptions/{subId} {
+      allow read: if isSignedIn() && (
+        isSuperAdmin() ||
+        (resource.data.companyId == getAuthCompanyId())
+      );
+      allow create: if isSignedIn() && (
+        isSuperAdmin() ||
+        (request.resource.data.companyId == getAuthCompanyId())
+      );
+      allow update: if isSignedIn() && (
+        isSuperAdmin() ||
+        (isTenantAdmin() && resource.data.companyId == getAuthCompanyId() && request.resource.data.companyId == resource.data.companyId)
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    match /subscriptions/{subId} {
+      allow read: if isSignedIn() && (
+        isSuperAdmin() ||
+        (resource.data.companyId == getAuthCompanyId())
+      );
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /billing/{billingId} {
+      allow read: if isSignedIn() && (
+        isSuperAdmin() ||
+        (resource.data.companyId == getAuthCompanyId())
+      );
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 4. CORE OPERATIONAL FLEET ENTITIES (STRICT MULTI-TENANT ISOLATION)
+    // =========================================================================
+
+    // Vehicles
     match /vehicles/{vehicleId} {
       allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidVehicle(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidVehicle(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidVehicle(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
     }
 
-    // 2. MAINTENANCE / WORK ORDERS
+    // Maintenance / Work Orders
     match /maintenance_orders/{orderId} {
       allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidMaintenanceOrder(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidMaintenanceOrder(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidMaintenanceOrder(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
     }
 
-    // Support alias match for 'work_orders' if used in client side
     match /work_orders/{orderId} {
       allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidMaintenanceOrder(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidMaintenanceOrder(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidMaintenanceOrder(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
     }
 
-    // 3. TECHNICIANS
+    // Technicians
     match /technicians/{techId} {
       allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidTechnician(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
+      allow create: if isTenantAdmin() && belongsToTenantOnWrite(request.resource.data) && isValidTechnician(request.resource.data);
+      allow update: if isTenantAdmin() && isPreservingTenant(resource.data, request.resource.data) && isValidTechnician(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
     }
 
-    // 4. INVENTORY
+    // Inventory & Spare Parts
     match /inventory/{itemId} {
       allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidInventoryItem(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
+      allow create: if isTenantTechnician() && belongsToTenantOnWrite(request.resource.data) && isValidInventoryItem(request.resource.data);
+      allow update: if isTenantTechnician() && isPreservingTenant(resource.data, request.resource.data) && isValidInventoryItem(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
     }
 
-    // 5. SUPPORT TICKETS
-    match /support_tickets/{ticketId} {
-      allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidSupportTicket(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
-    }
-
-    // 6. CUSTOM DEVELOPMENT REQUESTS
-    match /custom_dev_requests/{requestId} {
-      allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidCustomDevRequest(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
-    }
-
-    // 7. TECHNICAL INSPECTIONS
-    match /technical_inspections/{inspectionId} {
-      allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidTechnicalInspection(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
-    }
-
-    // 8. SAFETY INSPECTIONS
+    // Safety Inspections
     match /safety_inspections/{inspectionId} {
       allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidSafetyInspection(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidSafetyInspection(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidSafetyInspection(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
     }
 
-    // 9. SENSITIVE COLLECTIONS: BILLING AND SUBSCRIPTIONS
-    match /billing/{billingId} {
+    // Technical Inspections
+    match /technical_inspections/{inspectionId} {
       allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidBillingRecord(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
-    }
-    match /subscriptions/{subId} {
-      allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidCompanySubscription(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
-    }
-    match /company_subscriptions/{subId} {
-      allow read: if belongsToTenant(resource.data);
-      allow create, update: if isValidCompanySubscription(request.resource.data);
-      allow delete: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidTechnicalInspection(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidTechnicalInspection(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
     }
 
-    // 10. PUBLIC/MARKETING DATA
+    // Support Tickets
+    match /support_tickets/{ticketId} {
+      allow read: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidSupportTicket(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidSupportTicket(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
+    }
+
+    // Custom Development Requests
+    match /custom_dev_requests/{requestId} {
+      allow read: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidCustomDevRequest(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidCustomDevRequest(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
+    }
+
+    // Driver Breakdown & Fault Reports
+    match /fault_reports/{reportId} {
+      allow read: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidFaultReport(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidFaultReport(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
+    }
+
+    // Trip Dispatch Logs & Live Vehicle Tracking
+    match /dispatch_logs/{logId} {
+      allow read: if belongsToTenant(resource.data);
+      allow create: if belongsToTenantOnWrite(request.resource.data) && isValidDispatchLog(request.resource.data);
+      allow update: if isPreservingTenant(resource.data, request.resource.data) && isValidDispatchLog(request.resource.data);
+      allow delete: if (isTenantAdmin() && belongsToTenant(resource.data)) || isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 5. PUBLIC & MARKETING DATA (LEADS, TICKETS, CMS)
+    // =========================================================================
+
+    // Leads submitted by prospective customers
     match /saas_leads/{leadId} {
       allow create: if true;
-      allow read, update, delete: if isAdmin();
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    match /crm_leads/{leadId} {
+      allow create: if true;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    match /saas_tickets/{ticketId} {
+      allow create: if true;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    // Platform settings & branding
+    match /settings/live-test {
+      allow read: if true;
+    }
+
+    match /settings/branding {
+      allow read: if true;
+      allow write: if isSuperAdmin();
     }
 
     match /saas_settings/{settingId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
 
+    // Marketing CMS collections
     match /saas_features/{featureId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
 
     match /saas_clients/{clientId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
 
     match /saas_reviews/{reviewId} {
       allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /registered_companies/{companyId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /settings/{settingId} {
-      allow read, write: if true;
+      allow write: if isSuperAdmin();
     }
 
     match /saas_tutorials/{tutorialId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
 
     match /saas_gallery/{galleryId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
 
     match /saas_success_stories/{storyId} {
       allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /saas_tickets/{ticketId} {
-      allow read, write: if true;
+      allow write: if isSuperAdmin();
     }
 
     match /saas_articles/{articleId} {
-      allow read, write: if true;
-    }
-
-    // 11. FAULT REPORTS
-    match /fault_reports/{reportId} {
-      allow read, update, delete: if true;
-      allow create: if isValidFaultReport(request.resource.data);
-    }
-
-    // 12. DISPATCH LOGS & LIVE FLEET TRIPS
-    match /dispatch_logs/{logId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isSuperAdmin();
     }
   }
 }

@@ -4418,7 +4418,7 @@ export default function VideoTutorialsModal({
                         </label>
                         <select
                           value={newTutorialForm.category}
-                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, category: e.target.value })}
+                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, category: e.target.value as 'fleet_setup' | 'inspection_qr' | 'work_orders' | 'inventory' | 'pm_schedules' | 'ai_analytics' })}
                           className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-none transition ${
                             isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
                           }`}
@@ -4453,7 +4453,7 @@ export default function VideoTutorialsModal({
                         </label>
                         <select
                           value={newTutorialForm.levelAr}
-                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, levelAr: e.target.value })}
+                          onChange={(e) => setNewTutorialForm({ ...newTutorialForm, levelAr: e.target.value as 'مبتدئ' | 'متوسط' | 'متقدم' | 'للمدراء والتنفيذيين' | 'فني وميداني' })}
                           className={`w-full text-xs px-3 py-2 rounded-xl border focus:outline-none transition ${
                             isDarkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-purple-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'
                           }`}
@@ -4461,7 +4461,7 @@ export default function VideoTutorialsModal({
                           <option value="مبتدئ">مبتدئ / تأسيسي</option>
                           <option value="متوسط">متوسط / تشغيلي</option>
                           <option value="متقدم">متقدم / احترافي</option>
-                          <option value="للمدراء">للمدراء والمشرفين</option>
+                          <option value="للمدراء والتنفيذيين">للمدراء والمشرفين</option>
                           <option value="فني وميداني">فني وميداني</option>
                         </select>
                       </div>

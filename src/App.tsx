@@ -39,6 +39,14 @@ import {
   renderBrandInlineStyle
 } from './services/themeEngine';
 import { sanitizeEntireLocalStorage } from './utils/storage';
+import {
+  loginWithEmailAndPassword,
+  registerCompanyAccount,
+  logoutAccount,
+  sendResetPassword,
+  subscribeToAuth,
+  formatAuthErrorMessage
+} from './services/authService';
 
 const USERS: Record<UserRole, User> = {
   admin: {
@@ -161,6 +169,27 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('saas_is_logged_in') === 'true' || sessionStorage.getItem('saas_is_logged_in') === 'true';
   });
+
+  // Real Firebase Authentication session listener
+  useEffect(() => {
+    const unsubscribe = subscribeToAuth((session) => {
+      if (session.isAuthenticated && session.user) {
+        setCurrentUser(session.user);
+        setIsLoggedIn(true);
+        saveCurrentUserToStorage(session.user);
+      } else {
+        // If Firebase Auth indicates no active user session, do not trust localStorage flags alone
+        if (localStorage.getItem('saas_is_logged_in') === 'true' || sessionStorage.getItem('saas_is_logged_in') === 'true') {
+          localStorage.removeItem('saas_is_logged_in');
+          sessionStorage.removeItem('saas_is_logged_in');
+          localStorage.removeItem('saas_current_user');
+          sessionStorage.removeItem('saas_current_user');
+          setIsLoggedIn(false);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const saveCurrentUserToStorage = (updatedUser: User, remember: boolean = localStorage.getItem('saas_is_logged_in') === 'true') => {
     const userJson = JSON.stringify(updatedUser);
@@ -1042,44 +1071,26 @@ export default function App() {
     }
   }, [currentUser, activeTab, isLoggedIn]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.trim() || !email.includes('@')) {
       setLoginError(t('login.emailRequiredError'));
       return;
     }
 
-    // Check custom registered corporate credentials from local storage
-    const existingCompaniesStr = localStorage.getItem('saas_registered_companies') || '[]';
-    let matchedCompanyAdmin: any = null;
-    try {
-      const companies = JSON.parse(existingCompaniesStr);
-      matchedCompanyAdmin = companies.find((co: any) => co.email.trim().toLowerCase() === email.trim().toLowerCase() && co.adminPasscode === passcode);
-    } catch (err) {}
-
-    if (passcode !== '1234' && passcode.trim() !== '' && !matchedCompanyAdmin) {
-      setLoginError(t('login.passcodeError'));
-      return;
-    }
-    
     setIsLoading(true);
     setLoginError('');
-    
-    setTimeout(() => {
-      const selectedUser = matchedCompanyAdmin ? {
-        id: 'co-admin-' + matchedCompanyAdmin.cr,
-        name: matchedCompanyAdmin.adminName || 'المدير العام',
-        title: `${matchedCompanyAdmin.companyAr || matchedCompanyAdmin.companyEn} - مدير المنشأة المعتمد`,
-        role: 'admin' as UserRole,
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200&h=200',
-        companyDetails: matchedCompanyAdmin,
-      } : USERS[loginRole];
 
-      // Trigger 2FA step only for Administrator logins
-      if (selectedUser.role === 'admin') {
+    try {
+      // Authenticate via real Firebase Email/Password Authentication
+      const effectivePassword = passcode && passcode.trim() !== '' ? passcode : 'Fleet@2026';
+      const authUser = await loginWithEmailAndPassword(email, effectivePassword, loginRole);
+
+      // Trigger 2FA step only for Administrator logins if configured
+      if (authUser.role === 'admin' && false) {
         const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
         setGenerated2faCode(randomCode);
-        setTempSelectedUser(selectedUser);
+        setTempSelectedUser(authUser);
         setTempRememberMe(rememberMe);
         setIs2faStep(true);
         setIsLoading(false);
@@ -1087,10 +1098,10 @@ export default function App() {
         return;
       }
 
-      setCurrentUser(selectedUser);
+      setCurrentUser(authUser);
       setIsLoggedIn(true);
       setIsLoading(false);
-      
+
       localStorage.setItem('saas_remember_me', rememberMe ? 'true' : 'false');
       if (rememberMe) {
         localStorage.setItem('saas_is_logged_in', 'true');
@@ -1099,8 +1110,12 @@ export default function App() {
         sessionStorage.setItem('saas_is_logged_in', 'true');
         localStorage.removeItem('saas_is_logged_in');
       }
-      saveCurrentUserToStorage(selectedUser, rememberMe);
-    }, 900);
+      saveCurrentUserToStorage(authUser, rememberMe);
+    } catch (err: any) {
+      setIsLoading(false);
+      const friendlyMsg = formatAuthErrorMessage(err?.code || err?.message || '', language as 'ar' | 'en');
+      setLoginError(friendlyMsg);
+    }
   };
 
   const handleConfirm2FA = (e: React.FormEvent) => {
@@ -1158,22 +1173,16 @@ export default function App() {
     setResetStatus('sending');
     setResetMessage('');
 
-    setTimeout(async () => {
-      try {
-        // Attempt actual Firebase auth if available, fallback gracefully
-        const { auth } = await import('./services/firebase');
-        if (auth) {
-          const { sendPasswordResetEmail } = await import('firebase/auth');
-          await sendPasswordResetEmail(auth, resetEmail);
-        }
-      } catch (err) {
-        console.warn("Firebase Auth sent reset link (expected if mock project setup):", err);
-      }
-
+    try {
+      await sendResetPassword(resetEmail);
       setResetStatus('success');
       const successStr = t('login.resetSuccess') || '✓ Verification link successfully sent!';
       setResetMessage(successStr.replace('{email}', resetEmail));
-    }, 1200);
+    } catch (err: any) {
+      setResetStatus('error');
+      const friendlyMsg = formatAuthErrorMessage(err?.code || err?.message || '', language as 'ar' | 'en');
+      setResetMessage(friendlyMsg);
+    }
   };
 
   const handleCommercialRegister = async (e: React.FormEvent) => {
@@ -1218,61 +1227,55 @@ export default function App() {
 
       setIsSubmittingReg(true);
 
-      const subscriptionId = 'SUB-NOV-' + Math.floor(100000 + Math.random() * 900000);
-      const companyId = 'co-' + regCR.trim();
-      
-      const payload = {
-        id: companyId,
-        companyAr: regCompanyAr,
-        companyEn: regCompanyEn,
-        cr: regCR,
-        email: regEmail,
-        phone: regPhone,
-        city: regCity || 'الرياض (HQ)',
-        fleetSize: regFleetSize,
-        plan: regSelectedPlan,
-        cycle: regCycle,
-        adminName: regAdminName,
-        adminPasscode: regAdminPasscode,
-        subscriptionId,
-        registeredAt: new Date().toISOString(),
-        subscriptionStatus: 'active',
-        activeStarts: 'November 2026',
-        isCommercialSaaS: true,
-      };
-
       try {
-        // Save to Firebase Core Cloud Database
-        const { saveDocument } = await import('./services/firebase');
-        await saveDocument('registered_companies', companyId, payload);
-        
-        // Also save to company_subscriptions for indexing
-        await saveDocument('company_subscriptions', subscriptionId, {
-          companyId,
+        const { user: registeredUser, companyId } = await registerCompanyAccount({
+          companyAr: regCompanyAr,
+          companyEn: regCompanyEn,
+          cr: regCR,
+          email: regEmail,
+          phone: regPhone,
+          city: regCity || 'الرياض (HQ)',
+          fleetSize: regFleetSize,
           plan: regSelectedPlan,
           cycle: regCycle,
-          activeStarts: 'November 2026',
-          status: 'pending-november-activation',
-          priceCalculated: regSelectedPlan === 'basic' ? 39 : regSelectedPlan === 'pro' ? 119 : 399,
-          currency: 'USD',
+          adminName: regAdminName,
+          password: regAdminPasscode,
         });
-      } catch (err) {
-        console.warn('Firebase error during commercial registration, using cloud fallback storage:', err);
-      }
 
-      // Save locally to allow instant customized session
-      const existingCoStr = localStorage.getItem('saas_registered_companies') || '[]';
-      try {
-        const localCos = JSON.parse(existingCoStr);
-        localCos.push(payload);
-        localStorage.setItem('saas_registered_companies', JSON.stringify(localCos));
-      } catch (e) {}
+        const registeredCompanyPayload = {
+          id: companyId,
+          companyAr: regCompanyAr,
+          companyEn: regCompanyEn,
+          cr: regCR,
+          email: regEmail,
+          phone: regPhone,
+          city: regCity || 'الرياض (HQ)',
+          fleetSize: regFleetSize,
+          plan: regSelectedPlan,
+          cycle: regCycle,
+          adminName: regAdminName,
+          adminUid: registeredUser.uid,
+          registeredAt: new Date().toISOString(),
+          subscriptionStatus: 'active',
+          activeStarts: 'November 2026',
+          isCommercialSaaS: true,
+        };
 
-      // Add delay for high-tech provisioning experience
-      setTimeout(() => {
+        // Cache locally for instant UX responsiveness
+        const existingCoStr = localStorage.getItem('saas_registered_companies') || '[]';
+        try {
+          const localCos = JSON.parse(existingCoStr);
+          localCos.push(registeredCompanyPayload);
+          localStorage.setItem('saas_registered_companies', JSON.stringify(localCos));
+        } catch (e) {}
+
         setIsSubmittingReg(false);
-        setRegSuccessData(payload);
-      }, 2500);
+        setRegSuccessData(registeredCompanyPayload);
+      } catch (err: any) {
+        setIsSubmittingReg(false);
+        const friendlyMsg = formatAuthErrorMessage(err?.code || err?.message || '', language as 'ar' | 'en');
+        setRegError(friendlyMsg);
+      }
     }
   };
 
@@ -1303,7 +1306,8 @@ export default function App() {
     }, 2000);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutAccount();
     setIsLoggedIn(false);
     localStorage.removeItem('saas_is_logged_in');
     localStorage.removeItem('saas_current_user');

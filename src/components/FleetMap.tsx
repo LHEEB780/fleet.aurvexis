@@ -870,10 +870,8 @@ export function FleetMap({ vehicles: propVehicles }: FleetMapProps) {
                 mapTypeId={mapType}
                 internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
                 style={{ width: '100%', height: '100%' }}
-                options={{
-                  styles: darkMapStyles,
-                  disableDefaultUI: false,
-                }}
+                styles={darkMapStyles}
+                disableDefaultUI={false}
               >
                 {/* Loop overlay items markers */}
                 {filteredVehicles.map(v => {

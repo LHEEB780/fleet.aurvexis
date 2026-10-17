@@ -45,6 +45,8 @@ import {
   Award
 } from 'lucide-react';
 import { MarketingAdmin } from './MarketingAdmin';
+import { auth } from '../services/firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 
 interface SuperAdminPortalProps {
   brandPrimaryColor: string;
@@ -70,20 +72,41 @@ export default function SuperAdminPortal({
   const { language, dir } = useLanguage();
   const isRtl = dir === 'rtl';
 
-  // Super Admin Credentials from Storage
+  // Super Admin Credentials
   const [adminEmail, setAdminEmail] = useState(() => {
-    return localStorage.getItem('saas_superadmin_email') || 'laheeblaheeb0@gmail.com';
+    return 'laheeblaheeb0@gmail.com';
   });
 
   const [adminPin, setAdminPin] = useState(() => {
     return localStorage.getItem('saas_superadmin_pin') || 'Admin@2026';
   });
 
-  // Authentication State
+  const isSuperAdminEmail = (email: string | null | undefined): boolean => {
+    if (!email) return false;
+    const clean = email.trim().toLowerCase();
+    return clean === 'laheeblaheeb0@gmail.com';
+  };
+
+  // Authentication State: Require authorized Super Admin email and active session
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('saas_superadmin_auth') === 'true' || 
+    const currentEmail = auth?.currentUser?.email;
+    const isAuthorizedAdmin = isSuperAdminEmail(currentEmail);
+    const hasSession = sessionStorage.getItem('saas_superadmin_auth') === 'true' || 
            localStorage.getItem('saas_superadmin_remember') === 'true';
+    return isAuthorizedAdmin && hasSession;
   });
+
+  useEffect(() => {
+    if (!auth) return;
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (!user || !isSuperAdminEmail(user.email)) {
+        setIsAuthenticated(false);
+        sessionStorage.removeItem('saas_superadmin_auth');
+        localStorage.removeItem('saas_superadmin_remember');
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // Login Form States
   const [inputEmail, setInputEmail] = useState('');
@@ -338,44 +361,50 @@ export default function SuperAdminPortal({
     setTimeout(() => setCopiedField(null), 2500);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
     setIsLoggingIn(true);
 
-    setTimeout(() => {
+    try {
       const cleanInputEmail = inputEmail.trim().toLowerCase();
-      const cleanStoredEmail = adminEmail.trim().toLowerCase();
-
-      // Check if credentials match or master fallback
-      const isEmailValid = cleanInputEmail === cleanStoredEmail || cleanInputEmail === 'admin@fleetaurvexis.com' || cleanInputEmail === 'laheeblaheeb0@gmail.com';
-      const isPinValid = inputPin === adminPin || inputPin === 'Admin@2026' || inputPin === '998877';
-
-      if (isEmailValid && isPinValid) {
-        setIsAuthenticated(true);
-        sessionStorage.setItem('saas_superadmin_auth', 'true');
-        if (rememberMe) {
-          localStorage.setItem('saas_superadmin_remember', 'true');
-        }
-
-        // Save login audit log
-        const auditLog = {
-          timestamp: new Date().toISOString(),
-          email: cleanInputEmail,
-          status: 'success',
-          ip: '127.0.0.1 (Authorized Secure Session)'
-        };
-        const existingLogs = JSON.parse(localStorage.getItem('saas_superadmin_logs') || '[]');
-        localStorage.setItem('saas_superadmin_logs', JSON.stringify([auditLog, ...existingLogs.slice(0, 15)]));
-      } else {
-        setLoginError(
-          language === 'ar' 
-            ? 'البريد الإلكتروني أو الرمز السري غير صحيح. يرجى التحقق وإعادة المحاولة.' 
-            : 'Invalid master email or passcode. Please check your credentials.'
-        );
+      if (!isSuperAdminEmail(cleanInputEmail)) {
+        throw new Error('Unauthorized super admin access attempt');
       }
+      // Authenticate via real Firebase Auth if needed
+      if (auth) {
+        try {
+          await signInWithEmailAndPassword(auth, cleanInputEmail, inputPin);
+        } catch (authErr: any) {
+          if (!auth.currentUser) {
+            throw authErr;
+          }
+        }
+      }
+
+      setIsAuthenticated(true);
+      sessionStorage.setItem('saas_superadmin_auth', 'true');
+      if (rememberMe) {
+        localStorage.setItem('saas_superadmin_remember', 'true');
+      }
+
+      const auditLog = {
+        timestamp: new Date().toISOString(),
+        email: cleanInputEmail,
+        status: 'success',
+        ip: '127.0.0.1 (Authorized Secure Session)'
+      };
+      const existingLogs = JSON.parse(localStorage.getItem('saas_superadmin_logs') || '[]');
+      localStorage.setItem('saas_superadmin_logs', JSON.stringify([auditLog, ...existingLogs.slice(0, 15)]));
       setIsLoggingIn(false);
-    }, 600);
+    } catch (err: any) {
+      setIsLoggingIn(false);
+      setLoginError(
+        language === 'ar' 
+          ? 'البريد الإلكتروني أو الرمز السري غير صحيح. يرجى التحقق وإعادة المحاولة.' 
+          : 'Invalid master email or passcode. Please check your credentials.'
+      );
+    }
   };
 
   const handleLogout = () => {

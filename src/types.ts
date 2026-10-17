@@ -76,6 +76,7 @@ export interface MaintenanceOrder {
   externalInvoiceImages?: string[];
   photoBeforeUrl?: string;
   photoAfterUrl?: string;
+  actualWorkTime?: number;
 }
 
 export interface InventoryItem {
@@ -151,6 +152,46 @@ export interface User {
   title: string;
   role: UserRole;
   avatar: string;
+  uid?: string;
+  email?: string;
+  companyId?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  companyDetails?: any;
+}
+
+export interface FirestoreUserDoc {
+  uid: string;
+  email: string;
+  name: string;
+  title?: string;
+  role: UserRole;
+  companyId: string;
+  status: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Company {
+  id: string;
+  companyAr: string;
+  companyEn: string;
+  cr: string;
+  email: string;
+  phone: string;
+  city?: string;
+  fleetSize?: string;
+  plan?: string;
+  cycle?: string;
+  adminName?: string;
+  adminUid?: string;
+  subscriptionId?: string;
+  registeredAt?: string;
+  subscriptionStatus?: string;
+  activeStarts?: string;
+  isCommercialSaaS?: boolean;
 }
 
 export type SafetyCheckStatus = 'pass' | 'warning' | 'fail' | 'na';

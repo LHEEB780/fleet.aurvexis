@@ -620,7 +620,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
           <tbody>
             ${analysis.monthlyChartData.map(m => `
               <tr>
-                <td><strong>${m.month || m.name}</strong></td>
+                <td><strong>${m.name}</strong></td>
                 <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; color: #d97706;">${formatCurrency(m.cost * 0.5, language, 'SAR')}</td>
                 <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; color: #2563eb;">${formatCurrency(m.cost * 0.3, language, 'SAR')}</td>
                 <td style="text-align: ${isAr ? 'left' : 'right'}; font-family: monospace; color: #7c3aed;">${formatCurrency(m.cost * 0.2, language, 'SAR')}</td>
@@ -2229,7 +2229,7 @@ export default function Reports({ user, isDarkMode }: ReportsProps) {
                       <XAxis dataKey="name" tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
                       <YAxis tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
                       <Tooltip />
-                      <Legend verticalAlign="top" height={36} contentStyle={{ fontSize: 11, fontWeight: 'bold' }} />
+                      <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 11, fontWeight: 'bold' }} />
                       <Bar dataKey="المهام المنجزة" fill="#10B981" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="المهام الجارية" fill="#EF4444" radius={[4, 4, 0, 0]} />
                     </BarChart>

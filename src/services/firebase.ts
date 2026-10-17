@@ -10,6 +10,8 @@ import {
   deleteDoc, 
   collection, 
   getDocFromServer,
+  query,
+  where,
   setLogLevel
 } from 'firebase/firestore';
 import firebaseConfig from './firebaseConfig';
@@ -121,6 +123,42 @@ export async function testFirestoreConnection(): Promise<boolean> {
   }
 }
 
+// Core operational tenant collections requiring tenant isolation
+export const TENANT_COLLECTIONS = new Set([
+  'vehicles',
+  'maintenance_orders',
+  'work_orders',
+  'technicians',
+  'inventory',
+  'safety_inspections',
+  'technical_inspections',
+  'support_tickets',
+  'custom_dev_requests',
+  'fault_reports',
+  'dispatch_logs',
+  'billing',
+  'subscriptions',
+  'company_subscriptions',
+]);
+
+/**
+ * Resolves the authoritative companyId of the active authenticated user
+ */
+export function getCurrentTenantCompanyId(): string | null {
+  const currentUid = authInstance?.currentUser?.uid;
+  if (!currentUid) return null;
+  try {
+    const raw = safeLocalStorage.getItem('saas_current_user');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.uid === currentUid && parsed.companyId) {
+        return parsed.companyId;
+      }
+    }
+  } catch (e) {}
+  return 'company-' + currentUid.substring(0, 8);
+}
+
 // Single Document Operations
 export async function saveDocument(colName: string, docId?: string | null, data?: any): Promise<void> {
   const payload = data ? { ...data } : {};
@@ -150,6 +188,15 @@ export async function saveDocument(colName: string, docId?: string | null, data?
 
   if (!payload.id) {
     payload.id = targetId;
+  }
+
+  // Multi-Tenant Isolation Hardening:
+  // For operational tenant entities, strictly attach the authentic companyId of the current user
+  if (TENANT_COLLECTIONS.has(colName)) {
+    const activeCompanyId = getCurrentTenantCompanyId();
+    if (activeCompanyId) {
+      payload.companyId = activeCompanyId;
+    }
   }
 
   try {
@@ -268,11 +315,19 @@ export async function pullCloudDataToLocal(): Promise<{ success: boolean; count:
     return { success: false, count: 0 };
   }
   let count = 0;
+  const userCompanyId = getCurrentTenantCompanyId();
+
   try {
     // Process regular fleet collections
     for (const config of SYNC_CONFIGS) {
       try {
-        const snap = await getDocs(collection(db, config.collectionName));
+        const colRef = collection(db, config.collectionName);
+        // Tenant Isolation: Query restricted strictly to user's companyId
+        const q = userCompanyId 
+          ? query(colRef, where('companyId', '==', userCompanyId))
+          : colRef;
+
+        const snap = await getDocs(q);
         const list: any[] = [];
         snap.forEach((doc) => {
           const docData = doc.data() || {};
@@ -348,6 +403,7 @@ export function deepEqual(a: any, b: any): boolean {
 export async function getSyncConflicts(): Promise<ConflictItem[]> {
   const conflicts: ConflictItem[] = [];
   if (!db) return conflicts;
+  const userCompanyId = getCurrentTenantCompanyId();
 
   try {
     for (const config of SYNC_CONFIGS) {
@@ -358,7 +414,12 @@ export async function getSyncConflicts(): Promise<ConflictItem[]> {
           if (localItems.length > 0) break;
         }
 
-        const snap = await getDocs(collection(db, config.collectionName));
+        const colRef = collection(db, config.collectionName);
+        const q = userCompanyId 
+          ? query(colRef, where('companyId', '==', userCompanyId))
+          : colRef;
+
+        const snap = await getDocs(q);
         const cloudMap: Record<string, any> = {};
         snap.forEach(d => { cloudMap[d.id] = d.data(); });
 

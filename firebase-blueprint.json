@@ -276,6 +276,24 @@
       },
       "required": ["id", "companyName"]
     },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role, tenant assignment, and credentials reference.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth unique user identifier" },
+        "email": { "type": "string", "description": "Primary user email address" },
+        "name": { "type": "string", "description": "Display name of the user" },
+        "role": { "type": "string", "description": "User role: admin, technician, driver, viewer, super_admin" },
+        "companyId": { "type": "string", "description": "Assigned multi-tenant company identifier" },
+        "status": { "type": "string", "description": "Account status: active, suspended" },
+        "title": { "type": "string", "description": "Job title or professional position" },
+        "avatar": { "type": "string", "description": "Avatar image URL" },
+        "createdAt": { "type": "string", "description": "Creation timestamp ISO string" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp ISO string" }
+      },
+      "required": ["uid", "email", "name", "role", "companyId"]
+    },
     "SaaSTicket": {
       "title": "SaaSTicket",
       "description": "General customer inquiry ticket submitted through help center.",
@@ -373,6 +391,10 @@
     "company_subscriptions": {
       "schema": "CompanySubscription",
       "description": "Custom subscriptions management."
+    },
+    "users": {
+      "schema": "UserProfile",
+      "description": "Authoritative user profiles linked to Firebase Auth UID with role and company identity."
     }
   }
 }
