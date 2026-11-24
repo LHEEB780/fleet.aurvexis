@@ -118,55 +118,60 @@ export const generateBrandPalette = (baseHex: string, isDark: boolean): BrandPal
   const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
   if (!isDark) {
+    // Deepen bright base colors slightly for a richer, slightly darker enterprise appearance
+    const calibratedL = hsl.l > 42 ? Math.max(36, hsl.l - 7) : hsl.l;
+    const calibratedPrimary = hslToHex(hsl.h, Math.min(hsl.s + 4, 100), calibratedL);
+    const calibratedRgb = hexToRgb(calibratedPrimary);
+
     const shades: Record<number, string> = {
-      50: adjustColorBrightness(baseHex, 94),
-      100: adjustColorBrightness(baseHex, 84),
-      200: adjustColorBrightness(baseHex, 68),
-      300: adjustColorBrightness(baseHex, 48),
-      400: adjustColorBrightness(baseHex, 24),
-      500: baseHex,
-      600: adjustColorBrightness(baseHex, -14),
-      700: adjustColorBrightness(baseHex, -28),
-      800: adjustColorBrightness(baseHex, -42),
-      900: adjustColorBrightness(baseHex, -58),
+      50: adjustColorBrightness(calibratedPrimary, 88),
+      100: adjustColorBrightness(calibratedPrimary, 76),
+      200: adjustColorBrightness(calibratedPrimary, 58),
+      300: adjustColorBrightness(calibratedPrimary, 36),
+      400: adjustColorBrightness(calibratedPrimary, 14),
+      500: calibratedPrimary,
+      600: adjustColorBrightness(calibratedPrimary, -16),
+      700: adjustColorBrightness(calibratedPrimary, -30),
+      800: adjustColorBrightness(calibratedPrimary, -44),
+      900: adjustColorBrightness(calibratedPrimary, -60),
     };
     return {
       shades,
-      rgb,
-      glow: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)`,
-      subtleBg: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08)`,
-      subtleBorder: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18)`,
+      rgb: calibratedRgb,
+      glow: `rgba(${calibratedRgb.r}, ${calibratedRgb.g}, ${calibratedRgb.b}, 0.24)`,
+      subtleBg: `rgba(${calibratedRgb.r}, ${calibratedRgb.g}, ${calibratedRgb.b}, 0.11)`,
+      subtleBorder: `rgba(${calibratedRgb.r}, ${calibratedRgb.g}, ${calibratedRgb.b}, 0.24)`,
       textContrast: shades[800],
-      effectivePrimary: baseHex
+      effectivePrimary: calibratedPrimary
     };
   }
 
   // Dark Mode Calibration:
-  // Elevate lightness to ensure high contrast against dark surfaces
-  const darkL = Math.max(hsl.l, 54);
+  // Deepen primary tone slightly while maintaining clear contrast against dark surfaces
+  const darkL = Math.min(Math.max(hsl.l, 42), 50);
   const darkS = Math.min(hsl.s + 6, 100);
   const darkPrimary = hslToHex(hsl.h, darkS, darkL);
   const darkRgb = hexToRgb(darkPrimary);
 
   const shades: Record<number, string> = {
     // Rich chromatic dark surface fills (card backgrounds, badge containers)
-    50: hslToHex(hsl.h, Math.min(hsl.s, 40), 12),
-    100: hslToHex(hsl.h, Math.min(hsl.s, 45), 18),
-    200: hslToHex(hsl.h, Math.min(hsl.s, 50), 26),
-    300: hslToHex(hsl.h, Math.min(hsl.s, 60), 38),
-    400: hslToHex(hsl.h, Math.min(hsl.s, 70), 48),
+    50: hslToHex(hsl.h, Math.min(hsl.s, 42), 9),
+    100: hslToHex(hsl.h, Math.min(hsl.s, 48), 14),
+    200: hslToHex(hsl.h, Math.min(hsl.s, 52), 21),
+    300: hslToHex(hsl.h, Math.min(hsl.s, 60), 32),
+    400: hslToHex(hsl.h, Math.min(hsl.s, 68), 40),
     500: darkPrimary,
-    600: hslToHex(hsl.h, darkS, Math.max(38, darkL - 9)),
-    700: hslToHex(hsl.h, darkS, Math.max(30, darkL - 18)),
-    // In dark mode, brand-800 text MUST be luminescent pastel for crystal clarity
-    800: hslToHex(hsl.h, Math.min(hsl.s, 85), 85),
-    900: hslToHex(hsl.h, Math.min(hsl.s, 80), 93),
+    600: hslToHex(hsl.h, darkS, Math.max(32, darkL - 10)),
+    700: hslToHex(hsl.h, darkS, Math.max(24, darkL - 18)),
+    // In dark mode, brand-800 text remains luminous pastel for crystal clarity
+    800: hslToHex(hsl.h, Math.min(hsl.s, 80), 80),
+    900: hslToHex(hsl.h, Math.min(hsl.s, 75), 90),
   };
 
   return {
     shades,
     rgb: darkRgb,
-    glow: `rgba(${darkRgb.r}, ${darkRgb.g}, ${darkRgb.b}, 0.35)`,
+    glow: `rgba(${darkRgb.r}, ${darkRgb.g}, ${darkRgb.b}, 0.34)`,
     subtleBg: `rgba(${darkRgb.r}, ${darkRgb.g}, ${darkRgb.b}, 0.14)`,
     subtleBorder: `rgba(${darkRgb.r}, ${darkRgb.g}, ${darkRgb.b}, 0.32)`,
     textContrast: shades[800],
@@ -230,11 +235,11 @@ export const renderBrandInlineStyle = (color: string, isDark: boolean): string =
 };
 
 export const getStoredBrandColor = (): string => {
-  if (typeof localStorage === 'undefined') return '#673de6';
+  if (typeof localStorage === 'undefined') return '#5b21b6';
   return (
     localStorage.getItem('saas_brand_primary_color') ||
     localStorage.getItem('saas_primary_color') ||
-    '#673de6'
+    '#5b21b6'
   );
 };
 

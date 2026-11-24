@@ -767,7 +767,7 @@ export default function App() {
     return localStorage.getItem('saas_brand_logo') || '';
   });
   const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => {
-    return localStorage.getItem('saas_brand_primary_color') || localStorage.getItem('saas_primary_color') || '#673de6';
+    return localStorage.getItem('saas_brand_primary_color') || localStorage.getItem('saas_primary_color') || '#5b21b6';
   });
 
   // Proactively prevent QuotaExceededError by pruning stale caches and heavy base64 images
@@ -804,7 +804,7 @@ export default function App() {
       const activeColor = localStorage.getItem('saas_brand_primary_color') || 
                           localStorage.getItem('saas_primary_color') || 
                           brandPrimaryColor || 
-                          '#673de6';
+                          '#5b21b6';
       const palette = generateBrandPalette(activeColor, isDarkMode);
       applyBrandPaletteToDocument(palette);
     };
@@ -919,9 +919,9 @@ export default function App() {
 
   React.useEffect(() => {
     const currentColor = localStorage.getItem('saas_brand_primary_color');
-    if (!currentColor || currentColor === '#1e53e4') {
-      localStorage.setItem('saas_brand_primary_color', '#6d28d9');
-      setBrandPrimaryColor('#6d28d9');
+    if (!currentColor || currentColor === '#1e53e4' || currentColor === '#6d28d9' || currentColor === '#673de6') {
+      localStorage.setItem('saas_brand_primary_color', '#5b21b6');
+      setBrandPrimaryColor('#5b21b6');
     }
   }, []);
 
@@ -941,7 +941,7 @@ export default function App() {
       const newName = sanitizeBrandName(localStorage.getItem('saas_brand_name'));
       const newDesc = sanitizeBrandDesc(localStorage.getItem('saas_brand_desc'));
       const newLogo = localStorage.getItem('saas_brand_logo') || '';
-      const newColor = localStorage.getItem('saas_brand_primary_color') || '#6d28d9';
+      const newColor = localStorage.getItem('saas_brand_primary_color') || '#5b21b6';
       const newThreshold = parseFloat(localStorage.getItem('saas_sync_threshold_mb') || '5');
       const newWeight = getPendingDataVolumeMB();
 
@@ -1557,7 +1557,7 @@ export default function App() {
     return (
       <div 
         dir={dir} 
-        className="min-h-screen flex items-center justify-center bg-[#f4f6fa] dark:bg-[#080b11] text-slate-950 dark:text-slate-100 p-4 transition-colors duration-500 overflow-y-auto select-none"
+        className="min-h-screen flex items-center justify-center bg-[#dfe5ef] dark:bg-[#030407] text-slate-950 dark:text-slate-100 p-4 transition-colors duration-500 overflow-y-auto select-none"
       >
         <style>{`
           ${renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}

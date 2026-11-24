@@ -308,7 +308,7 @@ export default function MarketingLandingPage({
   onNavigateToSaaS,
   onNavigateToSuperAdmin,
   onNavigateToLegal,
-  brandPrimaryColor = '#6d28d9',
+  brandPrimaryColor = '#5b21b6',
   brandName = '',
   brandDesc = '',
   isInsideApp = false,
@@ -694,7 +694,7 @@ export default function MarketingLandingPage({
   const calculatedDowntimeDays = Math.round(calcVehicles * 4.5);
 
   return (
-    <div className={`min-h-screen w-full max-w-full overflow-x-clip bg-white text-slate-900 font-sans antialiased flex flex-col selection:bg-brand-blue-500/10 selection:text-brand-blue-500 transition-colors duration-300`}>
+    <div className={`min-h-screen w-full max-w-full overflow-x-clip bg-[#e5eaf3] text-slate-900 font-sans antialiased flex flex-col selection:bg-brand-blue-500/15 selection:text-brand-blue-600 transition-colors duration-300`}>
       
       {/* Live Preview Banner if inside app */}
       {isInsideApp && (
@@ -717,7 +717,7 @@ export default function MarketingLandingPage({
       )}
       
       {/* Main Responsive Unified Sticky Header in Brand Purple Gradient */}
-      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#1b0c36] via-[#2d1254] to-[#43147a] text-white backdrop-blur-xl border-b border-purple-400/20 shadow-lg shadow-purple-950/25 transition-all duration-300">
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#120726] via-[#200c3d] to-[#310e5e] text-white backdrop-blur-xl border-b border-purple-400/20 shadow-lg shadow-purple-950/35 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-2.5 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Logo Brand with Official Emblem & Modal Trigger */}
@@ -799,7 +799,7 @@ export default function MarketingLandingPage({
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-purple-50/40 via-slate-50/40 to-white py-16 md:py-24 border-b border-purple-100/50">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#d8dfed] via-[#e2e7f2] to-[#e9edf6] py-16 md:py-24 border-b border-slate-300/70">
         {/* Ambient Purple Backdrop Glows */}
         <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-purple-400/6 rounded-full blur-3xl pointer-events-none -translate-y-1/2" />
         <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-purple-300/8 rounded-full blur-3xl pointer-events-none translate-y-1/2" />

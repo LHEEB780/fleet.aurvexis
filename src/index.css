@@ -3,16 +3,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --brand-50: #f5f2ff;
-  --brand-100: #eae4ff;
-  --brand-200: #d6cbff;
-  --brand-300: #bca8ff;
-  --brand-400: #9778ff;
-  --brand-500: #673de6;
-  --brand-600: #5429cf;
-  --brand-700: #431bb5;
-  --brand-800: #321191;
-  --brand-900: #21086e;
+  --brand-50: #ece6ff;
+  --brand-100: #dcd1ff;
+  --brand-200: #bfaaff;
+  --brand-300: #9a7dff;
+  --brand-400: #7550f0;
+  --brand-500: #5b21b6;
+  --brand-600: #4c1d95;
+  --brand-700: #3b147a;
+  --brand-800: #2b0d5c;
+  --brand-900: #1c073d;
 }
 
 @theme {
@@ -20,52 +20,52 @@
   --font-inter: "Inter", "Plus Jakarta Sans", sans-serif;
   --font-jakarta: "Plus Jakarta Sans", "Inter", sans-serif;
   
-  /* Vibrant, Professional Enterprise Tech-Purple (Luxury Royal Purple inspired) */
+  /* Rich, Deep Enterprise Tech-Purple (Slightly Darker Royal Violet) */
   --color-brand-blue-50: var(--brand-50);
   --color-brand-blue-100: var(--brand-100);
   --color-brand-blue-200: var(--brand-200);
   --color-brand-blue-300: var(--brand-300);
   --color-brand-blue-400: var(--brand-400);
-  --color-brand-blue-500: var(--brand-500);   /* Rich, premium Hostinger violet-purple */
+  --color-brand-blue-500: var(--brand-500);   /* Deep royal violet-purple */
   --color-brand-blue-600: var(--brand-600);   /* Saturated active deep purple */
-  --color-brand-blue-700: var(--brand-700);   /* Luxurious royal dark purple */
+  --color-brand-blue-700: var(--brand-700);   /* Luxurious dark purple */
   --color-brand-blue-800: var(--brand-800);
   --color-brand-blue-900: var(--brand-900);
 
-  --color-brand-red-50: #fff5f5;
-  --color-brand-red-100: #ffe3e3;
-  --color-brand-red-200: #ffc9c9;
-  --color-brand-red-300: #ffa8a8;
-  --color-brand-red-400: #ff8787;
-  --color-brand-red-500: #f03e3e;   /* Crisp signal red */
-  --color-brand-red-600: #e03131;
-  --color-brand-red-700: #c92a2a;
-  --color-brand-red-800: #b01e1e;
-  --color-brand-red-900: #490a0a;
+  --color-brand-red-50: #fee2e2;
+  --color-brand-red-100: #fecaca;
+  --color-brand-red-200: #fca5a5;
+  --color-brand-red-300: #f87171;
+  --color-brand-red-400: #ef4444;
+  --color-brand-red-500: #dc2626;   /* Deep signal crimson */
+  --color-brand-red-600: #b91c1c;
+  --color-brand-red-700: #991b1b;
+  --color-brand-red-800: #7f1d1d;
+  --color-brand-red-900: #450a0a;
 
-  /* Radiant Emerald Green (Matching successful CRM indicators) */
-  --color-brand-green-50: #f0fdf4;
-  --color-brand-green-100: #dcfce7;
-  --color-brand-green-200: #bbf7d0;
-  --color-brand-green-300: #86efac;
-  --color-brand-green-400: #4ade80;
-  --color-brand-green-500: #00b95c;  /* True vibrant grass/success green */
-  --color-brand-green-600: #009d4e;
-  --color-brand-green-700: #00763b;
-  --color-brand-green-800: #005028;
-  --color-brand-green-900: #00361b;
+  /* Rich Deep Emerald Green */
+  --color-brand-green-50: #dcfce7;
+  --color-brand-green-100: #bbf7d0;
+  --color-brand-green-200: #86efac;
+  --color-brand-green-300: #4ade80;
+  --color-brand-green-400: #22c55e;
+  --color-brand-green-500: #059669;  /* Deep emerald green */
+  --color-brand-green-600: #047857;
+  --color-brand-green-700: #065f46;
+  --color-brand-green-800: #064e3b;
+  --color-brand-green-900: #022c22;
 
-  /* High Quality Amber and Warm Gold */
-  --color-brand-yellow-50: #fffbeb;
-  --color-brand-yellow-100: #fef3c7;
-  --color-brand-yellow-200: #fde68a;
-  --color-brand-yellow-300: #fcd34d;
-  --color-brand-yellow-400: #fbbf24;
-  --color-brand-yellow-500: #f59e0b;
-  --color-brand-yellow-600: #d97706;  /* High contrast amber */
-  --color-brand-yellow-700: #b45309;
-  --color-brand-yellow-800: #92400e;
-  --color-brand-yellow-900: #78350f;
+  /* Rich Deep Amber and Warm Gold */
+  --color-brand-yellow-50: #fef3c7;
+  --color-brand-yellow-100: #fde68a;
+  --color-brand-yellow-200: #fcd34d;
+  --color-brand-yellow-300: #fbbf24;
+  --color-brand-yellow-400: #f59e0b;
+  --color-brand-yellow-500: #d97706;
+  --color-brand-yellow-600: #b45309;  /* Deep contrast amber */
+  --color-brand-yellow-700: #92400e;
+  --color-brand-yellow-800: #78350f;
+  --color-brand-yellow-900: #451a03;
 }
 
 /* ==========================================================================
@@ -150,23 +150,53 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 
 @layer base {
   body {
-    @apply bg-[#f4f6fa] text-slate-950 transition-colors duration-305 antialiased leading-relaxed;
+    @apply bg-[#dfe5ef] text-slate-950 transition-colors duration-305 antialiased leading-relaxed;
     font-family: inherit;
     min-height: 100vh;
   }
 
   .dark body {
-    background-color: #05070a !important;
-    background-image: radial-gradient(circle at 12% 16%, rgba(103, 61, 230, 0.08) 0%, transparent 45%), radial-gradient(circle at 88% 84%, rgba(84, 41, 207, 0.04) 0%, transparent 50%) !important;
+    background-color: #04060c !important;
+    background-image: radial-gradient(circle at 12% 16%, rgba(84, 41, 207, 0.07) 0%, transparent 45%), radial-gradient(circle at 88% 84%, rgba(67, 27, 181, 0.04) 0%, transparent 50%) !important;
     color: #f8fafc !important;
     min-height: 100vh;
   }
 }
 
-/* Stunning Professional Enterprise Tech Premium Dark Theme Overrides */
-.dark .bg-white {
-  background-color: #111827 !important;
-  border-color: #1e293b !important;
+/* Calibrated Slightly Darker, Low-Glare Light Mode Surfaces */
+:root:not(.dark) .bg-white {
+  background-color: #f2f4f9 !important;
+}
+
+:root:not(.dark) .bg-slate-50,
+:root:not(.dark) .bg-gray-50 {
+  background-color: #e6ebf4 !important;
+}
+
+:root:not(.dark) .bg-slate-100,
+:root:not(.dark) .bg-gray-100 {
+  background-color: #d9e1ee !important;
+}
+
+:root:not(.dark) .border-slate-50,
+:root:not(.dark) .border-slate-100,
+:root:not(.dark) .border-slate-150,
+:root:not(.dark) .border-gray-100 {
+  border-color: #cbd5e4 !important;
+}
+
+:root:not(.dark) .border-slate-200,
+:root:not(.dark) .border-gray-200 {
+  border-color: #bfcadd !important;
+}
+
+/* Stunning Professional Enterprise Tech Premium Dark Theme Overrides (High-Contrast Card Elevation) */
+.dark .bg-white,
+.dark .bg-\[\#0f1422\],
+.dark .dark\:bg-\[\#0f1422\],
+.dark .dark\:bg-slate-900 {
+  background-color: #11192a !important;
+  border-color: #24324d !important;
 }
 
 .dark .bg-slate-50,
@@ -175,32 +205,25 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 .dark .bg-slate-200,
 .dark .bg-slate-250,
 .dark .dark\:bg-slate-800,
-.dark .dark\:bg-slate-900,
 .dark .dark\:bg-slate-705,
 .dark .dark\:bg-slate-703,
 .dark .dark\:bg-slate-700 {
-  background-color: #111827 !important;
-  border-color: #1e293b !important;
+  background-color: #182238 !important;
+  border-color: #263552 !important;
 }
 
 .dark .bg-gray-50,
 .dark .bg-gray-100,
 .dark .bg-gray-200,
 .dark .bg-gray-250 {
-  background-color: #111827 !important;
-}
-
-.dark .bg-[#0f1422],
-.dark .dark\:bg-\[\#0f1422\] {
-  background-color: #0a0e1a !important;
-  border-color: #1e293b !important;
+  background-color: #182238 !important;
 }
 
 .dark header,
 .dark .dark\:bg-slate-900\/85 {
-  background-color: rgba(11, 15, 25, 0.85) !important;
+  background-color: rgba(11, 17, 30, 0.92) !important;
   backdrop-filter: blur(16px) !important;
-  border-color: #1e293b !important;
+  border-color: #24324d !important;
 }
 
 /* Beautiful Transparent Accents for Status Elements and Badges in Dark Mode */
@@ -264,16 +287,21 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 .dark .text-slate-700,
 .dark .text-slate-650,
 .dark .text-slate-600,
-.dark .text-gray-700 {
-  color: #cbd5e1 !important;
+.dark .text-gray-700,
+.dark .dark\:text-slate-300 {
+  color: #e2e8f0 !important;
 }
 
 .dark .text-slate-500,
 .dark .text-slate-400,
 .dark .text-slate-450,
 .dark .text-gray-550,
-.dark .text-gray-500 {
-  color: #94a3b8 !important;
+.dark .text-gray-500,
+.dark .dark\:text-slate-400,
+.dark .dark\:text-slate-450,
+.dark .dark\:text-slate-500,
+.dark .dark\:text-slate-550 {
+  color: #cbd5e1 !important;
 }
 
 /* Beautiful precisely tuned borders */
@@ -289,14 +317,14 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 .dark .border-gray-100,
 .dark .border-gray-205,
 .dark .border-gray-200 {
-  border-color: #1e293b !important;
+  border-color: #24324d !important;
 }
 
 /* Glowing tech interactive items with dynamic brand variables */
 .dark .bg-brand-blue-500/10,
 .dark .dark\:bg-brand-blue-500\/20 {
-  background-color: var(--brand-subtle-bg, rgba(103, 61, 230, 0.15)) !important;
-  border-color: var(--brand-subtle-border, rgba(103, 61, 230, 0.3)) !important;
+  background-color: var(--brand-subtle-bg, rgba(91, 33, 182, 0.15)) !important;
+  border-color: var(--brand-subtle-border, rgba(91, 33, 182, 0.3)) !important;
 }
 
 .dark .text-brand-blue-800,
@@ -308,14 +336,14 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 
 /* Sidebar navigation active state with dynamic brand color gradient */
 .dark .bg-brand-blue-600 {
-  background: linear-gradient(135deg, var(--brand-500, #673de6) 0%, var(--brand-600, #5429cf) 100%) !important;
-  box-shadow: 0 4px 14px var(--brand-glow, rgba(103, 61, 230, 0.3)) !important;
+  background: linear-gradient(135deg, var(--brand-500, #5b21b6) 0%, var(--brand-600, #4c1d95) 100%) !important;
+  box-shadow: 0 4px 14px var(--brand-glow, rgba(91, 33, 182, 0.3)) !important;
 }
 
 /* Subtly tinted cards/badges in dark mode (prevent blinding white backgrounds) */
 .dark .bg-brand-blue-50 {
-  background-color: var(--brand-subtle-bg, rgba(103, 61, 230, 0.14)) !important;
-  border-color: var(--brand-subtle-border, rgba(103, 61, 230, 0.28)) !important;
+  background-color: var(--brand-subtle-bg, rgba(91, 33, 182, 0.14)) !important;
+  border-color: var(--brand-subtle-border, rgba(91, 33, 182, 0.28)) !important;
   color: var(--brand-800, #e0d7ff) !important;
 }
 
@@ -324,10 +352,10 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 .dark .dark\:bg-brand-blue-500,
 .dark .bg-brand-blue-700,
 .dark .bg-brand-blue-800 {
-  background: linear-gradient(135deg, var(--brand-500, #673de6) 0%, var(--brand-600, #5429cf) 100%) !important;
-  border-color: #1e293b !important;
+  background: linear-gradient(135deg, var(--brand-500, #5b21b6) 0%, var(--brand-600, #4c1d95) 100%) !important;
+  border-color: #162033 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 14px var(--brand-glow, rgba(103, 61, 230, 0.25)) !important;
+  box-shadow: 0 4px 14px var(--brand-glow, rgba(91, 33, 182, 0.25)) !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
@@ -336,7 +364,7 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 .dark .bg-brand-blue-600:hover,
 .dark .bg-brand-blue-700:hover {
   opacity: 0.95;
-  box-shadow: 0 6px 18px var(--brand-glow, rgba(103, 61, 230, 0.4)) !important;
+  box-shadow: 0 6px 18px var(--brand-glow, rgba(91, 33, 182, 0.4)) !important;
   transform: translateY(-0.5px);
 }
 
@@ -348,13 +376,14 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 .dark textarea,
 .dark .dark\:bg-slate-950,
 .dark .dark\:bg-slate-950\/50 {
-  background-color: #0d1321 !important;
-  border-color: #1e293b !important;
+  background-color: #0b111e !important;
+  border-color: #24324d !important;
   color: #f8fafc !important;
 }
 
-.dark input::placeholder {
-  color: #64748b !important;
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8 !important;
 }
 
 /* Fluid hover actions on rows and list elements */
@@ -364,25 +393,25 @@ html[data-font-size="huge"] .text-4xl, html[data-font-size="huge"] .text-\[36px\
 .dark .dark\:hover\:bg-slate-703:hover,
 .dark .dark\:hover\:bg-slate-700:hover,
 .dark .dark\:hover\:bg-slate-800\/60:hover {
-  background-color: #1e293b !important;
+  background-color: #1e2b45 !important;
   color: #ffffff !important;
 }
 
 .shadow-soft {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  box-shadow: 0 4px 8px -1px rgb(15 23 42 / 0.07), 0 2px 4px -2px rgb(15 23 42 / 0.05);
 }
 
 .dark .shadow-soft {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 0 12px 32px -5px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(148, 163, 184, 0.09) !important;
 }
 
 .card-gradient {
-  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, #f3f5fa 0%, #e4eaf4 100%);
 }
 
 .dark .card-gradient {
-  background: linear-gradient(135deg, #111827 0%, #0c111d 100%) !important;
-  border: 1px solid #1e293b !important;
+  background: linear-gradient(135deg, #141e32 0%, #0e1626 100%) !important;
+  border: 1px solid #24324d !important;
 }
 
 /* 🌟 Read-Only Mode CSS overrides to instantly hide add/edit/delete buttons */

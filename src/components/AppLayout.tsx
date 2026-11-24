@@ -116,7 +116,7 @@ const SidebarItem = ({ icon, label, active, onClick, collapsed }: SidebarItemPro
 const THEMES_PRESETS = [
   {
     id: 'classic-blue',
-    hex: '#6d28d9',
+    hex: '#5b21b6',
     nameAr: 'البنفسجي الملكي الإمبراطوري (Imperial Purple)',
     nameEn: 'Imperial Royal Purple',
     descAr: 'النمط الرسمي المعتمد لإدارة وتتبع الورش لأسطول رسمي ومثالي للأعمال الهندسية والمستقبلية.',
@@ -651,7 +651,7 @@ export default function AppLayout({
   const [adminPin, setAdminPin] = useState(() => localStorage.getItem('saas_admin_pin') || '4321');
   const [saasBrandColor, setSaasBrandColor] = useState(() => localStorage.getItem('saas_brand_color') || 'blue');
   const [brandTheme, setBrandTheme] = useState(() => localStorage.getItem('saas_brand_theme') || 'classic-blue');
-  const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => localStorage.getItem('saas_brand_primary_color') || '#6d28d9');
+  const [brandPrimaryColor, setBrandPrimaryColor] = useState(() => localStorage.getItem('saas_brand_primary_color') || '#5b21b6');
   const [selectedCurrencyState, setSelectedCurrencyState] = useState(() => {
     return safeLocalStorage.getItem('saas_base_currency') || 'SAR';
   });
@@ -798,9 +798,9 @@ export default function AppLayout({
 
   React.useEffect(() => {
     const currentColor = localStorage.getItem('saas_brand_primary_color');
-    if (!currentColor || currentColor === '#1e53e4') {
-      localStorage.setItem('saas_brand_primary_color', '#6d28d9');
-      setBrandPrimaryColor('#6d28d9');
+    if (!currentColor || currentColor === '#1e53e4' || currentColor === '#6d28d9' || currentColor === '#673de6') {
+      localStorage.setItem('saas_brand_primary_color', '#5b21b6');
+      setBrandPrimaryColor('#5b21b6');
     }
   }, []);
 
@@ -1610,7 +1610,7 @@ export default function AppLayout({
 
   return (
     <div 
-      className="flex h-screen bg-[#f4f6fa] dark:bg-[#05070a] font-sans text-slate-950 dark:text-slate-100 overflow-hidden transition-all duration-500" 
+      className="flex h-screen bg-[#dfe5ef] dark:bg-[#030407] font-sans text-slate-950 dark:text-slate-100 overflow-hidden transition-all duration-500" 
       dir={dir}
     >
       <style>{renderBrandInlineStyle(brandPrimaryColor, isDarkMode)}</style>
@@ -1773,7 +1773,7 @@ export default function AppLayout({
 
       {/* Sidebar - Desktop */}
       <aside 
-        className={`hidden md:flex flex-col bg-white dark:bg-[#0f1422] border-slate-200 dark:border-slate-800/80 transition-all duration-300 ease-in-out ${
+        className={`hidden md:flex flex-col bg-[#e9edf5] dark:bg-[#080c16] border-slate-300/80 dark:border-slate-800/80 transition-all duration-300 ease-in-out ${
           dir === 'rtl' ? 'border-l' : 'border-r'
         } ${collapsed ? 'w-14' : 'w-56'}`}
       >
@@ -1905,9 +1905,9 @@ export default function AppLayout({
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Header - Structured into Two Clean Rows (Top Row & Bottom Row) */}
-        <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800/70 z-30 transition-all duration-300 shadow-2xs">
+        <header className="bg-[#eef1f8]/95 dark:bg-[#080c16]/95 backdrop-blur-md border-b border-slate-300/80 dark:border-slate-800/70 z-30 transition-all duration-300 shadow-2xs">
           {/* Row 1 (Top Row): Mobile Menu + Search Bar & Profile Capsule + Notifications */}
-          <div className="py-2.5 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60">
+          <div className="py-2.5 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800/60">
             {/* Left: Mobile Menu & Global Search */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-full sm:max-w-md">
               <button 
@@ -2254,7 +2254,7 @@ export default function AppLayout({
           </div>
 
           {/* Row 2 (Bottom Row): Dedicated Action & Preference Toolbar with Perfect Alignment */}
-          <div className="py-2 px-2 sm:px-4 lg:px-6 flex items-center justify-between gap-1 sm:gap-2 bg-slate-50/70 dark:bg-slate-950/40 relative z-20">
+          <div className="py-2 px-2 sm:px-4 lg:px-6 flex items-center justify-between gap-1 sm:gap-2 bg-[#e2e7f0]/90 dark:bg-[#050810]/85 relative z-20">
             {/* Group A: Quick Action Controls */}
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {/* Barcode / QR Scanner Button */}

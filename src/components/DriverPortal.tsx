@@ -617,10 +617,10 @@ export default function DriverPortal({ user, onLogout, isDarkMode, onRoleChange 
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6fa] dark:bg-[#080b11] text-slate-900 dark:text-slate-100 pb-16 font-sans" dir={dir}>
+    <div className="min-h-screen bg-[#dfe5ef] dark:bg-[#030407] text-slate-900 dark:text-slate-100 pb-16 font-sans" dir={dir}>
       
       {/* Driver Portal Top Bar Header */}
-      <div className="bg-white dark:bg-[#0f1422] border-b border-slate-150 dark:border-slate-800/80 px-3 sm:px-5 py-2.5 sm:py-3 sticky top-0 z-50 shadow-xs">
+      <div className="bg-[#eef1f8] dark:bg-[#080c16] border-b border-slate-300/80 dark:border-slate-800/80 px-3 sm:px-5 py-2.5 sm:py-3 sticky top-0 z-50 shadow-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           {/* Driver Profile Info */}
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">

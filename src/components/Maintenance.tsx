@@ -61,7 +61,6 @@ import SmartDiagnostic from './SmartDiagnostic';
 import { notifyNewMaintenanceOrder } from '../services/browserNotifications';
 import { safeSetItem } from '../utils/storage';
 import { formatCurrency, getCurrencyLabel } from '../services/formatters';
-import CurrencyToggle from './CurrencyToggle';
 
 const SYSTEM_ANCHOR_DATE = '2026-05-19';
 
@@ -1649,35 +1648,37 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
             </div>
 
             {/* Action Controls & Display Tabs Toggle */}
-            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch lg:items-center gap-3 shrink-0">
-              <div className="bg-white/5 p-1 rounded-2xl border border-white/10 flex items-center w-full sm:w-auto gap-1">
-                <CurrencyToggle language={language} variant="compact" className="hidden sm:inline-flex" />
+            <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 min-w-0">
+              <div className="bg-white/10 p-1 rounded-2xl border border-white/15 grid grid-cols-2 sm:inline-flex items-center w-full sm:w-auto gap-1 backdrop-blur-sm">
                 <button
+                  type="button"
                   onClick={() => setManagerMode('kanban')}
-                  className={`flex-1 sm:flex-none px-3 py-2.5 sm:px-4 sm:py-1.5 rounded-xl text-[10.5px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  className={`min-w-0 px-2.5 sm:px-4 py-2.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     managerMode === 'kanban' 
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
-                      : 'text-purple-200 hover:text-white hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-950/30' 
+                      : 'text-purple-100/80 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <Kanban size={13} />
-                  <span>{language === 'ar' ? 'لوحة المشاريع (Kanban)' : 'Kanban Board'}</span>
+                  <Kanban size={14} className="shrink-0" />
+                  <span className="truncate">{language === 'ar' ? 'لوحة المشاريع (Kanban)' : 'Kanban Board'}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setManagerMode('list')}
-                  className={`flex-1 sm:flex-none px-3 py-2.5 sm:px-4 sm:py-1.5 rounded-xl text-[10.5px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                  className={`min-w-0 px-2.5 sm:px-4 py-2.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     managerMode === 'list' 
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
-                      : 'text-purple-200 hover:text-white hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-950/30' 
+                      : 'text-purple-100/80 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <ClipboardList size={13} />
-                  <span>{language === 'ar' ? 'قائمة المشاريع' : 'Projects List'}</span>
+                  <ClipboardList size={14} className="shrink-0" />
+                  <span className="truncate">{language === 'ar' ? 'قائمة المشاريع' : 'Projects List'}</span>
                 </button>
               </div>
 
               {user.role !== 'viewer' && (
                 <button 
+                  type="button"
                   onClick={() => openNewOrderModal()}
                   className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-0 sm:h-11 bg-purple-500 hover:bg-purple-600 text-white rounded-2xl sm:rounded-xl text-xs font-black shadow-md hover:shadow-lg active:scale-[98%] transition-all cursor-pointer border border-purple-400/20 whitespace-nowrap"
                 >
@@ -2118,19 +2119,21 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
       <div className="space-y-3 mb-5">
         
         {/* Top Control Strip: Toggle 3 Filter Lists + Quick Archive Button + Active Filter Chips */}
-        <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-150/60 dark:border-slate-800 shadow-soft flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex flex-wrap items-center justify-between gap-3">
           
           {/* Right side: Purple Gradient Toggle Button for the 3 Filter lists */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <button
               type="button"
               onClick={() => setIsFiltersOpen(prev => !prev)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-700 hover:via-violet-700 hover:to-indigo-700 text-white shadow-md shadow-purple-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer font-black text-xs select-none border border-white/20"
+              className="w-full sm:w-auto flex items-center justify-between sm:justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-xl bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-700 hover:via-violet-700 hover:to-indigo-700 text-white shadow-md shadow-purple-500/25 transition-all duration-200 active:scale-[0.98] cursor-pointer font-black text-xs select-none border border-white/20"
               title="فتح أو إغلاق قوائم الفلترة والتخصيص الثلاث"
             >
-              <Sliders size={13} className="text-purple-200" />
-              <span>{isFiltersOpen ? 'طي وإغلاق قوائم الفلترة' : 'فتح قوائم الفلترة والتخصيص (٣ قوائم)'}</span>
-              <div className={`p-1 bg-white/25 rounded-full backdrop-blur-xs transition-transform duration-300 ${isFiltersOpen ? 'rotate-180' : 'rotate-0'}`}>
+              <span className="flex items-center gap-2 min-w-0">
+                <Sliders size={13} className="text-purple-200 shrink-0" />
+                <span className="truncate">{isFiltersOpen ? 'طي وإغلاق قوائم الفلترة' : 'فتح قوائم الفلترة والتخصيص (٣ قوائم)'}</span>
+              </span>
+              <div className={`p-1 bg-white/25 rounded-full backdrop-blur-xs transition-transform duration-300 shrink-0 ${isFiltersOpen ? 'rotate-180' : 'rotate-0'}`}>
                 <ChevronDown size={13} className="text-white" strokeWidth={3} />
               </div>
             </button>
@@ -2142,10 +2145,10 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                 <button
                   type="button"
                   onClick={handleQuickArchiveAllCompleted}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100/90 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-black text-xs border border-purple-200/70 dark:border-purple-800/70 transition-all shadow-xs cursor-pointer select-none"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100/90 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-black text-xs border border-purple-200/70 dark:border-purple-800/70 transition-all shadow-xs cursor-pointer select-none"
                   title="أرشفة سريعة لكافة المهام المنتهية بنقرة واحدة لتنظيف الواجهة الرئيسية"
                 >
-                  <Archive size={13} className="text-purple-600 dark:text-purple-400" />
+                  <Archive size={13} className="text-purple-600 dark:text-purple-400 shrink-0" />
                   <span>الأرشفة السريعة للمنتهية ({completedUnarchivedCount}) 📦</span>
                 </button>
               ) : null;
@@ -2184,47 +2187,48 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
               className="overflow-hidden space-y-4 pt-1"
             >
               {/* Status filtering widgets (1. Horizontal Process Tabs) */}
-              <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-150/60 dark:border-slate-800 shadow-soft">
-                <div className="flex items-center justify-between px-1 pb-2 border-b border-slate-100 dark:border-slate-800/80 mb-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-3.5 rounded-full bg-brand-blue-500 block"></span>
-                    <span className="text-[11px] font-black text-slate-800 dark:text-slate-300">القائمة ١: مسار المشروع وحالات الإنجاز</span>
+              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 px-1 pb-2.5 border-b border-slate-100 dark:border-slate-800/80 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-3.5 rounded-full bg-brand-blue-500 block shrink-0"></span>
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-200">القائمة ١: مسار المشروع وحالات الإنجاز</span>
                   </div>
                   
-                  <span className="text-[10px] font-bold text-slate-400">
+                  <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400">
                     اختر الحالة لعرض المشاريع التابعة لها
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2">
                   {[
-                    { id: 'all', label: 'المشاريع النشطة والوافدة', icon: <FileText size={11} />, count: activeCount, color: 'text-brand-blue-500', bg: 'bg-brand-blue-500/10' },
-                    { id: 'pending', label: 'التشخيص وتلقي الأعطال', icon: <Clock size={11} />, count: orders.filter(o => o.status === 'pending' && !isOrderArchived(o)).length, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                    { id: 'in-progress', label: 'عمليات الصيانة الجارية', icon: <AlertCircle size={11} />, count: orders.filter(o => o.status === 'in-progress' && !isOrderArchived(o)).length, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                    { id: 'completed', label: 'مكتملة ومستلمة بالخدمة', icon: <CheckCircle2 size={11} />, count: orders.filter(o => o.status === 'completed' && !isOrderArchived(o)).length, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { id: 'archived', label: 'مستندات الأرشيف المغلق', icon: <Archive size={11} />, count: archivedCount, color: 'text-violet-500', bg: 'bg-violet-500/10' },
+                    { id: 'all', label: 'المشاريع النشطة والوافدة', icon: <FileText size={12} />, count: activeCount, color: 'text-brand-blue-500', bg: 'bg-brand-blue-500/10' },
+                    { id: 'pending', label: 'التشخيص وتلقي الأعطال', icon: <Clock size={12} />, count: orders.filter(o => o.status === 'pending' && !isOrderArchived(o)).length, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                    { id: 'in-progress', label: 'عمليات الصيانة الجارية', icon: <AlertCircle size={12} />, count: orders.filter(o => o.status === 'in-progress' && !isOrderArchived(o)).length, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                    { id: 'completed', label: 'مكتملة ومستلمة بالخدمة', icon: <CheckCircle2 size={12} />, count: orders.filter(o => o.status === 'completed' && !isOrderArchived(o)).length, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { id: 'archived', label: 'مستندات الأرشيف المغلق', icon: <Archive size={12} />, count: archivedCount, color: 'text-violet-500', bg: 'bg-violet-500/10' },
                   ].map((filter) => {
                     const isActive = statusFilter === filter.id;
                     return (
                       <button 
                         key={filter.id}
+                        type="button"
                         onClick={() => setStatusFilter(filter.id as any)}
-                        className={`w-full flex items-center justify-between py-1.5 px-2.5 rounded-xl transition-all border cursor-pointer ${
+                        className={`w-full min-w-0 flex items-center justify-between gap-2 py-2 px-3 rounded-xl transition-all border cursor-pointer ${
                           isActive 
-                            ? 'bg-brand-blue-50/70 dark:bg-brand-blue-955 text-brand-blue-700 dark:text-brand-blue-400 font-extrabold border-brand-blue-150/50 dark:border-brand-blue-800/60 shadow-xs' 
-                            : 'border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-855 text-slate-600 dark:text-slate-350 bg-slate-50/20 dark:bg-slate-905'
+                            ? 'bg-brand-blue-50/90 dark:bg-brand-blue-950/60 text-brand-blue-700 dark:text-brand-blue-300 font-extrabold border-brand-blue-300 dark:border-brand-blue-700 shadow-xs' 
+                            : 'border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-300 bg-slate-50/40 dark:bg-slate-900/60'
                         }`}
                       >
-                        <div className="flex items-center gap-1.5">
-                          <div className={`p-1 rounded-md transition-colors shrink-0 ${isActive ? 'bg-brand-blue-500 text-white' : `${filter.bg} ${filter.color}`}`}>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${isActive ? 'bg-brand-blue-500 text-white' : `${filter.bg} ${filter.color}`}`}>
                             {filter.icon}
                           </div>
-                          <span className="text-[10.5px] font-black text-right whitespace-nowrap">{filter.label}</span>
+                          <span className="text-[11px] font-black text-right leading-snug truncate">{filter.label}</span>
                         </div>
-                        <span className={`text-[9.5px] font-black px-1.5 py-0.5 rounded-full border shrink-0 ${
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border shrink-0 min-w-[26px] text-center ${
                           isActive 
-                            ? 'bg-brand-blue-105/60 dark:bg-brand-blue-900/60 border-brand-blue-200/40 dark:border-brand-blue-800/60 text-brand-blue-800 dark:text-brand-blue-300' 
-                            : 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-450'
+                            ? 'bg-brand-blue-100/80 dark:bg-brand-blue-900/70 border-brand-blue-300/60 dark:border-brand-blue-700/70 text-brand-blue-800 dark:text-brand-blue-200' 
+                            : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
                         }`}>
                           {filter.count}
                         </span>
@@ -2238,18 +2242,19 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-fadeIn">
                 
                 {/* 2. Dropdown selectors (takes 3/4 layout) */}
-                <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 mb-3.5 px-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-3.5 rounded-full bg-indigo-500 block"></span>
-                      <span className="text-[11.5px] font-black text-slate-850 dark:text-slate-300 flex items-center gap-1.5">
-                        <Sliders size={13} className="text-indigo-500" />
+                <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-soft">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/80 mb-3.5 px-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-1.5 h-3.5 rounded-full bg-indigo-500 block shrink-0"></span>
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <Sliders size={13} className="text-indigo-500 shrink-0" />
                         <span>القائمة ٢: تصفية وتخصيص دقيق للمشاريع</span>
                       </span>
                     </div>
                     <button 
+                      type="button"
                       onClick={clearFilters} 
-                      className="text-[10px] font-extrabold text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-350 transition-colors flex items-center gap-1 cursor-pointer bg-rose-50 dark:bg-rose-950/20 px-2.5 py-1 rounded-lg border border-rose-100 dark:border-rose-900/50"
+                      className="text-[10.5px] font-extrabold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition-colors flex items-center gap-1 cursor-pointer bg-rose-50 dark:bg-rose-950/30 px-3 py-1 rounded-lg border border-rose-200/80 dark:border-rose-900/50 shrink-0"
                     >
                       تصفير الفلاتر
                     </button>
@@ -2259,15 +2264,15 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                     
                     {/* Vehicle Search selection */}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
-                        <Truck size={11} className="text-slate-400" />
+                      <label className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
+                        <Truck size={11} className="text-slate-400 shrink-0" />
                         <span>المركبة المستطلعة</span>
                       </label>
                       <div className="relative">
                         <select 
                           value={selectedVehicleId} 
                           onChange={(e) => setSelectedVehicleId(e.target.value)}
-                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         >
                           <option value="all">كافة مركبات الأسطول</option>
                           {localVehicles.map(v => (
@@ -2279,15 +2284,15 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
 
                     {/* Workshop Search selection */}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
-                        <Wrench size={11} className="text-slate-400" />
+                      <label className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
+                        <Wrench size={11} className="text-slate-400 shrink-0" />
                         <span>الورشة الفنية المخصصة</span>
                       </label>
                       <div className="relative">
                         <select 
                           value={selectedWorkshopId} 
                           onChange={(e) => setSelectedWorkshopId(e.target.value)}
-                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-955 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         >
                           <option value="all">كافة فروع وصالات الصيانة</option>
                           {localWorkshops.map(ws => (
@@ -2299,15 +2304,15 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
 
                     {/* Technician Search selection */}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
-                        <UserIcon size={11} className="text-slate-400" />
+                      <label className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
+                        <UserIcon size={11} className="text-slate-400 shrink-0" />
                         <span>فني الصيانة المسؤول</span>
                       </label>
                       <div className="relative">
                         <select 
                           value={selectedTechnicianId} 
                           onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         >
                           <option value="all">المدراء والفنيين المعينين</option>
                           {localTechnicians.map(t => (
@@ -2319,15 +2324,15 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
 
                     {/* Priority selection */}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
-                        <AlertTriangle size={11} className="text-slate-400" />
+                      <label className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
+                        <AlertTriangle size={11} className="text-slate-400 shrink-0" />
                         <span>مستوى خطورة العطل</span>
                       </label>
                       <div className="relative">
                         <select 
                           value={selectedPriority} 
                           onChange={(e) => setSelectedPriority(e.target.value)}
-                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-550/15 focus:border-indigo-500"
+                          className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-xs font-bold dark:text-white outline-none cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         >
                           <option value="all">جميع درجات الخطورة</option>
                           <option value="low">منخفضة عادي</option>
@@ -2341,22 +2346,22 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                 </div>
 
                 {/* 3. Database & Logistics Archiving module */}
-                <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-150/60 dark:border-slate-800 shadow-soft flex flex-col justify-between">
-                  <div className="flex items-center gap-1.5 pb-2 border-b border-slate-100 dark:border-slate-800/80 mb-2">
-                    <span className="w-1.5 h-3.5 rounded-full bg-emerald-500 block"></span>
-                    <div className="flex items-center gap-1 text-slate-900 dark:text-white font-black text-xs">
-                      <Database size={13} className="text-emerald-500" />
-                      <span>القائمة ٣: أرشيف الإصلاحات</span>
+                <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex flex-col justify-between gap-3">
+                  <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800/80">
+                    <span className="w-1.5 h-3.5 rounded-full bg-emerald-500 block shrink-0"></span>
+                    <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-black text-xs min-w-0">
+                      <Database size={13} className="text-emerald-500 shrink-0" />
+                      <span className="truncate">القائمة ٣: أرشيف الإصلاحات</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 items-center mb-2">
+                  <div className="grid grid-cols-2 gap-2 items-stretch">
                     <div className="space-y-1">
-                      <span className="text-[9px] font-extrabold text-slate-400 block">فترة الأرشفة:</span>
+                      <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 block">فترة الأرشفة:</span>
                       <select
                         value={archiveYears}
                         onChange={(e) => setArchiveYears(parseFloat(e.target.value))}
-                        className="w-full p-1 bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 rounded-lg text-[9px] font-black text-slate-800 dark:text-slate-200 outline-none"
+                        className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-xl text-[11px] font-black text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
                       >
                         <option value={0.5}>٦ أشهر</option>
                         <option value={1}>سنة</option>
@@ -2365,33 +2370,35 @@ export default function Maintenance({ user, openAddOnLoad, onAddOpenHandled }: M
                       </select>
                     </div>
 
-                    <div className="bg-slate-50 dark:bg-slate-955 p-1.5 rounded-xl border border-slate-100 dark:border-slate-850 text-center">
-                      <span className="text-[9px] text-slate-405 block">المؤرشفة</span>
-                      <span className="text-[10px] font-black text-slate-700 dark:text-slate-200">
+                    <div className="bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800 flex flex-col items-center justify-center text-center">
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">المؤرشفة</span>
+                      <span className="text-xs font-black text-slate-700 dark:text-slate-200">
                         {archivedCount} مشروع
                       </span>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 mt-2">
+                  <div className="space-y-2">
                     <button
+                      type="button"
                       onClick={runArchivalMaintenance}
                       disabled={isSimulatingArchive}
-                      className="w-full text-[9px] font-black py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-755 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200/50 dark:border-slate-700 transition-all cursor-pointer block text-center"
+                      className="w-full text-[11px] font-black py-2 px-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl border border-slate-200/70 dark:border-slate-700 transition-all cursor-pointer block text-center"
                     >
                       {isSimulatingArchive ? 'جاري الصيانة...' : 'تحسين جدول الفهرس'}
                     </button>
                     {user.role === 'admin' ? (
                       <button
+                        type="button"
                         onClick={archiveCompletedTasksOlderThan30Days}
                         disabled={isArchiving30Days}
-                        className="w-full text-[9px] font-black py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-200/50 dark:border-indigo-800 transition-all cursor-pointer flex items-center justify-center gap-1"
+                        className="w-full text-[11px] font-black py-2 px-3 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-200/70 dark:border-indigo-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        {isArchiving30Days ? <Loader2 size={10} className="animate-spin" /> : <Archive size={10} />}
+                        {isArchiving30Days ? <Loader2 size={12} className="animate-spin shrink-0" /> : <Archive size={12} className="shrink-0" />}
                         <span>أرشفة المكتملة (+30 يوم)</span>
                       </button>
                     ) : (
-                      <div className="text-[8px] text-center text-slate-400 font-bold bg-slate-50 dark:bg-slate-905 p-1 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
+                      <div className="text-[10px] text-center text-slate-500 dark:text-slate-400 font-bold bg-slate-50 dark:bg-slate-950 py-1.5 px-2 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
                         أرشفة الـ 30 يوماً مخصصة للإدارة
                       </div>
                     )}
