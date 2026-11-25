@@ -1899,7 +1899,7 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
 
       {/* Vehicles Grid and List Dual-View Control */}
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 items-start">
           {filteredVehicles.map((vehicle) => {
             const totalCost = maintenanceOrders
               .filter(o => o.vehicleId === vehicle.id && o.status === 'completed')
@@ -1907,13 +1907,33 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
 
             const nextMaint = getNextMaintenanceInfo(vehicle.id, vehicle.lastMaintenance);
             const isSelected = selectedVehicleIds.includes(vehicle.id);
+            const isExpanded = !!expandedVehicleIds[vehicle.id];
+            const canDeleteVehicle =
+              user.role === 'admin' ||
+              (user.role as string) === 'fleet_manager' ||
+              hasGranularPermission('edit-vehicle-data', user.role) ||
+              (user.role as string) !== 'viewer';
 
-            let statusColorLineStyle = 'border-r-[6px] border-r-emerald-500';
-            if (vehicle.status === 'maintenance') {
-              statusColorLineStyle = 'border-r-[6px] border-r-amber-500';
-            } else if (vehicle.status === 'stopped') {
-              statusColorLineStyle = 'border-r-[6px] border-r-rose-500';
-            }
+            const statusDotColor =
+              vehicle.status === 'maintenance'
+                ? 'bg-amber-500'
+                : vehicle.status === 'stopped'
+                  ? 'bg-rose-500'
+                  : 'bg-emerald-500';
+
+            const statusLabel =
+              vehicle.status === 'maintenance'
+                ? (language === 'ar' ? 'تحت الصيانة' : 'Maintenance')
+                : vehicle.status === 'stopped'
+                  ? (language === 'ar' ? 'متوقفة' : 'Stopped')
+                  : (language === 'ar' ? 'فعالة' : 'Active');
+
+            const statusTextColor =
+              vehicle.status === 'maintenance'
+                ? 'text-amber-700 dark:text-amber-300'
+                : vehicle.status === 'stopped'
+                  ? 'text-rose-700 dark:text-rose-300'
+                  : 'text-emerald-700 dark:text-emerald-300';
 
             return (
               <div 
@@ -1939,306 +1959,306 @@ export default function Vehicles({ user, openAddOnLoad, onAddOpenHandled }: Vehi
                     setSelectedVehicleForHistory(vehicle);
                   }
                 }}
-                className={`bg-white dark:bg-[#0f1422] rounded-2xl border p-3 sm:p-4 pb-3 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col justify-between cursor-pointer group hover:-translate-y-0.5 select-none ${
+                className={`bg-white dark:bg-[#0f1422] rounded-2xl border p-2.5 sm:p-3.5 shadow-xs hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col gap-2.5 cursor-pointer group hover:-translate-y-0.5 select-none ${
+                  isExpanded ? 'col-span-2 md:col-span-1' : ''
+                } ${
                   isSelected 
                     ? 'ring-2 ring-brand-blue-500 border-brand-blue-500 bg-brand-blue-50/20 dark:bg-brand-blue-950/20 shadow-md' 
-                    : 'border-slate-105 dark:border-slate-805/80'
-                } ${expandedVehicleIds[vehicle.id] ? 'h-auto min-h-[420px]' : 'aspect-square'} ${statusColorLineStyle}`}
+                    : 'border-slate-200/80 dark:border-slate-800'
+                }`}
               >
-                {/* Selection Checkbox indicator (Visible in selection mode or on hover) */}
-                <div 
-                  className={`absolute top-2.5 left-2.5 z-10 transition-all ${
-                    isSelectionMode || isSelected ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 scale-95'
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isSelectionMode) setIsSelectionMode(true);
-                    toggleVehicleSelection(vehicle.id);
-                  }}
-                  title={isSelected ? (language === 'ar' ? 'إلغاء التحديد' : 'Deselect') : (language === 'ar' ? 'تحديد' : 'Select')}
-                >
-                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center transition-all ${
-                    isSelected 
-                      ? 'bg-brand-blue-600 text-white shadow-xs' 
-                      : 'bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700 text-transparent hover:border-brand-blue-400 shadow-3xs'
-                  }`}>
-                    <Check size={12} strokeWidth={3} className={isSelected ? 'block' : 'hidden'} />
-                  </div>
-                </div>
+                {/* Top subtle status line */}
+                <div className={`absolute top-0 right-0 left-0 h-1 ${statusDotColor}`} />
 
-                {/* Horizontal status line at top */}
-                <div className={`absolute top-0 right-0 left-0 h-0.5 ${
-                  vehicle.status === 'maintenance' ? 'bg-amber-500' : vehicle.status === 'stopped' ? 'bg-rose-500' : 'bg-emerald-500'
-                }`} />
-
-                <div className="space-y-1.5 flex-1 flex flex-col justify-between min-h-0">
-                  {/* Top card info: Icon/Avatar + Name + Core badge */}
-                  <div className="flex items-center justify-between gap-2 min-w-0">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="w-9.5 h-9.5 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 dark:bg-[#151c2e] dark:border-slate-850 shrink-0 shadow-xs flex items-center justify-center">
-                        {vehicle.iconName && VEHICLE_ICONS[vehicle.iconName] ? (
-                          (() => {
-                             const iconConfig = VEHICLE_ICONS[vehicle.iconName];
-                             const IconComp = iconConfig.component;
-                             return (
-                               <div className={`w-full h-full flex items-center justify-center ${iconConfig.bg}`}>
-                                 <IconComp size={16} className={iconConfig.text} />
-                               </div>
-                             );
-                          })()
-                        ) : vehicle.image ? (
-                          <img 
-                            src={vehicle.image} 
-                            alt={vehicle.name} 
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <Truck size={14} className="text-slate-400" />
-                        )}
-                      </div>
-                      
-                      <div className="text-right flex-1 min-w-0">
-                        <h3 className="text-[11px] sm:text-[12.5px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-500 transition-colors leading-tight">
-                          {vehicle.name}
-                        </h3>
-                        <div className="text-[8.5px] sm:text-[9.5px] text-slate-455 dark:text-slate-500 font-bold flex flex-wrap items-center gap-1 mt-0.5">
-                          <span className="truncate">{vehicle.type}</span>
-                          {(() => {
-                            const cKey = getVehicleClassification(vehicle);
-                            const cMeta = VEHICLE_CLASSIFICATIONS[cKey];
-                            if (!cMeta) return null;
-                            const ClassificationIcon = cMeta.icon;
-                            return (
-                              <span className={`inline-flex items-center gap-0.5 px-1 py-0.25 rounded text-[7.5px] font-black border uppercase shrink-0 ${cMeta.colorClass}`}>
-                                <ClassificationIcon size={8} />
-                                <span>{language === 'ar' ? cMeta.labelAr : cMeta.labelEn}</span>
-                              </span>
-                            );
-                          })()}
+                {/* 1. Vehicle Image / Visual */}
+                <div className="relative w-full h-24 sm:h-28 rounded-xl overflow-hidden bg-slate-100 dark:bg-[#151c2e] border border-slate-200/70 dark:border-slate-800 flex items-center justify-center mt-0.5">
+                  {vehicle.image ? (
+                    <img 
+                      src={vehicle.image} 
+                      alt={vehicle.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : vehicle.iconName && VEHICLE_ICONS[vehicle.iconName] ? (
+                    (() => {
+                      const iconConfig = VEHICLE_ICONS[vehicle.iconName];
+                      const IconComp = iconConfig.component;
+                      return (
+                        <div className={`w-full h-full flex items-center justify-center ${iconConfig.bg}`}>
+                          <IconComp size={30} className={iconConfig.text} />
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Quick QR code button on bento card */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedVehicleForQr(vehicle);
-                      }}
-                      className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-[#151c2e] dark:hover:bg-slate-800 text-slate-400 hover:text-amber-500 border border-slate-100 dark:border-slate-850 transition-all cursor-pointer shadow-3xs shrink-0"
-                      title={language === 'ar' ? 'عرض بطاقة ملصق QR للصيانة' : 'View Operational QR Pass'}
-                    >
-                      <QrCode size={12} />
-                    </button>
-                  </div>
-
-                  {/* Info row with department & last maintenance date */}
-                  <div className="flex items-center justify-between text-[8.5px] sm:text-[9.5px] font-bold text-slate-500 dark:text-slate-405 gap-1 border-t border-slate-50 dark:border-slate-850/40 pt-1.5">
-                    <div className="flex items-center gap-0.5 min-w-0">
-                      <MapPin size={10} className="text-slate-450 shrink-0" />
-                      <span className="truncate">{vehicle.department}</span>
-                    </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <Calendar size={10} className="text-slate-450" />
-                      <span>{language === 'ar' ? `صنع ${vehicle.modelYear || '2022'}` : `Year ${vehicle.modelYear || '2022'}`}</span>
-                    </div>
-                  </div>
-
-                  {/* Plate Card styled as a gorgeous real plate */}
-                  <div className="relative">
-                    <div className="inline-flex bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black font-mono text-slate-800 dark:text-slate-200 tracking-wider text-center w-full justify-center items-center shadow-inner select-none h-6.5">
-                      {vehicle.plateNumber}
-                    </div>
-                  </div>
-
-                  {/* Status badges & Dynamic alert row */}
-                  <div className="grid grid-cols-2 gap-1.5 pt-1">
-                    <div className="bg-slate-50/70 dark:bg-slate-900/60 p-1 px-1.5 rounded-lg border border-slate-105/10 dark:border-slate-850">
-                      <span className="text-[7.5px] sm:text-[8px] text-slate-405 block leading-tight font-bold">{language === 'ar' ? 'الحالة:' : 'Status:'}</span>
-                      <div className="mt-0.5 flex items-center scale-[0.78] origin-right">
-                        <StatusBadge status={vehicle.status} />
-                      </div>
-                    </div>
-                    <div className="bg-slate-50/70 dark:bg-[#131b31]/40 p-1 px-1.5 rounded-lg border border-slate-105/10 dark:border-slate-850">
-                      <span className="text-[7.5px] sm:text-[8px] text-slate-405 block leading-tight font-bold">{language === 'ar' ? 'الكلفة:' : 'Cost:'}</span>
-                      <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-brand-blue-600 dark:text-brand-blue-400 flex items-center gap-0.5">
-                        <DollarSign size={9} className="w-1.5 h-1.5 shrink-0" />
-                        <span>{totalCost.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <div className="bg-amber-500/5 dark:bg-amber-500/10 p-1 px-1.5 rounded-lg border border-amber-500/10 dark:border-amber-500/20">
-                      <span className="text-[7.5px] sm:text-[8px] text-amber-600 dark:text-amber-400 block leading-tight font-bold">{language === 'ar' ? 'وقود:' : 'Fuel:'}</span>
-                      <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-amber-700 dark:text-amber-500 flex items-center gap-0.5" dir="rtl">
-                        <Fuel size={9} className="text-amber-550 shrink-0" />
-                        <span className="truncate">{get30DayFuelData(vehicle.id)[29].value} {language === 'ar' ? 'لتر' : 'L'}</span>
-                      </div>
-                    </div>
-                    <div className="bg-brand-blue-500/5 dark:bg-brand-blue-500/10 p-1 px-1.5 rounded-lg border border-brand-blue-500/10 dark:border-brand-blue-500/20">
-                      <span className="text-[7.5px] sm:text-[8px] text-brand-blue-600 dark:text-brand-blue-405 block leading-tight font-bold">{language === 'ar' ? 'الإطارات:' : 'Tires:'}</span>
-                      <div className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-black text-brand-blue-650 dark:text-brand-blue-400 flex items-center gap-0.5" dir="rtl">
-                        <CircleDot size={9} className="text-brand-blue-500 shrink-0" />
-                        <span className="truncate">{get30DayTireData(vehicle.id)[29].value} PSI</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Next Scheduled Maintenance Alert */}
-                  {nextMaint.isApproaching && (
-                    <div className="bg-rose-50 dark:bg-rose-955/10 text-rose-600 dark:text-rose-455 p-1 px-1.5 rounded border border-rose-100/30 dark:border-rose-950/20 flex items-center justify-between text-[7.5px] sm:text-[8px] font-black leading-none shrink-0 border-r-[3px] border-r-rose-400">
-                      <span className="flex items-center gap-0.5">
-                        <span className="w-1 h-1 bg-rose-500 rounded-full animate-pulse" />
-                        <span>{language === 'ar' ? `الصيانة متبقي ${nextMaint.daysRemaining} يوم` : `Maint in ${nextMaint.daysRemaining}d`}</span>
-                      </span>
-                    </div>
+                      );
+                    })()
+                  ) : (
+                    <Truck size={28} className="text-slate-400" />
                   )}
 
-                  {/* Expanded inline maintenance status and details */}
-                  <AnimatePresence>
-                    {expandedVehicleIds[vehicle.id] && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-right text-[11px] space-y-2 overflow-hidden w-full"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/80 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="font-black text-slate-800 dark:text-slate-200">
-                              {language === 'ar' ? 'حالة آخر صيانة:' : 'Latest Maintenance Status:'}
-                            </span>
-                            {(() => {
-                              const latest = getLatestMaintenanceOrderAndTech(vehicle.id);
-                              if (!latest) {
-                                return <span className="text-slate-450 dark:text-slate-500 font-bold">{language === 'ar' ? 'لا يوجد صيانة مسجلة' : 'No recorded orders'}</span>;
-                              }
-                              
-                              let badgeClass = 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
-                              let label = language === 'ar' ? 'قيد الانتظار' : 'Pending';
-                              if (latest.status === 'in-progress') {
-                                badgeClass = 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
-                                label = language === 'ar' ? 'تحت العمل' : 'In Progress';
-                              } else if (latest.status === 'completed') {
-                                badgeClass = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
-                                label = language === 'ar' ? 'مكتملة' : 'Completed';
-                              }
-                              return <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${badgeClass}`}>{label}</span>;
-                            })()}
-                          </div>
-
-                          {(() => {
-                            const latest = getLatestMaintenanceOrderAndTech(vehicle.id);
-                            if (!latest) return null;
-                            return (
-                              <div className="space-y-1 text-[10.5px]">
-                                <div className="flex justify-between text-slate-500 dark:text-slate-400 font-bold">
-                                  <span>{language === 'ar' ? 'رقم الطلب:' : 'Order No:'}</span>
-                                  <span className="font-mono text-slate-700 dark:text-slate-300">{latest.orderNumber}</span>
-                                </div>
-                                <div className="flex justify-between text-slate-500 dark:text-slate-400 font-bold">
-                                  <span>{language === 'ar' ? 'تاريخ البدء:' : 'Start Date:'}</span>
-                                  <span className="font-mono text-slate-700 dark:text-slate-300">{latest.date}</span>
-                                </div>
-                                <div className="text-slate-750 dark:text-slate-300 mt-1 p-1 px-1.5 bg-white dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800 font-bold">
-                                  <span className="text-slate-400 text-[9px] block mb-0.5">{language === 'ar' ? 'الوصف الفني للمشكلة/العمل:' : 'Work Description:'}</span>
-                                  {latest.description}
-                                </div>
-                                {latest.techName && (
-                                  <div className="flex justify-between text-slate-550 dark:text-slate-400 font-bold pt-1 border-t border-slate-100/40 dark:border-slate-800/40">
-                                    <span>{language === 'ar' ? 'الفني المسؤول:' : 'Technician:'}</span>
-                                    <span className="text-brand-blue-600 dark:text-brand-blue-405">{latest.techName}</span>
-                                  </div>
-                                )}
-                                {latest.cost && (
-                                  <div className="flex justify-between text-slate-550 dark:text-slate-400 font-bold">
-                                    <span>{language === 'ar' ? 'التكلفة الإجمالية:' : 'Total Cost:'}</span>
-                                    <span className="text-emerald-600 dark:text-emerald-400 font-black">{latest.cost.toLocaleString()} $</span>
-                                  </div>
-                                )}
-                                {latest.partsUsed && latest.partsUsed.length > 0 && (
-                                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold pt-1">
-                                    <span>{language === 'ar' ? 'قطع الغيار المستخدمة:' : 'Parts Used:'}</span>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {latest.partsUsed.map((part: string, i: number) => (
-                                        <span key={i} className="px-1.5 py-0.5 bg-slate-200/50 dark:bg-slate-800 text-[9px] rounded text-slate-600 dark:text-slate-400">
-                                          {part}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Additional health specs */}
-                        <div className="grid grid-cols-2 gap-2 text-[10px] font-bold">
-                          <div className="bg-slate-50 dark:bg-slate-900/60 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
-                            <span className="text-slate-400 block mb-0.5">{language === 'ar' ? 'نوع الوقود:' : 'Fuel:'}</span>
-                            <span className="text-slate-750 dark:text-slate-300">{vehicle.fuelType === 'diesel' ? (language === 'ar' ? 'ديزل' : 'Diesel') : (language === 'ar' ? 'بنزين' : 'Gasoline')}</span>
-                          </div>
-                          <div className="bg-slate-50 dark:bg-slate-900/60 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
-                            <span className="text-slate-400 block mb-0.5">{language === 'ar' ? 'الحمولة القصوى:' : 'Capacity:'}</span>
-                            <span className="text-slate-750 dark:text-slate-300 truncate">{vehicle.loadingCapacity || 'N/A'}</span>
-                          </div>
-                          <div className="bg-slate-50 dark:bg-slate-900/60 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
-                            <span className="text-slate-400 block mb-0.5">{language === 'ar' ? 'رقم الهيكل (الشاصيه):' : 'Chassis No:'}</span>
-                            <span className="text-slate-750 dark:text-slate-300 font-mono truncate">{vehicle.chassisNumber || 'N/A'}</span>
-                          </div>
-                          <div className="bg-slate-50 dark:bg-slate-900/60 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
-                            <span className="text-slate-400 block mb-0.5">{language === 'ar' ? 'تأمين المركبة حتى:' : 'Insurance:'}</span>
-                            <span className="text-slate-750 dark:text-slate-300 font-mono text-[9px] truncate">{vehicle.insuranceExpiry || 'N/A'}</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Footer Details CTA & Admin Controls */}
-                <div className="flex items-center justify-between border-t border-slate-50 dark:border-slate-850/40 pt-1.5 mt-1.5 self-end w-full shrink-0 gap-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={(e) => toggleExpand(vehicle.id, e)}
-                      className="p-1 px-1.5 bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/20 dark:hover:bg-violet-955/40 text-violet-700 dark:text-violet-400 text-[8.5px] font-extrabold rounded-md transition-all flex items-center gap-0.5 cursor-pointer border border-violet-100/30 shrink-0"
-                      title={expandedVehicleIds[vehicle.id] ? (language === 'ar' ? "تقليص التفاصيل" : "Collapse details") : (language === 'ar' ? "توسيع تفاصيل الصيانة" : "Expand maintenance details")}
-                    >
-                      <ChevronDown size={10} className={`transform transition-transform duration-200 ${expandedVehicleIds[vehicle.id] ? 'rotate-180' : ''}`} />
-                      <span>{expandedVehicleIds[vehicle.id] ? (language === 'ar' ? 'تقليص' : 'Collapse') : (language === 'ar' ? 'توسيع' : 'Expand')}</span>
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedVehicleForQr(vehicle);
-                      }}
-                      className="p-1 px-1.5 bg-brand-blue-50/80 hover:bg-brand-blue-100 dark:bg-brand-blue-900/20 text-brand-blue-650 dark:text-brand-blue-400 text-[8.5px] font-extrabold rounded-md transition-all flex items-center gap-0.5 cursor-pointer border border-brand-blue-100/30 shrink-0"
-                      title={language === 'ar' ? "تحميل وطباعة ملصق الرمز السريع QR للمركبة" : "Download & print vehicle QR sticker"}
-                    >
-                      <QrCode size={10} className="shrink-0" />
-                      <span>{language === 'ar' ? 'كود QR' : 'QR Code'}</span>
-                    </button>
+                  {/* Top-right compact status indicator */}
+                  <div className={`absolute top-1.5 right-1.5 bg-white/95 dark:bg-slate-900/90 backdrop-blur-xs px-1.5 py-0.5 rounded-md border border-slate-200/70 dark:border-slate-700/80 flex items-center gap-1 text-[9px] font-black shadow-xs ${statusTextColor}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusDotColor}`} />
+                    <span>{statusLabel}</span>
                   </div>
 
-                  {(user.role === 'admin' || (user.role as string) === 'fleet_manager' || hasGranularPermission('edit-vehicle-data', user.role) || (user.role as string) !== 'viewer') && (
+                  {/* Top-left selection checkbox */}
+                  <div 
+                    className={`absolute top-1.5 left-1.5 z-10 transition-all ${
+                      isSelectionMode || isSelected ? 'opacity-100 scale-100' : 'opacity-0 group-hover:opacity-100 scale-95'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isSelectionMode) setIsSelectionMode(true);
+                      toggleVehicleSelection(vehicle.id);
+                    }}
+                    title={isSelected ? (language === 'ar' ? 'إلغاء التحديد' : 'Deselect') : (language === 'ar' ? 'تحديد' : 'Select')}
+                  >
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
+                      isSelected 
+                        ? 'bg-brand-blue-600 text-white shadow-xs' 
+                        : 'bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700 text-transparent hover:border-brand-blue-400 shadow-xs'
+                    }`}>
+                      <Check size={12} strokeWidth={3} className={isSelected ? 'block' : 'hidden'} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Plate Number */}
+                <div className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200/90 dark:border-slate-800 px-2 py-1 rounded-lg text-[11px] sm:text-xs font-black font-mono text-slate-900 dark:text-slate-100 tracking-wider text-center truncate select-none">
+                  {vehicle.plateNumber}
+                </div>
+
+                {/* 3. Model & Ownership (Department) */}
+                <div className="space-y-1 text-right min-w-0">
+                  <h3 className="text-xs sm:text-[13px] font-black text-slate-900 dark:text-white truncate group-hover:text-brand-blue-600 dark:group-hover:text-brand-blue-400 transition-colors leading-snug">
+                    {vehicle.name}
+                  </h3>
+                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1 min-w-0">
+                    <Calendar size={10} className="text-slate-400 shrink-0" />
+                    <span className="shrink-0">{language === 'ar' ? `موديل ${vehicle.modelYear || '2023'}` : `Model ${vehicle.modelYear || '2023'}`}</span>
+                    <span aria-hidden="true">·</span>
+                    <span className="truncate">{vehicle.type}</span>
+                  </div>
+                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1 min-w-0">
+                    <MapPin size={10} className="text-brand-blue-500 shrink-0" />
+                    <span className="truncate">
+                      {vehicle.department}
+                      {vehicle.subDepartment ? ` · ${vehicle.subDepartment}` : ''}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 4. Interactive Icons Bar (Click icons to open remaining details) */}
+                <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 mt-auto">
+                  <button
+                    type="button"
+                    onClick={(e) => toggleExpand(vehicle.id, e)}
+                    className={`relative flex-1 h-8 rounded-xl border flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                      isExpanded
+                        ? 'bg-brand-blue-50 dark:bg-brand-blue-950/60 border-brand-blue-300 dark:border-brand-blue-700 text-brand-blue-600 dark:text-brand-blue-300'
+                        : 'bg-slate-50/80 hover:bg-slate-100 dark:bg-slate-900/70 dark:hover:bg-slate-800 border-slate-200/70 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                    title={isExpanded ? (language === 'ar' ? 'إخفاء التفاصيل' : 'Hide details') : (language === 'ar' ? 'فتح باقي التفاصيل' : 'Show more details')}
+                    aria-label={isExpanded ? (language === 'ar' ? 'إخفاء التفاصيل' : 'Hide details') : (language === 'ar' ? 'فتح باقي التفاصيل' : 'Show more details')}
+                  >
+                    <Info size={14} className="shrink-0" />
+                    <ChevronDown size={11} className={`shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                    {nextMaint.isApproaching && !isExpanded && (
+                      <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedVehicleForHistory(vehicle);
+                    }}
+                    className="flex-1 h-8 rounded-xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/80 hover:bg-indigo-50 dark:bg-slate-900/70 dark:hover:bg-indigo-950/40 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400 flex items-center justify-center transition-all cursor-pointer"
+                    title={language === 'ar' ? 'الملف الفني وسجل الصيانة الكامل' : 'Full technical record & maintenance log'}
+                    aria-label={language === 'ar' ? 'الملف الفني وسجل الصيانة الكامل' : 'Full technical record & maintenance log'}
+                  >
+                    <FileText size={14} className="shrink-0" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedVehicleForQr(vehicle);
+                    }}
+                    className="flex-1 h-8 rounded-xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/80 hover:bg-amber-50 dark:bg-slate-900/70 dark:hover:bg-amber-950/40 text-slate-600 hover:text-amber-600 dark:text-slate-300 dark:hover:text-amber-400 flex items-center justify-center transition-all cursor-pointer"
+                    title={language === 'ar' ? 'عرض وطباعة كود QR للمركبة' : 'View & print vehicle QR code'}
+                    aria-label={language === 'ar' ? 'عرض وطباعة كود QR للمركبة' : 'View & print vehicle QR code'}
+                  >
+                    <QrCode size={14} className="shrink-0" />
+                  </button>
+
+                  {canDeleteVehicle && (
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteVehicle(vehicle.id, vehicle.name, vehicle.plateNumber, vehicle.type);
                       }}
-                      className="p-1 px-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/15 text-rose-500 hover:text-rose-600 text-[8.5px] font-extrabold rounded-md transition-all flex items-center gap-0.5 cursor-pointer border border-rose-100/50 dark:border-rose-955/35"
-                      title={language === 'ar' ? 'حذف الآلية نهائياً' : 'Delete asset'}
+                      className="flex-1 h-8 rounded-xl border border-rose-200/60 dark:border-rose-900/40 bg-rose-50/60 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/50 text-rose-500 hover:text-rose-600 dark:text-rose-400 flex items-center justify-center transition-all cursor-pointer"
+                      title={language === 'ar' ? 'حذف العجلة' : 'Delete vehicle'}
+                      aria-label={language === 'ar' ? 'حذف العجلة' : 'Delete vehicle'}
                     >
-                      <Trash2 size={9} className="shrink-0" />
-                      <span>{language === 'ar' ? 'حذف' : 'Delete'}</span>
+                      <Trash2 size={14} className="shrink-0" />
                     </button>
                   )}
                 </div>
+
+                {/* Expanded Inline Details Panel (Opened via the Details Icon) */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-2.5 border-t border-slate-100 dark:border-slate-800 text-right text-[11px] space-y-2.5 overflow-hidden w-full"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Quick operational metrics */}
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div className="bg-slate-50 dark:bg-slate-900/70 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                          <span className="text-[9.5px] text-slate-500 dark:text-slate-400 block font-bold">{language === 'ar' ? 'الحالة التشغيلية' : 'Status'}</span>
+                          <div className="mt-1 flex items-center">
+                            <StatusBadge status={vehicle.status} />
+                          </div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/70 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                          <span className="text-[9.5px] text-slate-500 dark:text-slate-400 block font-bold">{language === 'ar' ? 'إجمالي الكلفة' : 'Total Cost'}</span>
+                          <div className="mt-1 text-xs font-black text-brand-blue-600 dark:text-brand-blue-400 flex items-center gap-1">
+                            <DollarSign size={12} className="shrink-0" />
+                            <span>{totalCost.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="bg-amber-500/5 dark:bg-amber-500/10 p-2 rounded-xl border border-amber-500/15 dark:border-amber-500/20">
+                          <span className="text-[9.5px] text-amber-700 dark:text-amber-300 block font-bold">{language === 'ar' ? 'الوقود' : 'Fuel'}</span>
+                          <div className="mt-1 text-xs font-black text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                            <Fuel size={12} className="shrink-0" />
+                            <span>{get30DayFuelData(vehicle.id)[29].value} {language === 'ar' ? 'لتر' : 'L'}</span>
+                          </div>
+                        </div>
+                        <div className="bg-brand-blue-500/5 dark:bg-brand-blue-500/10 p-2 rounded-xl border border-brand-blue-500/15 dark:border-brand-blue-500/20">
+                          <span className="text-[9.5px] text-brand-blue-700 dark:text-brand-blue-300 block font-bold">{language === 'ar' ? 'الإطارات' : 'Tires'}</span>
+                          <div className="mt-1 text-xs font-black text-brand-blue-700 dark:text-brand-blue-400 flex items-center gap-1">
+                            <CircleDot size={12} className="shrink-0" />
+                            <span>{get30DayTireData(vehicle.id)[29].value} PSI</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {nextMaint.isApproaching && (
+                        <div className="bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 p-2 rounded-xl border border-rose-200/70 dark:border-rose-900/50 flex items-center justify-between text-[10.5px] font-black">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse shrink-0" />
+                            <span>{language === 'ar' ? `تنبيه: الصيانة القادمة خلال ${nextMaint.daysRemaining} يوم` : `Maint due in ${nextMaint.daysRemaining}d`}</span>
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Latest Maintenance Info */}
+                      <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-black text-slate-800 dark:text-slate-200">
+                            {language === 'ar' ? 'حالة آخر صيانة:' : 'Latest Maintenance:'}
+                          </span>
+                          {(() => {
+                            const latest = getLatestMaintenanceOrderAndTech(vehicle.id);
+                            if (!latest) {
+                              return <span className="text-slate-500 dark:text-slate-400 font-bold">{language === 'ar' ? 'لا يوجد صيانة مسجلة' : 'No recorded orders'}</span>;
+                            }
+                            let badgeClass = 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+                            let label = language === 'ar' ? 'قيد الانتظار' : 'Pending';
+                            if (latest.status === 'in-progress') {
+                              badgeClass = 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+                              label = language === 'ar' ? 'تحت العمل' : 'In Progress';
+                            } else if (latest.status === 'completed') {
+                              badgeClass = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+                              label = language === 'ar' ? 'مكتملة' : 'Completed';
+                            }
+                            return <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-black ${badgeClass}`}>{label}</span>;
+                          })()}
+                        </div>
+
+                        {(() => {
+                          const latest = getLatestMaintenanceOrderAndTech(vehicle.id);
+                          if (!latest) return null;
+                          return (
+                            <div className="space-y-1 text-[10.5px]">
+                              <div className="flex justify-between text-slate-500 dark:text-slate-400 font-bold">
+                                <span>{language === 'ar' ? 'رقم الطلب:' : 'Order No:'}</span>
+                                <span className="font-mono text-slate-700 dark:text-slate-300">{latest.orderNumber}</span>
+                              </div>
+                              <div className="flex justify-between text-slate-500 dark:text-slate-400 font-bold">
+                                <span>{language === 'ar' ? 'تاريخ البدء:' : 'Start Date:'}</span>
+                                <span className="font-mono text-slate-700 dark:text-slate-300">{latest.date}</span>
+                              </div>
+                              <div className="text-slate-700 dark:text-slate-300 mt-1 p-2 bg-white dark:bg-slate-950 rounded-lg border border-slate-200/70 dark:border-slate-800 font-bold">
+                                <span className="text-slate-400 text-[9.5px] block mb-0.5">{language === 'ar' ? 'الوصف الفني:' : 'Work Description:'}</span>
+                                {latest.description}
+                              </div>
+                              {latest.techName && (
+                                <div className="flex justify-between text-slate-600 dark:text-slate-400 font-bold pt-1 border-t border-slate-200/50 dark:border-slate-800">
+                                  <span>{language === 'ar' ? 'الفني المسؤول:' : 'Technician:'}</span>
+                                  <span className="text-brand-blue-600 dark:text-brand-blue-400">{latest.techName}</span>
+                                </div>
+                              )}
+                              {Boolean(latest.cost) && (
+                                <div className="flex justify-between text-slate-600 dark:text-slate-400 font-bold">
+                                  <span>{language === 'ar' ? 'التكلفة:' : 'Cost:'}</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-black">{latest.cost.toLocaleString()} $</span>
+                                </div>
+                              )}
+                              {latest.partsUsed && latest.partsUsed.length > 0 && (
+                                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold pt-1">
+                                  <span>{language === 'ar' ? 'قطع الغيار المستخدمة:' : 'Parts Used:'}</span>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {latest.partsUsed.map((part: string, i: number) => (
+                                      <span key={i} className="px-1.5 py-0.5 bg-slate-200/60 dark:bg-slate-800 text-[9.5px] rounded text-slate-600 dark:text-slate-300">
+                                        {part}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Additional specs */}
+                      <div className="grid grid-cols-2 gap-1.5 text-[10px] font-bold">
+                        <div className="bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                          <span className="text-slate-400 block mb-0.5">{language === 'ar' ? 'نوع الوقود:' : 'Fuel:'}</span>
+                          <span className="text-slate-700 dark:text-slate-300">{vehicle.fuelType === 'diesel' ? (language === 'ar' ? 'ديزل' : 'Diesel') : (language === 'ar' ? 'بنزين' : 'Gasoline')}</span>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                          <span className="text-slate-400 block mb-0.5">{language === 'ar' ? 'الحمولة:' : 'Capacity:'}</span>
+                          <span className="text-slate-700 dark:text-slate-300 truncate block">{vehicle.loadingCapacity || 'N/A'}</span>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                          <span className="text-slate-400 block mb-0.5">{language === 'ar' ? 'رقم الهيكل:' : 'Chassis:'}</span>
+                          <span className="text-slate-700 dark:text-slate-300 font-mono truncate block">{vehicle.chassisNumber || 'N/A'}</span>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                          <span className="text-slate-400 block mb-0.5">{language === 'ar' ? 'التأمين:' : 'Insurance:'}</span>
+                          <span className="text-slate-700 dark:text-slate-300 font-mono truncate block">{vehicle.insuranceExpiry || 'N/A'}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVehicleForHistory(vehicle)}
+                        className="w-full py-2 px-3 rounded-xl bg-brand-blue-600 hover:bg-brand-blue-700 text-white font-black text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <FileText size={13} />
+                        <span>{language === 'ar' ? 'فتح السجل الفني الكامل' : 'Open Full Technical Record'}</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}

@@ -116,12 +116,12 @@ interface RichMaintenanceOrder {
 }
 
 const VEHICLE_ICONS: Record<string, { component: React.ComponentType<{ size?: number; className?: string }>; label: string; bg: string; text: string }> = {
-  truck: { component: Truck, label: 'شاحنة نقل / نقل ثقيل', bg: 'bg-indigo-50 dark:bg-indigo-950/20', text: 'text-indigo-600 dark:text-indigo-400' },
-  car: { component: Car, label: 'سيارة خفيفة / ملاكي', bg: 'bg-emerald-50 dark:bg-emerald-950/20', text: 'text-emerald-600 dark:text-emerald-450' },
-  bus: { component: Bus, label: 'حافلة ركاب / نقل جماعي', bg: 'bg-sky-50 dark:bg-sky-950/20', text: 'text-sky-600 dark:text-sky-400' },
-  wrench: { component: Wrench, label: 'مركبة خدمات / صيانة ورشية', bg: 'bg-rose-50 dark:bg-rose-950/20', text: 'text-rose-600 dark:text-rose-450' },
-  shield: { component: Shield, label: 'أمن وطوارئ / رصد أمني', bg: 'bg-violet-50 dark:bg-violet-950/20', text: 'text-violet-600 dark:text-violet-400' },
-  cpu: { component: Cpu, label: 'آلية ذكية / معدة إلكترونية', bg: 'bg-amber-50 dark:bg-amber-950/20', text: 'text-amber-600 dark:text-amber-400' },
+  truck: { component: Truck, label: 'شاحنة نقل / نقل ثقيل', bg: 'bg-brand-blue-50 dark:bg-brand-blue-500/15', text: 'text-brand-blue-600 dark:text-brand-blue-300' },
+  car: { component: Car, label: 'سيارة خفيفة / ملاكي', bg: 'bg-emerald-50 dark:bg-emerald-500/15', text: 'text-emerald-600 dark:text-emerald-400' },
+  bus: { component: Bus, label: 'حافلة ركاب / نقل جماعي', bg: 'bg-sky-50 dark:bg-sky-500/15', text: 'text-sky-600 dark:text-sky-400' },
+  wrench: { component: Wrench, label: 'مركبة خدمات / صيانة ورشية', bg: 'bg-rose-50 dark:bg-rose-500/15', text: 'text-rose-600 dark:text-rose-400' },
+  shield: { component: Shield, label: 'أمن وطوارئ / رصد أمني', bg: 'bg-violet-50 dark:bg-violet-500/15', text: 'text-violet-600 dark:text-violet-300' },
+  cpu: { component: Cpu, label: 'آلية ذكية / معدة إلكترونية', bg: 'bg-amber-50 dark:bg-amber-500/15', text: 'text-amber-600 dark:text-amber-400' },
 };
 
 interface VehicleHistoryProps {
@@ -641,18 +641,18 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
 
   // Category tags translations
   const categoryNames: Record<string, { label: string; color: string }> = {
-    mechanical: { label: 'ميكانيكا وصيانة عامة', color: 'text-indigo-600 bg-indigo-50 border-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400' },
-    electrical: { label: 'كهرباء وإلكترونيات غامرة', color: 'text-violet-600 bg-violet-50 border-violet-100 dark:bg-violet-950/40 dark:text-violet-400' },
-    cooling: { label: 'أنظمة تبريد وتكييف', color: 'text-sky-600 bg-sky-50 border-sky-100 dark:bg-sky-950/40 dark:text-sky-400' },
-    hydraulic: { label: 'أنظمة هيدروليكية وروافع', color: 'text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-950/40 dark:text-rose-450' },
-    bodywork: { label: 'سمكرة وتعديل هيكل خارجي', color: 'text-amber-600 bg-amber-50 border-amber-100 dark:bg-amber-950/40 dark:text-amber-450' }
+    mechanical: { label: 'ميكانيكا وصيانة عامة', color: 'text-brand-blue-700 bg-brand-blue-50 border-brand-blue-200/80 dark:bg-brand-blue-500/15 dark:text-brand-blue-300 dark:border-brand-blue-500/30' },
+    electrical: { label: 'كهرباء وإلكترونيات غامرة', color: 'text-violet-700 bg-violet-50 border-violet-200/80 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/30' },
+    cooling: { label: 'أنظمة تبريد وتكييف', color: 'text-sky-700 bg-sky-50 border-sky-200/80 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30' },
+    hydraulic: { label: 'أنظمة هيدروليكية وروافع', color: 'text-rose-700 bg-rose-50 border-rose-200/80 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30' },
+    bodywork: { label: 'سمكرة وتعديل هيكل خارجي', color: 'text-amber-700 bg-amber-50 border-amber-200/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30' }
   };
 
   // Status indicators mapping
   const statusBadges: Record<string, { label: string; color: string; ring: string }> = {
-    completed: { label: 'منجز بالكامل ومختبر', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-300 dark:text-emerald-450', ring: 'ring-emerald-400/20' },
-    'in-progress': { label: 'تحت أعمال التصليح حالياً', color: 'bg-amber-500/10 text-amber-600 border-amber-300 dark:text-amber-400', ring: 'ring-amber-400/20' },
-    pending: { label: 'مجدول في انتظار الفحص', color: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300', ring: 'ring-slate-400/10' }
+    completed: { label: 'منجز بالكامل ومختبر', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30', ring: 'ring-emerald-400/20' },
+    'in-progress': { label: 'تحت أعمال التصليح حالياً', color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30', ring: 'ring-amber-400/20' },
+    pending: { label: 'مجدول في انتظار الفحص', color: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700', ring: 'ring-slate-400/10' }
   };
 
   // Action: Simulated upload triggering
@@ -862,53 +862,93 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60] flex items-center justify-center p-2 sm:p-4 text-right overflow-y-auto" dir="rtl">
+      <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[60] flex items-center justify-center p-2 sm:p-4 text-right overflow-y-auto" dir="rtl">
         <motion.div
           initial={{ opacity: 0, scale: 0.98, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: 15 }}
-          className="bg-white dark:bg-slate-900 w-full max-w-6xl rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 my-auto max-h-[96vh]"
+          className="bg-[#eef2f8] dark:bg-[#0b101d] w-full max-w-6xl rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border border-slate-300/80 dark:border-[#24324d] my-auto max-h-[96vh]"
         >
-          {/* Header */}
-          <div className="p-4 sm:p-5 md:p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-3 bg-white dark:bg-slate-900 sticky top-0 z-10 shrink-0">
-            <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-linear-to-br from-indigo-500 to-brand-blue-600 text-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/10 shrink-0">
-                <ClipboardList size={20} className="animate-pulse" />
+          {/* Executive Header */}
+          <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-slate-200/90 dark:border-[#24324d] flex items-center justify-between gap-3 bg-gradient-to-l from-brand-blue-50/60 via-white to-white dark:from-brand-blue-900/20 dark:via-[#11192a] dark:to-[#11192a] sticky top-0 z-10 shrink-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-slate-200 dark:border-[#24324d] bg-slate-100 dark:bg-[#182238] shrink-0 flex items-center justify-center">
+                {vehicle.image ? (
+                  <img
+                    src={vehicle.image}
+                    alt={vehicle.name}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  (() => {
+                    const iconConfig = vehicle.iconName && VEHICLE_ICONS[vehicle.iconName]
+                      ? VEHICLE_ICONS[vehicle.iconName]
+                      : { component: Truck, bg: 'bg-brand-blue-50 dark:bg-brand-blue-500/15', text: 'text-brand-blue-600 dark:text-brand-blue-300' };
+                    const IconComp = iconConfig.component;
+                    return (
+                      <div className={`w-full h-full flex items-center justify-center ${iconConfig.bg}`}>
+                        <IconComp size={20} className={iconConfig.text} />
+                      </div>
+                    );
+                  })()
+                )}
               </div>
+
               <div className="min-w-0 flex-1">
-                <div className="flex flex-col xs:flex-row xs:items-center gap-1.5 xs:gap-2">
-                  <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-black text-slate-900 dark:text-white leading-tight flex flex-wrap items-center gap-1.5 min-w-0">
-                    <span className="truncate">تفاصيل ومواصفات المركبة الفنية</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-sm sm:text-lg font-black text-slate-900 dark:text-white truncate">
+                    {vehicle.name}
                   </h2>
-                  <span className="inline-flex self-start xs:self-auto px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono tracking-wider shrink-0">
-                    {vehicle.status === 'active' ? '● تعمل بنشاط' : vehicle.status === 'maintenance' ? '🔧 في الورشة' : '⚠️ متوقفة لخلل'}
+                  <span className="text-[11px] sm:text-xs font-black font-mono tracking-wider text-brand-blue-700 dark:text-brand-blue-200 bg-brand-blue-50 dark:bg-brand-blue-500/15 px-2.5 py-0.5 rounded-md border border-brand-blue-200/80 dark:border-brand-blue-500/30 shrink-0">
+                    {vehicle.plateNumber}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 mt-1 sm:mt-1.5 flex-wrap">
-                  <span className="text-[10px] sm:text-xs font-black text-indigo-650 dark:text-indigo-400 font-mono tracking-wider bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-indigo-900/40">{vehicle.plateNumber}</span>
-                  <span className="w-[1px] bg-slate-200 dark:bg-slate-700 h-2.5" />
-                  <span className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-300 truncate max-w-[120px] sm:max-w-none">{vehicle.name}</span>
-                  <span className="w-[1px] bg-slate-200 dark:bg-slate-700 h-2.5" />
-                  <span className="text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-655 dark:text-slate-400">{vehicle.type}</span>
+
+                <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-slate-500 dark:text-slate-300 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 font-black ${
+                    vehicle.status === 'active'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : vehicle.status === 'maintenance'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-rose-600 dark:text-rose-400'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      vehicle.status === 'active'
+                        ? 'bg-emerald-500'
+                        : vehicle.status === 'maintenance'
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500'
+                    }`} />
+                    <span>{vehicle.status === 'active' ? 'تعمل بنشاط' : vehicle.status === 'maintenance' ? 'في الورشة' : 'متوقفة'}</span>
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span>{vehicle.type}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>موديل {vehicle.modelYear || '2023'}</span>
                 </div>
               </div>
             </div>
             
             <div className="flex items-center gap-2 shrink-0">
               <button
+                type="button"
                 onClick={() => setShowQrModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-650 text-white font-black text-xs rounded-xl shadow-xs transition-colors cursor-pointer shrink-0 animate-fade-in"
+                className="flex items-center gap-1.5 h-9 px-3 bg-brand-blue-600 hover:bg-brand-blue-700 text-white font-black text-xs rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
                 title="توليد وتنزيل رمز الصيانة QR للمركبة"
+                aria-label="بطاقة ملصق QR"
               >
-                <QrCode size={13} />
-                <span className="hidden sm:inline">بطاقة ملصق QR</span>
+                <QrCode size={15} />
+                <span className="hidden sm:inline">ملصق QR</span>
               </button>
 
               <button 
+                type="button"
                 onClick={onClose}
-                className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-350 rounded-xl transition-all cursor-pointer shrink-0 animate-fade-in"
+                className="w-9 h-9 flex items-center justify-center bg-slate-100 dark:bg-[#182238] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#24324d] hover:text-slate-900 dark:hover:text-white rounded-xl transition-all cursor-pointer shrink-0"
+                aria-label="إغلاق"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
           </div>
@@ -923,57 +963,58 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
           />
 
           {/* Navigation Tab Bar */}
-          <div className="flex px-4 sm:px-5 md:px-6 border-b border-slate-150 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-950/30 shrink-0 overflow-x-auto overflow-y-hidden select-none whitespace-nowrap scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex px-3 sm:px-6 border-b border-slate-200/90 dark:border-[#24324d] bg-white/85 dark:bg-[#0e1525] shrink-0 overflow-x-auto overflow-y-hidden select-none whitespace-nowrap scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <button
+              type="button"
               onClick={() => setActiveTab('specs')}
-              className={`py-3 sm:py-3.5 px-4 sm:px-5 font-black text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`py-3 px-3.5 sm:px-4 font-black text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === 'specs' 
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-450 font-black' 
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                  ? 'border-brand-blue-600 dark:border-brand-blue-400 text-brand-blue-700 dark:text-brand-blue-300 bg-brand-blue-50/60 dark:bg-brand-blue-500/10' 
+                  : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
               }`}
             >
               <Settings size={14} className="shrink-0" />
-              <span>المواصفات الفنية العميقة والإطارات</span>
+              <span>المواصفات والإطارات</span>
             </button>
             
             <button
+              type="button"
               onClick={() => setActiveTab('history')}
-              className={`py-3 sm:py-3.5 px-4 sm:px-5 font-black text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`py-3 px-3.5 sm:px-4 font-black text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === 'history' 
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-450 font-black' 
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                  ? 'border-brand-blue-600 dark:border-brand-blue-400 text-brand-blue-700 dark:text-brand-blue-300 bg-brand-blue-50/60 dark:bg-brand-blue-500/10' 
+                  : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
               }`}
             >
               <History size={14} className="shrink-0" />
-              <span>مركز الفواتير وسجل الصيانة الشامل ({vehicleHistory.length})</span>
+              <span>سجل الصيانة ({vehicleHistory.length})</span>
             </button>
 
             <button
+              type="button"
               onClick={() => setActiveTab('periodic')}
-              className={`py-3 sm:py-3.5 px-4 sm:px-5 font-black text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`py-3 px-3.5 sm:px-4 font-black text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === 'periodic' 
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-450 font-black' 
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                  ? 'border-brand-blue-600 dark:border-brand-blue-400 text-brand-blue-700 dark:text-brand-blue-300 bg-brand-blue-50/60 dark:bg-brand-blue-500/10' 
+                  : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
               }`}
             >
               <Calendar size={14} className="shrink-0" />
-              <span>جدولة الصيانة الدورية والتذكيرات</span>
+              <span>الصيانة الدورية</span>
             </button>
 
             {user?.role === 'admin' && (
               <button
+                type="button"
                 onClick={() => setActiveTab('finance')}
-                className={`py-3 sm:py-3.5 px-4 sm:px-5 font-black text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
+                className={`py-3 px-3.5 sm:px-4 font-black text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                   activeTab === 'finance' 
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-450 font-black' 
-                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                    ? 'border-brand-blue-600 dark:border-brand-blue-400 text-brand-blue-700 dark:text-brand-blue-300 bg-brand-blue-50/60 dark:bg-brand-blue-500/10' 
+                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                 }`}
               >
                 <DollarSign size={14} className="shrink-0 text-amber-500 dark:text-amber-400" />
-                <span className="flex items-center gap-1">
-                  <span>التقرير المالي والتكاليف</span>
-                  <span className="text-[9px] bg-amber-500/10 text-amber-600 px-1 py-0.5 rounded font-mono">🔒 الإدارة</span>
-                </span>
+                <span>التقرير المالي</span>
               </button>
             )}
           </div>
@@ -990,685 +1031,580 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                   transition={{ duration: 0.35, ease: 'easeOut' }}
                   className="space-y-6 text-right"
                 >
-                  {/* Top Combined Panel: Identity & Bento Grid info */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Top Combined Panel: Vehicle Dossier & Technical Specs */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                     
-                    {/* Right Panel: Identity Card & Animated Core Engine Pulse (4 cols) */}
-                    <div className="lg:col-span-4 flex flex-col gap-4">
-                      {/* Visual frame card */}
-                      <div className="relative overflow-hidden rounded-3xl border border-slate-150 dark:border-slate-800 bg-linear-to-b from-slate-50 to-slate-100/50 dark:from-slate-905 dark:to-slate-900 p-5 shadow-xs flex flex-col justify-between min-h-[260px] group">
-                        
-                        {/* Interactive Sparkles / Grid lines */}
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
-                        
-                        <div className="relative flex items-center justify-between z-10">
-                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest font-mono">ID: {vehicle.id}</span>
-                          <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-sans">فحص الهيكل نشط</span>
-                        </div>
-
-                        {/* Image or vector graphic */}
-                        <div className="my-4 flex items-center justify-center relative min-h-[140px] z-10 select-none">
+                    {/* Right Panel: Vehicle Photo, Ownership & Real Summary (5 cols) */}
+                    <div className="lg:col-span-5 flex flex-col gap-4">
+                      <div className="overflow-hidden rounded-2xl border border-slate-200/90 dark:border-[#24324d] bg-white dark:bg-[#11192a] shadow-xs">
+                        {/* Clean Media Showcase */}
+                        <div className="relative h-48 sm:h-56 bg-slate-200 dark:bg-[#0b111e] flex items-center justify-center overflow-hidden group">
                           {vehicle.image ? (
-                            <div className="w-full h-32 rounded-2xl overflow-hidden border border-slate-200/60 dark:border-slate-800 shadow-sm relative group bg-white dark:bg-slate-950">
-                              <img 
-                                src={vehicle.image} 
-                                alt={vehicle.name} 
-                                referrerPolicy="no-referrer"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                            </div>
+                            <img 
+                              src={vehicle.image} 
+                              alt={vehicle.name} 
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                            />
                           ) : (
                             (() => {
                               const iconConfig = vehicle.iconName && VEHICLE_ICONS[vehicle.iconName] 
                                 ? VEHICLE_ICONS[vehicle.iconName] 
-                                : { component: Truck, label: 'آلية نقل ثقيل', bg: 'bg-indigo-50/50', text: 'text-indigo-600' };
-                              
+                                : { component: Truck, label: 'آلية أسطول', bg: 'bg-brand-blue-50 dark:bg-brand-blue-500/15', text: 'text-brand-blue-600 dark:text-brand-blue-300' };
                               const IconComp = iconConfig.component;
                               return (
-                                <div className="flex flex-col items-center justify-center">
-                                  <div className="relative p-5 rounded-full bg-linear-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/40 dark:to-slate-900 shadow-inner mb-3">
-                                    <div className="absolute inset-0 rounded-full border border-dashed border-indigo-400/40 animate-spin-slow" />
-                                    <IconComp size={48} className="text-indigo-600 dark:text-indigo-400" />
-                                  </div>
-                                  <span className="text-[11px] font-black text-slate-550 dark:text-slate-400 tracking-wide">{iconConfig.label}</span>
+                                <div className={`w-full h-full flex flex-col items-center justify-center gap-2 ${iconConfig.bg}`}>
+                                  <IconComp size={48} className={iconConfig.text} />
+                                  <span className="text-xs font-black text-slate-700 dark:text-slate-200">{iconConfig.label}</span>
                                 </div>
                               );
                             })()
                           )}
-                        </div>
-
-                        {/* Department Terminals */}
-                        <div className="relative mt-2 p-3 bg-white dark:bg-slate-950 border border-slate-150/70 dark:border-slate-800 rounded-2xl flex items-center justify-between text-right z-10 shadow-3xs">
-                          <div>
-                            <span className="text-[8px] font-black text-slate-405 dark:text-slate-500 block leading-none">الإدارة المشغلة للآلية</span>
-                            <span className="text-[11px] font-black text-slate-800 dark:text-slate-200 mt-1.5 block leading-none">{vehicle.department}</span>
-                          </div>
-                          <div className="text-left">
-                            <span className="text-[8px] font-black text-slate-405 dark:text-slate-500 block leading-none">القسم الميداني المباشر</span>
-                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1.5 block font-mono leading-none">{vehicle.subDepartment}</span>
+                          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/75 via-slate-950/25 to-transparent pointer-events-none" />
+                          <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between gap-2 text-white">
+                            <span className="text-[11px] font-mono font-bold opacity-90 truncate">معرف الأصل: {vehicle.id}</span>
+                            <span className="text-xs font-black font-mono bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-lg border border-white/25">
+                              {vehicle.plateNumber}
+                            </span>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Diagnostic Oscilloscope wave / RPM speed gauge */}
-                      <div className="p-4 bg-slate-900 text-white rounded-3xl border border-slate-800 flex flex-col gap-3 relative overflow-hidden shadow-md">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[9.5px] font-black text-slate-300">إشارات المحرك الحيوية والنبض الفني</span>
+                        {/* Ownership & Field Unit (Hairline-separated, no nested boxes) */}
+                        <div className="grid grid-cols-2 divide-x divide-x-reverse divide-slate-200/90 dark:divide-[#24324d] border-t border-slate-200/90 dark:border-[#24324d]">
+                          <div className="p-3.5 text-right">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-300 block">عائدية العجلة (الإدارة)</span>
+                            <span className="text-xs font-black text-slate-900 dark:text-white mt-1 block truncate">{vehicle.department}</span>
                           </div>
-                          <span className="text-[9px] font-black font-sans text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">98% ممتاز</span>
+                          <div className="p-3.5 text-right">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-300 block">القسم / الشعبة</span>
+                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 mt-1 block truncate">{vehicle.subDepartment || 'غير محدد'}</span>
+                          </div>
                         </div>
 
-                        {/* Oscilloscope Graphic */}
-                        <div className="h-16 flex items-end justify-center gap-[3px] py-1 border-b border-slate-800 relative">
-                          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                            <span className="text-[10px] font-mono tracking-widest text-[#4f5e71]">DIAGNOSTIC UNIT ACTIVE</span>
+                        {/* Operational Summary Strip */}
+                        <div className="grid grid-cols-3 divide-x divide-x-reverse divide-slate-200/90 dark:divide-[#24324d] border-t border-slate-200/90 dark:border-[#24324d] bg-slate-50/90 dark:bg-[#0e1525]">
+                          <div className="p-3 text-center">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-300 block">سجل الصيانة</span>
+                            <span className="text-sm font-black font-mono text-slate-900 dark:text-white mt-0.5 block">{vehicleHistory.length}</span>
                           </div>
-                          {[25, 45, 12, 78, 92, 35, 40, 62, 10, 5, 88, 60, 48, 75, 95, 20, 32, 55, 80, 15, 68, 90, 42, 28, 74].map((h, i) => (
-                            <motion.div 
-                              key={i} 
-                              className="w-[3px] bg-linear-to-t from-cyan-400 to-indigo-500 rounded-full"
-                              animate={{ height: [`${h}%`, `${Math.min(95, Math.max(10, h + (i % 2 === 0 ? 15 : -15)))}%`, `${h}%`] }}
-                              transition={{ duration: 1.5 + (i % 3) * 0.2, repeat: Infinity, ease: 'easeInOut' }}
-                            />
-                          ))}
-                        </div>
-
-                        {/* Metrics specs HUD info */}
-                        <div className="grid grid-cols-3 gap-2 text-center text-slate-300">
-                          <div>
-                            <span className="text-[8px] text-slate-400 block pb-0.5">حالة الاشتعال</span>
-                            <span className="text-[10px] font-mono font-black text-cyan-400">14.2 V</span>
+                          <div className="p-3 text-center">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-300 block">إجمالي الإنفاق</span>
+                            <span className="text-sm font-black font-mono text-brand-blue-600 dark:text-brand-blue-300 mt-0.5 block">{totalCost.toLocaleString()}</span>
                           </div>
-                          <div>
-                            <span className="text-[8px] text-slate-400 block pb-0.5">دورة الدقيقة</span>
-                            <span className="text-[10px] font-mono font-black text-indigo-400">820 RPM</span>
-                          </div>
-                          <div>
-                            <span className="text-[8px] text-slate-400 block pb-0.5">حرارة المحرك</span>
-                            <span className="text-[10px] font-mono font-black text-rose-455">88°C</span>
+                          <div className="p-3 text-center">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-300 block">عدد الإطارات</span>
+                            <span className="text-sm font-black font-mono text-slate-900 dark:text-white mt-0.5 block">{vehicle.tireCount || 4}</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Interactive QR Code & Sticker Badge Card */}
-                      <div className="p-5 bg-white dark:bg-[#0f1422] rounded-3xl border border-slate-150 dark:border-slate-800 flex flex-col gap-3 relative overflow-hidden shadow-xs text-center">
-                        <div className="absolute top-0 right-0 left-0 h-1 bg-amber-500" />
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest font-mono">ملصق QR التعريفي</span>
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 font-sans flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            جاهز للمسح
-                          </span>
+                      {/* QR Identity & Quick Print Card */}
+                      <div className="p-4 bg-white dark:bg-[#11192a] rounded-2xl border border-slate-200/90 dark:border-[#24324d] flex items-center gap-4 shadow-xs">
+                        <div className="bg-white p-1.5 rounded-xl border border-slate-200 shrink-0 w-24 h-24 flex items-center justify-center">
+                          {localQrUrl ? (
+                            <img src={localQrUrl} alt="Vehicle QR Code" className="w-full h-full object-contain" />
+                          ) : (
+                            <div className="text-[10px] text-slate-400 font-bold animate-pulse">جاري التوليد...</div>
+                          )}
                         </div>
 
-                        {/* QR Image Frame */}
-                        <div className="my-2 flex flex-col items-center justify-center">
-                          <div className="bg-white p-2 rounded-2xl border border-slate-150 shadow-xs relative flex items-center justify-center w-36 h-36 select-none group">
-                            {localQrUrl ? (
-                              <img src={localQrUrl} alt="Vehicle QR Code" className="w-full h-full object-contain" />
-                            ) : (
-                              <div className="text-[10px] text-slate-400 font-bold animate-pulse">جاري التوليد...</div>
-                            )}
+                        <div className="flex-1 min-w-0 text-right space-y-2">
+                          <div>
+                            <h4 className="text-xs font-black text-slate-900 dark:text-white">ملصق التعريف السريع QR</h4>
+                            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-300 mt-0.5 leading-snug">
+                              امسح الرمز للوصول المباشر لملف المركبة وأوامر الصيانة.
+                            </p>
                           </div>
-                          
-                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 mt-2">
-                            امسح الرمز التعريفي للوصول الفوري لسجل الصيانة
-                          </span>
-                        </div>
-
-                        {/* Mini Print/Download buttons inside the sidebar details */}
-                        <div className="grid grid-cols-2 gap-2 mt-1">
-                          <button
-                            type="button"
-                            onClick={() => setShowQrModal(true)}
-                            className="h-8.5 flex items-center justify-center gap-1 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition-all font-bold text-[10.5px] cursor-pointer shadow-xs"
-                          >
-                            <QrCode size={12} />
-                            <span>طباعة الملصق</span>
-                          </button>
-                          
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!localQrUrl) return;
-                              const link = document.createElement('a');
-                              link.href = localQrUrl;
-                              link.download = `QR_${vehicle.plateNumber.replace(/\s+/g, '_')}.png`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                            }}
-                            className="h-8.5 flex items-center justify-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-850 dark:text-slate-200 rounded-xl transition-all font-bold text-[10.5px] cursor-pointer"
-                          >
-                            <Download size={12} />
-                            <span>تنزيل الرمز</span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowQrModal(true)}
+                              className="flex-1 h-8 px-2.5 flex items-center justify-center gap-1 bg-brand-blue-600 hover:bg-brand-blue-700 text-white rounded-lg transition-colors font-bold text-[11px] cursor-pointer"
+                            >
+                              <QrCode size={13} />
+                              <span>طباعة</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!localQrUrl) return;
+                                const link = document.createElement('a');
+                                link.href = localQrUrl;
+                                link.download = `QR_${vehicle.plateNumber.replace(/\s+/g, '_')}.png`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              }}
+                              className="flex-1 h-8 px-2.5 flex items-center justify-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-[#182238] dark:hover:bg-[#24324d] text-slate-800 dark:text-slate-100 rounded-lg transition-colors font-bold text-[11px] cursor-pointer"
+                            >
+                              <Download size={13} />
+                              <span>تنزيل</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Left Panel: Specifications Bento Box (8 cols) */}
-                    <div className="lg:col-span-8 flex flex-col gap-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {[
-                          { 
-                            id: 'chassis',
-                            icon: <Fingerprint size={16} />, 
-                            label: 'رقم هيكل الشاصي الأساسي', 
-                            val: vehicle.chassisNumber || 'MHRJT12G59048375', 
-                            color: 'text-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/50', 
-                            copyable: true 
-                          },
-                          { 
-                            id: 'engine',
-                            icon: <Cpu size={16} />, 
-                            label: 'رقم ورمز المحرك الميكانيكي', 
-                            val: vehicle.engineNumber || '2TR-FE-912837', 
-                            color: 'text-sky-600 bg-sky-50/50 dark:bg-sky-950/40 dark:text-sky-450 border-sky-100 dark:border-sky-900/50', 
-                            copyable: true 
-                          },
-                          { 
-                            id: 'fuel',
-                            icon: <Fuel size={16} />, 
-                            label: 'نوع الوقود ومنظومة الدفع', 
-                            val: getFuelTypeArabic(vehicle.fuelType), 
-                            color: 'text-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/50',
-                            customIndicator: (
-                              <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                                <div className="bg-emerald-500 h-full w-[78%] rounded-full animate-pulse" />
-                              </div>
-                            )
-                          },
-                          { 
-                            id: 'payload',
-                            icon: <Weight size={16} />, 
-                            label: 'الحمولة المسموحة القصوى', 
-                            val: vehicle.loadingCapacity || '1.2 طن الفئة أ', 
-                            color: 'text-purple-600 bg-purple-50/50 dark:bg-purple-950/40 dark:text-purple-400 border-purple-100 dark:border-purple-900/50',
-                            customIndicator: (
-                              <div className="flex items-center gap-1.5 mt-2">
-                                <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                  <div className="bg-purple-500 h-full w-[65%] rounded-full" />
+                    {/* Left Panel: Technical Specifications & Authorized Driver (7 cols) */}
+                    <div className="lg:col-span-7 flex flex-col gap-4">
+                      {/* Clean Technical Specifications Dossier */}
+                      <div className="bg-white dark:bg-[#11192a] border border-slate-200/90 dark:border-[#24324d] rounded-2xl overflow-hidden shadow-xs">
+                        <div className="px-4 py-3 border-b border-slate-200/90 dark:border-[#24324d] flex items-center justify-between bg-slate-50/90 dark:bg-[#0e1525]">
+                          <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                            <FileText size={15} className="text-brand-blue-600 dark:text-brand-blue-300" />
+                            <span>البيانات والوثائق الفنية للعجلة</span>
+                          </h3>
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-300">
+                            آخر صيانة: <span className="font-mono text-slate-800 dark:text-slate-100">{vehicle.lastMaintenance || 'غير مسجل'}</span>
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:gap-px bg-slate-200/80 dark:bg-[#24324d]">
+                          {[
+                            {
+                              id: 'chassis',
+                              icon: <Fingerprint size={15} className="text-brand-blue-600 dark:text-brand-blue-300" />,
+                              badgeBg: 'bg-brand-blue-50 dark:bg-brand-blue-500/15 border-brand-blue-200/60 dark:border-brand-blue-500/30',
+                              label: 'رقم هيكل الشاصيه (VIN)',
+                              val: vehicle.chassisNumber || 'غير مسجل',
+                              copyable: Boolean(vehicle.chassisNumber)
+                            },
+                            {
+                              id: 'engine',
+                              icon: <Cpu size={15} className="text-sky-600 dark:text-sky-300" />,
+                              badgeBg: 'bg-sky-50 dark:bg-sky-500/15 border-sky-200/60 dark:border-sky-500/30',
+                              label: 'رقم المحرك الميكانيكي',
+                              val: vehicle.engineNumber || 'غير مسجل',
+                              copyable: Boolean(vehicle.engineNumber)
+                            },
+                            {
+                              id: 'fuel',
+                              icon: <Fuel size={15} className="text-emerald-600 dark:text-emerald-300" />,
+                              badgeBg: 'bg-emerald-50 dark:bg-emerald-500/15 border-emerald-200/60 dark:border-emerald-500/30',
+                              label: 'نوع الوقود',
+                              val: getFuelTypeArabic(vehicle.fuelType),
+                            },
+                            {
+                              id: 'payload',
+                              icon: <Weight size={15} className="text-violet-600 dark:text-violet-300" />,
+                              badgeBg: 'bg-violet-50 dark:bg-violet-500/15 border-violet-200/60 dark:border-violet-500/30',
+                              label: 'الحمولة المسموحة القصوى',
+                              val: vehicle.loadingCapacity || 'غير محدد',
+                            },
+                            {
+                              id: 'insurance',
+                              icon: <ShieldCheck size={15} className="text-rose-600 dark:text-rose-300" />,
+                              badgeBg: 'bg-rose-50 dark:bg-rose-500/15 border-rose-200/60 dark:border-rose-500/30',
+                              label: 'صلاحية التأمين والترخيص',
+                              val: vehicle.insuranceExpiry || 'غير محدد',
+                            },
+                            {
+                              id: 'year',
+                              icon: <Calendar size={15} className="text-amber-600 dark:text-amber-300" />,
+                              badgeBg: 'bg-amber-50 dark:bg-amber-500/15 border-amber-200/60 dark:border-amber-500/30',
+                              label: 'سنة الموديل والتصنيع',
+                              val: `موديل ${vehicle.modelYear || '2023'}`,
+                            },
+                            {
+                              id: 'tireSpec',
+                              icon: <CircleDot size={15} className="text-brand-blue-600 dark:text-brand-blue-300" />,
+                              badgeBg: 'bg-brand-blue-50 dark:bg-brand-blue-500/15 border-brand-blue-200/60 dark:border-brand-blue-500/30',
+                              label: 'مقاس ونوع الإطارات',
+                              val: `${vehicle.tireSize || '265/65R17'} · ${vehicle.tireBrand || 'قياسي'}`,
+                            },
+                            {
+                              id: 'tireHealth',
+                              icon: <Activity size={15} className="text-teal-600 dark:text-teal-300" />,
+                              badgeBg: 'bg-teal-50 dark:bg-teal-500/15 border-teal-200/60 dark:border-teal-500/30',
+                              label: 'ضغط وحالة الإطارات العامة',
+                              val: `${vehicle.tirePressure || '35 PSI'} · ${vehicle.tireStatus || 'ممتاز'}`,
+                            },
+                          ].map((spec) => {
+                            const isCopied = copiedText === spec.id;
+                            return (
+                              <div
+                                key={spec.id}
+                                className="bg-white dark:bg-[#11192a] p-3.5 sm:p-4 flex items-start justify-between gap-2 min-w-0"
+                              >
+                                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${spec.badgeBg}`}>
+                                    {spec.icon}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-300 block leading-snug">
+                                      {spec.label}
+                                    </span>
+                                    <span className="text-xs sm:text-[13px] font-black text-slate-900 dark:text-white font-mono mt-1 block truncate">
+                                      {spec.val}
+                                    </span>
+                                  </div>
                                 </div>
-                                <span className="text-[8px] font-black text-purple-600 dark:text-purple-400">65% معتدل</span>
-                              </div>
-                            )
-                          },
-                          { 
-                            id: 'insurance',
-                            icon: <ShieldCheck size={16} />, 
-                            label: 'صلاحية ووثيقة التأمين والترخيص', 
-                            val: vehicle.insuranceExpiry || '2027-02-15', 
-                            color: 'text-rose-600 bg-rose-50/50 dark:bg-rose-950/40 dark:text-rose-450 border-rose-100 dark:border-rose-900/50',
-                            expiredWarning: true
-                          },
-                          { 
-                            id: 'year',
-                            icon: <Calendar size={16} />, 
-                            label: 'سنة وموديل التصنيع الفني', 
-                            val: `موديل ${vehicle.modelYear || '2023'} المعتمد`, 
-                            color: 'text-amber-600 bg-amber-50/50 dark:bg-amber-950/40 dark:text-amber-450 border-amber-100 dark:border-amber-900/50',
-                            customIndicator: (
-                              <div className="text-[9px] text-amber-600 dark:text-amber-400 font-extrabold mt-1.5">أصلية فحص دوري مجاز</div>
-                            )
-                          },
-                        ].map((spec) => {
-                          const isCopied = copiedText === spec.id;
-                          return (
-                            <div 
-                              key={spec.id} 
-                              className="bg-white dark:bg-slate-900 border border-slate-150/70 dark:border-slate-800 p-4 rounded-3xl flex flex-col justify-between transition-all hover:scale-[1.01] hover:border-indigo-300 dark:hover:border-slate-700 hover:shadow-xs relative"
-                            >
-                              <div className="flex items-start justify-between gap-1.5">
-                                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${spec.color} border`}>
-                                  {spec.icon}
-                                </div>
-                                
+
                                 {spec.copyable && (
                                   <button
+                                    type="button"
                                     onClick={() => copyToClipboard(spec.val, spec.id)}
-                                    className={`px-2 py-1 text-[8px] font-black rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                                      isCopied 
-                                        ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/20' 
-                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                    className={`px-2 py-1 text-[10px] font-black rounded-lg transition-colors cursor-pointer flex items-center gap-1 shrink-0 ${
+                                      isCopied
+                                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                                        : 'bg-slate-100 dark:bg-[#182238] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-[#24324d]'
                                     }`}
                                   >
-                                    {isCopied ? <Check size={8} /> : null}
-                                    <span>{isCopied ? 'تم النسخ' : 'نسخ رقم'}</span>
+                                    {isCopied && <Check size={10} />}
+                                    <span>{isCopied ? 'تم' : 'نسخ'}</span>
                                   </button>
                                 )}
                               </div>
-
-                              <div className="text-right mt-3 overflow-hidden min-w-0">
-                                <span className="text-[9.5px] font-black text-slate-400 dark:text-slate-500 block leading-none mb-1.5">{spec.label}</span>
-                                <span className="text-xs font-black text-slate-850 dark:text-white block font-mono capitalize truncate">{spec.val}</span>
-                              </div>
-
-                              {spec.customIndicator}
-                              
-                              {spec.expiredWarning && (
-                                <div className="mt-2 flex items-center gap-1 text-[8px] font-black text-emerald-600 dark:text-emerald-400">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
-                                  <span>تأمين ساري ومسجل رسمياً</span>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
 
-                      {/* Driver Assignment Block (Digitized Digital ID Card) */}
+                      {/* Driver Assignment Block */}
                       {assignedDriver ? (
-                        <div className="relative overflow-hidden rounded-3xl border border-indigo-150 dark:border-slate-800 bg-linear-to-r from-indigo-50/70 via-white to-brand-blue-50/40 dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900/50 p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-5 text-right group">
-                          
-                          {/* Grid Background Overlay */}
-                          <div className="absolute inset-0 bg-[radial-gradient(#80808007_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-
-                          {/* Left Security Badge Emblem */}
-                          <div className="absolute top-2 left-6 text-[8px] font-black tracking-widest text-indigo-400/30 uppercase select-none hidden md:block">OFFICIAL PERMIT BADGE</div>
-                          
-                          <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
-                            <div className="w-16 h-16 overflow-hidden rounded-2xl border-2 border-indigo-150 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-md shrink-0 relative group">
+                        <div className="rounded-2xl border border-slate-200/90 dark:border-[#24324d] bg-white dark:bg-[#11192a] p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-right">
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-14 h-14 overflow-hidden rounded-xl border border-slate-200 dark:border-[#24324d] bg-slate-100 dark:bg-[#182238] shrink-0">
                               <img 
                                 src={assignedDriver.avatar} 
                                 alt={assignedDriver.name} 
-                                className="w-full h-full object-cover scale-[1.05] transition-transform duration-300 group-hover:scale-110" 
+                                className="w-full h-full object-cover" 
                                 referrerPolicy="no-referrer"
                               />
-                              <div className="absolute bottom-0 inset-x-0 h-1 bg-emerald-500" />
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black text-indigo-650 dark:text-indigo-400 bg-indigo-550/10 px-2 py-0.5 rounded-lg border border-indigo-550/20">السائق المفوض رسمياً</span>
-                                <span className="text-[8.5px] text-slate-450 dark:text-slate-500 font-bold">رخصة سارية الصلاحية</span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 text-[10.5px] font-bold text-brand-blue-600 dark:text-brand-blue-300">
+                                <span>السائق المفوض</span>
+                                <span aria-hidden="true">·</span>
+                                <span className="text-emerald-600 dark:text-emerald-400">رخصة سارية</span>
                               </div>
-                              <h4 className="text-sm md:text-base font-black text-slate-900 dark:text-white mt-1.5 leading-none flex items-center gap-2">
-                                <span>{assignedDriver.name}</span>
-                                <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 px-1 py-0.2 rounded font-black font-sans">معتمد</span>
+                              <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white mt-0.5 truncate">
+                                {assignedDriver.name}
                               </h4>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-450 mt-1 leading-normal">
-                                رقـم الهويـة الوطنيـة: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{assignedDriver.identityNumber}</span> | فئة الترخيـص: <span className="font-black text-indigo-650 dark:text-indigo-400">{assignedDriver.licenseType}</span>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5 truncate">
+                                الهوية: <span className="font-mono font-bold text-slate-700 dark:text-slate-200">{assignedDriver.identityNumber}</span> · الفئة: <span className="font-bold text-slate-800 dark:text-slate-100">{assignedDriver.licenseType}</span>
                               </p>
                             </div>
                           </div>
                           
-                          <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto mt-4 md:mt-0 pt-3 md:pt-0 border-t border-slate-200/50 md:border-none relative z-10 font-sans">
-                            <div className="text-right">
-                              <span className="text-[8.5px] text-slate-400 block font-semibold">رقم الاتصال الميداني:</span>
-                              <span className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-250 font-mono tracking-wide mt-0.5 block">{assignedDriver.phone}</span>
-                            </div>
-
-                            {/* Digital QR Code Badge Simulation & Hand-signed Graphic Mock */}
-                            <div className="flex items-center gap-3">
-                              <div className="text-left hidden xs:block">
-                                <span className="text-[7.5px] text-slate-400 block pb-0.5 italic text-center">لجنة السلامة والجودة</span>
-                                <svg width="70" height="22" className="text-indigo-500/40 dark:text-indigo-400/30 overflow-visible opacity-85" viewBox="0 0 100 30" fill="none" stroke="currentColor">
-                                  <path d="M5,15 Q25,5 45,20 T85,10 M15,5 Q55,25 95,15" strokeWidth="1.5" strokeLinecap="round" />
-                                </svg>
-                              </div>
-                              
-                              <div className="w-12 h-12 bg-white dark:bg-slate-950 p-1 rounded-xl border border-slate-205 dark:border-slate-805 shadow-3xs flex flex-col gap-0.5 items-center justify-center relative select-none shrink-0" title="رمز التفويض المشفر">
-                                <div className="grid grid-cols-4 gap-[2px] w-full h-full opacity-70">
-                                  {[1,0,1,1,0,1,0,1,1,1,0,0,1,0,1,1].map((val, idx) => (
-                                    <div key={idx} className={`rounded-sm ${val === 1 ? 'bg-slate-850 dark:bg-slate-200' : 'bg-transparent'}`} />
-                                  ))}
-                                </div>
-                                <div className="absolute inset-0 bg-transparent flex items-center justify-center p-3">
-                                  <div className="w-2.5 h-2.5 bg-indigo-500 rounded-lg shadow-sm border border-white" />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                          <a
+                            href={`tel:${assignedDriver.phone}`}
+                            className="sm:text-left bg-slate-50 dark:bg-[#182238] px-3.5 py-2 rounded-xl border border-slate-200/90 dark:border-[#24324d] hover:border-brand-blue-400 dark:hover:border-brand-blue-400 transition-colors shrink-0"
+                          >
+                            <span className="text-[10px] text-slate-500 dark:text-slate-300 block font-bold">رقم الاتصال الميداني</span>
+                            <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white font-mono tracking-wide mt-0.5 block">{assignedDriver.phone}</span>
+                          </a>
                         </div>
                       ) : (
-                        <div className="bg-slate-50/50 dark:bg-slate-900/30 border border-slate-150/70 dark:border-slate-800/80 rounded-3xl p-5 flex flex-col sm:flex-row items-center justify-between text-right gap-4 transition-all hover:border-slate-305 dark:hover:border-slate-705">
+                        <div className="bg-white/80 dark:bg-[#11192a] border border-slate-200/90 dark:border-[#24324d] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between text-right gap-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
+                            <div className="w-10 h-10 bg-slate-100 dark:bg-[#182238] text-slate-500 dark:text-slate-300 rounded-xl flex items-center justify-center shrink-0 border border-slate-200/70 dark:border-[#24324d]">
                               <UserIcon size={18} />
                             </div>
                             <div>
-                              <span className="text-[9.5px] font-black text-slate-405 block">السائق المسؤول عن الآلية:</span>
-                              <span className="text-xs font-black text-slate-500 block mt-1">شاغر - لا يوجد سائق معين حالياً لطلب التشغيل</span>
+                              <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-300 block">السائق المسؤول عن العجلة</span>
+                              <span className="text-xs font-black text-slate-800 dark:text-slate-100 block mt-0.5">لا يوجد سائق معين حالياً</span>
                             </div>
                           </div>
-                          <p className="text-[10px] text-slate-450 dark:text-slate-500 max-w-xs text-center sm:text-left leading-relaxed">
-                            💡 يمكنك تعيين وتفويض سائق مرخص فئة مناسبة لهذه المركبة مباشرة بالذهاب لقسم <b>إدارة السائقين والتفويضات</b> في القائمة الجانبية.
+                          <p className="text-[11px] text-slate-500 dark:text-slate-300">
+                            يمكن تعيين سائق من قسم <strong className="text-slate-800 dark:text-white">إدارة السائقين</strong>.
                           </p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Tires, Wheels, and Suspension Diagnostics Unit (Redesigned Interactive Console) */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-[2rem] p-5 md:p-6 space-y-6 shadow-xs">
+                  {/* Tires, Wheels, and Suspension Diagnostics Unit */}
+                  <div className="bg-white dark:bg-[#11192a] border border-slate-200/90 dark:border-[#24324d] rounded-2xl p-4 sm:p-5 space-y-5 shadow-xs">
                     
                     {/* Header bar with controls */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-150 dark:border-slate-800 pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/90 dark:border-[#24324d] pb-4">
                       <div className="flex items-center gap-3 text-right">
-                        <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center shadow-inner shrink-0 border border-indigo-100 dark:border-indigo-900/30">
-                          <Activity size={18} className="animate-spin-slow" />
+                        <div className="w-10 h-10 bg-brand-blue-50 dark:bg-brand-blue-500/15 text-brand-blue-600 dark:text-brand-blue-300 rounded-xl flex items-center justify-center shrink-0 border border-brand-blue-200/70 dark:border-brand-blue-500/30">
+                          <Activity size={18} />
                         </div>
                         <div>
-                          <h4 className="text-xs md:text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
-                            <span>لوحة مراقبة الإطارات والحاقن الذكي</span>
-                            <span className="px-2 py-0.2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 text-[8.5px] font-black rounded-md border border-emerald-500/20 font-sans">تيليماتكس نشط</span>
+                          <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
+                            لوحة فحص الإطارات والمحاور
                           </h4>
-                          <p className="text-[10px] text-slate-505 dark:text-slate-400 mt-1 leading-none">مستشعرات ضغط الهواء لجميع المحاور الميكانيكية بالآلية وسجل تآكل النقشة</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-300 mt-0.5">مستشعرات ضغط الهواء والحرارة لجميع المحاور</p>
                         </div>
                       </div>
 
                       {/* Interactive Live Actions */}
-                      <div className="flex items-center gap-1.5 self-end sm:self-auto flex-wrap">
-                        
+                      <div className="flex items-center gap-2 flex-wrap">
                         <button
                           type="button"
                           onClick={handleRefillTires}
                           disabled={isRefilling}
-                          className={`px-3 py-1.5 text-[10px] font-black rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-3xs ${
+                          className={`px-3 py-1.5 text-[11px] font-black rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
                             isRefilling
-                              ? 'bg-slate-100 text-slate-400 border-slate-205 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700'
-                              : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-650 border-indigo-150 dark:bg-indigo-950/30 dark:hover:bg-indigo-950 dark:text-indigo-400 dark:border-indigo-809'
+                              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700'
+                              : 'bg-brand-blue-50 hover:bg-brand-blue-100 text-brand-blue-700 border-brand-blue-200 dark:bg-brand-blue-500/15 dark:hover:bg-brand-blue-500/25 dark:text-brand-blue-200 dark:border-brand-blue-500/30'
                           }`}
                         >
-                          <RefreshCw size={11} className={isRefilling ? 'animate-spin' : ''} />
-                          <span>{isRefilling ? 'جاري ضخ النيتروجين...' : 'تعبئة هواء (نيتروجين)'}</span>
+                          <RefreshCw size={12} className={isRefilling ? 'animate-spin' : ''} />
+                          <span>{isRefilling ? 'جاري الضخ...' : 'ضخ نيتروجين'}</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={handleCalibrateSensors}
                           disabled={isCalibrating}
-                          className={`px-3 py-1.5 text-[10px] font-black rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-3xs ${
+                          className={`px-3 py-1.5 text-[11px] font-black rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
                             isCalibrating
-                              ? 'bg-slate-100 text-slate-400 border-slate-205 cursor-not-allowed dark:bg-slate-800'
+                              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed dark:bg-slate-800'
                               : calibrationSuccess
-                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                                : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-300 border-slate-200/80 dark:border-slate-700'
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                : 'bg-slate-50 hover:bg-slate-100 dark:bg-[#182238] dark:hover:bg-[#24324d] text-slate-700 dark:text-slate-100 border-slate-200 dark:border-[#263552]'
                           }`}
                         >
-                          <Check size={11} className={isCalibrating ? 'animate-pulse' : ''} />
-                          <span>{isCalibrating ? 'جاري معايرة الليزر...' : calibrationSuccess ? '✓ تمت معايرة الميزان' : 'معايرة الحساسات'}</span>
+                          <Check size={12} className={isCalibrating ? 'animate-pulse' : ''} />
+                          <span>{isCalibrating ? 'جاري المعايرة...' : calibrationSuccess ? 'تمت المعايرة' : 'معايرة الحساسات'}</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={handleRotateTires}
                           disabled={isRotating}
-                          className={`px-3 py-1.5 text-[10px] font-black rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 shadow-3xs ${
+                          className={`px-3 py-1.5 text-[11px] font-black rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
                             isRotating
                               ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800'
                               : rotationSuccess
-                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                                : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-655 dark:text-slate-300 border-slate-205 dark:border-slate-700'
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                : 'bg-slate-50 hover:bg-slate-100 dark:bg-[#182238] dark:hover:bg-[#24324d] text-slate-700 dark:text-slate-100 border-slate-200 dark:border-[#263552]'
                           }`}
                         >
-                          <RefreshCw size={11} className={isRotating ? 'animate-spin' : ''} />
-                          <span>{isRotating ? 'جاري التدوير...' : rotationSuccess ? '✓ تم تدوير الإطارات' : 'تدوير الإطارات'}</span>
+                          <RefreshCw size={12} className={isRotating ? 'animate-spin' : ''} />
+                          <span>{isRotating ? 'جاري التدوير...' : rotationSuccess ? 'تم التدوير' : 'تدوير الإطارات'}</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Interactive Tire Inspection Grid Panel */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
                       
                       {/* Left Side: 2D Interactive Chassis Schema Overlay (7 cols) */}
-                      <div className="lg:col-span-7 flex flex-col items-center justify-center p-6 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/60 rounded-3xl relative overflow-hidden min-h-[340px]">
+                      <div className="lg:col-span-7 flex flex-col items-center justify-center p-5 bg-slate-50/90 dark:bg-[#0b111e] border border-slate-200/80 dark:border-[#24324d] rounded-2xl relative overflow-hidden min-h-[300px]">
+                        <span className="text-[11px] font-black text-slate-600 dark:text-slate-300 mb-5 block text-center">انقر على أي إطار لعرض قراءاته المباشرة</span>
                         
-                        <div className="absolute inset-0 bg-radial-grid opacity-10 pointer-events-none" />
-                        
-                        <span className="text-[9.5px] font-black text-slate-400 dark:text-slate-550 mb-6 tracking-widest uppercase block text-center">انقر على أي إطار لعرض تقرير الحساسات المباشر</span>
-                        
-                        <div className="relative w-44 py-6 px-12 flex flex-col gap-10">
-                          
-                          {/* Left-Right Axle Line Guides */}
-                          <div className="absolute inset-x-0 top-[44px] h-[1px] bg-slate-200 dark:bg-slate-800/80 pointer-events-none" />
+                        <div className="relative w-44 py-5 px-12 flex flex-col gap-10">
+                          <div className="absolute inset-x-0 top-[40px] h-[1.5px] bg-slate-300 dark:bg-[#2c3c5c] pointer-events-none" />
                           {((vehicle.tireCount ?? 4) > 4) && (
-                            <div className="absolute inset-x-0 top-[110px] h-[1px] bg-slate-200 dark:bg-slate-800/80 pointer-events-none" />
+                            <div className="absolute inset-x-0 top-[106px] h-[1.5px] bg-slate-300 dark:bg-[#2c3c5c] pointer-events-none" />
                           )}
-                          <div className="absolute inset-x-0 bottom-[44px] h-[1px] bg-slate-200 dark:bg-slate-800/80 pointer-events-none" />
+                          <div className="absolute inset-x-0 bottom-[40px] h-[1.5px] bg-slate-300 dark:bg-[#2c3c5c] pointer-events-none" />
 
-                          {/* Center Driveshaft vector graphic representation */}
-                          <div className="absolute top-10 bottom-10 left-[48%] w-1.5 bg-linear-to-b from-slate-200 via-slate-350 to-slate-200 dark:from-slate-800 dark:via-slate-650 dark:to-slate-800 rounded-full" />
+                          <div className="absolute top-10 bottom-10 left-[48%] w-1.5 bg-slate-300 dark:bg-[#2c3c5c] rounded-full" />
                           
                           {/* Front Axle */}
                           <div className="flex justify-between items-center w-full relative z-10">
-                            {/* Left Front (FL) */}
                             <button
                               type="button"
                               onClick={() => setSelectedTire('FL')}
-                              className={`w-6 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
+                              className={`w-7 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
                                 selectedTire === 'FL' 
-                                  ? 'bg-indigo-600 text-white border-indigo-400 ring-4 ring-indigo-500/20 scale-105 shadow-md shadow-indigo-600/30' 
-                                  : 'bg-slate-900 border-slate-700 hover:border-slate-500 text-slate-300'
+                                  ? 'bg-brand-blue-600 text-white border-brand-blue-300 ring-4 ring-brand-blue-500/25 scale-105 shadow-md' 
+                                  : 'bg-slate-800 dark:bg-[#182238] border-slate-600 dark:border-[#34466b] hover:border-brand-blue-400 text-slate-100'
                               }`}
                               title={tireStats['FL'].label}
                             >
-                              {selectedTire === 'FL' && <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping absolute top-0.5" />}
-                              <span className="text-[6.5px] font-mono leading-none font-bold">FL</span>
-                              <span className="text-[8px] font-black font-mono leading-none mt-1">{tireStats['FL'].pressure}</span>
+                              <span className="text-[7px] font-mono leading-none font-bold">FL</span>
+                              <span className="text-[9px] font-black font-mono leading-none mt-1">{tireStats['FL'].pressure}</span>
                             </button>
                             
-                            {/* Differential Core Housing representation */}
-                            <div className="w-6 h-6 bg-slate-250 border border-slate-305 dark:bg-slate-800 dark:border-slate-700 rounded-full flex items-center justify-center shadow-xs">
-                              <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full animate-pulse" />
+                            <div className="w-6 h-6 bg-slate-200 border border-slate-300 dark:bg-[#182238] dark:border-[#2c3c5c] rounded-full flex items-center justify-center">
+                              <span className="w-1.5 h-1.5 bg-slate-500 dark:bg-slate-300 rounded-full" />
                             </div>
                             
-                            {/* Right Front (FR) */}
                             <button
                               type="button"
                               onClick={() => setSelectedTire('FR')}
-                              className={`w-6 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
+                              className={`w-7 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
                                 selectedTire === 'FR' 
-                                  ? 'bg-indigo-600 text-white border-indigo-400 ring-4 ring-indigo-500/20 scale-105 shadow-md shadow-indigo-600/30' 
+                                  ? 'bg-brand-blue-600 text-white border-brand-blue-300 ring-4 ring-brand-blue-500/25 scale-105 shadow-md' 
                                   : tireStats['FR'].status === 'low'
-                                    ? 'bg-amber-500/20 border-amber-500 hover:border-amber-600 text-amber-600 dark:text-amber-400 animate-pulse'
-                                    : 'bg-slate-900 border-slate-700 hover:border-slate-500 text-slate-300'
+                                    ? 'bg-amber-500/20 border-amber-500 text-amber-700 dark:text-amber-300'
+                                    : 'bg-slate-800 dark:bg-[#182238] border-slate-600 dark:border-[#34466b] hover:border-brand-blue-400 text-slate-100'
                               }`}
                               title={tireStats['FR'].label}
                             >
-                              {selectedTire === 'FR' && <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping absolute top-0.5" />}
-                              <span className="text-[6.5px] font-mono leading-none font-bold">FR</span>
-                              <span className="text-[8px] font-black font-mono leading-none mt-1">{tireStats['FR'].pressure}</span>
+                              <span className="text-[7px] font-mono leading-none font-bold">FR</span>
+                              <span className="text-[9px] font-black font-mono leading-none mt-1">{tireStats['FR'].pressure}</span>
                             </button>
                           </div>
 
-                          {/* Middle/Dual Axles (Trucks or Busses) */}
+                          {/* Middle Axles (Trucks / Buses) */}
                           {((vehicle.tireCount ?? 4) > 4) && (
                             <div className="flex justify-between items-center w-full relative z-10">
                               <div className="flex gap-[3px] -ml-5">
-                                {/* ML Tire Left Inside */}
-                                <div className="w-5 h-12 bg-slate-950 border border-slate-800 rounded-sm" />
-                                {/* ML Tire Left Outside */}
+                                <div className="w-5 h-12 bg-slate-900 dark:bg-[#0f172a] border border-slate-700 rounded-sm" />
                                 <button
                                   type="button"
                                   onClick={() => setSelectedTire('ML')}
-                                  className={`w-6 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
+                                  className={`w-7 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
                                     selectedTire === 'ML' 
-                                      ? 'bg-indigo-600 text-white border-indigo-400 ring-4 ring-indigo-500/20 scale-105 shadow-md' 
-                                      : 'bg-slate-900 border-slate-700 hover:border-slate-500 text-slate-300'
+                                      ? 'bg-brand-blue-600 text-white border-brand-blue-300 ring-4 ring-brand-blue-500/25 scale-105 shadow-md' 
+                                      : 'bg-slate-800 dark:bg-[#182238] border-slate-600 dark:border-[#34466b] hover:border-brand-blue-400 text-slate-100'
                                   }`}
                                   title={tireStats['ML'].label}
                                 >
-                                  <span className="text-[6.5px] font-mono leading-none font-bold">ML</span>
-                                  <span className="text-[8px] font-black font-mono leading-none mt-1">{tireStats['ML'].pressure}</span>
+                                  <span className="text-[7px] font-mono leading-none font-bold">ML</span>
+                                  <span className="text-[9px] font-black font-mono leading-none mt-1">{tireStats['ML'].pressure}</span>
                                 </button>
                               </div>
 
-                              {/* Center Drive Gear */}
-                              <div className="w-5 h-5 bg-slate-350 dark:bg-slate-700 rounded-md" />
+                              <div className="w-5 h-5 bg-slate-300 dark:bg-[#24324d] rounded-md" />
 
                               <div className="flex gap-[3px] -mr-5">
-                                {/* MR Tire Right Outside */}
                                 <button
                                   type="button"
                                   onClick={() => setSelectedTire('MR')}
-                                  className={`w-6 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
+                                  className={`w-7 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
                                     selectedTire === 'MR' 
-                                      ? 'bg-indigo-600 text-white border-indigo-400 ring-4 ring-indigo-500/25 scale-105 shadow-md' 
-                                      : 'bg-slate-900 border-slate-700 hover:border-slate-500 text-slate-300'
+                                      ? 'bg-brand-blue-600 text-white border-brand-blue-300 ring-4 ring-brand-blue-500/25 scale-105 shadow-md' 
+                                      : 'bg-slate-800 dark:bg-[#182238] border-slate-600 dark:border-[#34466b] hover:border-brand-blue-400 text-slate-100'
                                   }`}
                                   title={tireStats['MR'].label}
                                 >
-                                  <span className="text-[6.5px] font-mono leading-none font-bold">MR</span>
-                                  <span className="text-[8px] font-black font-mono leading-none mt-1">{tireStats['MR'].pressure}</span>
+                                  <span className="text-[7px] font-mono leading-none font-bold">MR</span>
+                                  <span className="text-[9px] font-black font-mono leading-none mt-1">{tireStats['MR'].pressure}</span>
                                 </button>
-                                {/* MR Tire Right Inside */}
-                                <div className="w-5 h-12 bg-slate-950 border border-slate-800 rounded-sm" />
+                                <div className="w-5 h-12 bg-slate-900 dark:bg-[#0f172a] border border-slate-700 rounded-sm" />
                               </div>
                             </div>
                           )}
 
                           {/* Rear Axle */}
                           <div className="flex justify-between items-center w-full relative z-10">
-                            {/* Left Rear (RL) */}
                             <button
                               type="button"
                               onClick={() => setSelectedTire('RL')}
-                              className={`w-6 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
+                              className={`w-7 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
                                 selectedTire === 'RL' 
-                                  ? 'bg-indigo-600 text-white border-indigo-400 ring-4 ring-indigo-500/20 scale-105 shadow-md shadow-indigo-600/30' 
-                                  : 'bg-slate-900 border-slate-700 hover:border-slate-500 text-slate-300'
+                                  ? 'bg-brand-blue-600 text-white border-brand-blue-300 ring-4 ring-brand-blue-500/25 scale-105 shadow-md' 
+                                  : 'bg-slate-800 dark:bg-[#182238] border-slate-600 dark:border-[#34466b] hover:border-brand-blue-400 text-slate-100'
                               }`}
                               title={tireStats['RL'].label}
                             >
-                              {selectedTire === 'RL' && <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping absolute top-0.5" />}
-                              <span className="text-[6.5px] font-mono leading-none font-bold">RL</span>
-                              <span className="text-[8px] font-black font-mono leading-none mt-1">{tireStats['RL'].pressure}</span>
+                              <span className="text-[7px] font-mono leading-none font-bold">RL</span>
+                              <span className="text-[9px] font-black font-mono leading-none mt-1">{tireStats['RL'].pressure}</span>
                             </button>
 
-                            {/* Differential axle core box */}
-                            <div className="w-7 h-5 bg-slate-300 dark:bg-slate-800 rounded-md border border-slate-400/50 flex items-center justify-center shadow-xs">
-                              <span className="text-[7px] font-medium font-sans text-slate-500 dark:text-slate-400">4x4</span>
+                            <div className="w-7 h-5 bg-slate-300 dark:bg-[#182238] rounded-md border border-slate-400/50 dark:border-[#2c3c5c] flex items-center justify-center">
+                              <span className="text-[7px] font-bold font-sans text-slate-700 dark:text-slate-200">4x4</span>
                             </div>
 
-                            {/* Right Rear (RR) */}
                             <button
                               type="button"
                               onClick={() => setSelectedTire('RR')}
-                              className={`w-6 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
+                              className={`w-7 h-12 rounded-lg border-2 flex flex-col items-center justify-center cursor-pointer transition-all ${
                                 selectedTire === 'RR' 
-                                  ? 'bg-indigo-600 text-white border-indigo-400 ring-4 ring-indigo-500/20 scale-105 shadow-md shadow-indigo-600/30' 
-                                  : 'bg-slate-900 border-slate-700 hover:border-slate-505 text-slate-300'
+                                  ? 'bg-brand-blue-600 text-white border-brand-blue-300 ring-4 ring-brand-blue-500/25 scale-105 shadow-md' 
+                                  : 'bg-slate-800 dark:bg-[#182238] border-slate-600 dark:border-[#34466b] hover:border-brand-blue-400 text-slate-100'
                               }`}
                               title={tireStats['RR'].label}
                             >
-                              {selectedTire === 'RR' && <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping absolute top-0.5" />}
-                              <span className="text-[6.5px] font-mono leading-none font-bold">RR</span>
-                              <span className="text-[8px] font-black font-mono leading-none mt-1">{tireStats['RR'].pressure}</span>
+                              <span className="text-[7px] font-mono leading-none font-bold">RR</span>
+                              <span className="text-[9px] font-black font-mono leading-none mt-1">{tireStats['RR'].pressure}</span>
                             </button>
                           </div>
                         </div>
 
-                        {/* Tire Type Labels Legend */}
-                        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-[9.5px] font-black text-slate-500">
-                          <span className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-200">
-                            <span className="w-2.5 h-2.5 bg-indigo-500 rounded-sm block" />
-                            <span>المحور النشط المختار</span>
+                        {/* Tire Legend */}
+                        <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 bg-brand-blue-500 rounded-sm block" />
+                            <span>المختار</span>
                           </span>
-                          <span className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-200">
-                            <span className="w-2.5 h-2.5 bg-amber-500/80 rounded-sm block" />
-                            <span>يحتاج للتحقق / ضغط منخفض</span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 bg-amber-500 rounded-sm block" />
+                            <span>ضغط منخفض</span>
                           </span>
-                          <span className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-200">
-                            <span className="w-2.5 h-2.5 bg-slate-900/90 rounded-sm block" />
-                            <span>محور نقل العزم (الدفع)</span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 bg-slate-800 dark:bg-slate-500 rounded-sm block" />
+                            <span>طبيعي</span>
                           </span>
                         </div>
                       </div>
 
-                      {/* Right Side: Selected Tire Telemetry Diagnostic HUD Panel (5 cols) */}
-                      <div className="lg:col-span-5 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/60 p-5 rounded-3xl min-h-[340px] flex flex-col justify-between">
-                        
-                        {/* Upper Section */}
+                      {/* Right Side: Selected Tire Telemetry Panel (5 cols) */}
+                      <div className="lg:col-span-5 bg-slate-50/90 dark:bg-[#0b111e] border border-slate-200/80 dark:border-[#24324d] p-4 sm:p-5 rounded-2xl flex flex-col justify-between gap-4">
                         <div>
-                          <div className="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3 mb-4">
+                          <div className="flex items-center justify-between border-b border-slate-200/90 dark:border-[#24324d] pb-3 mb-4">
                             <div>
-                              <span className="text-[8px] font-black text-indigo-650 dark:text-indigo-400 uppercase font-mono tracking-widest block">SENSOR TELEMETRY</span>
-                              <h5 className="font-black text-slate-900 dark:text-white text-xs md:text-sm mt-0.5 flex items-center gap-1">{tireStats[selectedTire].label}</h5>
+                              <span className="text-[10px] font-bold text-brand-blue-600 dark:text-brand-blue-300 block">قراءات الإطار المحدد</span>
+                              <h5 className="font-black text-slate-900 dark:text-white text-xs sm:text-sm mt-0.5">{tireStats[selectedTire].label}</h5>
                             </div>
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 font-sans">حساس نشط</span>
+                            <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <span>حساس نشط</span>
+                            </span>
                           </div>
 
-                          {/* Pressure circular Gauge Representation */}
-                          <div className="flex items-center gap-4 py-2">
-                            {/* Circular gauge mock using simple SVG */}
+                          <div className="flex items-center gap-4 py-1">
                             <div className="relative w-20 h-20 shrink-0">
                               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                                <circle cx="18" cy="18" r="16" fill="transparent" stroke="rgba(0,0,0,0.06)" strokeWidth="3" />
+                                <circle cx="18" cy="18" r="16" fill="transparent" stroke="currentColor" className="text-slate-200 dark:text-[#1e2b45]" strokeWidth="3" />
                                 <circle 
                                   cx="18" 
                                   cy="18" 
                                   r="16" 
                                   fill="transparent" 
-                                  stroke={tireStats[selectedTire].status === 'low' ? '#f59e0b' : '#3b82f6'} 
+                                  stroke={tireStats[selectedTire].status === 'low' ? '#f59e0b' : '#5b21b6'} 
                                   strokeWidth="3.5" 
                                   strokeDasharray={`${(tireStats[selectedTire].pressure / 50) * 100}, 100`} 
-                                  className="transition-all duration-1000"
+                                  className="transition-all duration-700"
                                 />
                               </svg>
                               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-sm font-black font-mono text-slate-800 dark:text-white leading-none">{tireStats[selectedTire].pressure}</span>
-                                <span className="text-[8px] text-slate-400 mt-0.5">PSI</span>
+                                <span className="text-sm font-black font-mono text-slate-900 dark:text-white leading-none">{tireStats[selectedTire].pressure}</span>
+                                <span className="text-[9px] text-slate-500 dark:text-slate-300 mt-0.5">PSI</span>
                               </div>
                             </div>
 
-                            <div className="flex-1 text-right space-y-1.5">
-                              <div>
-                                <span className="text-[8px] text-slate-400 block leading-none">مستوى سلامة الإطار والضغط</span>
-                                <span className={`text-[11px] font-black mt-1 inline-block px-1.5 py-0.2 rounded ${
-                                  tireStats[selectedTire].status === 'low' 
-                                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' 
-                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                }`}>
-                                  {tireStats[selectedTire].status === 'low' ? 'تنبيه: ضغط هواء منخفض' : 'مثالي وآمن للسرعات العالية'}
-                                </span>
-                              </div>
-                              <p className="text-[9.5px] text-slate-500 dark:text-slate-400 leading-normal">يحافظ الضغط المتوازن (35 PSI) على ثبات المركبة ويقلل التآكل الكلي بنسبة تصل إلى 15%.</p>
+                            <div className="flex-1 text-right space-y-1">
+                              <span className="text-[10px] text-slate-500 dark:text-slate-300 block font-bold">حالة الضغط</span>
+                              <span className={`text-xs font-black inline-block ${
+                                tireStats[selectedTire].status === 'low' 
+                                  ? 'text-amber-600 dark:text-amber-400' 
+                                  : 'text-emerald-600 dark:text-emerald-400'
+                              }`}>
+                                {tireStats[selectedTire].status === 'low' ? 'تنبيه: ضغط هواء منخفض' : 'مثالي وآمن للتشغيل'}
+                              </span>
+                              <p className="text-[10.5px] text-slate-500 dark:text-slate-300 leading-snug">المستوى الموصى به 35 PSI لضمان ثبات المركبة وتقليل استهلاك الإطار.</p>
                             </div>
                           </div>
 
-                          {/* Core Sensor Diagnostics Stats Sheet */}
                           <div className="mt-4 space-y-2">
-                            <div className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-200 dark:border-slate-800">
-                              <span className="text-slate-400">درجة حرارة الإطار المكتشفة</span>
-                              <span className="font-mono font-black text-slate-800 dark:text-slate-200">{tireStats[selectedTire].temp}°C</span>
+                            <div className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-200 dark:border-[#24324d]">
+                              <span className="text-slate-500 dark:text-slate-300">درجة الحرارة</span>
+                              <span className="font-mono font-black text-slate-800 dark:text-slate-100">{tireStats[selectedTire].temp}°C</span>
                             </div>
                             
-                            <div className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-200 dark:border-slate-800">
-                              <span className="text-slate-400">نقشة وعمق ممشى الكاوتشوك</span>
-                              <div className="flex items-center gap-1.5 text-right font-sans">
-                                <span className="font-mono font-black text-slate-850 dark:text-slate-200">{tireStats[selectedTire].tread}%</span>
-                                <div className="w-16 bg-slate-200 dark:bg-slate-805 h-1.5 rounded-full overflow-hidden block">
-                                  <div className="bg-indigo-505 h-full rounded-full" style={{ width: `${tireStats[selectedTire].tread}%` }} />
+                            <div className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-200 dark:border-[#24324d]">
+                              <span className="text-slate-500 dark:text-slate-300">عمق النقشة</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-black text-slate-800 dark:text-slate-100">{tireStats[selectedTire].tread}%</span>
+                                <div className="w-16 bg-slate-200 dark:bg-[#1e2b45] h-1.5 rounded-full overflow-hidden">
+                                  <div className="bg-brand-blue-500 h-full rounded-full" style={{ width: `${tireStats[selectedTire].tread}%` }} />
                                 </div>
                               </div>
                             </div>
 
-                            <div className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-200 dark:border-slate-800 font-sans">
-                              <span className="text-slate-400">توازن ومحاذاة زوايا الميزان</span>
-                              <span className="font-medium text-slate-800 dark:text-slate-200">{tireStats[selectedTire].alignment}</span>
+                            <div className="flex justify-between items-center text-xs py-1.5 border-b border-dashed border-slate-200 dark:border-[#24324d]">
+                              <span className="text-slate-500 dark:text-slate-300">توازن الميزان</span>
+                              <span className="font-bold text-slate-800 dark:text-slate-100">{tireStats[selectedTire].alignment}</span>
                             </div>
 
                             <div className="flex justify-between items-center text-xs py-1.5">
-                              <span className="text-slate-400">حالة المستشعر الرقمي اللاسلكي</span>
-                              <span className="font-black text-xs text-emerald-600 dark:text-emerald-450 flex items-center gap-1 font-sans">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse block" />
-                                <span>{tireStats[selectedTire].sensor}</span>
+                              <span className="text-slate-500 dark:text-slate-300">حالة المستشعر</span>
+                              <span className="font-black text-xs text-emerald-600 dark:text-emerald-400">
+                                {tireStats[selectedTire].sensor}
                               </span>
                             </div>
                           </div>
-                        </div>
-
-                        {/* Bottom Diagnostic Health Summary Text */}
-                        <div className="mt-4 p-3 bg-indigo-50/40 dark:bg-indigo-950/25 rounded-2xl border border-indigo-100/40 dark:border-indigo-900/30 text-[10px] text-indigo-950 dark:text-indigo-300 leading-normal flex items-start gap-1.5">
-                          <Info size={13} className="shrink-0 text-indigo-550 mt-0.5" />
-                          <p>
-                            يتم تحديث مستشعرات TPMS بشكل دوري. في حال انخفاض الضغط عن 30 PSI يرجى ضخ النيتروجين فوراً لتجنب مخاطر انساخ الإطار أثناء التشغيل الثقيل.
-                          </p>
                         </div>
                       </div>
                     </div>
@@ -2392,13 +2328,13 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                   className="space-y-6"
                 >
                   {/* Top Notification / Title block */}
-                  <div className="bg-amber-50 dark:bg-amber-950/15 border border-amber-200/50 dark:border-amber-950/20 p-4 rounded-3xl flex items-center gap-3" dir="rtl">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                  <div className="bg-amber-50 dark:bg-amber-950/25 border border-amber-200/80 dark:border-amber-800/40 p-4 rounded-3xl flex items-center gap-3" dir="rtl">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-400/30 flex items-center justify-center shrink-0">
                       <Shield size={20} />
                     </div>
                     <div>
                       <h4 className="text-sm font-black text-slate-900 dark:text-white leading-tight">دفتر القيود المالية وتكاليف الصيانة للفئة الفائقة</h4>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-extrabold mt-0.5">
+                      <p className="text-[10px] text-slate-600 dark:text-slate-300 font-extrabold mt-0.5">
                         هذه البيانات سرية للغاية ومقيدة لمستوى الإدارة والمحاسبة والتشغيل اللوجستي فقط. لا يمكن لعامة سائقي الأسطول ولا لجهات الفحص الميداني الاطلاع عليها.
                       </p>
                     </div>
@@ -2407,65 +2343,65 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                   {/* High Level Bento Statistics Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" dir="rtl">
                     {/* Stat CARD 1: Total Spending */}
-                    <div className="bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/15 p-4.5 rounded-[1.5rem] flex items-center justify-between shadow-xs">
+                    <div className="bg-white dark:bg-[#11192a] border border-emerald-200/80 dark:border-emerald-500/30 p-4.5 rounded-[1.5rem] flex items-center justify-between shadow-xs">
                       <div className="text-right">
-                        <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 block mb-1">إجمالي تكاليف الصيانة الكلية</span>
+                        <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 block mb-1">إجمالي تكاليف الصيانة الكلية</span>
                         <div className="flex items-baseline gap-1 justify-start">
-                          <span className="text-xl sm:text-2xl font-black text-emerald-750 dark:text-emerald-300 font-sans tracking-tight">
+                          <span className="text-xl sm:text-2xl font-black text-emerald-800 dark:text-emerald-300 font-sans tracking-tight">
                             {financialData.totalSpending.toLocaleString()}
                           </span>
-                          <span className="text-[10px] font-extrabold text-emerald-650 dark:text-emerald-400 font-sans">ر.س</span>
+                          <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 font-sans">ر.س</span>
                         </div>
                       </div>
-                      <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/10">
+                      <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30 flex items-center justify-center shrink-0">
                         <DollarSign size={20} />
                       </div>
                     </div>
 
                     {/* Stat CARD 2: Total Spare Parts */}
-                    <div className="bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/15 p-4.5 rounded-[1.5rem] flex items-center justify-between shadow-xs">
+                    <div className="bg-white dark:bg-[#11192a] border border-amber-200/80 dark:border-amber-500/30 p-4.5 rounded-[1.5rem] flex items-center justify-between shadow-xs">
                       <div className="text-right">
-                        <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 block mb-1">تكلفة مشتريات قطع الغيار</span>
+                        <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 block mb-1">تكلفة مشتريات قطع الغيار</span>
                         <div className="flex items-baseline gap-1 justify-start">
-                          <span className="text-xl sm:text-2xl font-black text-amber-750 dark:text-amber-300 font-sans tracking-tight">
+                          <span className="text-xl sm:text-2xl font-black text-amber-800 dark:text-amber-300 font-sans tracking-tight">
                             {financialData.totalPartsCost.toLocaleString()}
                           </span>
-                          <span className="text-[10px] font-extrabold text-amber-650 dark:text-amber-400 font-sans">ر.س</span>
+                          <span className="text-[10px] font-extrabold text-amber-600 dark:text-amber-400 font-sans">ر.س</span>
                         </div>
                       </div>
-                      <div className="w-11 h-11 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/10">
+                      <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/30 flex items-center justify-center shrink-0">
                         <Settings size={18} />
                       </div>
                     </div>
 
                     {/* Stat CARD 3: Labor Cost */}
-                    <div className="bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/15 p-4.5 rounded-[1.5rem] flex items-center justify-between shadow-xs">
+                    <div className="bg-white dark:bg-[#11192a] border border-brand-blue-200/80 dark:border-brand-blue-500/30 p-4.5 rounded-[1.5rem] flex items-center justify-between shadow-xs">
                       <div className="text-right">
-                        <span className="text-[10px] font-black text-blue-650 dark:text-blue-400 block mb-1">أجور الأيدي العاملة والصيانة</span>
+                        <span className="text-[10px] font-black text-brand-blue-700 dark:text-brand-blue-300 block mb-1">أجور الأيدي العاملة والصيانة</span>
                         <div className="flex items-baseline gap-1 justify-start">
-                          <span className="text-xl sm:text-2xl font-black text-blue-750 dark:text-blue-300 font-sans tracking-tight">
+                          <span className="text-xl sm:text-2xl font-black text-brand-blue-800 dark:text-brand-blue-200 font-sans tracking-tight">
                             {financialData.totalLaborCost.toLocaleString()}
                           </span>
-                          <span className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 font-sans">ر.س</span>
+                          <span className="text-[10px] font-extrabold text-brand-blue-600 dark:text-brand-blue-300 font-sans">ر.س</span>
                         </div>
                       </div>
-                      <div className="w-11 h-11 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/10">
+                      <div className="w-11 h-11 rounded-2xl bg-brand-blue-50 dark:bg-brand-blue-500/15 text-brand-blue-600 dark:text-brand-blue-300 border border-brand-blue-200/60 dark:border-brand-blue-500/30 flex items-center justify-center shrink-0">
                         <Wrench size={18} />
                       </div>
                     </div>
 
                     {/* Stat CARD 4: Avg Order Cost */}
-                    <div className="bg-slate-500/5 dark:bg-slate-500/10 border border-slate-500/15 p-4.5 rounded-[1.5rem] flex items-center justify-between shadow-xs">
+                    <div className="bg-white dark:bg-[#11192a] border border-slate-200/90 dark:border-[#24324d] p-4.5 rounded-[1.5rem] flex items-center justify-between shadow-xs">
                       <div className="text-right">
-                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 block mb-1">متوسط تكلفة كرت الصيانة</span>
+                        <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 block mb-1">متوسط تكلفة كرت الصيانة</span>
                         <div className="flex items-baseline gap-1 justify-start">
-                          <span className="text-xl sm:text-2xl font-black text-slate-750 dark:text-slate-300 font-sans tracking-tight">
+                          <span className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 font-sans tracking-tight">
                             {financialData.averageOrderCost.toLocaleString()}
                           </span>
-                          <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 font-sans">ر.س</span>
+                          <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-300 font-sans">ر.س</span>
                         </div>
                       </div>
-                      <div className="w-11 h-11 rounded-2xl bg-slate-500/10 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0 shadow-sm shadow-slate-500/5">
+                      <div className="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-[#182238] text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-[#263552] flex items-center justify-center shrink-0">
                         <Activity size={18} />
                       </div>
                     </div>
@@ -2475,10 +2411,10 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                   {financialData.completedOrders.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5" dir="rtl">
                       {/* Left: cost split donut chart */}
-                      <div className="lg:col-span-5 bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800/80 p-5 rounded-[1.5rem] flex flex-col justify-between shadow-xs min-h-[300px]">
+                      <div className="lg:col-span-5 bg-white dark:bg-[#11192a] border border-slate-200/90 dark:border-[#24324d] p-5 rounded-[1.5rem] flex flex-col justify-between shadow-xs min-h-[300px]">
                         <div>
-                          <h4 className="text-xs font-black text-slate-800 dark:text-white mb-1 text-right">توزيع تكاليف الصيانة: اليد العاملة ضد قطع الغيار</h4>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold text-right leading-normal">يكشف النسبة المئوية للمصروف في القطع مقابل أجرة التشغيل والفحوصات.</p>
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white mb-1 text-right">توزيع تكاليف الصيانة: اليد العاملة ضد قطع الغيار</h4>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-300 font-bold text-right leading-normal">يكشف النسبة المئوية للمصروف في القطع مقابل أجرة التشغيل والفحوصات.</p>
                         </div>
                         
                         <div className="h-44 w-full relative flex items-center justify-center">
@@ -2497,39 +2433,40 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                                 dataKey="value"
                               >
                                 <Cell fill="#f59e0b" />
-                                <Cell fill="#3b82f6" />
+                                <Cell fill="#5b21b6" />
                               </Pie>
                               <Tooltip 
                                 formatter={(value: any) => [`${Number(value).toLocaleString()} ر.س`, 'التكلفة']}
-                                contentStyle={{ borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}
+                                contentStyle={{ borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#11192a', border: '1px solid #24324d', color: '#f8fafc' }}
+                                itemStyle={{ color: '#f8fafc' }}
                               />
                             </PieChart>
                           </ResponsiveContainer>
                           
                           {/* Inner summary stats absolute centered */}
-                          <div className="absolute flex flex-col items-center">
-                            <span className="text-[9px] font-black text-slate-400 dark:text-slate-550">الإجمالي</span>
-                            <span className="text-xs font-black text-slate-800 dark:text-white font-sans">{financialData.totalSpending.toLocaleString()}</span>
+                          <div className="absolute flex flex-col items-center pointer-events-none">
+                            <span className="text-[9px] font-black text-slate-500 dark:text-slate-300">الإجمالي</span>
+                            <span className="text-xs font-black text-slate-900 dark:text-white font-sans">{financialData.totalSpending.toLocaleString()}</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-center gap-6 text-[10px] font-black pt-2 border-t border-slate-100 dark:border-slate-800/60 leading-none">
-                          <span className="flex items-center gap-1.5 text-amber-600">
+                        <div className="flex items-center justify-center gap-6 text-[10px] font-black pt-2 border-t border-slate-200/80 dark:border-[#24324d] leading-none">
+                          <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                             <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                             <span>قطع الغيار ({financialData.totalSpending ? Math.round((financialData.totalPartsCost / financialData.totalSpending) * 100) : 0}%)</span>
                           </span>
-                          <span className="flex items-center gap-1.5 text-blue-500">
-                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                          <span className="flex items-center gap-1.5 text-brand-blue-600 dark:text-brand-blue-300">
+                            <span className="w-2.5 h-2.5 rounded-full bg-brand-blue-500" />
                             <span>أجور فنية ({financialData.totalSpending ? Math.round((financialData.totalLaborCost / financialData.totalSpending) * 100) : 0}%)</span>
                           </span>
                         </div>
                       </div>
 
                       {/* Right: cost categories bar chart */}
-                      <div className="lg:col-span-7 bg-white dark:bg-[#0f1422] border border-slate-100 dark:border-slate-800/80 p-5 rounded-[1.5rem] flex flex-col justify-between shadow-xs min-h-[300px]">
+                      <div className="lg:col-span-7 bg-white dark:bg-[#11192a] border border-slate-200/90 dark:border-[#24324d] p-5 rounded-[1.5rem] flex flex-col justify-between shadow-xs min-h-[300px]">
                         <div>
-                          <h4 className="text-xs font-black text-slate-800 dark:text-white mb-1 text-right">مصروفات الصيانة مقسمة حسب الأنظمة الميكانيكية والكهربائية</h4>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold text-right leading-normal">يتابع حجم التكاليف الكلية شاملة لكل فئة لتقرير جودة وكفاءة عمل المركبة.</p>
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white mb-1 text-right">مصروفات الصيانة مقسمة حسب الأنظمة الميكانيكية والكهربائية</h4>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-300 font-bold text-right leading-normal">يتابع حجم التكاليف الكلية شاملة لكل فئة لتقرير جودة وكفاءة عمل المركبة.</p>
                         </div>
 
                         <div className="h-44 w-full mt-3">
@@ -2550,25 +2487,26 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               })}
                               margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
                             >
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(148, 163, 184, 0.2)" />
                               <XAxis 
                                 dataKey="name" 
-                                tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }}
+                                tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
                                 axisLine={false}
                                 tickLine={false}
                               />
                               <YAxis 
-                                tick={{ fontSize: 9, fontWeight: 'bold', fill: '#64748b' }}
+                                tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }}
                                 axisLine={false}
                                 tickLine={false}
                               />
                               <Tooltip 
                                 formatter={(value: any) => [`${Number(value).toLocaleString()} ر.س`, 'التكلفة الكلية']}
-                                contentStyle={{ borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}
+                                contentStyle={{ borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#11192a', border: '1px solid #24324d', color: '#f8fafc' }}
+                                itemStyle={{ color: '#f8fafc' }}
                               />
                               <Bar dataKey="التكلفة الكلية (ر.س)" radius={[6, 6, 0, 0]}>
                                 {Object.entries(financialData.categoryCosts).map((entry, index) => {
-                                  const colors = ['#6366f1', '#8b5cf6', '#0ea5e9', '#f43f5e', '#f59e0b'];
+                                  const colors = ['#5b21b6', '#7c3aed', '#0ea5e9', '#f43f5e', '#f59e0b'];
                                   return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
                                 })}
                               </Bar>
@@ -2580,33 +2518,33 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-slate-50 dark:bg-slate-950/20 border-2 border-dashed border-slate-200 dark:border-slate-800 p-8 rounded-3xl flex flex-col items-center justify-center text-center">
-                      <DollarSign size={36} className="text-slate-400 mb-2 animate-pulse" />
-                      <h4 className="text-xs font-black text-slate-850 dark:text-white leading-tight">لم يتم العثور على قيود الصيانة المكتملة</h4>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold max-w-sm mt-1 leading-normal">
+                    <div className="bg-white/70 dark:bg-[#11192a] border-2 border-dashed border-slate-300 dark:border-[#24324d] p-8 rounded-3xl flex flex-col items-center justify-center text-center">
+                      <DollarSign size={36} className="text-brand-blue-500/50 mb-2 animate-pulse" />
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">لم يتم العثور على قيود الصيانة المكتملة</h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-300 font-bold max-w-sm mt-1 leading-normal">
                         عند قيامك بإنجاز بلاغات صيانة في شاشة الصيانة وتعيين أسعار لقطع الغيار وتكلفة الصيانة، سيقوم كاشف النظام التلقائي بإدراجها في التقرير المالي هنا.
                       </p>
                     </div>
                   )}
 
                   {/* Financial Ledger Tabbed Interface (Bills ledger vs Component ledger) */}
-                  <div className="border border-slate-100 dark:border-slate-800/80 rounded-[1.5rem] overflow-hidden bg-white dark:bg-[#0f1422] shadow-xs" dir="rtl">
+                  <div className="border border-slate-200/90 dark:border-[#24324d] rounded-[1.5rem] overflow-hidden bg-white dark:bg-[#11192a] shadow-xs" dir="rtl">
                     {/* Header Controls */}
-                    <div className="bg-slate-50/70 dark:bg-slate-900/60 p-4 border-b border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
+                    <div className="bg-slate-50/90 dark:bg-[#0e1525] p-4 border-b border-slate-200/80 dark:border-[#24324d] flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
                       <div>
-                        <h4 className="text-xs font-black text-slate-800 dark:text-white leading-tight">سجل قيود الحسابات ودفاتر الدفع المعتمدة للكلفة</h4>
-                        <p className="text-[10px] text-slate-450 dark:text-slate-500 font-bold mt-0.5 leading-normal">تبديل الرؤية بين فواتير الأوامر الشاملة وقائمة قطع الغيار المستحقة للضمان والجدولة.</p>
+                        <h4 className="text-xs font-black text-slate-900 dark:text-white leading-tight">سجل قيود الحسابات ودفاتر الدفع المعتمدة للكلفة</h4>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-300 font-bold mt-0.5 leading-normal">تبديل الرؤية بين فواتير الأوامر الشاملة وقائمة قطع الغيار المستحقة للضمان والجدولة.</p>
                       </div>
                       
                       {/* Control buttons */}
-                      <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200/40 shrink-0">
+                      <div className="flex bg-slate-200/70 dark:bg-[#182238] p-1 rounded-xl border border-slate-200/80 dark:border-[#24324d] shrink-0">
                         <button
                           type="button"
                           onClick={() => setFinanceSubTab('bills')}
                           className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
                             financeSubTab === 'bills'
-                              ? 'bg-white dark:bg-[#151c2e] text-[#2563eb] shadow-xs border border-slate-200/10'
-                              : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350'
+                              ? 'bg-white dark:bg-[#11192a] text-brand-blue-700 dark:text-brand-blue-300 shadow-xs border border-slate-200/60 dark:border-[#24324d]'
+                              : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                           }`}
                         >
                           💸 فواتير الأوامر ({financialData.completedOrders.length})
@@ -2616,8 +2554,8 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                           onClick={() => setFinanceSubTab('parts')}
                           className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
                             financeSubTab === 'parts'
-                              ? 'bg-white dark:bg-[#151c2e] text-[#2563eb] shadow-xs border border-slate-200/10'
-                              : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350'
+                              ? 'bg-white dark:bg-[#11192a] text-brand-blue-700 dark:text-brand-blue-300 shadow-xs border border-slate-200/60 dark:border-[#24324d]'
+                              : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
                           }`}
                         >
                           🚚 بنود قطع الغيار المعتمدة ({financialData.allParts.length})
@@ -2630,7 +2568,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                       {financeSubTab === 'bills' ? (
                         <table className="w-full text-right text-[11px] font-bold border-collapse">
                           <thead>
-                            <tr className="bg-slate-50/55 dark:bg-slate-900/40 text-slate-450 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                            <tr className="bg-slate-50/80 dark:bg-[#141e33] text-slate-600 dark:text-slate-300 border-b border-slate-200/80 dark:border-[#24324d]">
                               <th className="pr-5 py-3 font-black text-slate-900 dark:text-white text-right">رقم الفاتورة والتاريخ</th>
                               <th className="py-3 font-black text-slate-900 dark:text-white text-right">عنوان بلاغ الصيانة والفئة</th>
                               <th className="py-3 font-black text-slate-900 dark:text-white text-right">تكلفة بنود قطع الغيار</th>
@@ -2638,7 +2576,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               <th className="py-3 font-black text-slate-900 dark:text-white text-left pl-5">التكلفة الإجمالية للفاتورة</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 font-sans">
+                          <tbody className="divide-y divide-slate-100 dark:divide-[#24324d] font-sans">
                             {financialData.completedOrders.length > 0 ? (
                               financialData.completedOrders.map((ord) => {
                                 const orderPartsCost = ord.supplierParts ? ord.supplierParts.reduce((sum, p) => sum + (p.qty * p.unitPrice), 0) : 0;
@@ -2646,16 +2584,16 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                                 const total = ord.cost !== undefined ? ord.cost : orderPartsCost;
 
                                 return (
-                                  <tr key={ord.id} className="hover:bg-slate-55/70 dark:hover:bg-slate-800/10 transition-colors">
+                                  <tr key={ord.id} className="hover:bg-slate-50/80 dark:hover:bg-[#182238]/60 transition-colors">
                                     <td className="pr-5 py-3.5">
-                                      <span className="block text-slate-800 dark:text-slate-150 font-extrabold font-mono text-[11.5px]">{ord.orderNumber}</span>
-                                      <span className="block text-[9.5px] font-extrabold text-slate-450 dark:text-slate-550 font-mono tracking-wide mt-0.5">{ord.date}</span>
+                                      <span className="block text-slate-800 dark:text-slate-100 font-extrabold font-mono text-[11.5px]">{ord.orderNumber}</span>
+                                      <span className="block text-[9.5px] font-extrabold text-slate-500 dark:text-slate-300 font-mono tracking-wide mt-0.5">{ord.date}</span>
                                     </td>
                                     <td className="py-3.5">
                                       <span className="block text-slate-900 dark:text-white text-xs truncate max-w-[240px] font-black">{ord.description}</span>
                                       <span className="inline-block mt-1">
                                         {(() => {
-                                          const catInfo = categoryNames[ord.category] || { label: ord.category, color: 'text-slate-500 bg-slate-50' };
+                                          const catInfo = categoryNames[ord.category] || { label: ord.category, color: 'text-slate-600 bg-slate-100' };
                                           return (
                                             <span className={`px-2 py-0.5 rounded text-[8.5px] font-black border ${catInfo.color}`}>
                                               {catInfo.label}
@@ -2664,13 +2602,13 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                                         })()}
                                       </span>
                                     </td>
-                                    <td className="py-3.5 text-slate-700 dark:text-slate-350 font-mono">
+                                    <td className="py-3.5 text-slate-700 dark:text-slate-200 font-mono">
                                       {orderPartsCost.toLocaleString()} ر.س
                                     </td>
-                                    <td className="py-3.5 text-slate-700 dark:text-slate-350 font-mono">
+                                    <td className="py-3.5 text-slate-700 dark:text-slate-200 font-mono">
                                       {laborCost.toLocaleString()} ر.س
                                     </td>
-                                    <td className="py-3.5 pl-5 text-left text-xs font-black text-emerald-600 dark:text-emerald-450 font-mono">
+                                    <td className="py-3.5 pl-5 text-left text-xs font-black text-emerald-700 dark:text-emerald-400 font-mono">
                                       {total.toLocaleString()} ر.س
                                     </td>
                                   </tr>
@@ -2678,7 +2616,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               })
                             ) : (
                               <tr>
-                                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500 font-extrabold">
+                                <td colSpan={5} className="py-12 text-center text-slate-500 dark:text-slate-300 font-extrabold">
                                   لا توجد فواتير صيانة منجزة مسلجة لهذه المركبة حتى الآن.
                                 </td>
                               </tr>
@@ -2688,7 +2626,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                       ) : (
                         <table className="w-full text-right text-[11px] font-bold border-collapse">
                           <thead>
-                            <tr className="bg-slate-50/55 dark:bg-slate-900/40 text-slate-450 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                            <tr className="bg-slate-50/80 dark:bg-[#141e33] text-slate-600 dark:text-slate-300 border-b border-slate-200/80 dark:border-[#24324d]">
                               <th className="pr-5 py-3 font-black text-slate-900 dark:text-white text-right">اسم القطعة ورمز القطعة</th>
                               <th className="py-3 font-black text-slate-900 dark:text-white text-right">أمر صيانة الأسطول والمورد</th>
                               <th className="py-3 font-black text-slate-900 dark:text-white text-center">الكمية</th>
@@ -2697,28 +2635,28 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               <th className="py-3 font-black text-slate-900 dark:text-white text-left pl-5">حالة ضمان البند من المورد</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 font-sans">
+                          <tbody className="divide-y divide-slate-100 dark:divide-[#24324d] font-sans">
                             {financialData.allParts.length > 0 ? (
                               financialData.allParts.map((p, pIdx) => {
                                 const partTotal = p.qty * p.unitPrice;
                                 const wInfo = getWarrantyStatus(p.orderDate, p.warrantyMonths);
 
                                 return (
-                                  <tr key={p.id ? `fin-part-${p.id}-${pIdx}` : `fin-part-${pIdx}`} className="hover:bg-slate-55/70 dark:hover:bg-slate-800/10 transition-all font-sans">
+                                  <tr key={p.id ? `fin-part-${p.id}-${pIdx}` : `fin-part-${pIdx}`} className="hover:bg-slate-50/80 dark:hover:bg-[#182238]/60 transition-all font-sans">
                                     <td className="pr-5 py-3.5">
-                                      <span className="block text-slate-850 dark:text-slate-100 font-extrabold text-xs">{p.name}</span>
-                                      <span className="block text-[9.5px] font-black text-slate-400 dark:text-slate-550 font-mono tracking-wider mt-0.5">{p.partNumber}</span>
+                                      <span className="block text-slate-900 dark:text-slate-100 font-extrabold text-xs">{p.name}</span>
+                                      <span className="block text-[9.5px] font-black text-slate-500 dark:text-slate-300 font-mono tracking-wider mt-0.5">{p.partNumber}</span>
                                     </td>
                                     <td className="py-3.5">
-                                      <span className="block text-slate-100 dark:text-slate-200 text-[10px] font-mono leading-none font-extrabold">أمر شغل: {p.orderNumber}</span>
-                                      <span className="block text-[9.5px] font-bold text-slate-450 dark:text-slate-500 mt-1">{p.supplier}</span>
+                                      <span className="block text-slate-800 dark:text-slate-200 text-[10px] font-mono leading-none font-extrabold">أمر شغل: {p.orderNumber}</span>
+                                      <span className="block text-[9.5px] font-bold text-slate-500 dark:text-slate-300 mt-1">{p.supplier}</span>
                                     </td>
                                     <td className="py-3.5 text-center">
-                                      <span className="inline-block px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-300 font-mono text-[10px] rounded font-black">
+                                      <span className="inline-block px-2 py-0.5 bg-slate-100 dark:bg-[#182238] text-slate-700 dark:text-slate-200 font-mono text-[10px] rounded font-black">
                                         {p.qty}x
                                       </span>
                                     </td>
-                                    <td className="py-3.5 text-slate-650 dark:text-slate-350 font-mono">
+                                    <td className="py-3.5 text-slate-700 dark:text-slate-200 font-mono">
                                       {p.unitPrice.toLocaleString()} ر.س
                                     </td>
                                     <td className="py-3.5 text-slate-900 dark:text-slate-100 font-extrabold font-mono text-xs">
@@ -2727,8 +2665,8 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                                     <td className="py-3.5 pl-5 text-left">
                                       <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black border ${
                                         wInfo.active 
-                                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/15' 
-                                          : 'bg-rose-500/10 text-rose-550 border-rose-500/15'
+                                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/25' 
+                                          : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/25'
                                       }`}>
                                         {wInfo.active ? '✔️' : '⚠️'} {wInfo.label}
                                       </span>
@@ -2738,7 +2676,7 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
                               })
                             ) : (
                               <tr>
-                                <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500 font-extrabold">
+                                <td colSpan={6} className="py-12 text-center text-slate-500 dark:text-slate-300 font-extrabold">
                                   لا توجد بنود قطع غيار مسجلة لهذه المركبة حتى الآن.
                                 </td>
                               </tr>
@@ -2796,14 +2734,19 @@ export default function VehicleHistory({ vehicle, onClose, user }: VehicleHistor
             language={user?.role === 'admin' ? 'ar' : 'ar'}
           />
 
-          {/* Footer Copyright and stamp */}
-          <div className="p-4 md:p-5 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0 text-center sm:text-right">
-            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500">
-              جميع حقوق الأصول وسجل الملكية والضمان والوصولات محفوظة للمؤسسة الرسمية - نظام الميكانيك © 2026
-            </p>
-            <div className="flex items-center gap-1 text-[9px] font-black text-indigo-505 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 pl-2.5 py-0.5 rounded-full">
-              <ShieldCheck size={11} className="text-emerald-500" />
-              <span>نظام تدقيق الجودة ISO 9001</span>
+          {/* Slim Action Footer */}
+          <div className="px-4 py-3 sm:px-6 bg-white/90 dark:bg-[#0e1525] border-t border-slate-200/90 dark:border-[#24324d] flex items-center justify-between gap-3 shrink-0">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate">
+              آخر صيانة مسجلة: <span className="font-mono text-slate-900 dark:text-slate-100">{vehicle.lastMaintenance || 'غير محدد'}</span>
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-1.5 rounded-xl bg-slate-100 dark:bg-[#182238] border border-slate-200 dark:border-[#263552] text-xs font-black text-slate-800 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-[#24324d] transition-colors cursor-pointer"
+              >
+                إغلاق
+              </button>
             </div>
           </div>
         </motion.div>
